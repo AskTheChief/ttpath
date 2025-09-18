@@ -1,9 +1,10 @@
 'use client';
 
 import { Level, levels } from '@/lib/types';
-import { User, Dna, Crown, GraduationCap, Users, Bot, Star } from 'lucide-react';
+import { User, Dna, Crown, GraduationCap, Users, Bot, Star, Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ConfettiEffect from './confetti-effect';
+import { absoluteCenter } from '@/lib/utils';
 
 type Node = {
   id: Level;
@@ -22,12 +23,19 @@ const nodes: Node[] = [
 ];
 
 const paths = {
-  'Visitor-Guest': 'M 50 250 Q 150 200 250 250',
-  'Guest-Candidate': 'M 250 250 Q 350 200 450 250',
-  'Candidate-Member': 'M 450 250 Q 575 150 700 150',
-  'Candidate-Chief': 'M 450 250 Q 575 200 700 250',
-  'Candidate-Mentor': 'M 450 250 Q 575 350 700 350',
+  'Visitor-Guest': 'M 75 250 L 225 250',
+  'Guest-Candidate': 'M 275 250 L 425 250',
+  'Candidate-Member': 'M 475 250 C 550 250 625 150 675 150',
+  'Candidate-Chief': 'M 475 250 L 675 250',
+  'Candidate-Mentor': 'M 475 250 C 550 250 625 350 675 350',
 };
+
+const GamePiece = () => (
+    <g className="drop-shadow-lg">
+      <path d="M12 2L2 22h20L12 2z" fill="hsl(var(--primary))" stroke="hsl(var(--primary-foreground))" strokeWidth="1.5" />
+    </g>
+);
+
 
 const PathVisualization = ({
   currentLevel,
@@ -39,33 +47,42 @@ const PathVisualization = ({
   const meIconRef = useRef<SVGGElement>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  const [playerPosition, setPlayerPosition] = useState<{x: number; y: number}>(() => {
+    const startNode = nodes.find(n => n.id === currentLevel);
+    return { x: startNode?.x ?? 50, y: startNode?.y ?? 250 };
+  });
 
   const currentNode = nodes.find(n => n.id === currentLevel);
   
   useEffect(() => {
     if (previousLevel && previousLevel !== currentLevel) {
       const pathKey = `${previousLevel}-${currentLevel}` as keyof typeof paths;
-      const path = paths[pathKey];
+      const pathData = paths[pathKey];
+      const endNode = nodes.find(n => n.id === currentLevel);
       
-      if (path && meIconRef.current) {
+      if (pathData && endNode && meIconRef.current) {
         setIsAnimating(true);
         const meIcon = meIconRef.current;
         
         // Temporarily set the animation path
-        meIcon.style.offsetPath = `path('${path}')`;
+        meIcon.style.offsetPath = `path('${pathData}')`;
         meIcon.style.animation = 'move-along 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards';
 
         setTimeout(() => {
           setIsAnimating(false);
           setShowConfetti(true);
+          setPlayerPosition({ x: endNode.x, y: endNode.y });
           if (meIconRef.current) {
              meIconRef.current.style.animation = '';
              meIconRef.current.style.offsetPath = 'none';
           }
         }, 1500);
       }
+    } else if (currentNode) {
+        setPlayerPosition({ x: currentNode.x, y: currentNode.y });
     }
-  }, [currentLevel, previousLevel]);
+  }, [currentLevel, previousLevel, currentNode]);
 
   const currentLevelIndex = levels.indexOf(currentLevel);
 
@@ -73,11 +90,11 @@ const PathVisualization = ({
     <div className="relative w-full max-w-4xl">
       <style>{`
         @keyframes move-along {
-          0% { offset-distance: 0%; }
-          100% { offset-distance: 100%; }
+          0% { offset-distance: 0%; transform: translate(-50%, -100%); }
+          100% { offset-distance: 100%; transform: translate(-50%, -100%); }
         }
       `}</style>
-      <svg viewBox="0 0 800 500" className="w-full h-auto" aria-hidden="true">
+      <svg viewBox="0 0 800 500" className="w-full h-auto overflow-visible" aria-hidden="true">
         <defs>
           {Object.entries(paths).map(([key, d]) => (
             <path id={`path-${key}`} key={key} d={d} />
@@ -85,40 +102,53 @@ const PathVisualization = ({
         </defs>
 
         {/* Draw all paths */}
-        <g stroke="hsl(var(--primary) / 0.2)" strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="5, 10">
-          {Object.values(paths).map((d, i) => (
-            <path d={d} key={i} />
-          ))}
+        <g stroke="hsl(var(--muted))" strokeWidth="2" fill="none" strokeDasharray="4, 8" strokeLinecap="round">
+            {Object.entries(paths).map(([key, d]) => {
+                const [startLevel] = key.split('-') as [Level];
+                const startLevelIndex = levels.indexOf(startLevel);
+                const isCompletedPath = startLevelIndex < currentLevelIndex;
+                return (
+                    <path d={d} key={key} className={isCompletedPath ? 'stroke-primary stroke-dash-[0]' : ''} />
+                )
+            })}
         </g>
 
         {/* Nodes */}
         {nodes.map((node, index) => {
           const isCurrent = node.id === currentLevel;
-          const isUnlocked = index > currentLevelIndex;
+          const isCompleted = index < currentLevelIndex;
+          const isNext = index > currentLevelIndex;
+          
           return (
             <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
               <circle
-                r="20"
-                fill="hsl(var(--background))"
-                stroke="hsl(var(--primary))"
+                r="25"
+                fill={isCompleted || isCurrent ? 'hsl(var(--primary))' : 'hsl(var(--background))'}
+                stroke={isCompleted || isCurrent ? 'hsl(var(--primary))' : 'hsl(var(--muted))'}
                 strokeWidth="2"
-                className={`transition-all duration-300 ${isUnlocked ? 'shimmer-blue opacity-50' : ''}`}
+                className={`transition-all duration-300 ${isNext ? 'opacity-70' : ''}`}
               />
-              <node.icon
-                className={`w-6 h-6 text-primary absolute-center transition-colors duration-300 ${isUnlocked ? 'opacity-50' : ''}`}
-              />
+              {isCompleted ? (
+                 <Check className={`w-8 h-8 text-primary-foreground ${absoluteCenter}`} />
+              ) : (
+                <node.icon
+                  className={`w-8 h-8 absolute-center transition-colors duration-300 ${isCompleted || isCurrent ? 'text-primary-foreground' : 'text-muted-foreground'} ${isNext ? 'opacity-70' : ''}`}
+                />
+              )}
+             
               <text
                 y="40"
                 textAnchor="middle"
-                className="font-headline text-sm fill-current text-primary"
+                className={`font-headline text-sm fill-current transition-colors duration-300 ${isCompleted || isCurrent ? 'text-primary' : 'text-muted-foreground'}`}
               >
                 {node.id}
               </text>
               {isCurrent && (
                 <circle
-                  r="20"
+                  r="30"
                   fill="none"
-                  stroke="transparent"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="3"
                   className="pulse-green"
                 />
               )}
@@ -128,9 +158,8 @@ const PathVisualization = ({
         
         {/* Me Icon - animated separately */}
         {currentNode && (
-           <g ref={meIconRef} transform={!isAnimating ? `translate(${currentNode.x}, ${currentNode.y})` : ''}>
-             <circle r="12" fill="hsl(var(--primary))" />
-             <Star className="w-4 h-4 text-primary-foreground absolute-center" fill="currentColor"/>
+           <g ref={meIconRef} transform={!isAnimating ? `translate(${playerPosition.x}, ${playerPosition.y - 30})` : ''}>
+             <GamePiece />
            </g>
         )}
       </svg>

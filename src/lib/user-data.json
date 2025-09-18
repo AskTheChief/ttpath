@@ -1,4 +1,6 @@
 {
   "level": "Visitor",
-  "completedRequirements": {}
+  "completedRequirements": {
+    "sign-up": true
+  }
 }
