@@ -67,7 +67,7 @@ const AbilitiesPanel = ({
   }
 
   return (
-    <Card className="w-full max-w-md shadow-2xl bg-white/50 backdrop-blur-sm">
+    <Card className="w-full max-w-md shadow-none border-none bg-transparent">
       <CardHeader>
         <CardTitle className="font-headline text-3xl">Level: {user.level}</CardTitle>
         <CardDescription>Complete your abilities to advance.</CardDescription>

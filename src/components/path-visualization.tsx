@@ -40,9 +40,11 @@ const GamePiece = () => (
 const PathVisualization = ({
   currentLevel,
   previousLevel,
+  onNodeClick,
 }: {
   currentLevel: Level;
   previousLevel: Level | null;
+  onNodeClick: (level: Level) => void;
 }) => {
   const meIconRef = useRef<SVGGElement>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -120,7 +122,12 @@ const PathVisualization = ({
           const isNext = index > currentLevelIndex;
           
           return (
-            <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
+            <g 
+              key={node.id}
+              transform={`translate(${node.x}, ${node.y})`}
+              onClick={() => onNodeClick(node.id)}
+              className={isCurrent ? 'cursor-pointer' : ''}
+            >
               <circle
                 r="25"
                 fill={isCompleted || isCurrent ? 'hsl(var(--primary))' : 'hsl(var(--background))'}

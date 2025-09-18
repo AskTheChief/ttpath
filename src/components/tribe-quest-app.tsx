@@ -6,6 +6,11 @@ import type { Level, User } from '@/lib/types';
 import PathVisualization from './path-visualization';
 import AbilitiesPanel from './abilities-panel';
 import { Skeleton } from './ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog"
+
 
 const usePrevious = <T,>(value: T): T | null => {
   const ref = useState<T | null>(null);
@@ -19,6 +24,7 @@ const TribeQuestApp = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [isAbilitiesPanelOpen, setIsAbilitiesPanelOpen] = useState(false);
 
   const previousLevel = usePrevious(user?.level ?? null);
 
@@ -33,9 +39,16 @@ const TribeQuestApp = () => {
 
   const handleLevelAdvance = (newLevel: Level) => {
     if(user){
-        setUser({ ...user, level: newLevel });
+        setUser({ ...user, level: newLevel, completedRequirements: user.completedRequirements });
     }
+    setIsAbilitiesPanelOpen(false);
   };
+  
+  const handleNodeClick = (level: Level) => {
+    if (level === user?.level) {
+      setIsAbilitiesPanelOpen(true);
+    }
+  }
 
   if (isLoading || !user) {
     return (
@@ -49,8 +62,16 @@ const TribeQuestApp = () => {
   return (
     <div className="flex flex-col items-center gap-12 w-full">
       <h1 className="text-5xl font-headline text-primary tracking-wider">TribeQuest</h1>
-      <PathVisualization currentLevel={user.level} previousLevel={previousLevel} />
-      <AbilitiesPanel key={user.level} user={user} onLevelAdvance={handleLevelAdvance} />
+      <PathVisualization 
+        currentLevel={user.level} 
+        previousLevel={previousLevel}
+        onNodeClick={handleNodeClick}
+      />
+      <Dialog open={isAbilitiesPanelOpen} onOpenChange={setIsAbilitiesPanelOpen}>
+        <DialogContent>
+            {user && <AbilitiesPanel key={user.level} user={user} onLevelAdvance={handleLevelAdvance} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
