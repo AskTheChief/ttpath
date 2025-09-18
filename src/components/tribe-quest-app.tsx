@@ -45,18 +45,24 @@ const TribeQuestApp = () => {
   const previousLevel = usePrevious(user?.level ?? null);
 
   useEffect(() => {
-    startTransition(async () => {
+    const loadUser = async () => {
       setIsLoading(true);
       const userData = await fetchUserData();
       setUser(userData);
       setIsLoading(false);
+    }
+    startTransition(() => {
+      loadUser();
     });
   }, []);
 
   const handleLevelAdvance = (newLevel: Level) => {
-    if(user){
-        setUser({ ...user, level: newLevel, completedRequirements: {} });
-    }
+    setUser(prevUser => {
+        if (prevUser) {
+            return { ...prevUser, level: newLevel, completedRequirements: {} };
+        }
+        return null;
+    });
     setIsAbilitiesPanelOpen(false);
   };
   
