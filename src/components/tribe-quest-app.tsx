@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useRef } from 'react';
 import { fetchUserData, resetProgress } from '@/app/actions';
 import type { Level, User } from '@/lib/types';
 import PathVisualization from './path-visualization';
@@ -28,12 +28,12 @@ import {
 import { RefreshCw } from 'lucide-react';
 
 
-const usePrevious = <T,>(value: T): T | null => {
-  const ref = useState<T | null>(null);
+const usePrevious = <T,>(value: T): T | undefined => {
+  const ref = useRef<T>();
   useEffect(() => {
-    ref[1](value);
-  });
-  return ref[0];
+    ref.current = value;
+  }, [value]);
+  return ref.current;
 };
 
 const TribeQuestApp = () => {
@@ -42,7 +42,7 @@ const TribeQuestApp = () => {
   const [isPending, startTransition] = useTransition();
   const [isAbilitiesPanelOpen, setIsAbilitiesPanelOpen] = useState(false);
 
-  const previousLevel = usePrevious(user?.level ?? null);
+  const previousLevel = usePrevious(user?.level ?? null) as Level | null;
 
   useEffect(() => {
     startTransition(async () => {
