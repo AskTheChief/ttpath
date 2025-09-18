@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition, useRef } from 'react';
-import { fetchUserData, resetProgress } from '@/app/actions';
+import { fetchUserData, resetProgress, setLevel } from '@/app/actions';
 import type { Level, User } from '@/lib/types';
 import PathVisualization from './path-visualization';
 import AbilitiesPanel from './abilities-panel';
@@ -51,17 +51,13 @@ const TribeQuestApp = () => {
       setUser(userData);
       setIsLoading(false);
     }
-    startTransition(() => {
-      loadUser();
-    });
+    loadUser();
   }, []);
 
   const handleLevelAdvance = (newLevel: Level) => {
-    setUser(prevUser => {
-        if (prevUser) {
-            return { ...prevUser, level: newLevel, completedRequirements: {} };
-        }
-        return null;
+    // Rely on server action and revalidation to update state
+    startTransition(async () => {
+        await setLevel(newLevel);
     });
     setIsAbilitiesPanelOpen(false);
   };
@@ -126,7 +122,7 @@ const TribeQuestApp = () => {
                 <DialogTitle className="font-headline text-3xl">Level: {user.level}</DialogTitle>
                 <DialogDescription>Complete your abilities to advance.</DialogDescription>
             </DialogHeader>
-            {user && <AbilitiesPanel key={user.level} user={user} onLevelAdvance={handleLevelAdvance} />}
+            {user && <AbilitiesPanel user={user} onLevelAdvance={handleLevelAdvance} />}
         </DialogContent>
       </Dialog>
     </div>
