@@ -68,11 +68,7 @@ const AbilitiesPanel = ({
 
   return (
     <Card className="w-full max-w-md shadow-none border-none bg-transparent">
-      <CardHeader>
-        <CardTitle className="font-headline text-3xl">Level: {user.level}</CardTitle>
-        <CardDescription>Complete your abilities to advance.</CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {isLoading ? (
           <div className="flex justify-center items-center h-24">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />

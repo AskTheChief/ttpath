@@ -1,6 +1,8 @@
 {
   "level": "Guest",
   "completedRequirements": {
-    "sign-up": true
+    "sign-up": true,
+    "read-book": true,
+    "complete-tutorial": true
   }
 }

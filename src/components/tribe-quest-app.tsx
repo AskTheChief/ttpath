@@ -9,6 +9,9 @@ import { Skeleton } from './ui/skeleton';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 
 
@@ -69,6 +72,10 @@ const TribeQuestApp = () => {
       />
       <Dialog open={isAbilitiesPanelOpen} onOpenChange={setIsAbilitiesPanelOpen}>
         <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="font-headline text-3xl">Level: {user.level}</DialogTitle>
+                <DialogDescription>Complete your abilities to advance.</DialogDescription>
+            </DialogHeader>
             {user && <AbilitiesPanel key={user.level} user={user} onLevelAdvance={handleLevelAdvance} />}
         </DialogContent>
       </Dialog>
