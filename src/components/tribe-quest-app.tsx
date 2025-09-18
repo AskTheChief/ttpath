@@ -28,12 +28,12 @@ import {
 import { RefreshCw } from 'lucide-react';
 
 
-const usePrevious = <T,>(value: T): T | undefined => {
+const usePrevious = <T,>(value: T): T | null => {
   const ref = useRef<T>();
   useEffect(() => {
     ref.current = value;
-  }, [value]);
-  return ref.current;
+  });
+  return ref.current ?? null;
 };
 
 const TribeQuestApp = () => {
@@ -42,7 +42,7 @@ const TribeQuestApp = () => {
   const [isPending, startTransition] = useTransition();
   const [isAbilitiesPanelOpen, setIsAbilitiesPanelOpen] = useState(false);
 
-  const previousLevel = usePrevious(user?.level ?? null) as Level | null;
+  const previousLevel = usePrevious(user?.level ?? null);
 
   useEffect(() => {
     startTransition(async () => {
