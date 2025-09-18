@@ -48,7 +48,7 @@ const AbilitiesPanel = ({
       }
     };
     fetchAbilities();
-  }, [user]);
+  }, [user.level, user.completedRequirements]);
 
   const handleComplete = (requirementId: Requirement) => {
     startTransition(async () => {
