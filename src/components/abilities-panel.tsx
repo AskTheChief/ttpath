@@ -6,7 +6,7 @@ import { generateRelevantAbilities } from '@/ai/flows/generate-relevant-abilitie
 import type { GenerateRelevantAbilitiesOutput } from '@/ai/flows/generate-relevant-abilities';
 import type { Level, Requirement, User } from '@/lib/types';
 import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardFooter } from './ui/card';
 import { Check, Loader2 } from 'lucide-react';
 import { useSound } from '@/hooks/use-sound';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { fetchUserData } from '@/app/actions';
+import { fetchUserData, resetProgress } from '@/app/actions';
 import type { Level, User } from '@/lib/types';
 import PathVisualization from './path-visualization';
 import AbilitiesPanel from './abilities-panel';
@@ -13,6 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Button } from './ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { RefreshCw } from 'lucide-react';
 
 
 const usePrevious = <T,>(value: T): T | null => {
@@ -42,7 +55,7 @@ const TribeQuestApp = () => {
 
   const handleLevelAdvance = (newLevel: Level) => {
     if(user){
-        setUser({ ...user, level: newLevel, completedRequirements: user.completedRequirements });
+        setUser({ ...user, level: newLevel, completedRequirements: {} });
     }
     setIsAbilitiesPanelOpen(false);
   };
@@ -51,6 +64,13 @@ const TribeQuestApp = () => {
     if (level === user?.level) {
       setIsAbilitiesPanelOpen(true);
     }
+  }
+
+  const handleReset = () => {
+    startTransition(async () => {
+      const defaultUser = await resetProgress();
+      setUser(defaultUser);
+    });
   }
 
   if (isLoading || !user) {
@@ -64,7 +84,31 @@ const TribeQuestApp = () => {
 
   return (
     <div className="flex flex-col items-center gap-12 w-full">
-      <h1 className="text-5xl font-headline text-primary tracking-wider">TribeQuest</h1>
+      <div className="flex items-center justify-between w-full max-w-4xl">
+        <div className="w-12"></div>
+        <h1 className="text-5xl font-headline text-primary tracking-wider text-center">TribeQuest</h1>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="icon" className="w-12 h-12 rounded-full">
+                <RefreshCw />
+                <span className="sr-only">Reset Progress</span>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action will reset all your progress back to the 'Visitor' level.
+                You will lose all completed abilities.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
       <PathVisualization 
         currentLevel={user.level} 
         previousLevel={previousLevel}

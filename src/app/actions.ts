@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getUserData, updateUserData } from '@/lib/db';
-import type { Level, Requirement } from '@/lib/types';
+import type { Level, Requirement, User } from '@/lib/types';
 import { levels } from '@/lib/types';
 
 export async function fetchUserData() {
@@ -26,4 +26,14 @@ export async function setLevel(newLevel: Level) {
     return user;
   }
   throw new Error('Invalid level');
+}
+
+export async function resetProgress(): Promise<User> {
+    const defaultUser: User = {
+        level: 'Visitor',
+        completedRequirements: {},
+    };
+    await updateUserData(defaultUser);
+    revalidatePath('/');
+    return defaultUser;
 }
