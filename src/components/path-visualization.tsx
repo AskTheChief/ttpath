@@ -5,6 +5,7 @@ import { User, Dna, Crown, GraduationCap, Users, Bot, Star, Check } from 'lucide
 import { useEffect, useRef, useState } from 'react';
 import ConfettiEffect from './confetti-effect';
 import { absoluteCenter } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 
 type Node = {
   id: Level;
@@ -31,7 +32,7 @@ const paths = {
 };
 
 const GamePiece = () => (
-    <g className="drop-shadow-lg">
+    <g className="drop-shadow-lg game-piece">
       <path d="M12 2L2 22h20L12 2z" fill="hsl(var(--primary))" stroke="hsl(var(--primary-foreground))" strokeWidth="1.5" />
     </g>
 );
@@ -49,6 +50,7 @@ const PathVisualization = ({
   const meIconRef = useRef<SVGGElement>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const { playWalk, stopWalk } = useSound();
   
   const [playerPosition, setPlayerPosition] = useState<{x: number; y: number}>(() => {
     const startNode = nodes.find(n => n.id === currentLevel);
@@ -65,16 +67,18 @@ const PathVisualization = ({
       
       if (pathData && endNode && meIconRef.current) {
         setIsAnimating(true);
+        playWalk();
         const meIcon = meIconRef.current;
         
         // Temporarily set the animation path
         meIcon.style.offsetPath = `path('${pathData}')`;
-        meIcon.style.animation = 'move-along 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards';
+        meIcon.style.animation = 'move-along 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards, walk 0.3s linear infinite';
 
         setTimeout(() => {
           setIsAnimating(false);
           setShowConfetti(true);
           setPlayerPosition({ x: endNode.x, y: endNode.y });
+          stopWalk();
           if (meIconRef.current) {
              meIconRef.current.style.animation = '';
              meIconRef.current.style.offsetPath = 'none';
@@ -84,7 +88,7 @@ const PathVisualization = ({
     } else if (currentNode) {
         setPlayerPosition({ x: currentNode.x, y: currentNode.y });
     }
-  }, [currentLevel, previousLevel, currentNode]);
+  }, [currentLevel, previousLevel, currentNode, playWalk, stopWalk]);
 
   const currentLevelIndex = levels.indexOf(currentLevel);
 
@@ -92,8 +96,16 @@ const PathVisualization = ({
     <div className="relative w-full max-w-4xl">
       <style>{`
         @keyframes move-along {
-          0% { offset-distance: 0%; transform: translate(-50%, -100%); }
-          100% { offset-distance: 100%; transform: translate(-50%, -100%); }
+          0% { offset-distance: 0%; }
+          100% { offset-distance: 100%; }
+        }
+        @keyframes walk {
+          0% { transform: translateY(-30px); }
+          50% { transform: translateY(-35px); }
+          100% { transform: translateY(-30px); }
+        }
+        .game-piece {
+            transform: translateY(-30px);
         }
       `}</style>
       <svg viewBox="0 0 800 500" className="w-full h-auto overflow-visible" aria-hidden="true">
@@ -165,7 +177,7 @@ const PathVisualization = ({
         
         {/* Me Icon - animated separately */}
         {currentNode && (
-           <g ref={meIconRef} transform={!isAnimating ? `translate(${playerPosition.x}, ${playerPosition.y - 30})` : ''}>
+           <g ref={meIconRef} transform={!isAnimating ? `translate(${playerPosition.x}, ${playerPosition.y})` : ''}>
              <GamePiece />
            </g>
         )}
