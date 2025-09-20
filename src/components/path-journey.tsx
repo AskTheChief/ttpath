@@ -426,7 +426,7 @@ export default function PathJourney() {
       <div id="path-container" className="path-container" ref={pathContainerRef}>
         <div className={cn("loading-curtain", !showSplash && "hide")}></div>
         <div id="logo-container" className={cn(logoState === 'persistent' && 'persistent')}>
-          <Image src="/logo/logo.svg" alt="Tribe Logo" width={500} height={500} />
+          <Image src="/logo/logo.svg" alt="Tribe Logo" width={500} height={500} priority />
         </div>
         <div className="chat-icon-container">
           <button

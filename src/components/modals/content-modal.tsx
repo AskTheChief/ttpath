@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ContentModalProps = {
   isOpen: boolean;
@@ -21,10 +22,14 @@ export default function ContentModal({
   onComplete,
 }: ContentModalProps) {
   
+  const isMobile = useIsMobile();
+
   const handleComplete = () => {
     onComplete(requirementId);
     onClose();
   };
+
+  const mobileSrc = isMobile ? `${iframeSrc}&rm=minimal&embedded=true&chrome=false&usp=sharing&fontsize=10` : iframeSrc;
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -44,10 +49,10 @@ export default function ContentModal({
             This is a modal containing content related to the current step.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 min-h-0 flex justify-center items-center bg-gray-100">
+        <div className="flex-1 min-h-0 flex justify-center items-center bg-gray-100 overflow-hidden">
           <iframe
             className="w-full max-w-4xl h-full border-0"
-            src={iframeSrc}
+            src={mobileSrc}
             allowFullScreen
             title={title}
           ></iframe>
