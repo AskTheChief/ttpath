@@ -106,50 +106,24 @@ body {
   }
 
   .journey-title {
-    position: absolute;
-    top: 2rem;
-    left: 4rem;
-    transform: none;
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
     font-size: 1.5rem;
-    color: #a0aec0;
-    z-index: 10;
+    color: black;
+    margin-bottom: 1rem; /* Add some space below the title */
   }
-
+  
   .chat-icon-container {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; 
     align-items: center;
     z-index: 20;
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
   }
-
-  .chat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #ffffff;
-    border: 4px solid #cbd5e1;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  .chat-icon:hover {
-      transform: scale(1.15);
-  }
-
-  .chat-icon-container .node-label {
-    margin-top: 8px; /* Adjust as needed */
-  }
-
   
   @keyframes fade-in-delay {
     from {
@@ -159,7 +133,6 @@ body {
       opacity: 1;
     }
   }
-
 
   @keyframes gradient-pan {
       0% { background-position: 0% 50%; }
@@ -191,8 +164,9 @@ body {
       height: 100%;
       z-index: 1;
   }
-  .path-node {
-      position: absolute;
+
+  /* Unified icon styles */
+  .path-node, .chat-icon {
       width: 50px;
       height: 50px;
       border-radius: 50%;
@@ -201,14 +175,21 @@ body {
       justify-content: center;
       cursor: pointer;
       transition: all 0.3s ease;
-      z-index: 10;
       background-color: #ffffff;
       border: 4px solid #cbd5e1;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+  }
+  .path-node {
+      position: absolute;
+      z-index: 10;
       transform: translate(-50%, -50%);
   }
-  .path-node:not(.locked):hover {
+
+  .path-node:not(.locked):hover, .chat-icon:hover {
       transform: translate(-50%, -50%) scale(1.15);
+  }
+  .chat-icon:hover {
+    transform: scale(1.15);
   }
   
   @keyframes pulse {
@@ -242,6 +223,10 @@ body {
   .path-node .node-label {
     position: absolute;
     bottom: -30px;
+  }
+
+  .chat-icon-container .node-label {
+    margin-top: 8px; /* Adjust as needed */
   }
 
   #user-icon {
@@ -341,7 +326,7 @@ body {
       opacity: 0;
       border-radius: 50%;
   }
-
+  
   .info-panel {
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
   }
@@ -351,8 +336,21 @@ body {
     pointer-events: none;
   }
 
+  .glow-green {
+    animation: glow-green 2s infinite;
+  }
+
+  @keyframes glow-green {
+    0%, 100% {
+      box-shadow: 0 0 5px #34d399, 0 0 10px #34d399, 0 0 15px #34d399;
+    }
+    50% {
+      box-shadow: 0 0 10px #34d399, 0 0 20px #34d399, 0 0 30px #34d399;
+    }
+  }
+  
   @media (max-width: 768px) {
-    .path-node {
+    .path-node, .chat-icon {
         width: 40px;
         height: 40px;
         border-width: 3px;

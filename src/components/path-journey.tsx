@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -35,6 +36,7 @@ export default function PathJourney() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const [logoState, setLogoState] = useState('splash');
+  const { toast } = useToast();
   
   const [modalState, setModalState] = useState({
     pamphlet: false,
@@ -222,6 +224,7 @@ export default function PathJourney() {
     const duration = 2000;
     const hopCount = 15;
     let startTime: number | null = null;
+    let lastHop = 0;
 
     const animationStep = (timestamp: number) => {
         if (!startTime) startTime = timestamp;
@@ -237,8 +240,10 @@ export default function PathJourney() {
         const hopY = -Math.sin(hopProgress * Math.PI) * 20;
         userIconRef.current!.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
 
-        if (Math.floor(progress * hopCount) > Math.floor(((timestamp - 16 - startTime) / duration) * hopCount)) {
+        const currentHop = Math.floor(progress * hopCount);
+        if (currentHop > lastHop) {
             playSound('hop');
+            lastHop = currentHop;
         }
         
         if (progress < 1) {
@@ -252,10 +257,21 @@ export default function PathJourney() {
             playSound('progress');
             setCurrentUserLevel(targetNode.level);
             triggerConfetti(finalPoint.x, finalPoint.y);
+
+            if (targetNode.id === 'node-guest') {
+                toast({
+                    title: "Welcome, Guest!",
+                    description: `You can now proceed on your journey.`,
+                });
+            } else if (targetNode.id === 'node-graduate') {
+                toast({
+                    title: "Congratulations, You Graduate!",
+                });
+            }
         }
     };
     requestAnimationFrame(animationStep);
-  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti]);
+  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
 
   const handleActionClick = (action: PathAction) => {
     const allDepsMet = !action.dependsOn || requirementsState[action.dependsOn];
@@ -278,9 +294,6 @@ export default function PathJourney() {
             } else {
                  // If there's no specific requirement, complete it on click
                  completeRequirement(action.id);
-                 if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
-                    setTimeout(() => animateUserIcon(nextNode), 100);
-                }
             }
         } else {
             // Shake logic or tooltip could be handled inside the button in the tooltip now
@@ -370,7 +383,7 @@ export default function PathJourney() {
           if (isNextStepAction) {
             const nextNodeTitle = pathNodesData.find(n => n.id === `node-${action.next}`)?.title;
             if (isCompleted) {
-                buttonText = `Journey to ${nextNodeTitle}`;
+                buttonText = `Path to ${nextNodeTitle}`;
             } else if (dependsOnMet) {
                 buttonText = action.label;
             }
@@ -384,7 +397,7 @@ export default function PathJourney() {
               variant="secondary"
               size="sm"
               className={cn('w-full justify-start h-auto p-2 text-wrap', {
-                'animate-pulse': isNextStepAction && !isCompleted && dependsOnMet && isActive,
+                'glow-green': isNextStepAction && isCompleted && isActive,
               })}
               onClick={(e) => {
                 if (isDisabled) {
@@ -415,7 +428,6 @@ export default function PathJourney() {
         <div id="logo-container" className={cn(logoState === 'persistent' && 'persistent')}>
           <Image src="/logo/logo.svg" alt="Tribe Logo" width={500} height={500} />
         </div>
-        <h2 className="journey-title">Your Journey</h2>
         <div className="chat-icon-container">
           <button
             className="chat-icon"
@@ -462,8 +474,10 @@ export default function PathJourney() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>
-                    <h4 className="font-semibold mb-2 text-foreground/80">Abilities:</h4>
+                    {selectedNode.req && (
+                        <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>
+                    )}
+                    <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                     {renderAbilities(selectedNode)}
                 </CardContent>
             </Card>
@@ -507,8 +521,8 @@ export default function PathJourney() {
                       <CardTitle>{node.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>
-                      <h4 className="font-semibold mb-2 text-foreground/80">Abilities:</h4>
+                      {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
+                      <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                       {renderAbilities(node)}
                   </CardContent>
               </TooltipContent>

@@ -23,10 +23,10 @@ export const pathNodesData: PathNodeData[] = [
     level: 1,
     pathPos: 0.0,
     title: "Visitor",
-    req: "None",
+    req: "",
     actions: [
-      { id: "read-book", label: "Read the short intro book", action: "open-pamphlet" },
-      { id: "sign-up", label: "Sign Up", next: "guest", requires: "signup-form", dependsOn: "read-book" }
+      { id: "read-book", label: "Read Quick-Start Guide", action: "open-pamphlet" },
+      { id: "sign-up", label: "Register as Guest", next: "guest", requires: "signup-form", dependsOn: "read-book" }
     ],
     panelPos: "right"
   },
@@ -35,10 +35,10 @@ export const pathNodesData: PathNodeData[] = [
     level: 2,
     pathPos: 0.20,
     title: "Guest",
-    req: "Sign Up",
+    req: "",
     actions: [
-      { id: "read-full-book", label: "Read the full book", action: "open-full-book" },
-      { id: "complete-tutorial", label: "Become a Graduate", next: "graduate", requires: "tutorial", dependsOn: "read-full-book" }
+      { id: "read-full-book", label: "Read the Source Book", action: "open-full-book" },
+      { id: "complete-tutorial", label: "Take the Tutorial", next: "graduate", requires: "tutorial", dependsOn: "read-full-book" }
     ],
     panelPos: "left"
   },
@@ -47,10 +47,10 @@ export const pathNodesData: PathNodeData[] = [
     level: 3,
     pathPos: 0.40,
     title: "Graduate",
-    req: "Complete the Tutorial",
+    req: "",
     actions: [
-      { id: "join-tribe", label: "Join a Tribe as a Member", next: "member" },
-      { id: "start-tribe", label: "Run a Tribe as a Chief", next: "chief" }
+      { id: "join-tribe", label: "Join a Tribe", next: "member" },
+      { id: "start-tribe", label: "Start a Tribe", next: "chief" }
     ],
     panelPos: "right"
   },

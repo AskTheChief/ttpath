@@ -23,10 +23,6 @@ export default function SignupModal({ isOpen, onClose, onComplete }: SignupModal
     await new Promise(resolve => setTimeout(resolve, 500));
 
     onComplete("sign-up");
-    toast({
-      title: "Welcome, Guest!",
-      description: `You can now proceed on your journey.`,
-    });
     onClose();
     setIsLoading(false);
   };
@@ -35,19 +31,13 @@ export default function SignupModal({ isOpen, onClose, onComplete }: SignupModal
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-slate-800">Become a Guest</DialogTitle>
-          <DialogDescription>
-            Confirm your intention to join as a guest.
-          </DialogDescription>
+          <DialogTitle className="text-2xl font-bold text-slate-800">Register as a Guest</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-4">
-            <p className="text-slate-600">To become a Guest and unlock more abilities, confirm your intention to join.</p>
-          </div>
           <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
             <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isLoading}>
-              {isLoading ? "Joining..." : "Join as Guest"}
+              {isLoading ? "Registering..." : "Register"}
             </Button>
           </DialogFooter>
         </form>
