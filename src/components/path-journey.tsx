@@ -2,13 +2,14 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, MessageCircleQuestion } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
 import ContentModal from './modals/content-modal';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
+import FeedbackModal from './modals/feedback-modal';
 import TutorialModal from './modals/tutorial-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
@@ -44,6 +45,8 @@ export default function PathJourney() {
     signup: false,
     chatbot: false,
     tutorial: false,
+    database: false,
+    feedback: false,
   });
 
   const pathRef = useRef<SVGPathElement>(null);
@@ -428,6 +431,15 @@ export default function PathJourney() {
         <div id="logo-container" className={cn(logoState === 'persistent' && 'persistent')}>
           <Image src="/logo/logo.svg" alt="Tribe Logo" width={500} height={500} priority />
         </div>
+        <div className="database-icon-container">
+          <button
+            className="chat-icon"
+            onClick={() => setModalState(s => ({ ...s, database: true }))}
+          >
+            <Database className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Data Base</span>
+        </div>
         <div className="chat-icon-container">
           <button
             className="chat-icon"
@@ -436,6 +448,15 @@ export default function PathJourney() {
             <MessageSquare className="h-8 w-8 text-muted-foreground" />
           </button>
           <span className="node-label">The Chief</span>
+        </div>
+        <div className="chat-icon-container" style={{top: 'auto', bottom: '1.5rem'}}>
+            <button
+                className="chat-icon"
+                onClick={() => setModalState(s => ({ ...s, feedback: true }))}
+            >
+                <MessageCircleQuestion className="h-8 w-8 text-muted-foreground" />
+            </button>
+            <span className="node-label">Feedback</span>
         </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
@@ -546,6 +567,14 @@ export default function PathJourney() {
         requirementId="read-full-book"
         onComplete={completeRequirement}
       />
+       <ContentModal
+        isOpen={modalState.database}
+        onClose={() => setModalState(s => ({ ...s, database: false }))}
+        title="Tribe Reports"
+        iframeSrc="https://docs.google.com/document/d/e/2PACX-1vTwqFKCYD2CGhr68_L3hyDlC2KaAbf1rq7blq86alcipgRXcaK_cURmGcnqcP4jTmuJirOx66SfUX2s/pub?embedded=true"
+        requirementId="view-database"
+        onComplete={() => {}}
+      />
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
@@ -554,6 +583,10 @@ export default function PathJourney() {
       <ChatbotModal
         isOpen={modalState.chatbot}
         onClose={() => setModalState(s => ({ ...s, chatbot: false }))}
+      />
+       <FeedbackModal
+        isOpen={modalState.feedback}
+        onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
       <TutorialModal
         isOpen={modalState.tutorial}

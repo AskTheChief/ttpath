@@ -4,3 +4,4 @@ config();
 import '@/ai/flows/mentor-bot-assistance.ts';
 import '@/ai/flows/personalized-tutorial-creation.ts';
 import '@/ai/flows/chatbot-guidance.ts';
+import '@/ai/flows/submit-feedback.ts';

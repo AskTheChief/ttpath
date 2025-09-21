@@ -113,6 +113,18 @@ body {
     margin-bottom: 1rem; /* Add some space below the title */
   }
   
+  .database-icon-container {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+  
   .chat-icon-container {
     position: absolute;
     top: 1.5rem;
@@ -225,7 +237,7 @@ body {
     bottom: -30px;
   }
 
-  .chat-icon-container .node-label {
+  .chat-icon-container .node-label, .database-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 
