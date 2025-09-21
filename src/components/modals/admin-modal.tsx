@@ -66,7 +66,7 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
         } catch (err: any) {
           console.error("Error fetching admin data:", err);
-          setError(`Failed to load data: ${err.message}. Ensure the database ID in your Firebase config is correct and the database exists.`);
+          setError(`Failed to load data: ${err.message}.`);
         } finally {
           setIsLoading(false);
         }

@@ -9,12 +9,9 @@ const firebaseConfig = {
   storageBucket: "studio-7790315517-f3fe6.firebasestorage.app",
   messagingSenderId: "193775147768",
   appId: "1:193775147768:web:83072dbfcedbf0601ff90d",
-  // TODO: Replace with the ID of the database you want to use.
-  // You can find your database IDs in the Firebase console.
-  databaseId: "your-database-id",
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-// The getFirestore function will automatically use the databaseId from the config
+// The getFirestore function will automatically use the default database
 export const db = getFirestore(app);
 export const auth = getAuth(app);
