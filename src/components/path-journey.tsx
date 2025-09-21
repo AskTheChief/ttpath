@@ -2,15 +2,16 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, MessageCircleQuestion } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Shield, MessageCircle } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
 import ContentModal from './modals/content-modal';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
-import FeedbackModal from './modals/feedback-modal';
 import TutorialModal from './modals/tutorial-modal';
+import AdminModal from './modals/admin-modal';
+import FeedbackModal from './modals/feedback-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -46,6 +47,7 @@ export default function PathJourney() {
     chatbot: false,
     tutorial: false,
     database: false,
+    admin: false,
     feedback: false,
   });
 
@@ -449,14 +451,23 @@ export default function PathJourney() {
           </button>
           <span className="node-label">The Chief</span>
         </div>
-        <div className="chat-icon-container" style={{top: 'auto', bottom: '1.5rem'}}>
-            <button
-                className="chat-icon"
-                onClick={() => setModalState(s => ({ ...s, feedback: true }))}
-            >
-                <MessageCircleQuestion className="h-8 w-8 text-muted-foreground" />
-            </button>
-            <span className="node-label">Feedback</span>
+        <div className="admin-icon-container">
+          <button
+            className="chat-icon"
+            onClick={() => setModalState(s => ({ ...s, admin: true }))}
+          >
+            <Shield className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Admin's Corner</span>
+        </div>
+        <div className="feedback-icon-container">
+          <button
+            className="chat-icon"
+            onClick={() => setModalState(s => ({ ...s, feedback: true }))}
+          >
+            <MessageCircle className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Submit Feedback</span>
         </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
@@ -575,6 +586,10 @@ export default function PathJourney() {
         requirementId="view-database"
         onComplete={() => {}}
       />
+      <AdminModal
+        isOpen={modalState.admin}
+        onClose={() => setModalState(s => ({ ...s, admin: false }))}
+      />
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
@@ -584,14 +599,14 @@ export default function PathJourney() {
         isOpen={modalState.chatbot}
         onClose={() => setModalState(s => ({ ...s, chatbot: false }))}
       />
-       <FeedbackModal
-        isOpen={modalState.feedback}
-        onClose={() => setModalState(s => ({ ...s, feedback: false }))}
-      />
       <TutorialModal
         isOpen={modalState.tutorial}
         onClose={() => setModalState(s => ({ ...s, tutorial: false }))}
         onComplete={completeRequirement}
+      />
+      <FeedbackModal
+        isOpen={modalState.feedback}
+        onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
     </TooltipProvider>
   );

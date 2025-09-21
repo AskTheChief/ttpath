@@ -1,80 +1,56 @@
 'use server';
-/**
- * @fileOverview A Genkit flow for submitting user feedback to Firestore and sending an email notification.
- *
- * - submitFeedback - A function that takes user feedback and stores it.
- * - SubmitFeedbackInput - The input type for the submitFeedback function.
- * - SubmitFeedbackOutput - The return type for the submitFeedback function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import {getFirestore} from 'firebase-admin/firestore';
-import {initializeApp, getApps, App} from 'firebase-admin/app';
-import {credential} from 'firebase-admin';
+import { z } from 'zod';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { credential } from 'firebase-admin';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
-  initializeApp({
-    credential: credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  try {
+    initializeApp({
+      credential: credential.applicationDefault(),
+      projectId: process.env.FIREBASE_PROJECT_ID,
+    });
+  } catch (e) {
+    console.error('Firebase Admin SDK initialization error:', e);
+  }
 }
 const db = getFirestore();
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
-
 const SubmitFeedbackInputSchema = z.object({
-  feedback: z.string().describe('The user’s feedback text.'),
-  email: z.string().optional().describe('The user’s email (optional).'),
+  feedback: z.string().describe('The user feedback text.'),
+  email: z.string().optional().describe("The user's email address (optional)."),
 });
 export type SubmitFeedbackInput = z.infer<typeof SubmitFeedbackInputSchema>;
 
 const SubmitFeedbackOutputSchema = z.object({
-  success: z.boolean().describe('Whether the feedback was submitted successfully.'),
-  message: z.string().describe('A message indicating the result.'),
+  success: z.boolean(),
+  message: z.string().optional(),
 });
 export type SubmitFeedbackOutput = z.infer<typeof SubmitFeedbackOutputSchema>;
 
-async function sendEmailNotification(feedback: string, fromEmail?: string) {
-  // In a real application, you would use an email sending service
-  // like SendGrid, Mailgun, or a Firebase Extension like "Trigger Email".
-  console.log('--- Sending Email Notification ---');
-  console.log(`To: ${ADMIN_EMAIL}`);
-  console.log(`From: ${fromEmail || 'anonymous'}`);
-  console.log(`Subject: New Feedback Submitted`);
-  console.log(`Body: ${feedback}`);
-  console.log('---------------------------------');
-  // This is a placeholder. Replace with actual email sending logic.
-  return Promise.resolve();
-}
-
 export async function submitFeedback(input: SubmitFeedbackInput): Promise<SubmitFeedbackOutput> {
-  return submitFeedbackFlow(input);
-}
+  try {
+    // Validate input against the Zod schema
+    const validatedInput = SubmitFeedbackInputSchema.parse(input);
 
-const submitFeedbackFlow = ai.defineFlow(
-  {
-    name: 'submitFeedbackFlow',
-    inputSchema: SubmitFeedbackInputSchema,
-    outputSchema: SubmitFeedbackOutputSchema,
-  },
-  async input => {
-    try {
-      // Save to Firestore
-      const feedbackRef = db.collection('feedback').doc();
-      await feedbackRef.set({
-        ...input,
-        createdAt: new Date(),
-      });
+    // Save to Firestore
+    const feedbackRef = db.collection('feedback').doc();
+    await feedbackRef.set({
+      ...validatedInput,
+      createdAt: new Date(),
+    });
 
-      // Send email notification
-      await sendEmailNotification(input.feedback, input.email);
+    // The "Trigger Email" extension will handle sending the email.
+    // No need for email logic here.
 
-      return {success: true, message: 'Feedback submitted successfully!'};
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      return {success: false, message: 'Failed to submit feedback.'};
+    return { success: true, message: 'Feedback submitted successfully!' };
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    if (error instanceof z.ZodError) {
+      return { success: false, message: 'Invalid input.' };
     }
+    return { success: false, message: 'Failed to submit feedback.' };
   }
-);
+}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { mentorBotAssistance } from "@/ai/flows/mentor-bot-assistance";
 import { Send } from "lucide-react";
@@ -22,7 +22,7 @@ export default function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       sender: "chief",
-      text: "Welcome! I am Chief, your guide. Ask me anything about the Tribe.",
+      text: "Welcome! Ask me anything about the Tribe.",
     },
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -72,9 +72,6 @@ export default function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
           <DialogTitle className="text-2xl font-bold text-foreground">
             Chat with the Chief
           </DialogTitle>
-          <DialogDescription>
-            This is a chat window where you can ask questions to the Chief.
-          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow p-4">
           <div className="space-y-4">

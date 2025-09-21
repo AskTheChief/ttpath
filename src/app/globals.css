@@ -136,6 +136,30 @@ body {
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
   }
+
+  .admin-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .feedback-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
   
   @keyframes fade-in-delay {
     from {
@@ -237,7 +261,7 @@ body {
     bottom: -30px;
   }
 
-  .chat-icon-container .node-label, .database-icon-container .node-label {
+  .chat-icon-container .node-label, .database-icon-container .node-label, .admin-icon-container .node-label, .feedback-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 

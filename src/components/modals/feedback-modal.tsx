@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { submitFeedback } from "@/ai/flows/submit-feedback";
@@ -22,19 +22,17 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (feedback.trim() === "") {
+    if (!feedback) {
       toast({
         variant: "destructive",
-        title: "Feedback Required",
-        description: "Please enter your feedback before submitting.",
+        title: "Feedback is required.",
       });
       return;
     }
     setIsLoading(true);
-
     try {
-      const response = await submitFeedback({ feedback, email });
-      if (response.success) {
+      const result = await submitFeedback({ feedback, email });
+      if (result.success) {
         toast({
           title: "Feedback Submitted!",
           description: "Thank you for your feedback.",
@@ -43,13 +41,13 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         setEmail("");
         onClose();
       } else {
-        throw new Error(response.message);
+        throw new Error(result.message);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Submission Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: "Could not submit feedback. Please try again later.",
       });
     } finally {
       setIsLoading(false);
@@ -60,43 +58,40 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-foreground">
-            Submit Feedback
-          </DialogTitle>
+          <DialogTitle>Submit Feedback</DialogTitle>
           <DialogDescription>
-            We value your input. Please let us know what you think.
+            We'd love to hear your thoughts on how we can improve.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="py-4 space-y-4">
+          <div className="p-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="feedback-text">Feedback</Label>
+              <Label htmlFor="feedback">Feedback</Label>
               <Textarea
-                id="feedback-text"
-                placeholder="Tell us what's on your mind..."
+                id="feedback"
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
+                placeholder="What's on your mind?"
                 required
-                rows={5}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="feedback-email">Email (Optional)</Label>
+              <Label htmlFor="email">Email (Optional)</Label>
               <Input
-                id="feedback-email"
+                id="email"
                 type="email"
-                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
               />
             </div>
           </div>
-          <DialogFooter className="p-4 border-t bg-muted/50">
+          <DialogFooter className="p-4 border-t">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isLoading}>
-              {isLoading ? "Submitting..." : "Submit Feedback"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Submit"}
             </Button>
           </DialogFooter>
         </form>
