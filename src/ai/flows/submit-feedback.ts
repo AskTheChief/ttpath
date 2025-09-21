@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview A Genkit flow for submitting user feedback to Firestore.
+ * @fileOverview A Genkit flow for submitting user feedback to Firestore and sending an email notification.
  *
  * - submitFeedback - A function that takes user feedback and stores it.
  * - SubmitFeedbackInput - The input type for the submitFeedback function.
@@ -22,6 +22,8 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+
 const SubmitFeedbackInputSchema = z.object({
   feedback: z.string().describe('The user’s feedback text.'),
   email: z.string().optional().describe('The user’s email (optional).'),
@@ -33,6 +35,19 @@ const SubmitFeedbackOutputSchema = z.object({
   message: z.string().describe('A message indicating the result.'),
 });
 export type SubmitFeedbackOutput = z.infer<typeof SubmitFeedbackOutputSchema>;
+
+async function sendEmailNotification(feedback: string, fromEmail?: string) {
+  // In a real application, you would use an email sending service
+  // like SendGrid, Mailgun, or a Firebase Extension like "Trigger Email".
+  console.log('--- Sending Email Notification ---');
+  console.log(`To: ${ADMIN_EMAIL}`);
+  console.log(`From: ${fromEmail || 'anonymous'}`);
+  console.log(`Subject: New Feedback Submitted`);
+  console.log(`Body: ${feedback}`);
+  console.log('---------------------------------');
+  // This is a placeholder. Replace with actual email sending logic.
+  return Promise.resolve();
+}
 
 export async function submitFeedback(input: SubmitFeedbackInput): Promise<SubmitFeedbackOutput> {
   return submitFeedbackFlow(input);
@@ -46,14 +61,19 @@ const submitFeedbackFlow = ai.defineFlow(
   },
   async input => {
     try {
+      // Save to Firestore
       const feedbackRef = db.collection('feedback').doc();
       await feedbackRef.set({
         ...input,
         createdAt: new Date(),
       });
+
+      // Send email notification
+      await sendEmailNotification(input.feedback, input.email);
+
       return {success: true, message: 'Feedback submitted successfully!'};
     } catch (error) {
-      console.error('Error submitting feedback to Firestore:', error);
+      console.error('Error submitting feedback:', error);
       return {success: false, message: 'Failed to submit feedback.'};
     }
   }
