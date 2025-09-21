@@ -39,6 +39,11 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
         setIsLoading(true);
         setError(null);
         try {
+          if (!db) {
+             setError("Firestore is not initialized. Please check your Firebase config.");
+             setIsLoading(false);
+             return;
+          }
           // Fetch Feedback
           const feedbackQuery = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
           const feedbackSnapshot = await getDocs(feedbackQuery);
@@ -59,9 +64,9 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
           })) as ChatSession[];
           setChatSessions(chatData);
 
-        } catch (err) {
+        } catch (err: any) {
           console.error("Error fetching admin data:", err);
-          setError("Failed to load data. Please check your Firestore connection and permissions.");
+          setError(`Failed to load data: ${err.message}. Ensure the database ID in your Firebase config is correct and the database exists.`);
         } finally {
           setIsLoading(false);
         }

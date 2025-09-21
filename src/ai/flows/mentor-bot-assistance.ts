@@ -19,6 +19,9 @@ import {initializeApp, getApps} from 'firebase-admin/app';
 if (!getApps().length) {
   initializeApp();
 }
+// Connect to a specific database if required, otherwise it uses the default.
+// To use a non-default database, you would do:
+// initializeApp({ databaseId: 'your-database-id' });
 const db = getFirestore();
 
 const MentorBotAssistanceInputSchema = z.object({
