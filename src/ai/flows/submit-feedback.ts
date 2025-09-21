@@ -3,18 +3,10 @@
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
-  try {
-    initializeApp({
-      credential: credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
-  } catch (e) {
-    console.error('Firebase Admin SDK initialization error:', e);
-  }
+  initializeApp();
 }
 const db = getFirestore();
 

@@ -13,15 +13,11 @@ import {z} from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
 import {getFirestore} from 'firebase-admin/firestore';
-import {initializeApp, getApps, App} from 'firebase-admin/app';
-import {credential} from 'firebase-admin';
+import {initializeApp, getApps} from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
-  initializeApp({
-    credential: credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  initializeApp();
 }
 const db = getFirestore();
 
