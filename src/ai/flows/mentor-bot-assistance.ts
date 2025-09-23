@@ -12,17 +12,18 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
-import {getFirestore} from 'firebase-admin/firestore';
-import {initializeApp, getApps} from 'firebase-admin/app';
+// import {getFirestore} from 'firebase-admin/firestore';
+// import {initializeApp, getApps, App} from 'firebase-admin/app';
+// import {credential} from 'firebase-admin';
 
-// Initialize Firebase Admin SDK if it hasn't been already.
-if (!getApps().length) {
-  initializeApp();
-}
-// Connect to a specific database if required, otherwise it uses the default.
-// To use a non-default database, you would do:
-// initializeApp({ databaseId: 'your-database-id' });
-const db = getFirestore();
+// // Initialize Firebase Admin SDK if it hasn't been already.
+// if (!getApps().length) {
+//   initializeApp({
+//     credential: credential.applicationDefault(),
+//     projectId: process.env.FIREBASE_PROJECT_ID,
+//   });
+// }
+// const db = getFirestore();
 
 const MentorBotAssistanceInputSchema = z.object({
   question: z.string().describe('The user’s question for the mentor bot.'),
@@ -88,18 +89,18 @@ const mentorBotAssistanceFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
 
-    if (output) {
-      try {
-        const chatSessionRef = db.collection('chat_sessions').doc();
-        await chatSessionRef.set({
-          createdAt: new Date(),
-          question: input.question,
-          answer: output.answer,
-        });
-      } catch (error) {
-        console.error('Error saving chat session to Firestore:', error);
-      }
-    }
+    // if (output) {
+    //   try {
+    //     const chatSessionRef = db.collection('chat_sessions').doc();
+    //     await chatSessionRef.set({
+    //       createdAt: new Date(),
+    //       question: input.question,
+    //       answer: output.answer,
+    //     });
+    //   } catch (error) {
+    //     console.error('Error saving chat session to Firestore:', error);
+    //   }
+    // }
     
     return output!;
   }

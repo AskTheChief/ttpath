@@ -2,7 +2,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Shield, MessageCircle } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -10,12 +10,11 @@ import ContentModal from './modals/content-modal';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
 import TutorialModal from './modals/tutorial-modal';
-import AdminModal from './modals/admin-modal';
 import FeedbackModal from './modals/feedback-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
@@ -37,7 +36,8 @@ export default function PathJourney() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
-  const [logoState, setLogoState] = useState('splash');
+  const [showCurtain, setShowCurtain] = useState(true);
+  const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   
   const [modalState, setModalState] = useState({
@@ -47,7 +47,6 @@ export default function PathJourney() {
     chatbot: false,
     tutorial: false,
     database: false,
-    admin: false,
     feedback: false,
   });
 
@@ -174,8 +173,13 @@ export default function PathJourney() {
         setIsMounted(true);
         setTimeout(() => {
             setShowSplash(false);
-            setLogoState('persistent');
-        }, 1000); // Shorten timeout to start logo transition sooner
+            setTimeout(() => {
+              setShowCurtain(false);
+              setTimeout(() => {
+                setLogoZIndex(0);
+              }, 1000);
+            }, 1000);
+        }, 1000);
     });
 
     return () => {
@@ -429,9 +433,15 @@ export default function PathJourney() {
   return (
     <TooltipProvider>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
-        <div className={cn("loading-curtain", !showSplash && "hide")}></div>
-        <div id="logo-container" className={cn(logoState === 'persistent' && 'persistent')}>
-          <Image src="/logo/logo.svg" alt="Tribe Logo" width={500} height={500} priority />
+        <div className={cn("loading-curtain", !showCurtain && "hide")}></div>
+        <div 
+          id="logo-container" 
+          className={cn('splash-logo-container', !showSplash && 'persistent-logo')}
+          style={{ zIndex: logoZIndex }}
+        >
+          <video className="animated-logo" autoPlay loop muted playsInline>
+            <source src="/logo/spinning_logo.webm" type="video/webm" />
+          </video>
         </div>
         <div className="database-icon-container">
           <button
@@ -451,23 +461,14 @@ export default function PathJourney() {
           </button>
           <span className="node-label">The Chief</span>
         </div>
-        <div className="admin-icon-container">
-          <button
-            className="chat-icon"
-            onClick={() => setModalState(s => ({ ...s, admin: true }))}
-          >
-            <Shield className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">Admin's Corner</span>
-        </div>
         <div className="feedback-icon-container">
           <button
             className="chat-icon"
             onClick={() => setModalState(s => ({ ...s, feedback: true }))}
           >
-            <MessageCircle className="h-8 w-8 text-muted-foreground" />
+            <Mail className="h-8 w-8 text-muted-foreground" />
           </button>
-          <span className="node-label">Submit Feedback</span>
+          <span className="node-label">Send Feedback</span>
         </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
@@ -585,10 +586,6 @@ export default function PathJourney() {
         iframeSrc="https://docs.google.com/document/d/e/2PACX-1vTwqFKCYD2CGhr68_L3hyDlC2KaAbf1rq7blq86alcipgRXcaK_cURmGcnqcP4jTmuJirOx66SfUX2s/pub?embedded=true"
         requirementId="view-database"
         onComplete={() => {}}
-      />
-      <AdminModal
-        isOpen={modalState.admin}
-        onClose={() => setModalState(s => ({ ...s, admin: false }))}
       />
       <SignupModal 
         isOpen={modalState.signup}

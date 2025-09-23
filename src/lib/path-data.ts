@@ -59,10 +59,9 @@ export const pathNodesData: PathNodeData[] = [
     level: 4,
     pathPos: 0.60,
     title: "Tribe Member",
-    req: "Acceptance by Chief",
+    req: "",
     actions: [
-      { id: "attend", label: "Attend Tribe Meetings" },
-      { id: "become-mentor", label: "Become a Mentor", next: "mentor" }
+      { id: "go-to-page", label: "Go to my page" }
     ],
     panelPos: "left"
   },
@@ -70,11 +69,10 @@ export const pathNodesData: PathNodeData[] = [
     id: "node-chief",
     level: 5,
     pathPos: 0.8,
-    title: "Chief",
-    req: "Chosen by Tribe",
+    title: "Tribe Chief",
+    req: "",
     actions: [
-      { id: "lead", label: "Lead a Tribe" },
-      { id: "review", label: "Review Applications" }
+      { id: "go-to-page", label: "Go to my page" }
     ],
     panelPos: "right"
   },
@@ -83,10 +81,9 @@ export const pathNodesData: PathNodeData[] = [
     level: 6,
     pathPos: 1.0,
     title: "Mentor",
-    req: "Chief Acceptance",
+    req: "",
     actions: [
-      { id: "guide", label: "Guide new Chiefs" },
-      { id: "wisdom", label: "Provide wisdom" }
+      { id: "go-to-page", label: "Go to my page" }
     ],
     panelPos: "left"
   }
