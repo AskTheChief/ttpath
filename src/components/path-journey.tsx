@@ -6,11 +6,11 @@ import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquar
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
-import ContentModal from './modals/content-modal';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
 import TutorialModal from './modals/tutorial-modal';
 import FeedbackModal from './modals/feedback-modal';
+import LinkModal from './modals/link-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -41,13 +41,17 @@ export default function PathJourney() {
   const { toast } = useToast();
   
   const [modalState, setModalState] = useState({
-    pamphlet: false,
-    fullBook: false,
     signup: false,
     chatbot: false,
     tutorial: false,
-    database: false,
     feedback: false,
+    link: false,
+  });
+
+  const [linkModalData, setLinkModalData] = useState({
+    title: '',
+    url: '',
+    requirementId: null,
   });
 
   const pathRef = useRef<SVGPathElement>(null);
@@ -60,6 +64,31 @@ export default function PathJourney() {
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
   
+  useEffect(() => {
+    try {
+      const savedLevel = localStorage.getItem('currentUserLevel');
+      const savedRequirements = localStorage.getItem('requirementsState');
+
+      if (savedLevel) {
+        setCurrentUserLevel(JSON.parse(savedLevel));
+      }
+      if (savedRequirements) {
+        setRequirementsState(JSON.parse(savedRequirements));
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('currentUserLevel', JSON.stringify(currentUserLevel));
+      localStorage.setItem('requirementsState', JSON.stringify(requirementsState));
+    } catch (error) {
+      console.error("Failed to save state to localStorage", error);
+    }
+  }, [currentUserLevel, requirementsState]);
+
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
     
@@ -173,11 +202,9 @@ export default function PathJourney() {
         setIsMounted(true);
         setTimeout(() => {
             setShowSplash(false);
+            setLogoZIndex(0);
             setTimeout(() => {
               setShowCurtain(false);
-              setTimeout(() => {
-                setLogoZIndex(0);
-              }, 1000);
             }, 1000);
         }, 1000);
     });
@@ -287,6 +314,16 @@ export default function PathJourney() {
     const requirementCompleted = requirementsState[action.id];
     
     playSound('action', 'C4', '8n');
+
+    if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
+      const url = action.action === 'open-pamphlet' 
+        ? 'https://docs.google.com/document/d/e/2PACX-1vQjAz9yUZwN3a20MZSLnk1HQl8RaAuCWzrD0CfcxbPVwf6XRzDWcqpyfLMpP0JAXg/pub'
+        : 'https://docs.google.com/document/d/e/2PACX-1vSynbRUG7OY7U2579zMdkkWWJz8_GNDUydqlIM_TBzOQwZUmf6FTIwPugj8AenLORbuKVSql4uAu1cq/pub';
+      
+      setLinkModalData({ title: action.label, url: url, requirementId: action.id });
+      setModalState(s => ({ ...s, link: true }));
+      return;
+    }
     
     if (action.next) { // This is a progression action
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
@@ -307,9 +344,6 @@ export default function PathJourney() {
         } else {
             // Shake logic or tooltip could be handled inside the button in the tooltip now
         }
-    } else if (action.action) { // This is a non-progressing action
-        if (action.action === 'open-pamphlet') setModalState(s => ({ ...s, pamphlet: true }));
-        else if (action.action === 'open-full-book') setModalState(s => ({ ...s, fullBook: true }));
     }
   };
 
@@ -429,6 +463,14 @@ export default function PathJourney() {
     );
   };
 
+  const handleOpenDatabase = () => {
+    setLinkModalData({
+      title: 'Tribe Reports',
+      url: 'https://docs.google.com/document/d/e/2PACX-1vTwqFKCYD2CGhr68_L3hyDlC2KaAbf1rq7blq86alcipgRXcaK_cURmGcnqcP4jTmuJirOx66SfUX2s/pub',
+      requirementId: null,
+    });
+    setModalState(s => ({...s, link: true}));
+  };
 
   return (
     <TooltipProvider>
@@ -439,14 +481,15 @@ export default function PathJourney() {
           className={cn('splash-logo-container', !showSplash && 'persistent-logo')}
           style={{ zIndex: logoZIndex }}
         >
-          <video className="animated-logo" autoPlay loop muted playsInline>
-            <source src="/logo/spinning_logo.webm" type="video/webm" />
+          <video className="animated-logo" autoPlay loop muted playsInline style={{ backgroundColor: 'transparent' }}>
+            <source src="/logo/spinning_logo.mp4" type="video/mp4" />
+            <source src="/logo/spinning_logo.mp4" type="video/x-m4v" />
           </video>
         </div>
         <div className="database-icon-container">
           <button
             className="chat-icon"
-            onClick={() => setModalState(s => ({ ...s, database: true }))}
+            onClick={handleOpenDatabase}
           >
             <Database className="h-8 w-8 text-muted-foreground" />
           </button>
@@ -460,15 +503,6 @@ export default function PathJourney() {
             <MessageSquare className="h-8 w-8 text-muted-foreground" />
           </button>
           <span className="node-label">The Chief</span>
-        </div>
-        <div className="feedback-icon-container">
-          <button
-            className="chat-icon"
-            onClick={() => setModalState(s => ({ ...s, feedback: true }))}
-          >
-            <Mail className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">Send Feedback</span>
         </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
@@ -541,7 +575,6 @@ export default function PathJourney() {
                     'active': isActive,
                     'locked': isLocked,
                     'next-step': isNextStep,
-                     'opacity-60': node.level > currentUserLevel + 1,
                   })}
                   onClick={() => handleNodeClick(node)}
                 >
@@ -562,30 +595,23 @@ export default function PathJourney() {
             </Tooltip>
           );
         })}
+        <div className="feedback-icon-container">
+          <button
+            className="chat-icon"
+            onClick={() => setModalState(s => ({ ...s, feedback: true }))}
+          >
+            <Mail className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Send Feedback</span>
+        </div>
       </div>
-      <ContentModal
-        isOpen={modalState.pamphlet}
-        onClose={() => setModalState(s => ({ ...s, pamphlet: false }))}
-        title="The Trading Tribe Handbook"
-        iframeSrc="https://docs.google.com/document/d/e/2PACX-1vQjAz9yUZwN3a20MZSLnk1HQl8RaAuCWzrD0CfcxbPVwf6XRzDWcqpyfLMpP0JAXg/pub?embedded=true"
-        requirementId="read-book"
+      <LinkModal
+        isOpen={modalState.link}
+        onClose={() => setModalState(s => ({ ...s, link: false }))}
+        title={linkModalData.title}
+        url={linkModalData.url}
+        requirementId={linkModalData.requirementId}
         onComplete={completeRequirement}
-      />
-      <ContentModal
-        isOpen={modalState.fullBook}
-        onClose={() => setModalState(s => ({ ...s, fullBook: false }))}
-        title="The Trading Tribe - Full Book"
-        iframeSrc="https://docs.google.com/document/d/e/2PACX-1vSynbRUG7OY7U2579zMdkkWWJz8_GNDUydqlIM_TBzOQwZUmf6FTIwPugj8AenLORbuKVSql4uAu1cq/pub?embedded=true"
-        requirementId="read-full-book"
-        onComplete={completeRequirement}
-      />
-       <ContentModal
-        isOpen={modalState.database}
-        onClose={() => setModalState(s => ({ ...s, database: false }))}
-        title="Tribe Reports"
-        iframeSrc="https://docs.google.com/document/d/e/2PACX-1vTwqFKCYD2CGhr68_L3hyDlC2KaAbf1rq7blq86alcipgRXcaK_cURmGcnqcP4jTmuJirOx66SfUX2s/pub?embedded=true"
-        requirementId="view-database"
-        onComplete={() => {}}
       />
       <SignupModal 
         isOpen={modalState.signup}

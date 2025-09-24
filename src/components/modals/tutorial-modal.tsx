@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const tutorialQuestions = [
     "Explain how judgment effects communication.",
@@ -25,6 +27,8 @@ const tutorialQuestions = [
     "Describe what you do with your life to serve others."
 ];
 
+const tutorialDocUrl = "https://docs.google.com/document/d/e/2PACX-1vQ5g7gJ_2nZ6_3o_3n_4Y_2c_3r_3n_4Y_2c_3r_3n_4Y_2c_3r_3n_4Y_2c_3/pub";
+
 type TutorialModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -33,10 +37,9 @@ type TutorialModalProps = {
 
 export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialModalProps) {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const handleSubmit = () => {
-    // In a real app, you would submit the answers.
-    // Here we just complete the requirement.
     onComplete("complete-tutorial");
     toast({
       title: "Tutorial Submitted!",
@@ -44,6 +47,34 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     });
     onClose();
   };
+
+  const handleOpenLink = () => {
+    window.open(tutorialDocUrl, '_blank');
+  };
+
+  if (isMobile) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tutorial Study Guide</DialogTitle>
+            <DialogDescription>
+              To complete the tutorial, please open the study guide in a new tab.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Button onClick={handleOpenLink} className="w-full">
+              Open Study Guide
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit}>Submit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
