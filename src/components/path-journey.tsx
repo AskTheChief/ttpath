@@ -11,6 +11,7 @@ import ChatbotModal from './modals/chatbot-modal';
 import TutorialModal from './modals/tutorial-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
+import DevDropdown from './dev-dropdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -202,9 +203,11 @@ export default function PathJourney() {
         setIsMounted(true);
         setTimeout(() => {
             setShowSplash(false);
-            setLogoZIndex(0);
             setTimeout(() => {
               setShowCurtain(false);
+              setTimeout(() => {
+                setLogoZIndex(0);
+              }, 1000);
             }, 1000);
         }, 1000);
     });
@@ -503,6 +506,10 @@ export default function PathJourney() {
             <MessageSquare className="h-8 w-8 text-muted-foreground" />
           </button>
           <span className="node-label">The Chief</span>
+        </div>
+        <div className="dev-den-icon-container">
+          <DevDropdown />
+          <span className="node-label">Dev Den</span>
         </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
