@@ -41,7 +41,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         <DialogHeader>
           <DialogTitle>Submit Feedback</DialogTitle>
           <DialogDescription>
-            We'd love to hear your thoughts on how we can improve.
+            We welcome your thoughts and feelings on how to improve this site.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

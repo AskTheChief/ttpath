@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const kalam = Kalam({ subsets: ["latin"], weight: "700", variable: "--font-kalam" });
 
 export const metadata: Metadata = {
-  title: 'Tribe Ascent',
+  title: 'TT Path',
   description: 'Your adventure to joining the Trading Tribe begins here.',
 };
 
