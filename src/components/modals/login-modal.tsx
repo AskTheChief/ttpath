@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -12,16 +12,17 @@ import { useState } from "react";
 type LoginModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  showSignup: () => void;
 };
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalProps) {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -48,12 +49,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-slate-800">Login to your Account</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Login to your Account</DialogTitle>
           <DialogDescription>
             Enter your credentials to log in to your account.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleEmailLogin}>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email-login">Email Address</Label>
@@ -65,12 +66,17 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-          <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+          <div className="p-4 border-t flex flex-col gap-2">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login with Email"}
             </Button>
-          </DialogFooter>
+            <Button type="button" variant="link" onClick={showSignup} disabled={isLoading} className="w-full">
+              Don't have an account? Sign Up
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading} className="w-full">
+              Cancel
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

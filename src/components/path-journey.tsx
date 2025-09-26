@@ -2,7 +2,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail, LogIn, LogOut, Swords } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -13,12 +13,23 @@ import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
 import DevDropdown from './dev-dropdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import Image from 'next/image';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import LoginModal from './modals/login-modal';
+import Link from 'next/link';
+import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { updateUserProgress } from '@/ai/flows/update-user-progress';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
+
+interface LinkModalData {
+  title: string;
+  url: string;
+  requirementId: string | null;
+}
 
 const nodeIcons: { [key: string]: React.FC<any> } = {
   visitor: User,
@@ -41,15 +52,19 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const isGuest = currentUser !== null;
+
   const [modalState, setModalState] = useState({
     signup: false,
+    login: false,
     chatbot: false,
     tutorial: false,
     feedback: false,
     link: false,
   });
 
-  const [linkModalData, setLinkModalData] = useState({
+  const [linkModalData, setLinkModalData] = useState<LinkModalData>({
     title: '',
     url: '',
     requirementId: null,
@@ -64,31 +79,27 @@ export default function PathJourney() {
 
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
-  
-  useEffect(() => {
-    try {
-      const savedLevel = localStorage.getItem('currentUserLevel');
-      const savedRequirements = localStorage.getItem('requirementsState');
 
-      if (savedLevel) {
-        setCurrentUserLevel(JSON.parse(savedLevel));
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        const progress = await getUserProgress({});
+        setCurrentUserLevel(progress.currentUserLevel);
+        setRequirementsState(progress.requirementsState);
+      } else {
+        setCurrentUserLevel(1);
+        setRequirementsState({});
       }
-      if (savedRequirements) {
-        setRequirementsState(JSON.parse(savedRequirements));
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-    }
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('currentUserLevel', JSON.stringify(currentUserLevel));
-      localStorage.setItem('requirementsState', JSON.stringify(requirementsState));
-    } catch (error) {
-      console.error("Failed to save state to localStorage", error);
+    if (isGuest) {
+      updateUserProgress({ currentUserLevel, requirementsState });
     }
-  }, [currentUserLevel, requirementsState]);
+  }, [currentUserLevel, requirementsState, isGuest]);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -119,7 +130,7 @@ export default function PathJourney() {
   
   const completeRequirement = useCallback((reqId: string) => {
     setRequirementsState(prev => {
-      if (prev[reqId]) return prev; // Avoid re-triggering effects if already complete
+      if (prev[reqId]) return prev;
       const newState = { ...prev, [reqId]: true };
       setJustCompletedActionId(reqId);
       playSound('complete');
@@ -162,7 +173,6 @@ export default function PathJourney() {
     const container = pathContainerRef.current;
     if (!pathRef.current || !container) return;
     
-    // Allow React to re-render with the new viewBox before calculating positions
     setTimeout(() => {
       if (!pathRef.current) return;
       const totalLength = pathRef.current.getTotalLength();
@@ -187,7 +197,6 @@ export default function PathJourney() {
     }, 0);
 
   }, [mapSvgPointToCss, currentUserLevel, isAnimating]);
-
 
   useEffect(() => {
     const observer = new ResizeObserver(() => {
@@ -313,9 +322,6 @@ export default function PathJourney() {
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
 
   const handleActionClick = (action: PathAction) => {
-    const allDepsMet = !action.dependsOn || requirementsState[action.dependsOn];
-    const requirementCompleted = requirementsState[action.id];
-    
     playSound('action', 'C4', '8n');
 
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
@@ -328,24 +334,15 @@ export default function PathJourney() {
       return;
     }
     
-    if (action.next) { // This is a progression action
+    if (action.next) { 
+        if (action.requires === 'signup-form' && !isGuest) {
+            setModalState(s => ({...s, login: true}));
+            return;
+        }
+
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-        if (allDepsMet) {
-            if (requirementCompleted) {
-                if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
-                    animateUserIcon(nextNode);
-                }
-            } else if (action.requires) {
-                 if (action.requires === 'signup-form') {
-                  setModalState(s => ({ ...s, signup: true }));
-                }
-                if (action.requires === 'tutorial') setModalState(s => ({ ...s, tutorial: true }));
-            } else {
-                 // If there's no specific requirement, complete it on click
-                 completeRequirement(action.id);
-            }
-        } else {
-            // Shake logic or tooltip could be handled inside the button in the tooltip now
+        if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
+            animateUserIcon(nextNode);
         }
     }
   };
@@ -354,7 +351,7 @@ export default function PathJourney() {
     if (isAnimating) return;
     
     if (nodeData.id === selectedNodeId) {
-        setSelectedNodeId(null); // Toggle off if clicking the same node
+        setSelectedNodeId(null);
         return;
     }
 
@@ -393,7 +390,6 @@ export default function PathJourney() {
 
     top = top - (panelRect.height / 2) + (nodeRect.height / 2);
     
-    // Clamp values to be within the container
     top = Math.max(10, Math.min(top, containerRect.height - panelRect.height - 10));
     left = Math.max(10, Math.min(left, containerRect.width - panelRect.width - 10));
 
@@ -412,7 +408,6 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
-          const dependsOnMet = !action.dependsOn || requirementsState[action.dependsOn];
           const isCompleted = requirementsState[action.id];
           const isNextStepAction = !!action.next;
           const isLocked = node.level > currentUserLevel;
@@ -430,13 +425,9 @@ export default function PathJourney() {
             const nextNodeTitle = pathNodesData.find(n => n.id === `node-${action.next}`)?.title;
             if (isCompleted) {
                 buttonText = `Path to ${nextNodeTitle}`;
-            } else if (dependsOnMet) {
-                buttonText = action.label;
             }
           }
-
-          const isDisabled = (isNextStepAction && !dependsOnMet) || isLocked;
-
+          
           return (
             <Button
               key={action.id}
@@ -446,7 +437,7 @@ export default function PathJourney() {
                 'glow-green': isNextStepAction && isCompleted && isActive,
               })}
               onClick={(e) => {
-                if (isDisabled) {
+                if (isLocked) {
                   const buttonEl = e.currentTarget;
                   buttonEl.classList.add('button-shake');
                   setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
@@ -458,7 +449,7 @@ export default function PathJourney() {
             >
               {isCompleted && !isNextStepAction ? Checkmark : null}
               <span className="flex-grow text-left">{buttonText}</span>
-              {isNextStepAction && (isCompleted || (dependsOnMet && isActive)) ? '→' : ''}
+              {isNextStepAction && (isCompleted || isActive) ? '→' : ''}
             </Button>
           );
         })}
@@ -475,6 +466,17 @@ export default function PathJourney() {
     setModalState(s => ({...s, link: true}));
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully.",
+    });
+  };
+
+  const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
+  const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
+
   return (
     <TooltipProvider>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
@@ -489,6 +491,20 @@ export default function PathJourney() {
             <source src="/logo/spinning_logo.mp4" type="video/x-m4v" />
           </video>
         </div>
+
+        <div className="login-icon-container">
+            {isGuest ? (
+                <button className="chat-icon" onClick={handleLogout}>
+                    <LogOut className="h-8 w-8 text-muted-foreground" />
+                </button>
+            ) : (
+                <button className="chat-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
+                    <LogIn className="h-8 w-8 text-muted-foreground" />
+                </button>
+            )}
+             <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
+        </div>
+        
         <div className="database-icon-container">
           <button
             className="chat-icon"
@@ -496,17 +512,29 @@ export default function PathJourney() {
           >
             <Database className="h-8 w-8 text-muted-foreground" />
           </button>
-          <span className="node-label">Data Base</span>
+          <span className="node-label">Library</span>
         </div>
-        <div className="chat-icon-container">
-          <button
-            className="chat-icon"
-            onClick={() => setModalState(s => ({ ...s, chatbot: true }))}
-          >
-            <MessageSquare className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">The Chief</span>
-        </div>
+        {isGuest && (
+            <div className="chat-icon-container">
+            <button
+                className="chat-icon"
+                onClick={() => setModalState(s => ({ ...s, chatbot: true }))}
+            >
+                <MessageSquare className="h-8 w-8 text-muted-foreground" />
+            </button>
+            <span className="node-label">The Chief</span>
+            </div>
+        )}
+        {isGuest && (
+          <div className="my-tribe-icon-container">
+            <Link href="/my-tribe">
+              <button className="chat-icon">
+                <Swords className="h-8 w-8 text-muted-foreground" />
+              </button>
+            </Link>
+            <span className="node-label">My Tribe</span>
+          </div>
+        )}
         <div className="dev-den-icon-container">
           <DevDropdown />
           <span className="node-label">Dev Den</span>
@@ -624,6 +652,12 @@ export default function PathJourney() {
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
         onComplete={completeRequirement}
+        showLogin={showLoginModal}
+      />
+      <LoginModal 
+        isOpen={modalState.login}
+        onClose={() => setModalState(s => ({ ...s, login: false }))}
+        showSignup={showSignupModal}
       />
       <ChatbotModal
         isOpen={modalState.chatbot}

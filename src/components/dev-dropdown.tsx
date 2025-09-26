@@ -11,8 +11,29 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Shield } from 'lucide-react';
 import Link from 'next/link';
+import { resetUserProgress } from "@/ai/flows/reset-user-progress";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DevDropdown() {
+  const { toast } = useToast();
+
+  const handleReset = async () => {
+    try {
+      await resetUserProgress({});
+      toast({
+        title: "Progress Reset",
+        description: "Your progress has been reset.",
+      });
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error resetting progress",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -29,6 +50,8 @@ export default function DevDropdown() {
         <Link href="/admin/dev-den" passHref>
           <DropdownMenuItem>Chief Sessions</DropdownMenuItem>
         </Link>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleReset}>Reset Progress</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

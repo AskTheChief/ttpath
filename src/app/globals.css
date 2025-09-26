@@ -123,6 +123,18 @@ body {
     color: black;
     margin-bottom: 1rem; /* Add some space below the title */
   }
+
+  .login-icon-container {
+    position: absolute;
+    top: 1.5rem;
+    right: 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
   
   .database-icon-container {
     position: absolute;
@@ -142,6 +154,18 @@ body {
     right: 1.5rem;
     display: flex;
     flex-direction: column; 
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .my-tribe-icon-container {
+    position: absolute;
+    top: 1.5rem;
+    right: 8.5rem;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     z-index: 20;
     opacity: 0;
@@ -273,7 +297,7 @@ body {
     bottom: -30px;
   }
 
-  .chat-icon-container .node-label, .database-icon-container .node-label, .feedback-icon-container .node-label, .dev-den-icon-container .node-label {
+  .chat-icon-container .node-label, .database-icon-container .node-label, .feedback-icon-container .node-label, .dev-den-icon-container .node-label, .login-icon-container .node-label, .my-tribe-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 
