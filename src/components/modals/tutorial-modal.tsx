@@ -42,6 +42,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(null);
   const [showBackButton, setShowBackButton] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReviewButton, setShowReviewButton] = useState(false);
 
   useEffect(() => {
     async function fetchAnswers() {
@@ -49,6 +50,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
         setIsFetching(true);
         setFeedback(null);
         setShowBackButton(false);
+        setShowReviewButton(false);
         try {
           const existingAnswers = await getTutorialAnswers({});
           setAnswers(existingAnswers);
@@ -86,6 +88,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setIsLoading(true);
     setFeedback(null);
     setShowBackButton(false);
+    setShowReviewButton(false);
 
     try {
       const saveResult = await saveTutorialAnswers({ answers });
@@ -114,6 +117,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
           description: "The Chief has some feedback for you.",
           variant: "destructive",
         });
+        setShowReviewButton(true);
       }
     } catch (error: any) {
       console.error("Error evaluating answers:", error);
@@ -133,6 +137,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setFeedback(null);
     setIsLoading(false);
     setShowBackButton(false);
+    setShowReviewButton(false);
     onClose();
   };
 
@@ -149,6 +154,11 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     });
     setShowConfirmation(false);
   };
+  
+  const handleReviewFeedback = () => {
+    setFeedback(null);
+    setShowReviewButton(false);
+  }
 
   return (
     <>
@@ -175,20 +185,20 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
                                   rows={3}
                                   value={answers[q] || ''}
                                   onChange={(e) => handleAnswerChange(q, e.target.value)}
-                                  disabled={isLoading}
+                                  disabled={isLoading || showReviewButton}
                                   placeholder="Your thoughtful answer..."
                                 />
                             </div>
                         ))}
                         <div className="space-y-4 pt-4 border-t">
                               <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading} />
+                                  <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading || showReviewButton} />
                                   <Label htmlFor="agree-meetings" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                       I agree to participate fully in all meetings and to submit reports promptly. (Must Agree to Proceed)
                                   </Label>
                               </div>
                               <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading} />
+                                  <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading || showReviewButton} />
                                   <Label htmlFor="agree-mentor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                       I agree to act as a mentor for new chiefs. (Must agree to proceed)
                                   </Label>
@@ -211,15 +221,23 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
             </div>
           )}
           <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
-            {showBackButton ? (
+            {!showBackButton && !showReviewButton && (
+              <>
+                <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
+                <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
+                  {isLoading ? "Evaluating..." : "Submit to The Chief"}
+                </Button>
+              </>
+            )}
+            {showBackButton && (
                <Button className="bg-primary hover:bg-primary/90" onClick={() => setShowConfirmation(true)}>
                  Back to Path
                </Button>
-            ) : (
-              <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
-                {isLoading ? "Evaluating..." : "Submit to The Chief"}
-              </Button>
+            )}
+            {showReviewButton && (
+                <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
+                    I have reviewed the Chief's Feedback
+                </Button>
             )}
           </DialogFooter>
         </DialogContent>
