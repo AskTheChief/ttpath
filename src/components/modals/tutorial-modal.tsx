@@ -15,6 +15,16 @@ import { getTutorialAnswers } from "@/lib/tutorial";
 import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type TutorialModalProps = {
   isOpen: boolean;
@@ -31,6 +41,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   const [isFetching, setIsFetching] = useState(false);
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(null);
   const [showBackButton, setShowBackButton] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
     async function fetchAnswers() {
@@ -96,8 +107,13 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
           title: "Tutorial Submitted!",
           description: "The Chief approves.",
         });
-        onComplete("complete-tutorial");
         setShowBackButton(true);
+      } else {
+        toast({
+          title: "Review Required",
+          description: "The Chief has some feedback for you.",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error("Error evaluating answers:", error);
@@ -120,78 +136,108 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     onClose();
   };
 
+  const handleProceedToGraduate = () => {
+    onComplete("complete-tutorial");
+    handleClose();
+  };
+
+  const handleNeedsMoreTime = () => {
+    toast({
+      title: "Self-Reflection",
+      description: "Please read over the source book again, reflect, and update your tutorial until you feel ready.",
+      duration: 5000,
+    });
+    setShowConfirmation(false);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="text-2xl font-bold text-slate-800">Tutorial Study Guide</DialogTitle>
-          <DialogDescription>
-            Answer the questions below to complete the tutorial. Your answers save as you go. The Chief will review your responses upon submission.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full">
-              <div className="p-6 space-y-6">
-                  {isFetching ? (
-                    <p>Loading your answers...</p>
-                  ) : (
-                    <>
-                      {tutorialQuestions.map((q, i) => (
-                          <div key={i} className="space-y-2">
-                              <Label htmlFor={`q${i}`} className="text-md font-medium text-slate-700">{`${i + 1}. ${q}`}</Label>
-                              <Textarea 
-                                id={`q${i}`} 
-                                rows={3}
-                                value={answers[q] || ''}
-                                onChange={(e) => handleAnswerChange(q, e.target.value)}
-                                disabled={isLoading}
-                                placeholder="Your thoughtful answer..."
-                              />
+    <>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="text-2xl font-bold text-slate-800">Tutorial Study Guide</DialogTitle>
+            <DialogDescription>
+              Answer the questions below to complete the tutorial. Your answers save as you go. The Chief will review your responses upon submission.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
+                <div className="p-6 space-y-6">
+                    {isFetching ? (
+                      <p>Loading your answers...</p>
+                    ) : (
+                      <>
+                        {tutorialQuestions.map((q, i) => (
+                            <div key={i} className="space-y-2">
+                                <Label htmlFor={`q${i}`} className="text-md font-medium text-slate-700">{`${i + 1}. ${q}`}</Label>
+                                <Textarea 
+                                  id={`q${i}`} 
+                                  rows={3}
+                                  value={answers[q] || ''}
+                                  onChange={(e) => handleAnswerChange(q, e.target.value)}
+                                  disabled={isLoading}
+                                  placeholder="Your thoughtful answer..."
+                                />
+                            </div>
+                        ))}
+                        <div className="space-y-4 pt-4 border-t">
+                              <div className="flex items-start space-x-3">
+                                  <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading} />
+                                  <Label htmlFor="agree-meetings" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      I agree to participate fully in all meetings and to submit reports promptly. (Must Agree to Proceed)
+                                  </Label>
+                              </div>
+                              <div className="flex items-start space-x-3">
+                                  <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading} />
+                                  <Label htmlFor="agree-mentor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      I agree to act as a mentor for new chiefs. (Must agree to proceed)
+                                  </Label>
+                              </div>
                           </div>
-                      ))}
-                      <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-start space-x-3">
-                                <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading} />
-                                <Label htmlFor="agree-meetings" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    I agree to participate fully in all meetings and to submit reports promptly. (Must Agree to Proceed)
-                                </Label>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                                <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading} />
-                                <Label htmlFor="agree-mentor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    I agree to act as a mentor for new chiefs. (Must agree to proceed)
-                                </Label>
-                            </div>
-                        </div>
-                    </>
-                  )}
-              </div>
-          </ScrollArea>
-        </div>
-        {feedback && (
-          <div className="p-4">
-            <Alert variant={feedback.passed ? "default" : "destructive"} className={feedback.passed ? "border-green-500" : ""}>
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Feedback from The Chief</AlertTitle>
-              <AlertDescription>
-                {feedback.message}
-              </AlertDescription>
-            </Alert>
+                      </>
+                    )}
+                </div>
+            </ScrollArea>
           </div>
-        )}
-        <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
-          {showBackButton ? (
-             <Button className="bg-primary hover:bg-primary/90" onClick={handleClose}>
-               Back to Path
-             </Button>
-          ) : (
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
-              {isLoading ? "Evaluating..." : "Submit to The Chief"}
-            </Button>
+          {feedback && (
+            <div className="p-4">
+              <Alert variant={feedback.passed ? "default" : "destructive"} className={feedback.passed ? "border-green-500" : ""}>
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Feedback from The Chief</AlertTitle>
+                <AlertDescription>
+                  {feedback.message}
+                </AlertDescription>
+              </Alert>
+            </div>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
+            <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
+            {showBackButton ? (
+               <Button className="bg-primary hover:bg-primary/90" onClick={() => setShowConfirmation(true)}>
+                 Back to Path
+               </Button>
+            ) : (
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
+                {isLoading ? "Evaluating..." : "Submit to The Chief"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you ready to graduate?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you believe you have sufficient understanding of the source book to be able to join an existing tribe or start a tribe of your own successfully?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleNeedsMoreTime}>No</AlertDialogCancel>
+            <AlertDialogAction onClick={handleProceedToGraduate}>Yes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
