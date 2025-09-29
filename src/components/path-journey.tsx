@@ -16,7 +16,7 @@ import CreateTribeModal from './modals/create-tribe-modal';
 import JoinTribeModal from './modals/join-tribe-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -649,6 +649,7 @@ export default function PathJourney() {
                     </Button>
                 </CardHeader>
                 <CardContent>
+                    {selectedNode.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{selectedNode.description}</p>}
                     {selectedNode.req && (
                         <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>
                     )}
@@ -695,6 +696,7 @@ export default function PathJourney() {
                       <CardTitle>{node.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
+                      {node.description && <CardDescription className="mb-4 whitespace-pre-wrap">{node.description}</CardDescription>}
                       {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
                       <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                       {renderAbilities(node)}
