@@ -1,12 +1,23 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function GamesPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,6 +60,11 @@ export default function GamesPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        user && <p className="text-xl mb-2">Welcome, {user.email}</p>
+      )}
       <h1 className="text-3xl font-bold mb-4">Games</h1>
       <canvas ref={canvasRef} width="480" height="320" className="bg-gray-800 rounded-lg mb-4"></canvas>
       <p className="mb-4">More games coming soon!</p>
