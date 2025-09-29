@@ -74,7 +74,6 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setFeedback(null);
 
     try {
-      // Save the answers first
       const saveResult = await saveTutorialAnswers({ answers });
       if (!saveResult.success) {
         throw new Error("Failed to save your answers. Please try again.");
@@ -86,12 +85,13 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
       });
 
       const evaluation = await evaluateTutorialAnswers({ answers });
+      
       if (evaluation.passed) {
-        onComplete("complete-tutorial");
         toast({
           title: "Tutorial Submitted!",
           description: evaluation.feedback,
         });
+        onComplete("complete-tutorial");
         onClose();
       } else {
         setFeedback({ passed: false, message: evaluation.feedback });
