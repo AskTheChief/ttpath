@@ -104,12 +104,15 @@ export default function MyTribePage() {
   };
 
   const handleSaveAnswers = async () => {
+    setIsLoading(true);
     try {
       await saveTutorialAnswers({ answers: tutorialAnswers });
       toast({ title: 'Success', description: 'Your tutorial answers have been saved.' });
     } catch (error) {
       console.error("Error saving tutorial answers: ", error);
       toast({ title: 'Error', description: 'Failed to save your answers.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -205,6 +208,7 @@ export default function MyTribePage() {
                         value={tutorialAnswers[q] || ''}
                         onChange={(e) => handleAnswerChange(q, e.target.value)}
                         placeholder="Your answer..."
+                        disabled={isLoading}
                       />
                    </AccordionContent>
                 </AccordionItem>
@@ -212,7 +216,9 @@ export default function MyTribePage() {
             </Accordion>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleSaveAnswers}>Save Answers</Button>
+            <Button onClick={handleSaveAnswers} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Answers'}
+            </Button>
           </CardFooter>
         </Card>
       </div>
