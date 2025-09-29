@@ -12,3 +12,4 @@ import '@/ai/flows/get-tutorial-answers.ts';
 import '@/ai/flows/create-tribe.ts';
 import '@/ai/flows/get-tribes.ts';
 import '@/ai/flows/join-tribe.ts';
+import '@/ai/flows/get-tutorial-feedback.ts';

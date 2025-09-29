@@ -13,6 +13,17 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { credential } from 'firebase-admin';
+
+if (!getApps().length) {
+  initializeApp({
+    credential: credential.applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
+}
+const db = getFirestore();
 
 const EvaluateTutorialAnswersInputSchema = z.object({
   answers: z.record(z.string()).describe("A dictionary of questions and the user's answers."),
@@ -72,8 +83,26 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
     inputSchema: EvaluateTutorialAnswersInputSchema,
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
-  async input => {
+  async (input, context) => {
     const {output} = await prompt(input);
-    return output!;
+    const result = output!;
+
+    // Save the feedback to Firestore
+    const user = context?.auth;
+    if (user && result) {
+      try {
+        await db.collection('tutorial_feedback').add({
+          userId: user.uid,
+          passed: result.passed,
+          feedback: result.feedback,
+          createdAt: new Date(),
+        });
+      } catch (error) {
+        console.error('Error saving tutorial feedback:', error);
+        // We don't want to fail the whole flow if this fails, just log it.
+      }
+    }
+
+    return result;
   }
 );

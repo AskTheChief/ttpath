@@ -16,6 +16,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +26,7 @@ export default function MyTribePage() {
   const [newTribeName, setNewTribeName] = useState('');
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
+  const [tutorialFeedback, setTutorialFeedback] = useState<TutorialFeedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -42,6 +46,16 @@ export default function MyTribePage() {
       toast({ title: 'Error', description: 'Could not load your tutorial answers.', variant: 'destructive' });
     }
   }, [toast]);
+  
+  const fetchTutorialFeedback = useCallback(async () => {
+    try {
+      const feedback = await getTutorialFeedback();
+      setTutorialFeedback(feedback);
+    } catch (error) {
+      console.error("Error fetching tutorial feedback: ", error);
+      toast({ title: 'Error', description: 'Could not load your tutorial feedback.', variant: 'destructive' });
+    }
+  }, [toast]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -50,17 +64,19 @@ export default function MyTribePage() {
       if (currentUser) {
         await Promise.all([
           fetchTribes(currentUser.uid),
-          fetchTutorialAnswers()
+          fetchTutorialAnswers(),
+          fetchTutorialFeedback(),
         ]);
       } else {
         setTribes([]);
         setUserTribe(null);
         setTutorialAnswers({});
+        setTutorialFeedback([]);
       }
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchTribes, fetchTutorialAnswers]);
+  }, [fetchTribes, fetchTutorialAnswers, fetchTutorialFeedback]);
 
   const handleCreateTribe = async () => {
     if (newTribeName.trim() === '' || !user) return;
@@ -138,10 +154,10 @@ export default function MyTribePage() {
       </Link>
       <h1 className="text-3xl font-bold text-center my-8">My Tribe</h1>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div>
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 space-y-8">
           {userTribe ? (
-            <Card className="mb-8">
+            <Card>
               <CardHeader>
                 <CardTitle>Your Current Tribe: {userTribe.name}</CardTitle>
               </CardHeader>
@@ -151,7 +167,7 @@ export default function MyTribePage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="mb-8">
+            <Card>
               <CardHeader>
                 <CardTitle>Create a New Tribe</CardTitle>
               </CardHeader>
@@ -192,35 +208,61 @@ export default function MyTribePage() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>My Living Tutorial</CardTitle>
-            <CardDescription>Review and edit your answers. Your progress saves automatically.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {tutorialQuestions.map((q, i) => (
-                <AccordionItem key={i} value={`item-${i}`}>
-                   <AccordionTrigger>{i + 1}. {q}</AccordionTrigger>
-                   <AccordionContent>
-                      <Textarea
-                        rows={5}
-                        value={tutorialAnswers[q] || ''}
-                        onChange={(e) => handleAnswerChange(q, e.target.value)}
-                        placeholder="Your answer..."
-                        disabled={isLoading}
-                      />
-                   </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleSaveAnswers} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Answers'}
-            </Button>
-          </CardFooter>
-        </Card>
+        <div className="lg:col-span-2 space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Living Tutorial</CardTitle>
+              <CardDescription>Review and edit your answers. Your progress saves automatically.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                {tutorialQuestions.map((q, i) => (
+                  <AccordionItem key={i} value={`item-${i}`}>
+                    <AccordionTrigger>{i + 1}. {q}</AccordionTrigger>
+                    <AccordionContent>
+                        <Textarea
+                          rows={5}
+                          value={tutorialAnswers[q] || ''}
+                          onChange={(e) => handleAnswerChange(q, e.target.value)}
+                          placeholder="Your answer..."
+                          disabled={isLoading}
+                        />
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveAnswers} disabled={isLoading}>
+                {isLoading ? 'Saving...' : 'Save Answers'}
+              </Button>
+            </CardFooter>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Feedback from The Chief</CardTitle>
+              <CardDescription>Review your past tutorial submissions and feedback.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {tutorialFeedback.length > 0 ? (
+                tutorialFeedback.map(fb => (
+                  <Alert key={fb.id} variant={fb.passed ? "default" : "destructive"} className={fb.passed ? "border-green-500" : ""}>
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle className="flex justify-between">
+                      <span>{fb.passed ? "Passed" : "Needs Review"}</span>
+                      <span className="text-sm font-normal text-muted-foreground">{new Date(fb.createdAt).toLocaleString()}</span>
+                    </AlertTitle>
+                    <AlertDescription>
+                      {fb.feedback}
+                    </AlertDescription>
+                  </Alert>
+                ))
+              ) : (
+                <p>No feedback from The Chief yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

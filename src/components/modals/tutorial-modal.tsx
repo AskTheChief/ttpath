@@ -30,12 +30,14 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(null);
+  const [showBackButton, setShowBackButton] = useState(false);
 
   useEffect(() => {
     async function fetchAnswers() {
       if (isOpen) {
         setIsFetching(true);
         setFeedback(null);
+        setShowBackButton(false);
         try {
           const existingAnswers = await getTutorialAnswers({});
           setAnswers(existingAnswers);
@@ -72,6 +74,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     
     setIsLoading(true);
     setFeedback(null);
+    setShowBackButton(false);
 
     try {
       const saveResult = await saveTutorialAnswers({ answers });
@@ -86,15 +89,15 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
 
       const evaluation = await evaluateTutorialAnswers({ answers });
       
+      setFeedback({ passed: evaluation.passed, message: evaluation.feedback });
+
       if (evaluation.passed) {
         toast({
           title: "Tutorial Submitted!",
-          description: evaluation.feedback,
+          description: "The Chief approves.",
         });
         onComplete("complete-tutorial");
-        onClose();
-      } else {
-        setFeedback({ passed: false, message: evaluation.feedback });
+        setShowBackButton(true);
       }
     } catch (error: any) {
       console.error("Error evaluating answers:", error);
@@ -113,6 +116,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setAgreeMentor(false);
     setFeedback(null);
     setIsLoading(false);
+    setShowBackButton(false);
     onClose();
   };
 
@@ -132,15 +136,6 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
                     <p>Loading your answers...</p>
                   ) : (
                     <>
-                      {feedback && !feedback.passed && (
-                        <Alert variant="destructive">
-                          <Terminal className="h-4 w-4" />
-                          <AlertTitle>Feedback from The Chief</AlertTitle>
-                          <AlertDescription>
-                            {feedback.message}
-                          </AlertDescription>
-                        </Alert>
-                      )}
                       {tutorialQuestions.map((q, i) => (
                           <div key={i} className="space-y-2">
                               <Label htmlFor={`q${i}`} className="text-md font-medium text-slate-700">{`${i + 1}. ${q}`}</Label>
@@ -173,11 +168,28 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
               </div>
           </ScrollArea>
         </div>
+        {feedback && (
+          <div className="p-4">
+            <Alert variant={feedback.passed ? "default" : "destructive"} className={feedback.passed ? "border-green-500" : ""}>
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Feedback from The Chief</AlertTitle>
+              <AlertDescription>
+                {feedback.message}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
         <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
-          <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
-            {isLoading ? "Evaluating..." : "Submit to The Chief"}
-          </Button>
+          {showBackButton ? (
+             <Button className="bg-primary hover:bg-primary/90" onClick={handleClose}>
+               Back to Path
+             </Button>
+          ) : (
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
+              {isLoading ? "Evaluating..." : "Submit to The Chief"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
