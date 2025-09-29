@@ -84,8 +84,28 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
   async (input, context) => {
-    const {output} = await prompt(input);
-    const result = output!;
+    let retries = 3;
+    let result: EvaluateTutorialAnswersOutput | null = null;
+
+    while (retries > 0) {
+      try {
+        const { output } = await prompt(input);
+        result = output;
+        break; // Success, exit loop
+      } catch (error: any) {
+        console.error(`Attempt failed: ${error.message}`);
+        retries--;
+        if (retries === 0) {
+          throw new Error("The Chief is currently unavailable after multiple attempts. Please try again later.");
+        }
+        // Wait for a short period before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+      }
+    }
+    
+    if (!result) {
+        throw new Error("Failed to get a response from the AI model.");
+    }
 
     // Save the feedback to Firestore
     const user = context?.auth;
