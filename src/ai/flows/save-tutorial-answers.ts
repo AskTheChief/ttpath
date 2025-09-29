@@ -38,7 +38,11 @@ const saveTutorialAnswersFlow = ai.defineFlow(
   async (input, context) => {
     const user = context?.auth;
     if (!user) {
-      throw new Error('User not authenticated');
+      // For visitors, we don't save answers to the DB, but we don't want to throw an error.
+      // The answers will be evaluated, and if they pass and sign up,
+      // we can save their answers at that point or have them re-submit.
+      // For now, just return success.
+      return { success: true };
     }
 
     try {
