@@ -125,105 +125,18 @@ body {
     margin-bottom: 1rem; /* Add some space below the title */
   }
 
-  .login-icon-container {
+  .menu-icon-container {
     position: absolute;
     top: 1.5rem;
     left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-  
-  .database-icon-container {
-    position: absolute;
-    top: 8.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-  
-  .chat-icon-container {
-    position: absolute;
-    top: 15.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
     z-index: 20;
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
   }
 
-  .my-tribe-icon-container {
+  .login-icon-container {
     position: absolute;
-    top: 22.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-
-  .games-icon-container {
-    position: absolute;
-    top: 29.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-
-  .store-icon-container {
-    position: absolute;
-    bottom: 15.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-
-  .trading-icon-container {
-    position: absolute;
-    bottom: 8.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-
-  .feedback-icon-container {
-    position: absolute;
-    bottom: 1.5rem;
-    left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 20;
-    opacity: 0;
-    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
-  }
-  
-  .dev-den-icon-container {
-    position: absolute;
-    bottom: 1.5rem;
+    top: 1.5rem;
     right: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -232,7 +145,7 @@ body {
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
   }
-
+  
   @keyframes fade-in-delay {
     from {
       opacity: 0;
@@ -274,7 +187,7 @@ body {
   }
 
   /* Unified icon styles */
-  .path-node, .chat-icon {
+  .path-node, .action-icon {
       width: 50px;
       height: 50px;
       border-radius: 50%;
@@ -293,10 +206,10 @@ body {
       transform: translate(-50%, -50%);
   }
 
-  .path-node:not(.locked):hover, .chat-icon:hover {
+  .path-node:not(.locked):hover, .action-icon:hover {
       transform: translate(-50%, -50%) scale(1.15);
   }
-  .chat-icon:hover {
+  .action-icon:hover {
     transform: scale(1.15);
   }
   
@@ -334,7 +247,7 @@ body {
     bottom: -30px;
   }
 
-  .chat-icon-container .node-label, .database-icon-container .node-label, .feedback-icon-container .node-label, .dev-den-icon-container .node-label, .login-icon-container .node-label, .my-tribe-icon-container .node-label, .games-icon-container .node-label, .store-icon-container .node-label, .trading-icon-container .node-label {
+  .login-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 
@@ -459,7 +372,7 @@ body {
   }
   
   @media (max-width: 768px) {
-    .path-node, .chat-icon {
+    .path-node, .action-icon {
         width: 40px;
         height: 40px;
         border-width: 3px;
@@ -479,5 +392,3 @@ body {
     }
   }
 }
-
-    

@@ -2,7 +2,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail, LogIn, LogOut, Swords, Gamepad2, Store, CandlestickChart } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -11,19 +11,18 @@ import ChatbotModal from './modals/chatbot-modal';
 import TutorialModal from './modals/tutorial-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
-import DevDropdown from './dev-dropdown';
 import CreateTribeModal from './modals/create-tribe-modal';
 import JoinTribeModal from './modals/join-tribe-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import LoginModal from './modals/login-modal';
-import Link from 'next/link';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
+import MenuSheet from './menu-sheet';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -70,6 +69,7 @@ export default function PathJourney() {
     link: false,
     createTribe: false,
     joinTribe: false,
+    menu: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -500,15 +500,6 @@ export default function PathJourney() {
     );
   };
 
-  const handleOpenDatabase = () => {
-    setLinkModalData({
-      title: 'Library',
-      url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
-      requirementId: null,
-    });
-    setModalState(s => ({...s, link: true}));
-  };
-
   const handleLogout = async () => {
     await signOut(auth);
     toast({
@@ -519,6 +510,10 @@ export default function PathJourney() {
 
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
+
+  const openModal = (modalName: keyof typeof modalState) => {
+    setModalState(s => ({ ...s, [modalName]: true, menu: false }));
+  };
 
   return (
     <TooltipProvider>
@@ -535,83 +530,25 @@ export default function PathJourney() {
           </video>
         </div>
 
+        <div className="menu-icon-container">
+          <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
+            <Menu className="h-8 w-8 text-muted-foreground" />
+          </button>
+        </div>
+
         <div className="login-icon-container">
             {isGuest ? (
-                <button className="chat-icon" onClick={handleLogout}>
+                <button className="action-icon" onClick={handleLogout}>
                     <LogOut className="h-8 w-8 text-muted-foreground" />
                 </button>
             ) : (
-                <button className="chat-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
+                <button className="action-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
                     <LogIn className="h-8 w-8 text-muted-foreground" />
                 </button>
             )}
              <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
         </div>
         
-        <div className="database-icon-container">
-          <button
-            className="chat-icon"
-            onClick={handleOpenDatabase}
-          >
-            <Database className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">Library</span>
-        </div>
-        {isGuest && (
-            <div className="chat-icon-container">
-            <button
-                className="chat-icon"
-                onClick={() => setModalState(s => ({ ...s, chatbot: true }))}
-            >
-                <MessageSquare className="h-8 w-8 text-muted-foreground" />
-            </button>
-            <span className="node-label">The Chief</span>
-            </div>
-        )}
-        {isGuest && (
-          <div className="my-tribe-icon-container">
-            <Link href="/my-tribe">
-              <button className="chat-icon">
-                <Swords className="h-8 w-8 text-muted-foreground" />
-              </button>
-            </Link>
-            <span className="node-label">My Tribe</span>
-          </div>
-        )}
-        {isGuest && (
-          <div className="games-icon-container">
-            <Link href="/games">
-              <button className="chat-icon">
-                <Gamepad2 className="h-8 w-8 text-muted-foreground" />
-              </button>
-            </Link>
-            <span className="node-label">Games</span>
-          </div>
-        )}
-        {isGuest && (
-          <div className="store-icon-container">
-            <Link href="/store">
-              <button className="chat-icon">
-                <Store className="h-8 w-8 text-muted-foreground" />
-              </button>
-            </Link>
-            <span className="node-label">Store</span>
-          </div>
-        )}
-        {isGuest && (
-          <div className="trading-icon-container">
-            <Link href="/trading">
-              <button className="chat-icon">
-                <CandlestickChart className="h-8 w-8 text-muted-foreground" />
-              </button>
-            </Link>
-            <span className="node-label">Trading</span>
-          </div>
-        )}
-        <div className="dev-den-icon-container">
-          <DevDropdown />
-          <span className="node-label">Dev Den</span>
-        </div>
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
           <defs>
@@ -696,7 +633,7 @@ export default function PathJourney() {
                       <CardTitle>{node.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                      {node.description && <CardDescription className="mb-4 whitespace-pre-wrap">{node.description}</CardDescription>}
+                      {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
                       {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
                       <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                       {renderAbilities(node)}
@@ -705,16 +642,13 @@ export default function PathJourney() {
             </Tooltip>
           );
         })}
-        <div className="feedback-icon-container">
-          <button
-            className="chat-icon"
-            onClick={() => setModalState(s => ({ ...s, feedback: true }))}
-          >
-            <Mail className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">Send Feedback</span>
-        </div>
       </div>
+      <MenuSheet 
+        isOpen={modalState.menu}
+        onClose={() => setModalState(s => ({...s, menu: false}))}
+        openModal={openModal}
+        isGuest={isGuest}
+      />
       <LinkModal
         isOpen={modalState.link}
         onClose={() => setModalState(s => ({ ...s, link: false }))}
