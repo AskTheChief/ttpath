@@ -128,7 +128,7 @@ body {
   .login-icon-container {
     position: absolute;
     top: 1.5rem;
-    right: 8.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -139,7 +139,7 @@ body {
   
   .database-icon-container {
     position: absolute;
-    top: 1.5rem;
+    top: 8.5rem;
     left: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -151,8 +151,8 @@ body {
   
   .chat-icon-container {
     position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
+    top: 15.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column; 
     align-items: center;
@@ -163,8 +163,8 @@ body {
 
   .my-tribe-icon-container {
     position: absolute;
-    top: 1.5rem;
-    right: 15.5rem;
+    top: 22.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -175,8 +175,8 @@ body {
 
   .games-icon-container {
     position: absolute;
-    bottom: 1.5rem;
-    right: 15.5rem;
+    top: 29.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -187,8 +187,8 @@ body {
 
   .store-icon-container {
     position: absolute;
-    bottom: 1.5rem;
-    right: 8.5rem;
+    bottom: 15.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -199,8 +199,8 @@ body {
 
   .trading-icon-container {
     position: absolute;
-    bottom: 1.5rem;
-    right: 1.5rem;
+    bottom: 8.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -212,7 +212,7 @@ body {
   .feedback-icon-container {
     position: absolute;
     bottom: 1.5rem;
-    left: 8.5rem;
+    left: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -224,7 +224,7 @@ body {
   .dev-den-icon-container {
     position: absolute;
     bottom: 1.5rem;
-    left: 1.5rem;
+    right: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -479,3 +479,5 @@ body {
     }
   }
 }
+
+    
