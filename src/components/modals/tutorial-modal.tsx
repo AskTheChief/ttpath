@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -10,26 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
+import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
+import { getTutorialAnswers } from "@/lib/tutorial";
+import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-
-const tutorialQuestions = [
-    "Explain how judgment affects communication.",
-    "Describe the positive intentions of fear, anger and envy.",
-    "Describe three things that exist in the past and three more that exist in the future.",
-    'Explain the meaning of "Intentions = Results."',
-    'Explain how the "Healing Field of Acknowledgment” works',
-    "Explain the importance of willingness testing.",
-    'Provide an example of a "medicinal rock" and a "proactive rock."',
-    'Explain the purpose of the "Rocks Process."',
-    "Explain the difference between the causal model and the feedback model.",
-    "Explain the purpose in following SVOP-b syntax.",
-    'Explain how "emotional honesty" differs from “objective truth.”',
-    "State the purpose of The Trading Tribe.",
-    "Explain how the tribe implements accountability.",
-    "Describe a personal issue you wish to bring to Tribe.",
-    "Describe what you do with your life to serve others."
-];
 
 type TutorialModalProps = {
   isOpen: boolean;
@@ -44,6 +29,23 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   const [agreeMentor, setAgreeMentor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchAnswers() {
+      if (isOpen) {
+        setIsLoading(true);
+        try {
+          const existingAnswers = await getTutorialAnswers({});
+          setAnswers(existingAnswers);
+        } catch (error) {
+          console.error("Failed to fetch previous answers", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    fetchAnswers();
+  }, [isOpen]);
 
   const allAgreed = agreeMeetings && agreeMentor;
 
@@ -65,6 +67,9 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setFeedback(null);
 
     try {
+      // Save the answers first
+      await saveTutorialAnswers({ answers });
+
       const evaluation = await evaluateTutorialAnswers({ answers });
       if (evaluation.passed) {
         onComplete("complete-tutorial");
@@ -89,8 +94,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   };
 
   const handleClose = () => {
-    // Reset state on close
-    setAnswers({});
+    // Keep answers in state, but reset agreements and feedback
     setAgreeMeetings(false);
     setAgreeMentor(false);
     setFeedback(null);
@@ -128,6 +132,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
                             value={answers[q] || ''}
                             onChange={(e) => handleAnswerChange(q, e.target.value)}
                             disabled={isLoading}
+                            placeholder="Your thoughtful answer..."
                           />
                       </div>
                   ))}

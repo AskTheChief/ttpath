@@ -7,3 +7,5 @@ import '@/ai/flows/personalized-tutorial-creation.ts';
 import '@/ai/flows/chatbot-guidance.ts';
 import '@/ai/flows/submit-feedback.ts';
 import '@/ai/flows/evaluate-tutorial-answers.ts';
+import '@/ai/flows/save-tutorial-answers.ts';
+import '@/ai/flows/get-tutorial-answers.ts';

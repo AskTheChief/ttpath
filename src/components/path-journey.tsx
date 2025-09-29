@@ -40,6 +40,10 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
   mentor: GraduationCap
 };
 
+const actionIcons: { [key: string]: React.FC<any> } = {
+  'complete-tutorial': FileCheck,
+};
+
 export default function PathJourney() {
   const [currentUserLevel, setCurrentUserLevel] = useState(1);
   const [requirementsState, setRequirementsState] = useState<Record<string, boolean>>({});
@@ -327,10 +331,14 @@ export default function PathJourney() {
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
       const url = action.action === 'open-pamphlet' 
         ? 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/'
-        : 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/';
+        : 'https://docs.google.com/document/d/e/2PACX-1vSynbRUG7OY7U2579zMdkkWWJz8_GNDUydqlIM_TBzOQwZUmf6FTIwPugj8AenLORbuKVSql4uAu1cq/pub?embedded=true';
       
       setLinkModalData({ title: action.label, url: url, requirementId: action.id });
       setModalState(s => ({ ...s, link: true }));
+      return;
+    }
+     if (action.requires === 'tutorial') {
+      setModalState(s => ({...s, tutorial: true}));
       return;
     }
     
@@ -412,6 +420,8 @@ export default function PathJourney() {
           const isNextStepAction = !!action.next;
           const isLocked = node.level > currentUserLevel;
           const isActive = node.level === currentUserLevel;
+          
+          const Icon = actionIcons[action.id];
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
           const Checkmark = isCompleted ? (
@@ -445,9 +455,10 @@ export default function PathJourney() {
                   handleActionClick(action);
                 }
               }}
-              disabled={isLocked}
+              disabled={isLocked && action.requires !== 'tutorial'}
             >
               {isCompleted && !isNextStepAction ? Checkmark : null}
+              {Icon && <Icon className="h-4 w-4 mr-2 shrink-0" />}
               <span className="flex-grow text-left">{buttonText}</span>
               {isNextStepAction && (isCompleted || isActive) ? '→' : ''}
             </Button>
