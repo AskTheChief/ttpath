@@ -147,6 +147,7 @@ body {
     z-index: 20;
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+    text-align: center;
   }
 
   .feedback-icon-container {

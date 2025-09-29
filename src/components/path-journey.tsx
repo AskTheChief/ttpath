@@ -539,15 +539,21 @@ export default function PathJourney() {
 
         <div className="login-icon-container">
             {isGuest ? (
-                <button className="action-icon" onClick={handleLogout}>
-                    <LogOut className="h-8 w-8 text-muted-foreground" />
-                </button>
+                <>
+                    <button className="action-icon" onClick={handleLogout}>
+                        <LogOut className="h-8 w-8 text-muted-foreground" />
+                    </button>
+                    {currentUser?.email && <span className="node-label text-xs mt-1 truncate max-w-[150px]">{currentUser.email}</span>}
+                    <span className="node-label mt-5">{isGuest ? "Logout" : "Login"}</span>
+                </>
             ) : (
-                <button className="action-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
-                    <LogIn className="h-8 w-8 text-muted-foreground" />
-                </button>
+                <>
+                    <button className="action-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
+                        <LogIn className="h-8 w-8 text-muted-foreground" />
+                    </button>
+                     <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
+                </>
             )}
-             <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
         </div>
 
         <div className="feedback-icon-container">
