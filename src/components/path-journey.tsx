@@ -511,8 +511,17 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof typeof modalState) => {
-    setModalState(s => ({ ...s, [modalName]: true, menu: false }));
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link'> | 'pamphlet') => {
+    if (modalName === 'pamphlet') {
+      setLinkModalData({
+        title: 'Quick-Start Guide',
+        url: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
+        requirementId: 'read-book',
+      });
+      setModalState(s => ({ ...s, link: true, menu: false }));
+    } else {
+      setModalState(s => ({ ...s, [modalName]: true, menu: false }));
+    }
   };
 
   return (

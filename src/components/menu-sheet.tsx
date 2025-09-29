@@ -15,11 +15,11 @@ type MenuSheetProps = {
 };
 
 const menuItems = [
-    { id: 'library', icon: Database, label: 'Library', requireGuest: false },
-    { id: 'my-tribe', icon: Swords, label: 'My Tribe', requireGuest: true, href: '/my-tribe' },
-    { id: 'games', icon: Gamepad2, label: 'Games', requireGuest: true, href: '/games' },
-    { id: 'store', icon: Store, label: 'Store', requireGuest: true, href: '/store' },
-    { id: 'trading', icon: CandlestickChart, label: 'Trading', requireGuest: true, href: '/trading' },
+    { id: 'pamphlet', icon: Database, label: 'Library' },
+    { id: 'my-tribe', icon: Swords, label: 'My Tribe', href: '/my-tribe' },
+    { id: 'games', icon: Gamepad2, label: 'Games', href: '/games' },
+    { id: 'store', icon: Store, label: 'Store', href: '/store' },
+    { id: 'trading', icon: CandlestickChart, label: 'Trading', href: '/trading' },
 ];
 
 export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuSheetProps) {
@@ -33,21 +33,30 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuS
   }
 
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
-    if (item.requireGuest && !isGuest) return null;
+    const isLink = !!item.href;
+    // For non-links, only show if not a guest-only item or if user is a guest.
+    // My Tribe, Games, Store, Trading are for logged-in users. Library is for everyone.
+    if (item.id !== 'pamphlet' && !isGuest) {
+      return null;
+    }
 
     const content = (
         <Button
             variant="ghost"
             className="w-full justify-start text-lg p-6"
-            onClick={() => handleItemClick(item)}
+            onClick={() => !isLink && handleItemClick(item)}
         >
             <item.icon className="h-6 w-6 mr-4" />
             {item.label}
         </Button>
     );
 
-    if (item.href) {
-        return <Link href={item.href} key={item.id}>{content}</Link>;
+    if (isLink) {
+      return (
+        <Link href={item.href!} key={item.id} passHref>
+          {content}
+        </Link>
+      );
     }
 
     return <div key={item.id}>{content}</div>;
@@ -61,10 +70,12 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuS
         </SheetHeader>
         <div className="p-4 space-y-2">
           {menuItems.map(renderMenuItem)}
-          <div className="p-2">
-            <DevDropdown />
-            <span className="ml-3 text-lg">Dev Den</span>
-          </div>
+          {isGuest && (
+            <div className="p-2">
+              <DevDropdown />
+              <span className="ml-3 text-lg">Dev Den</span>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
