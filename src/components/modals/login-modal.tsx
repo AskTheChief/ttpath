@@ -49,9 +49,9 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Login to your Account</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Guest Login</DialogTitle>
           <DialogDescription>
-            Enter your credentials to log in to your account.
+            Enter your credentials to continue as a guest.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleEmailLogin}>
@@ -68,10 +68,10 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
           </div>
           <div className="p-4 border-t flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login with Email"}
+              {isLoading ? "Logging in..." : "Login as Guest"}
             </Button>
             <Button type="button" variant="link" onClick={showSignup} disabled={isLoading} className="w-full">
-              Don't have an account? Sign Up
+              Don't have a guest account? Become a Guest
             </Button>
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading} className="w-full">
               Cancel

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -127,7 +128,7 @@ body {
   .login-icon-container {
     position: absolute;
     top: 1.5rem;
-    right: 5rem;
+    right: 8.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -163,7 +164,43 @@ body {
   .my-tribe-icon-container {
     position: absolute;
     top: 1.5rem;
+    right: 15.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .games-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 15.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .store-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
     right: 8.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .trading-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -175,7 +212,7 @@ body {
   .feedback-icon-container {
     position: absolute;
     bottom: 1.5rem;
-    right: 1.5rem;
+    left: 8.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -297,14 +334,14 @@ body {
     bottom: -30px;
   }
 
-  .chat-icon-container .node-label, .database-icon-container .node-label, .feedback-icon-container .node-label, .dev-den-icon-container .node-label, .login-icon-container .node-label, .my-tribe-icon-container .node-label {
+  .chat-icon-container .node-label, .database-icon-container .node-label, .feedback-icon-container .node-label, .dev-den-icon-container .node-label, .login-icon-container .node-label, .my-tribe-icon-container .node-label, .games-icon-container .node-label, .store-icon-container .node-label, .trading-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 
   #user-icon {
       position: absolute;
-      width: 44px;
-      height: 44px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       background-color: hsl(var(--accent));
       border: 3px solid white;
@@ -433,8 +470,8 @@ body {
     }
 
     #user-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
     }
     
     .info-panel {

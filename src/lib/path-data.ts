@@ -13,6 +13,7 @@ export type PathNodeData = {
   pathPos: number;
   title: string;
   req: string;
+  description: string;
   actions: PathAction[];
   panelPos: 'left' | 'right';
 };
@@ -24,6 +25,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.0,
     title: "Visitor",
     req: "",
+    description: "Welcome to the Tribe Path. To find out how the Tribe works, read the Quick-Start Guide. Then, if you wish to proceed, you may register as a Guest. As a guest, you have access to Tribe resources, such as The Chief, The Library, Feedback, Trading, Games and The Store. You may also proceed along the path to join a Tribe or to run one as a Chief.",
     actions: [
       { id: "read-book", label: "Read Quick-Start Guide", action: "open-pamphlet" },
       { id: "sign-up", label: "Register as Guest", next: "guest", requires: "signup-form", dependsOn: "read-book" }
@@ -36,6 +38,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.20,
     title: "Guest",
     req: "",
+    description: "",
     actions: [
       { id: "read-full-book", label: "Read the Source Book", action: "open-full-book" },
       { id: "complete-tutorial", label: "Take the Tutorial", next: "graduate", requires: "tutorial", dependsOn: "read-full-book" }
@@ -48,6 +51,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.40,
     title: "Graduate",
     req: "",
+    description: "",
     actions: [
       { id: "join-tribe", label: "Join a Tribe", next: "member" },
       { id: "start-tribe", label: "Start a Tribe", next: "chief" }
@@ -60,6 +64,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.60,
     title: "Tribe Member",
     req: "",
+    description: "",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
@@ -71,6 +76,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.8,
     title: "Tribe Chief",
     req: "",
+    description: "",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
@@ -82,6 +88,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 1.0,
     title: "Mentor",
     req: "",
+    description: "",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],

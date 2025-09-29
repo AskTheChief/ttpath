@@ -2,7 +2,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail, LogIn, LogOut, Swords } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, MessageSquare, Database, Mail, LogIn, LogOut, Swords, Gamepad2, Store, CandlestickChart } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -326,8 +326,8 @@ export default function PathJourney() {
 
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
       const url = action.action === 'open-pamphlet' 
-        ? 'https://docs.google.com/document/d/e/2PACX-1vQjAz9yUZwN3a20MZSLnk1HQl8RaAuCWzrD0CfcxbPVwf6XRzDWcqpyfLMpP0JAXg/pub'
-        : 'https://docs.google.com/document/d/e/2PACX-1vSynbRUG7OY7U2579zMdkkWWJz8_GNDUydqlIM_TBzOQwZUmf6FTIwPugj8AenLORbuKVSql4uAu1cq/pub';
+        ? 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/'
+        : 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/';
       
       setLinkModalData({ title: action.label, url: url, requirementId: action.id });
       setModalState(s => ({ ...s, link: true }));
@@ -459,8 +459,8 @@ export default function PathJourney() {
 
   const handleOpenDatabase = () => {
     setLinkModalData({
-      title: 'Tribe Reports',
-      url: 'https://docs.google.com/document/d/e/2PACX-1vTwqFKCYD2CGhr68_L3hyDlC2KaAbf1rq7blq86alcipgRXcaK_cURmGcnqcP4jTmuJirOx66SfUX2s/pub',
+      title: 'Library',
+      url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
       requirementId: null,
     });
     setModalState(s => ({...s, link: true}));
@@ -533,6 +533,36 @@ export default function PathJourney() {
               </button>
             </Link>
             <span className="node-label">My Tribe</span>
+          </div>
+        )}
+        {isGuest && (
+          <div className="games-icon-container">
+            <Link href="/games">
+              <button className="chat-icon">
+                <Gamepad2 className="h-8 w-8 text-muted-foreground" />
+              </button>
+            </Link>
+            <span className="node-label">Games</span>
+          </div>
+        )}
+        {isGuest && (
+          <div className="store-icon-container">
+            <Link href="/store">
+              <button className="chat-icon">
+                <Store className="h-8 w-8 text-muted-foreground" />
+              </button>
+            </Link>
+            <span className="node-label">Store</span>
+          </div>
+        )}
+        {isGuest && (
+          <div className="trading-icon-container">
+            <Link href="/trading">
+              <button className="chat-icon">
+                <CandlestickChart className="h-8 w-8 text-muted-foreground" />
+              </button>
+            </Link>
+            <span className="node-label">Trading</span>
           </div>
         )}
         <div className="dev-den-icon-container">

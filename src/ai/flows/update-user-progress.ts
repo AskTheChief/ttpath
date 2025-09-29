@@ -39,7 +39,9 @@ const updateUserProgressFlow = ai.defineFlow(
   async (input, context) => {
     const user = context?.auth;
     if (!user) {
-      throw new Error('User not authenticated');
+      // For guest users, we don't save progress to the DB.
+      // We just return success to prevent client-side errors.
+      return { success: true };
     }
 
     try {

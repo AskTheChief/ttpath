@@ -51,7 +51,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Register as a Guest</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Become a Guest</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleEmailSignup}>
           <div className="p-6 space-y-4">
@@ -67,7 +67,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
           </div>
           <div className="p-4 border-t flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Registering..." : "Register with Email"}
+              {isLoading ? "Registering..." : "Continue as Guest"}
             </Button>
             <Button type="button" variant="link" onClick={showLogin} disabled={isLoading} className="w-full">
               Already have an account? Log In

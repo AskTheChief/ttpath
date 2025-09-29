@@ -37,7 +37,10 @@ const getUserProgressFlow = ai.defineFlow(
   async (input, context) => {
     const user = context?.auth;
     if (!user) {
-      throw new Error('User not authenticated');
+      return {
+        currentUserLevel: 1,
+        requirementsState: {},
+      };
     }
 
     try {
