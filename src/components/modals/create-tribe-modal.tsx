@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,28 +11,41 @@ import { createTribe } from '@/ai/flows/create-tribe';
 type CreateTribeModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onComplete: () => void;
 };
 
-export default function CreateTribeModal({ isOpen, onClose }: CreateTribeModalProps) {
+export default function CreateTribeModal({ isOpen, onClose, onComplete }: CreateTribeModalProps) {
   const [tribeName, setTribeName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tribeName.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Tribe name is required',
+        });
+        return;
+    }
     setIsLoading(true);
     try {
-      await createTribe({ name: tribeName });
-      toast({
-        title: 'Tribe Created!',
-        description: 'Your tribe has been created.',
-      });
-      onClose();
+      const result = await createTribe({ name: tribeName });
+      if (result.success) {
+        toast({
+          title: 'Tribe Created!',
+          description: 'Your tribe has been created.',
+        });
+        onComplete();
+        onClose();
+      } else {
+        throw new Error('Failed to create tribe.');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error creating tribe',
-        description: error.message,
+        description: error.message || 'An unknown error occurred.',
       });
     } finally {
       setIsLoading(false);

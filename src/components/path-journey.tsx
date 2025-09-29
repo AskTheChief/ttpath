@@ -12,6 +12,8 @@ import TutorialModal from './modals/tutorial-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
 import DevDropdown from './dev-dropdown';
+import CreateTribeModal from './modals/create-tribe-modal';
+import JoinTribeModal from './modals/join-tribe-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,6 +68,8 @@ export default function PathJourney() {
     tutorial: false,
     feedback: false,
     link: false,
+    createTribe: false,
+    joinTribe: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -138,6 +142,14 @@ export default function PathJourney() {
       const newState = { ...prev, [reqId]: true };
       setJustCompletedActionId(reqId);
       playSound('complete');
+      
+      const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+      if (action?.next) {
+        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        if (nextNode) {
+          animateUserIcon(nextNode);
+        }
+      }
       return newState;
     });
   }, [playSound]);
@@ -337,20 +349,35 @@ export default function PathJourney() {
       setModalState(s => ({ ...s, link: true }));
       return;
     }
-     if (action.requires === 'tutorial') {
+     if (action.id === 'complete-tutorial') {
       setModalState(s => ({...s, tutorial: true}));
       return;
     }
     
+    if (action.id === 'join-tribe') {
+        setModalState(s => ({...s, joinTribe: true}));
+        return;
+    }
+    if (action.id === 'start-tribe') {
+        setModalState(s => ({...s, createTribe: true}));
+        return;
+    }
+    
     if (action.next) { 
-        if (action.requires === 'signup-form' && !isGuest) {
-            setModalState(s => ({...s, login: true}));
+        if (action.id === 'sign-up' && !isGuest) {
+            setModalState(s => ({...s, signup: true}));
             return;
         }
 
-        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-        if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
-            animateUserIcon(nextNode);
+        const isCompleted = requirementsState[action.id];
+        if (!isCompleted) {
+            // This case handles advancing after completing a multi-step action like signup
+            completeRequirement(action.id);
+        } else {
+             const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+            if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
+                animateUserIcon(nextNode);
+            }
         }
     }
   };
@@ -418,10 +445,10 @@ export default function PathJourney() {
         {node.actions.map(action => {
           const isCompleted = requirementsState[action.id];
           const isNextStepAction = !!action.next;
-          const isLocked = node.level > currentUserLevel;
+          const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           const isActive = node.level === currentUserLevel;
           
-          const Icon = actionIcons[action.id];
+          const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
           const Checkmark = isCompleted ? (
@@ -451,11 +478,16 @@ export default function PathJourney() {
                   const buttonEl = e.currentTarget;
                   buttonEl.classList.add('button-shake');
                   setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
+                  toast({
+                    variant: "destructive",
+                    title: "Prerequisite not met",
+                    description: "You must complete the previous steps first.",
+                  });
                 } else {
                   handleActionClick(action);
                 }
               }}
-              disabled={isLocked && action.requires !== 'tutorial'}
+              disabled={isLocked && action.id !== 'sign-up'}
             >
               {isCompleted && !isNextStepAction ? Checkmark : null}
               {Icon && <Icon className="h-4 w-4 mr-2 shrink-0" />}
@@ -692,7 +724,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onComplete={completeRequirement}
+        onComplete={() => completeRequirement('sign-up')}
         showLogin={showLoginModal}
       />
       <LoginModal 
@@ -707,11 +739,21 @@ export default function PathJourney() {
       <TutorialModal
         isOpen={modalState.tutorial}
         onClose={() => setModalState(s => ({ ...s, tutorial: false }))}
-        onComplete={completeRequirement}
+        onComplete={() => completeRequirement('complete-tutorial')}
       />
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
+      />
+      <CreateTribeModal
+        isOpen={modalState.createTribe}
+        onClose={() => setModalState(s => ({ ...s, createTribe: false }))}
+        onComplete={() => completeRequirement('start-tribe')}
+      />
+      <JoinTribeModal
+        isOpen={modalState.joinTribe}
+        onClose={() => setModalState(s => ({ ...s, joinTribe: false }))}
+        onComplete={() => completeRequirement('join-tribe')}
       />
     </TooltipProvider>
   );

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -6,7 +5,6 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import { auth } from 'firebase-admin';
 
 if (!getApps().length) {
   initializeApp({
