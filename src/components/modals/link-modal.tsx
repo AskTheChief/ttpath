@@ -45,7 +45,7 @@ export default function LinkModal({
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
           >
-            {title}
+            Open the Library
           </a>
         </div>
         <DialogFooter className="gap-2 sm:justify-end">

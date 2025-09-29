@@ -516,7 +516,7 @@ export default function PathJourney() {
         setLinkModalData({
             title: 'Library',
             url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
-            requirementId: 'read-book',
+            requirementId: null, // No requirement for just opening library
         });
         setModalState(s => ({ ...s, link: true, menu: false }));
     } else if (modalName) {
