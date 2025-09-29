@@ -2,7 +2,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -548,6 +548,20 @@ export default function PathJourney() {
                 </button>
             )}
              <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
+        </div>
+
+        <div className="feedback-icon-container">
+          <button className="action-icon" onClick={() => openModal('feedback')}>
+              <Mail className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Send Feedback</span>
+        </div>
+
+        <div className="chatbot-icon-container">
+            <button className="action-icon" onClick={() => openModal('chatbot')}>
+                <MessageSquare className="h-8 w-8 text-muted-foreground" />
+            </button>
+            <span className="node-label">The Chief</span>
         </div>
         
         <div id="confetti-container" ref={confettiContainerRef}></div>

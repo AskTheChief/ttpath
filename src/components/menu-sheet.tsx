@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, MessageSquare, Swords, Gamepad2, Store, CandlestickChart, Mail } from "lucide-react";
+import { Database, Swords, Gamepad2, Store, CandlestickChart } from "lucide-react";
 
 type MenuSheetProps = {
   isOpen: boolean;
@@ -16,12 +16,10 @@ type MenuSheetProps = {
 
 const menuItems = [
     { id: 'library', icon: Database, label: 'Library', requireGuest: false },
-    { id: 'chatbot', icon: MessageSquare, label: 'The Chief', requireGuest: true },
     { id: 'my-tribe', icon: Swords, label: 'My Tribe', requireGuest: true, href: '/my-tribe' },
     { id: 'games', icon: Gamepad2, label: 'Games', requireGuest: true, href: '/games' },
     { id: 'store', icon: Store, label: 'Store', requireGuest: true, href: '/store' },
     { id: 'trading', icon: CandlestickChart, label: 'Trading', requireGuest: true, href: '/trading' },
-    { id: 'feedback', icon: Mail, label: 'Send Feedback', requireGuest: false },
 ];
 
 export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuSheetProps) {

@@ -148,6 +148,30 @@ body {
     opacity: 0;
     animation: fade-in-delay 1s ease-in-out forwards 1.5s;
   }
+
+  .feedback-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
+
+  .chatbot-icon-container {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    animation: fade-in-delay 1s ease-in-out forwards 1.5s;
+  }
   
   @keyframes fade-in-delay {
     from {
@@ -251,7 +275,9 @@ body {
   }
 
   .login-icon-container .node-label,
-  .menu-icon-container .node-label {
+  .menu-icon-container .node-label,
+  .feedback-icon-container .node-label,
+  .chatbot-icon-container .node-label {
     margin-top: 8px; /* Adjust as needed */
   }
 
