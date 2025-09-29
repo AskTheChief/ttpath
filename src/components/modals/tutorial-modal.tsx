@@ -156,8 +156,8 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   };
   
   const handleReviewFeedback = () => {
-    setFeedback(null);
-    setShowReviewButton(false);
+    handleClose();
+    setShowConfirmation(true);
   }
 
   return (
