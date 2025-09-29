@@ -511,16 +511,16 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link'> | 'pamphlet') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu'> | 'pamphlet') => {
     if (modalName === 'pamphlet') {
-      setLinkModalData({
-        title: 'Quick-Start Guide',
-        url: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
-        requirementId: 'read-book',
-      });
-      setModalState(s => ({ ...s, link: true, menu: false }));
-    } else {
-      setModalState(s => ({ ...s, [modalName]: true, menu: false }));
+        setLinkModalData({
+            title: 'Library',
+            url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
+            requirementId: 'read-book',
+        });
+        setModalState(s => ({ ...s, link: true, menu: false }));
+    } else if (modalName) {
+        setModalState(s => ({ ...s, [modalName]: true, menu: false }));
     }
   };
 
@@ -552,8 +552,8 @@ export default function PathJourney() {
                     <button className="action-icon" onClick={handleLogout}>
                         <LogOut className="h-8 w-8 text-muted-foreground" />
                     </button>
-                    {currentUser?.email && <span className="node-label text-xs mt-1 truncate max-w-[150px]">{currentUser.email}</span>}
-                    <span className="node-label mt-5">{isGuest ? "Logout" : "Login"}</span>
+                    <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
+                    {currentUser?.email && <span className="node-label text-xs mt-0 truncate max-w-[150px]">{currentUser.email}</span>}
                 </>
             ) : (
                 <>
