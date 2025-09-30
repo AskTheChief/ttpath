@@ -102,20 +102,21 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
         throw new Error("Failed to get a response from the AI model.");
     }
 
-    if (result) {
-      try {
-        await db.collection('tutorial_feedback').add({
-          userId: user.uid,
-          passed: result.passed,
-          feedback: result.feedback,
-          createdAt: new Date(),
-        });
-      } catch (error) {
-        console.error('Error saving tutorial feedback:', error);
-        // Do not throw here, the main operation succeeded.
-      }
+    // We can be sure result is not null here, so use !
+    const finalResult = result!;
+
+    try {
+      await db.collection('tutorial_feedback').add({
+        userId: user.uid,
+        passed: finalResult.passed,
+        feedback: finalResult.feedback,
+        createdAt: new Date(),
+      });
+    } catch (error) {
+      console.error('Error saving tutorial feedback:', error);
+      // Do not throw here, the main operation succeeded.
     }
 
-    return result;
+    return finalResult;
   }
 );
