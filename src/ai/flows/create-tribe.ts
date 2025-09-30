@@ -6,6 +6,7 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import type { Flow, FlowContext } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -17,7 +18,6 @@ const db = getFirestore();
 
 const CreateTribeInputSchema = z.object({
   name: z.string(),
-  chiefId: z.string(),
 });
 export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
@@ -29,26 +29,26 @@ export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 export async function createTribe(
   input: CreateTribeInput
 ): Promise<CreateTribeOutput> {
-  const user = context?.auth;
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-  return createTribeFlow({ ...input, chiefId: user.uid });
+  return createTribeFlow(input);
 }
 
-export const createTribeFlow = ai.defineFlow(
+export const createTribeFlow: Flow<typeof CreateTribeInputSchema, typeof CreateTribeOutputSchema> = ai.defineFlow(
   {
     name: 'createTribeFlow',
     inputSchema: CreateTribeInputSchema,
     outputSchema: CreateTribeOutputSchema,
   },
-  async (input: CreateTribeInput) => {
+  async (input: CreateTribeInput, _, context: FlowContext) => {
+    const user = context?.auth;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
     try {
       const tribeRef = db.collection('tribes').doc();
       await tribeRef.set({
         name: input.name,
-        chief: input.chiefId,
-        members: [input.chiefId],
+        chief: user.uid,
+        members: [user.uid],
         createdAt: new Date(),
       });
       return { success: true };
