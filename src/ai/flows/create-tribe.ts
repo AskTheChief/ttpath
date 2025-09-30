@@ -6,7 +6,7 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import type { Flow, FlowContext } from 'genkit/flow';
+import type { Flow, FlowContext } from 'genkit';
 
 if (!getApps().length) {
   initializeApp({
