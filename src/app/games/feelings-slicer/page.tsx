@@ -44,11 +44,11 @@ export default function FeelingsSlicerPage() {
       ? principles[Math.floor(Math.random() * principles.length)]
       : feelings[Math.floor(Math.random() * feelings.length)];
 
-    const x = GAME_WIDTH / 2 + (Math.random() - 0.5) * (GAME_WIDTH / 2);
-    const y = GAME_HEIGHT + ITEM_SIZE;
+    const x = GAME_WIDTH / 2; // Start from the center
+    const y = GAME_HEIGHT; // Start from the bottom
 
     const angle = Math.random() * (Math.PI / 2) + Math.PI / 4; // Launch between 45 and 135 degrees
-    const speed = Math.random() * 3 + 14; // A bit more initial vertical speed
+    const speed = Math.random() * 3 + 12; // Reduced initial speed
 
     return {
       id: nextItemId.current++,
@@ -56,8 +56,8 @@ export default function FeelingsSlicerPage() {
       type,
       x,
       y,
-      vx: Math.cos(angle) * speed * (x > GAME_WIDTH / 2 ? -1 : 1) * 0.3, // Reduced horizontal speed and ensures it moves towards center
-      vy: -Math.sin(angle) * speed,
+      vx: (Math.random() - 0.5) * 4, // Gentle horizontal movement
+      vy: -speed, // Apply vertical speed
       rotation: Math.random() * 360,
     };
   }, []);
@@ -91,7 +91,7 @@ export default function FeelingsSlicerPage() {
 
     // Item Spawning
     const now = Date.now();
-    if (now - lastSpawnTimeRef.current > 1500) { // Spawn every 1.5 seconds
+    if (now - lastSpawnTimeRef.current > 750) { // Spawn every 750ms
         lastSpawnTimeRef.current = now;
         setItems(prevItems => [...prevItems, createItem()]);
     }
@@ -103,14 +103,14 @@ export default function FeelingsSlicerPage() {
                 ...item,
                 x: item.x + item.vx,
                 y: item.y + item.vy,
-                vy: item.vy + 0.05, // Reduced Gravity
+                vy: item.vy + 0.15, // Gravity
                 rotation: item.rotation + item.vx,
             };
             return newItem;
         });
 
         // Check for missed items
-        const missedFeelings = newItems.filter(item => item.y > GAME_HEIGHT + ITEM_SIZE * 2 && !item.sliced && item.type === 'feeling');
+        const missedFeelings = newItems.filter(item => item.y > GAME_HEIGHT + ITEM_SIZE && !item.sliced && item.type === 'feeling');
         if (missedFeelings.length > 0) {
             setLives(l => {
                 const newLives = l - missedFeelings.length;
