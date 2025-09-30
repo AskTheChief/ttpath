@@ -74,7 +74,7 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
     inputSchema: EvaluateTutorialAnswersInputSchema,
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
-  async (input, context) => {
+  async (input, _, context) => {
     const user = context?.auth;
     if (!user) {
       throw new Error('User not authenticated');
