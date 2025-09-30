@@ -101,6 +101,9 @@ export default function FeelingsSlicerPage() {
   
   const handleSlice = (id: number) => {
     setItems(currentItems => {
+        // Prevent any slicing logic if the game is already over
+        if (gameState === 'gameOver') return currentItems;
+        
         const item = currentItems.find(i => i.id === id);
         if (!item || item.sliced) return currentItems;
 
