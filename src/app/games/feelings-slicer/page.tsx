@@ -45,7 +45,7 @@ export default function FeelingsSlicerPage() {
       : feelings[Math.floor(Math.random() * feelings.length)];
 
     const x = Math.random() * GAME_WIDTH;
-    const y = GAME_height + ITEM_SIZE;
+    const y = GAME_HEIGHT + ITEM_SIZE;
 
     const angle = Math.random() * (Math.PI / 2) + Math.PI / 4; // Launch between 45 and 135 degrees
     const speed = Math.random() * 5 + 10;
