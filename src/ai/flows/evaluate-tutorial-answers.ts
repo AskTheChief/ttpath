@@ -75,7 +75,7 @@ const evaluateTutorialAnswersFlow: Flow<typeof EvaluateTutorialAnswersInputSchem
     inputSchema: EvaluateTutorialAnswersInputSchema,
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
-  async (input: EvaluateTutorialAnswersInput, context?: FlowContext) => {
+  async (input, context) => {
     const user = context?.auth;
     if (!user) {
       throw new Error('User not authenticated');
