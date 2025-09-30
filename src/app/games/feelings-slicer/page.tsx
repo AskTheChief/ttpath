@@ -91,7 +91,7 @@ export default function FeelingsSlicerPage() {
 
     // Item Spawning
     const now = Date.now();
-    if (now - lastSpawnTimeRef.current > 750) { // Spawn every 750ms
+    if (now - lastSpawnTimeRef.current > 1500) { // Spawn every 1500ms
         lastSpawnTimeRef.current = now;
         setItems(prevItems => [...prevItems, createItem()]);
     }
