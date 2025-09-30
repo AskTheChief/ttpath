@@ -112,6 +112,7 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
         });
       } catch (error) {
         console.error('Error saving tutorial feedback:', error);
+        // Do not throw here, the main operation succeeded.
       }
     }
 
