@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, Play, RefreshCw, XOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
+import { useDrag } from '@use-gesture/react';
 
 // Game constants
 const GAME_WIDTH = 800;
@@ -147,6 +148,29 @@ export default function FeelingsSlicerPage() {
         return currentItems.map(i => i.id === id ? {...i, sliced: true} : i);
     })
   }
+  
+  const bind = useDrag(({ xy: [x, y], down, movement: [mx, my], event }) => {
+    if (gameState !== 'playing' || !down) return;
+    
+    // Get the game area's position relative to the viewport
+    const gameArea = (event.target as HTMLElement).closest('[data-game-area]');
+    if (!gameArea) return;
+    const rect = gameArea.getBoundingClientRect();
+
+    // Adjust coordinates to be relative to the game area
+    const relativeX = x - rect.left;
+    const relativeY = y - rect.top;
+
+    items.forEach(item => {
+      // Basic circle collision detection
+      const distance = Math.sqrt(
+        Math.pow(relativeX - (item.x), 2) + Math.pow(relativeY - (item.y), 2)
+      );
+      if (distance < ITEM_SIZE / 2) {
+        handleSlice(item.id);
+      }
+    });
+  });
 
   const gameLoop = useCallback(() => {
     if (gameState !== 'playing') return;
@@ -191,7 +215,7 @@ export default function FeelingsSlicerPage() {
     });
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, createItem, lives]);
+  }, [gameState, createItem, lives, items]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -222,7 +246,9 @@ export default function FeelingsSlicerPage() {
         </div>
 
         <div 
-          className="relative bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair" 
+          {...bind()}
+          data-game-area
+          className="relative bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair touch-none" 
           style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
         >
           {gameState === 'ready' && (
@@ -244,7 +270,7 @@ export default function FeelingsSlicerPage() {
             <div
                 key={item.id}
                 className={cn(
-                    "absolute flex items-center justify-center font-bold text-2xl rounded-full select-none transition-opacity duration-300",
+                    "absolute flex items-center justify-center font-bold text-2xl rounded-full select-none transition-opacity duration-300 pointer-events-none",
                     item.type === 'feeling' ? 'bg-blue-500' : 'bg-yellow-500 text-gray-900',
                     item.sliced && "opacity-0"
                 )}
@@ -271,5 +297,3 @@ export default function FeelingsSlicerPage() {
     </div>
   );
 }
-
-    
