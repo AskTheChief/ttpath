@@ -16,6 +16,7 @@ const ITEM_SIZE = 120;
 const BOMB_CHANCE = 0.2; // 20% chance for an item to be a bomb
 const GRAVITY = 0.075; // Reduced gravity
 const MAX_PEAK_HEIGHT = 100; // The closest items get to the top of the screen
+const TRAIL_LENGTH = 15;
 
 const feelings = ["Anger", "Fear", "Sadness", "Envy", "Judgement", "Resentment", "Guilt"];
 const principles = ["Support", "Willingness", "Honesty", "Feedback", "Accountability", "Acknowledgment"];
@@ -63,6 +64,8 @@ export default function FeelingsSlicerPage() {
   const lastSpawnTimeRef = useRef<number>(0);
   const nextItemId = useRef(0);
   const soundCooldown = useRef(false);
+  const [trail, setTrail] = useState<{x: number, y: number}[]>([]);
+
 
   const playSound = (type: 'slice' | 'bomb' | 'miss') => {
     if (soundCooldown.current) return;
@@ -119,17 +122,18 @@ export default function FeelingsSlicerPage() {
     setScore(0);
     setLives(3);
     setItems([]);
+    setTrail([]);
     setGameState('playing');
     lastSpawnTimeRef.current = Date.now();
   };
   
   const handleSlice = (id: number) => {
     setItems(currentItems => {
-        // Prevent any slicing logic if the game is already over
-        if (gameState === 'gameOver') return currentItems;
-        
         const item = currentItems.find(i => i.id === id);
         if (!item || item.sliced) return currentItems;
+
+        // Prevent any slicing logic if the game is already over
+        if (gameState === 'gameOver') return currentItems;
 
         if (item.type === 'principle') {
             playSound('bomb');
@@ -150,19 +154,22 @@ export default function FeelingsSlicerPage() {
   }
   
   const bind = useDrag(({ xy: [x, y], down, movement: [mx, my], event }) => {
-    if (gameState !== 'playing' || !down) return;
+    if (gameState !== 'playing') return;
     
-    // Get the game area's position relative to the viewport
     const gameArea = (event.target as HTMLElement).closest('[data-game-area]');
     if (!gameArea) return;
     const rect = gameArea.getBoundingClientRect();
 
-    // Adjust coordinates to be relative to the game area
     const relativeX = x - rect.left;
     const relativeY = y - rect.top;
 
+    if (down) {
+        setTrail(currentTrail => [...currentTrail, { x: relativeX, y: relativeY }].slice(-TRAIL_LENGTH));
+    } else {
+        setTrail([]);
+    }
+
     items.forEach(item => {
-      // Basic circle collision detection
       const distance = Math.sqrt(
         Math.pow(relativeX - (item.x), 2) + Math.pow(relativeY - (item.y), 2)
       );
@@ -181,6 +188,12 @@ export default function FeelingsSlicerPage() {
         lastSpawnTimeRef.current = now;
         setItems(prevItems => [...prevItems, createItem()]);
     }
+    
+    // Fade out trail
+    if (trail.length > 0) {
+        setTrail(currentTrail => currentTrail.slice(1));
+    }
+
 
     // Item movement & cleanup
     setItems(prevItems => {
@@ -196,8 +209,8 @@ export default function FeelingsSlicerPage() {
             
             // Check for newly missed items
             if (item.y <= GAME_HEIGHT + ITEM_SIZE && newItem.y > GAME_HEIGHT + ITEM_SIZE && !newItem.sliced && newItem.type === 'feeling') {
-                playSound('miss');
                 newLives--;
+                if (newLives > 0) playSound('miss');
             }
             
             return newItem;
@@ -215,7 +228,7 @@ export default function FeelingsSlicerPage() {
     });
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, createItem, lives, items]);
+  }, [gameState, createItem, lives, items, trail]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -281,11 +294,25 @@ export default function FeelingsSlicerPage() {
                     height: ITEM_SIZE,
                     transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                 }}
-                onMouseEnter={() => handleSlice(item.id)}
             >
                 {item.text}
             </div>
           ))}
+
+            <svg className="absolute inset-0 pointer-events-none z-10" width={GAME_WIDTH} height={GAME_HEIGHT}>
+                {trail.length > 1 && (
+                    <polyline
+                        points={trail.map(p => `${p.x},${p.y}`).join(' ')}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ opacity: Math.max(0, trail.length / TRAIL_LENGTH) }}
+                    />
+                )}
+            </svg>
+
         </div>
       </div>
       <Button asChild variant="link" className="mt-6 text-white">
@@ -297,3 +324,5 @@ export default function FeelingsSlicerPage() {
     </div>
   );
 }
+
+  
