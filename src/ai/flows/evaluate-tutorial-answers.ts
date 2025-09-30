@@ -8,7 +8,6 @@ import * as path from 'path';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import { Flow, FlowContext } from 'genkit';
 
 if (!getApps().length) {
   initializeApp({
@@ -69,7 +68,7 @@ Respond with the 'passed' and 'feedback' fields in the specified format.
 `,
 });
 
-const evaluateTutorialAnswersFlow: Flow<typeof EvaluateTutorialAnswersInputSchema, typeof EvaluateTutorialAnswersOutputSchema> = ai.defineFlow(
+const evaluateTutorialAnswersFlow = ai.defineFlow(
   {
     name: 'evaluateTutorialAnswersFlow',
     inputSchema: EvaluateTutorialAnswersInputSchema,
