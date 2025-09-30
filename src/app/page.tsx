@@ -14,10 +14,10 @@ export default function Home() {
         </CardHeader>
         <CardContent className="text-muted-foreground">
           <p className="mb-4">
-            TribeQuest is an application designed to guide you through the levels of the Trading Tribe, a community focused on self-improvement and trading psychology. Our app visually represents your progress, allows you to complete tasks to advance, and provides a clear path toward becoming a mentor.
+          TribeQuest provides a structured path for personal growth, guiding you through the principles of the Trading Tribe. Our focus is on helping you discover how your feelings and experiences shape your results. Through a series of levels, you'll engage with core concepts, take on challenges, and demonstrate your understanding to advance. This journey is designed to support you in joining or even leading a Tribe.
           </p>
           <p>
-            We request user data, such as your email for registration and progress tracking, solely to provide and enhance your personalized journey on the path. Your information helps us save your progress and offer features like tribe membership. We are committed to protecting your privacy, and your data will not be shared with third parties.
+            To facilitate your journey, we request user data like your email for registration and to save your progress. This allows us to create a personalized experience and manage your advancement through the levels and your participation in Tribes. We are committed to protecting your privacy, and your data will not be shared with third parties.
           </p>
         </CardContent>
       </Card>
