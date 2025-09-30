@@ -48,7 +48,7 @@ export default function FeelingsSlicerPage() {
     const y = GAME_HEIGHT + ITEM_SIZE;
 
     const angle = Math.random() * (Math.PI / 2) + Math.PI / 4; // Launch between 45 and 135 degrees
-    const speed = Math.random() * 5 + 10;
+    const speed = Math.random() * 3 + 12; // Reduced speed randomness, increased base upward velocity
 
     return {
       id: nextItemId.current++,
@@ -56,7 +56,7 @@ export default function FeelingsSlicerPage() {
       type,
       x,
       y,
-      vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
+      vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1) * 0.5, // Slower horizontal speed
       vy: -Math.sin(angle) * speed,
       rotation: Math.random() * 360,
     };
@@ -103,7 +103,7 @@ export default function FeelingsSlicerPage() {
                 ...item,
                 x: item.x + item.vx,
                 y: item.y + item.vy,
-                vy: item.vy + 0.2, // Gravity
+                vy: item.vy + 0.15, // Reduced Gravity
                 rotation: item.rotation + item.vx,
             };
             return newItem;
