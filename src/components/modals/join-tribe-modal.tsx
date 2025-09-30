@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -50,6 +51,7 @@ export default function JoinTribeModal({ isOpen, onClose, onComplete }: JoinTrib
     if (!selectedTribe) return;
     setIsLoading(true);
     try {
+      // The applicantId is handled by the flow context, no need to pass it.
       const result = await joinTribe({ tribeId: selectedTribe });
       if (result.success) {
         toast({

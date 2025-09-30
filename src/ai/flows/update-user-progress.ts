@@ -6,6 +6,7 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import type { Flow, FlowContext } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -30,17 +31,15 @@ export async function updateUserProgress(input: UpdateUserProgressInput): Promis
   return updateUserProgressFlow(input);
 }
 
-const updateUserProgressFlow = ai.defineFlow(
+const updateUserProgressFlow: Flow<typeof UpdateUserProgressInputSchema, typeof UpdateUserProgressOutputSchema> = ai.defineFlow(
   {
     name: 'updateUserProgressFlow',
     inputSchema: UpdateUserProgressInputSchema,
     outputSchema: UpdateUserProgressOutputSchema,
   },
-  async (input, context) => {
+  async (input: UpdateUserProgressInput, _, context: FlowContext) => {
     const user = context?.auth;
     if (!user) {
-      // For guest users, we don't save progress to the DB.
-      // We just return success to prevent client-side errors.
       return { success: true };
     }
 

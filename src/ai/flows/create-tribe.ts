@@ -29,7 +29,11 @@ export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 export async function createTribe(
   input: CreateTribeInput
 ): Promise<CreateTribeOutput> {
-  return createTribeFlow(input);
+  const user = context?.auth;
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  return createTribeFlow({ ...input, chiefId: user.uid });
 }
 
 export const createTribeFlow = ai.defineFlow(
@@ -38,7 +42,7 @@ export const createTribeFlow = ai.defineFlow(
     inputSchema: CreateTribeInputSchema,
     outputSchema: CreateTribeOutputSchema,
   },
-  async (input) => {
+  async (input: CreateTribeInput) => {
     try {
       const tribeRef = db.collection('tribes').doc();
       await tribeRef.set({

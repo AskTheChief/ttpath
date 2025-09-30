@@ -6,8 +6,9 @@ import { z } from 'genkit';
 import { getFirestore, query, collection, where, getDocs, orderBy } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import type { Flow, FlowContext } from 'genkit/flow';
 
-// Initialize Firebase Admin SDK if it hasn't been already.
+
 if (!getApps().length) {
   initializeApp({
     credential: credential.applicationDefault(),
@@ -31,15 +32,14 @@ export async function getTutorialFeedback(): Promise<GetTutorialFeedbackOutput> 
   return getTutorialFeedbackFlow();
 }
 
-const getTutorialFeedbackFlow = ai.defineFlow(
+const getTutorialFeedbackFlow: Flow<any, typeof GetTutorialFeedbackOutputSchema> = ai.defineFlow(
   {
     name: 'getTutorialFeedbackFlow',
     outputSchema: GetTutorialFeedbackOutputSchema,
   },
-  async (input, context) => {
+  async (_, __, context: FlowContext) => {
     const user = context?.auth;
     if (!user) {
-      // Return empty array for non-authenticated users
       return [];
     }
 

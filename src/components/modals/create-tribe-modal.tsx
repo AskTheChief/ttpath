@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,6 +31,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     }
     setIsLoading(true);
     try {
+      // The chiefId is now handled by the flow context, so we don't pass it here.
       const result = await createTribe({ name: tribeName });
       if (result.success) {
         toast({

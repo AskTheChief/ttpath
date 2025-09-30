@@ -6,6 +6,7 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import type { Flow, FlowContext } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -25,13 +26,13 @@ export async function getTutorialAnswers(input: GetTutorialAnswersInput): Promis
   return getTutorialAnswersFlow(input);
 }
 
-const getTutorialAnswersFlow = ai.defineFlow(
+const getTutorialAnswersFlow: Flow<typeof GetTutorialAnswersInputSchema, typeof GetTutorialAnswersOutputSchema> = ai.defineFlow(
   {
     name: 'getTutorialAnswersFlow',
     inputSchema: GetTutorialAnswersInputSchema,
     outputSchema: GetTutorialAnswersOutputSchema,
   },
-  async (input, context) => {
+  async (input: GetTutorialAnswersInput, _, context: FlowContext) => {
     const user = context?.auth;
     if (!user) {
       return {};
