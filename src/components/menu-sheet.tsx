@@ -34,8 +34,9 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuS
 
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isLink = !!item.href;
-    // For non-links, only show if not a guest-only item or if user is a guest.
-    // My Tribe, Games, Store, Trading are for logged-in users. Library is for everyone.
+    
+    // The library ('pamphlet') is visible to everyone.
+    // Other items are only visible to guests (logged-in users).
     if (item.id !== 'pamphlet' && !isGuest) {
       return null;
     }
