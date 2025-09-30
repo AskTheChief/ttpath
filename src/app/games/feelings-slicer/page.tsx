@@ -154,6 +154,7 @@ export default function FeelingsSlicerPage() {
 
     // Item movement & cleanup
     setItems(prevItems => {
+        let newLives = lives;
         const newItems = prevItems.map(item => {
             const newItem = {
                 ...item,
@@ -162,28 +163,29 @@ export default function FeelingsSlicerPage() {
                 vy: item.vy + GRAVITY, // Apply gravity
                 rotation: item.rotation + item.vx,
             };
+            
+            // Check for newly missed items
+            if (item.y <= GAME_HEIGHT + ITEM_SIZE && newItem.y > GAME_HEIGHT + ITEM_SIZE && !newItem.sliced && newItem.type === 'feeling') {
+                playSound('miss');
+                newLives--;
+            }
+            
             return newItem;
         });
 
-        // Check for missed items
-        const missedFeelings = newItems.filter(item => item.y > GAME_HEIGHT + ITEM_SIZE && !item.sliced && item.type === 'feeling');
-        if (missedFeelings.length > 0) {
-            playSound('miss');
-            setLives(l => {
-                const newLives = l - missedFeelings.length;
-                if (newLives <= 0) {
-                    setGameState('gameOver');
-                    return 0;
-                }
-                return newLives;
-            });
+        if (newLives !== lives) {
+            setLives(newLives);
+            if (newLives <= 0) {
+                setGameState('gameOver');
+            }
         }
         
-        return newItems.filter(item => item.y < GAME_HEIGHT + ITEM_SIZE * 2 || item.sliced && item.y < GAME_HEIGHT + ITEM_SIZE * 4);
+        // Filter out items that are way off-screen
+        return newItems.filter(item => item.y < GAME_HEIGHT + ITEM_SIZE * 2 || (item.sliced && item.y < GAME_HEIGHT + ITEM_SIZE * 4));
     });
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, createItem]);
+  }, [gameState, createItem, lives]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -263,5 +265,3 @@ export default function FeelingsSlicerPage() {
     </div>
   );
 }
-
-    
