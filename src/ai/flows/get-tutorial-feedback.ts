@@ -3,10 +3,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, query, collection, where, getDocs, orderBy } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import type { Flow, FlowContext } from 'genkit/flow';
 
 
 if (!getApps().length) {
@@ -32,24 +31,22 @@ export async function getTutorialFeedback(): Promise<GetTutorialFeedbackOutput> 
   return getTutorialFeedbackFlow();
 }
 
-const getTutorialFeedbackFlow: Flow<any, typeof GetTutorialFeedbackOutputSchema> = ai.defineFlow(
+const getTutorialFeedbackFlow = ai.defineFlow(
   {
     name: 'getTutorialFeedbackFlow',
     outputSchema: GetTutorialFeedbackOutputSchema,
   },
-  async (_, __, context: FlowContext) => {
+  async (_, __, context) => {
     const user = context?.auth;
     if (!user) {
       return [];
     }
 
     try {
-      const q = query(
-        collection(db, 'tutorial_feedback'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-      );
-      const feedbackSnapshot = await getDocs(q);
+      const q = db.collection('tutorial_feedback')
+        .where('userId', '==', user.uid)
+        .orderBy('createdAt', 'desc');
+      const feedbackSnapshot = await q.get();
       
       const feedback = feedbackSnapshot.docs.map(doc => {
         const data = doc.data();

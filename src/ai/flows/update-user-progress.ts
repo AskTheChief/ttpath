@@ -6,7 +6,6 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import type { Flow, FlowContext } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -31,13 +30,13 @@ export async function updateUserProgress(input: UpdateUserProgressInput): Promis
   return updateUserProgressFlow(input);
 }
 
-const updateUserProgressFlow: Flow<typeof UpdateUserProgressInputSchema, typeof UpdateUserProgressOutputSchema> = ai.defineFlow(
+const updateUserProgressFlow = ai.defineFlow(
   {
     name: 'updateUserProgressFlow',
     inputSchema: UpdateUserProgressInputSchema,
     outputSchema: UpdateUserProgressOutputSchema,
   },
-  async (input: UpdateUserProgressInput, _, context: FlowContext) => {
+  async (input, _, context) => {
     const user = context?.auth;
     if (!user) {
       return { success: true };

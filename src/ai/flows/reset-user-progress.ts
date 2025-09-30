@@ -6,7 +6,6 @@ import { z } from 'genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
-import type { Flow, FlowContext } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -28,13 +27,13 @@ export async function resetUserProgress(input: ResetUserProgressInput): Promise<
   return resetUserProgressFlow(input);
 }
 
-const resetUserProgressFlow: Flow<typeof ResetUserProgressInputSchema, typeof ResetUserProgressOutputSchema> = ai.defineFlow(
+const resetUserProgressFlow = ai.defineFlow(
   {
     name: 'resetUserProgressFlow',
     inputSchema: ResetUserProgressInputSchema,
     outputSchema: ResetUserProgressOutputSchema,
   },
-  async (input: ResetUserProgressInput, _, context: FlowContext) => {
+  async (input, _, context) => {
     const user = context?.auth;
     if (!user) {
       throw new Error('User not authenticated');

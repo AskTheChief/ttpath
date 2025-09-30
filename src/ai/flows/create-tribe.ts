@@ -11,9 +11,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { initializeApp, getApps, App, credential } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -66,7 +65,7 @@ const createTribeFlow = ai.defineFlow(
         name: input.name,
         chief: user.uid, // The user creating the tribe is the chief.
         members: [user.uid], // The chief is automatically a member.
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
       });
       // Return a successful response with the new tribe's ID.
       return { success: true, tribeId: tribeRef.id };
