@@ -1,4 +1,3 @@
-
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -533,10 +532,15 @@ export default function PathJourney() {
           className={cn('splash-logo-container', !showSplash && 'persistent-logo')}
           style={{ zIndex: logoZIndex }}
         >
-          <video className="animated-logo" autoPlay loop muted playsInline style={{ backgroundColor: 'transparent' }}>
-            <source src="/logo/spinning_logo.mp4" type="video/mp4" />
-            <source src="/logo/spinning_logo.mp4" type="video/x-m4v" />
-          </video>
+          <video
+            className="animated-logo"
+            src="/logo/spinning_logo.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ backgroundColor: 'transparent' }}
+          />
         </div>
 
         <div className="menu-icon-container">
