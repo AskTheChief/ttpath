@@ -161,7 +161,7 @@ export default function FeelingsSlicerPage() {
         </div>
 
         <div 
-          className="relative bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair" 
+          className="relative bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-blade" 
           style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
         >
           {gameState === 'ready' && (
