@@ -70,10 +70,7 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
   },
   async (input, _, context) => {
     const user = context?.auth;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
+    
     let retries = 3;
     let result: EvaluateTutorialAnswersOutput | null = null;
 
@@ -98,16 +95,21 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
 
     const finalResult = result!;
 
-    try {
-      await db.collection('tutorial_feedback').add({
-        userId: user.uid,
-        feedback: finalResult.feedback,
-        createdAt: new Date(),
-      });
-    } catch (error) {
-      console.error('Error saving tutorial feedback:', error);
+    // Only save feedback if the user is authenticated.
+    if (user) {
+      try {
+        await db.collection('tutorial_feedback').add({
+          userId: user.uid,
+          feedback: finalResult.feedback,
+          createdAt: new Date(),
+        });
+      } catch (error) {
+        // Log the error, but don't block the user from getting their feedback.
+        console.error('Error saving tutorial feedback:', error);
+      }
     }
 
     return finalResult;
   }
 );
+
