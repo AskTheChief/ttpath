@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Play, RefreshCw, XOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as Tone from 'tone';
 
 // Game constants
 const GAME_WIDTH = 800;
@@ -29,6 +30,28 @@ type GameItem = {
   rotation: number;
   sliced?: boolean;
 };
+
+// Sound setup
+let synths: { slice?: Tone.NoiseSynth, bomb?: Tone.MembraneSynth, miss?: Tone.NoiseSynth } = {};
+if (typeof window !== 'undefined') {
+    synths.slice = new Tone.NoiseSynth({
+        noise: { type: 'white' },
+        envelope: { attack: 0.005, decay: 0.1, sustain: 0 },
+    }).toDestination();
+
+    synths.bomb = new Tone.MembraneSynth({
+        pitchDecay: 0.05,
+        octaves: 10,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 },
+    }).toDestination();
+    
+    synths.miss = new Tone.NoiseSynth({
+        noise: { type: 'pink' },
+        envelope: { attack: 0.01, decay: 0.15, sustain: 0 },
+    }).toDestination();
+}
+
 
 export default function FeelingsSlicerPage() {
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'gameOver'>('ready');
@@ -67,6 +90,8 @@ export default function FeelingsSlicerPage() {
   }, []);
 
   const startGame = () => {
+    // Ensure Tone.js is started by user interaction
+    Tone.start();
     setScore(0);
     setLives(3);
     setItems([]);
@@ -80,12 +105,13 @@ export default function FeelingsSlicerPage() {
         if (!item || item.sliced) return currentItems;
 
         if (item.type === 'principle') {
+            synths.bomb?.triggerAttackRelease("C1", "1n");
             setGameState('gameOver');
             return currentItems.map(i => ({...i, sliced: true}));
         }
 
+        synths.slice?.triggerAttack();
         setScore(s => s + 10);
-        // Add sound effect logic here if desired
         return currentItems.map(i => i.id === id ? {...i, sliced: true} : i);
     })
   }
@@ -116,6 +142,7 @@ export default function FeelingsSlicerPage() {
         // Check for missed items
         const missedFeelings = newItems.filter(item => item.y > GAME_HEIGHT + ITEM_SIZE && !item.sliced && item.type === 'feeling');
         if (missedFeelings.length > 0) {
+            synths.miss?.triggerAttack();
             setLives(l => {
                 const newLives = l - missedFeelings.length;
                 if (newLives <= 0) {
