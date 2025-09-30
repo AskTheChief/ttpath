@@ -52,8 +52,6 @@ const createTribeFlow = ai.defineFlow(
     inputSchema: CreateTribeInputSchema,
     outputSchema: CreateTribeOutputSchema,
   },
-  // The flow function receives the input and the flow's context.
-  // The context contains authentication information.
   async (input, _, context) => {
     // Get the authenticated user from the context.
     const user = context?.auth;
