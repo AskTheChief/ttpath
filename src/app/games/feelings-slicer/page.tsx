@@ -10,12 +10,10 @@ import * as Tone from 'tone';
 import { useDrag } from '@use-gesture/react';
 
 // Game constants
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 600;
 const ITEM_SIZE = 120;
 const BOMB_CHANCE = 0.2; // 20% chance for an item to be a bomb
-const GRAVITY = 0.075; // Reduced gravity
-const MAX_PEAK_HEIGHT = 100; // The closest items get to the top of the screen
+const GRAVITY_SCALE = 0.000125; // Scaled gravity
+const MAX_PEAK_HEIGHT_SCALE = 0.16; // The closest items get to the top of the screen, as a fraction of height
 const TRAIL_LENGTH = 15;
 
 const feelings = ["Anger", "Fear", "Sadness", "Envy", "Judgement", "Resentment", "Guilt"];
@@ -60,11 +58,29 @@ export default function FeelingsSlicerPage() {
   const [items, setItems] = useState<GameItem[]>([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [trail, setTrail] = useState<{x: number, y: number}[]>([]);
+  const [gameDimensions, setGameDimensions] = useState({ width: 800, height: 600 });
+  
+  const gameAreaRef = useRef<HTMLDivElement>(null);
   const gameLoopRef = useRef<number>();
   const lastSpawnTimeRef = useRef<number>(0);
   const nextItemId = useRef(0);
   const soundCooldown = useRef(false);
-  const [trail, setTrail] = useState<{x: number, y: number}[]>([]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        setGameDimensions({ width, height });
+      }
+    });
+
+    if (gameAreaRef.current) {
+      observer.observe(gameAreaRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
 
   const playSound = (type: 'slice' | 'bomb' | 'miss') => {
@@ -90,19 +106,23 @@ export default function FeelingsSlicerPage() {
   };
 
   const createItem = useCallback(() => {
+    const { width, height } = gameDimensions;
+
     const isBomb = Math.random() < BOMB_CHANCE;
     const type = isBomb ? 'principle' : 'feeling';
     const text = isBomb
       ? principles[Math.floor(Math.random() * principles.length)]
       : feelings[Math.floor(Math.random() * feelings.length)];
 
-    const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT;
+    const x = width / 2;
+    const y = height;
 
-    // Calculate vertical velocity to ensure it reaches a certain height but not off-screen
-    const targetPeakY = MAX_PEAK_HEIGHT + Math.random() * (GAME_HEIGHT / 3);
+    // Scaled physics
+    const gravity = height * GRAVITY_SCALE;
+    const maxPeakHeight = height * MAX_PEAK_HEIGHT_SCALE;
+    const targetPeakY = maxPeakHeight + Math.random() * (height / 3);
     const deltaY = y - targetPeakY;
-    const verticalVelocity = -Math.sqrt(2 * GRAVITY * deltaY);
+    const verticalVelocity = -Math.sqrt(2 * gravity * deltaY);
 
     return {
       id: nextItemId.current++,
@@ -110,11 +130,11 @@ export default function FeelingsSlicerPage() {
       type,
       x,
       y,
-      vx: (Math.random() - 0.5) * 4, // Gentle horizontal movement
-      vy: verticalVelocity, // Calculated vertical speed
+      vx: (Math.random() - 0.5) * (width / 200), // Scale horizontal velocity
+      vy: verticalVelocity,
       rotation: Math.random() * 360,
     };
-  }, []);
+  }, [gameDimensions]);
 
   const startGame = () => {
     // Ensure Tone.js is started by user interaction
@@ -132,7 +152,6 @@ export default function FeelingsSlicerPage() {
         const item = currentItems.find(i => i.id === id);
         if (!item || item.sliced) return currentItems;
 
-        // Prevent any slicing logic if the game is already over
         if (gameState === 'gameOver') return currentItems;
 
         if (item.type === 'principle') {
@@ -153,12 +172,10 @@ export default function FeelingsSlicerPage() {
     })
   }
   
-  const bind = useDrag(({ xy: [x, y], down, movement: [mx, my], event }) => {
-    if (gameState !== 'playing') return;
+  const bind = useDrag(({ xy: [x, y], down, event }) => {
+    if (gameState !== 'playing' || !gameAreaRef.current) return;
     
-    const gameArea = (event.target as HTMLElement).closest('[data-game-area]');
-    if (!gameArea) return;
-    const rect = gameArea.getBoundingClientRect();
+    const rect = gameAreaRef.current.getBoundingClientRect();
 
     const relativeX = x - rect.left;
     const relativeY = y - rect.top;
@@ -182,6 +199,9 @@ export default function FeelingsSlicerPage() {
   const gameLoop = useCallback(() => {
     if (gameState !== 'playing') return;
 
+    const { height } = gameDimensions;
+    const gravity = height * GRAVITY_SCALE;
+
     // Item Spawning
     const now = Date.now();
     if (now - lastSpawnTimeRef.current > 1500) { // Spawn every 1500ms
@@ -194,7 +214,6 @@ export default function FeelingsSlicerPage() {
         setTrail(currentTrail => currentTrail.slice(1));
     }
 
-
     // Item movement & cleanup
     setItems(prevItems => {
         let newLives = lives;
@@ -203,12 +222,11 @@ export default function FeelingsSlicerPage() {
                 ...item,
                 x: item.x + item.vx,
                 y: item.y + item.vy,
-                vy: item.vy + GRAVITY, // Apply gravity
+                vy: item.vy + gravity, // Apply gravity
                 rotation: item.rotation + item.vx,
             };
             
-            // Check for newly missed items
-            if (item.y <= GAME_HEIGHT + ITEM_SIZE && newItem.y > GAME_HEIGHT + ITEM_SIZE && !newItem.sliced && newItem.type === 'feeling') {
+            if (item.y <= height + ITEM_SIZE && newItem.y > height + ITEM_SIZE && !newItem.sliced && newItem.type === 'feeling') {
                 newLives--;
                 if (newLives > 0) playSound('miss');
             }
@@ -223,15 +241,14 @@ export default function FeelingsSlicerPage() {
             }
         }
         
-        // Filter out items that are way off-screen
-        return newItems.filter(item => item.y < GAME_HEIGHT + ITEM_SIZE * 2 || (item.sliced && item.y < GAME_HEIGHT + ITEM_SIZE * 4));
+        return newItems.filter(item => item.y < height + ITEM_SIZE * 2 || (item.sliced && item.y < height + ITEM_SIZE * 4));
     });
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, createItem, lives, items, trail]);
+  }, [gameState, createItem, lives, items, trail, gameDimensions]);
 
   useEffect(() => {
-    if (gameState === 'playing') {
+    if (gameState === 'playing' && gameDimensions.width > 0) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
     return () => {
@@ -239,12 +256,12 @@ export default function FeelingsSlicerPage() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameState, gameLoop]);
+  }, [gameState, gameLoop, gameDimensions]);
 
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto flex flex-col">
         <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold">Feelings Slicer</h1>
             <div className="flex items-center gap-6 text-xl">
@@ -260,9 +277,8 @@ export default function FeelingsSlicerPage() {
 
         <div 
           {...bind()}
-          data-game-area
-          className="relative bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair touch-none" 
-          style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
+          ref={gameAreaRef}
+          className="relative w-full aspect-[4/3] bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair touch-none"
         >
           {gameState === 'ready' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-20">
@@ -299,7 +315,7 @@ export default function FeelingsSlicerPage() {
             </div>
           ))}
 
-            <svg className="absolute inset-0 pointer-events-none z-10" width={GAME_WIDTH} height={GAME_HEIGHT}>
+            <svg className="absolute inset-0 pointer-events-none z-10" width={gameDimensions.width} height={gameDimensions.height}>
                 {trail.length > 1 && (
                     <polyline
                         points={trail.map(p => `${p.x},${p.y}`).join(' ')}
