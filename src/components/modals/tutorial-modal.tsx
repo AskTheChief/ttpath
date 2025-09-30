@@ -39,17 +39,15 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   const [agreeMentor, setAgreeMentor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(null);
-  const [showBackButton, setShowBackButton] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [feedback, setFeedback] = useState<{ message: string } | null>(null);
   const [showReviewButton, setShowReviewButton] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
     async function fetchAnswers() {
       if (isOpen) {
         setIsFetching(true);
         setFeedback(null);
-        setShowBackButton(false);
         setShowReviewButton(false);
         try {
           const existingAnswers = await getTutorialAnswers({});
@@ -87,7 +85,6 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     
     setIsLoading(true);
     setFeedback(null);
-    setShowBackButton(false);
     setShowReviewButton(false);
 
     try {
@@ -103,22 +100,14 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
 
       const evaluation = await evaluateTutorialAnswers({ answers });
       
-      setFeedback({ passed: evaluation.passed, message: evaluation.feedback });
+      setFeedback({ message: evaluation.feedback });
+      setShowReviewButton(true);
+      
+      toast({
+        title: "Guidance Received",
+        description: "The Chief has provided some feedback for you to consider.",
+      });
 
-      if (evaluation.passed) {
-        toast({
-          title: "Tutorial Submitted!",
-          description: "The Chief approves.",
-        });
-        setShowBackButton(true);
-      } else {
-        toast({
-          title: "Review Required",
-          description: "The Chief has some feedback for you.",
-          variant: "destructive",
-        });
-        setShowReviewButton(true);
-      }
     } catch (error: any) {
       console.error("Error evaluating answers:", error);
       toast({
@@ -136,8 +125,8 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
     setAgreeMentor(false);
     setFeedback(null);
     setIsLoading(false);
-    setShowBackButton(false);
     setShowReviewButton(false);
+    setShowConfirmation(false);
     onClose();
   };
 
@@ -153,10 +142,10 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
       duration: 5000,
     });
     setShowConfirmation(false);
+    // We don't close the main modal, allowing the user to continue editing.
   };
   
   const handleReviewFeedback = () => {
-    handleClose();
     setShowConfirmation(true);
   }
 
@@ -167,7 +156,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-2xl font-bold text-slate-800">Tutorial Study Guide</DialogTitle>
             <DialogDescription>
-              Answer the questions below to complete the tutorial. Your answers save as you go. The Chief will review your responses upon submission.
+              Answer the questions below to complete the tutorial. Your answers save as you go. Submit to The Chief for guidance when you are ready.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0">
@@ -211,9 +200,9 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
           </div>
           {feedback && (
             <div className="p-4">
-              <Alert variant={feedback.passed ? "default" : "destructive"} className={feedback.passed ? "border-green-500" : ""}>
+              <Alert>
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>Feedback from The Chief</AlertTitle>
+                <AlertTitle>Guidance from The Chief</AlertTitle>
                 <AlertDescription>
                   {feedback.message}
                 </AlertDescription>
@@ -221,7 +210,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
             </div>
           )}
           <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-            {!showBackButton && !showReviewButton && (
+            {!showReviewButton && (
               <>
                 <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
                 <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
@@ -229,14 +218,9 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
                 </Button>
               </>
             )}
-            {showBackButton && (
-               <Button className="bg-primary hover:bg-primary/90" onClick={() => setShowConfirmation(true)}>
-                 Back to Path
-               </Button>
-            )}
             {showReviewButton && (
                 <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
-                    I have reviewed the Chief's Feedback
+                    I Have Reviewed the Chief's Guidance
                 </Button>
             )}
           </DialogFooter>

@@ -23,8 +23,7 @@ const EvaluateTutorialAnswersInputSchema = z.object({
 export type EvaluateTutorialAnswersInput = z.infer<typeof EvaluateTutorialAnswersInputSchema>;
 
 const EvaluateTutorialAnswersOutputSchema = z.object({
-  passed: z.boolean().describe('Whether the user passed the evaluation.'),
-  feedback: z.string().describe('Feedback for the user from The Chief.'),
+  feedback: z.string().describe('Guidance for the user from The Chief based on their answers.'),
 });
 export type EvaluateTutorialAnswersOutput = z.infer<typeof EvaluateTutorialAnswersOutputSchema>;
 
@@ -39,11 +38,11 @@ const prompt = ai.definePrompt({
   name: 'evaluateTutorialAnswersPrompt',
   input: { schema: EvaluateTutorialAnswersInputSchema },
   output: { schema: EvaluateTutorialAnswersOutputSchema },
-  prompt: `You are The Chief from the Trading Tribe, and you are reviewing a potential new member's answers to the tutorial questions. Your role is to encourage comprehension through support. You determine if the user shows a genuine willingness to learn by making a serious effort to understand the material in the Source Book.
+  prompt: `You are The Chief from the Trading Tribe, and you are reviewing a potential new member's answers to the tutorial questions. Your role is to guide them toward deeper comprehension through supportive feedback. You do not judge or grade them; you only provide guidance to help them learn. The user determines for themselves when they are ready to proceed.
 
 IMPORTANT: Structure all responses using SVOP-B sentence structure (Subject-Verb-Object, present tense only). Eliminate all "to be" verbs (is, are, was, were, being, been) and replace with action verbs. You may rephrase sentences like "John is smart" to "John scores higher than anyone else...". Suggest actions with "You might consider..." instead of direct commands.
 
-Use the provided Source Book content to evaluate their answers.
+Use the provided Source Book content to review their answers.
 
 ---
 SOURCE BOOK CONTENT:
@@ -57,14 +56,9 @@ Answer: {{this}}
 ---
 {{/each}}
 
-Review the user's answers.
+Review the user's answers and provide constructive, supportive feedback in the voice of The Chief. View blank or incomplete answers not as failures, but as opportunities for guidance. For each area, especially blanks, gently point them toward the relevant concepts in the book, encouraging them to reflect and learn. Frame all feedback as the next step in their learning journey.
 
-1.  **Determine Passage:** Decide if the user's answers, as a whole, demonstrate a serious attempt to engage with the material. View blank or incomplete answers not as automatic failures, but as opportunities to provide guidance. If the user shows effort in other areas, you might still pass them while providing feedback on the blank sections. Set the 'passed' field to true or false based on their overall effort.
-2.  **Provide Feedback:** Write constructive, supportive feedback for the user in the voice of The Chief.
-    *   If they pass, congratulate them and offer a short piece of encouragement. If some answers were blank, gently point them toward the relevant concepts in the book for those areas, framing it as the next step in their learning.
-    *   If they fail, explain gently which areas they might need to review. Point them toward concepts in the book without giving them the direct answers. Encourage them to help them learn. Treat blank answers as areas needing the most guidance.
-
-Respond with the 'passed' and 'feedback' fields in the specified format.
+Respond with only the 'feedback' field in the specified format.
 `,
 });
 
@@ -102,19 +96,16 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
         throw new Error("Failed to get a response from the AI model.");
     }
 
-    // We can be sure result is not null here, so use !
     const finalResult = result!;
 
     try {
       await db.collection('tutorial_feedback').add({
         userId: user.uid,
-        passed: finalResult.passed,
         feedback: finalResult.feedback,
         createdAt: new Date(),
       });
     } catch (error) {
       console.error('Error saving tutorial feedback:', error);
-      // Do not throw here, the main operation succeeded.
     }
 
     return finalResult;

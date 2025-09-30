@@ -19,7 +19,6 @@ const db = getFirestore();
 const TutorialFeedbackSchema = z.object({
   id: z.string(),
   feedback: z.string(),
-  passed: z.boolean(),
   createdAt: z.string(),
 });
 export type TutorialFeedback = z.infer<typeof TutorialFeedbackSchema>;
@@ -53,7 +52,6 @@ const getTutorialFeedbackFlow = ai.defineFlow(
         return {
           id: doc.id,
           feedback: data.feedback,
-          passed: data.passed,
           createdAt: data.createdAt.toDate().toISOString(),
         };
       });

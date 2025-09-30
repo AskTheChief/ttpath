@@ -26,7 +26,7 @@ export default function MyTribePage() {
   const [newTribeName, setNewTribeName] = useState('');
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
-  const [tutorialFeedback, setTutorialFeedback] = useState<TutorialFeedback[]>([]);
+  const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -84,7 +84,7 @@ export default function MyTribePage() {
       await createTribe(newTribeName, user.uid);
       toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
       setNewTribeName('');
-      fetchTribes(user.uid);
+      if (user) fetchTribes(user.uid);
     } catch (error) {
       console.error("Error creating tribe: ", error);
       toast({ title: 'Error', description: 'Failed to create tribe.', variant: 'destructive' });
@@ -96,7 +96,7 @@ export default function MyTribePage() {
     try {
       await joinTribe(tribeId, user.uid);
       toast({ title: 'Joined Tribe', description: 'You have successfully joined the tribe.' });
-      fetchTribes(user.uid);
+      if (user) fetchTribes(user.uid);
     } catch (error) {
       console.error("Error joining tribe: ", error);
       toast({ title: 'Error', description: 'Failed to join tribe.', variant: 'destructive' });
@@ -108,7 +108,7 @@ export default function MyTribePage() {
     try {
       await leaveTribe(tribeId, user.uid);
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      fetchTribes(user.uid);
+      if (user) fetchTribes(user.uid);
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -240,16 +240,16 @@ export default function MyTribePage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Feedback from The Chief</CardTitle>
-              <CardDescription>Review your past tutorial submissions and feedback.</CardDescription>
+              <CardTitle>Guidance from The Chief</CardTitle>
+              <CardDescription>Review your past tutorial submissions and guidance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {tutorialFeedback.length > 0 ? (
                 tutorialFeedback.map(fb => (
-                  <Alert key={fb.id} variant={fb.passed ? "default" : "destructive"} className={fb.passed ? "border-green-500" : ""}>
+                  <Alert key={fb.id}>
                     <Terminal className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
-                      <span>{fb.passed ? "Passed" : "Needs Review"}</span>
+                      <span>Guidance Received</span>
                       <span className="text-sm font-normal text-muted-foreground">{new Date(fb.createdAt).toLocaleString()}</span>
                     </AlertTitle>
                     <AlertDescription>
@@ -258,7 +258,7 @@ export default function MyTribePage() {
                   </Alert>
                 ))
               ) : (
-                <p>No feedback from The Chief yet.</p>
+                <p>No guidance from The Chief yet.</p>
               )}
             </CardContent>
           </Card>
