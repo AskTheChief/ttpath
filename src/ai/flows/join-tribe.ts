@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -16,6 +17,7 @@ const db = getFirestore();
 
 const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
+  applicantId: z.string(),
 });
 export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 
@@ -28,23 +30,18 @@ export async function joinTribe(input: JoinTribeInput): Promise<JoinTribeOutput>
   return joinTribeFlow(input);
 }
 
-const joinTribeFlow = ai.defineFlow(
+export const joinTribeFlow = ai.defineFlow(
   {
     name: 'joinTribeFlow',
     inputSchema: JoinTribeInputSchema,
     outputSchema: JoinTribeOutputSchema,
   },
-  async (input, context) => {
-    const user = context?.auth;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
+  async (input) => {
     try {
       const applicationRef = db.collection('tribe_applications').doc();
       await applicationRef.set({
         tribeId: input.tribeId,
-        applicantId: user.uid,
+        applicantId: input.applicantId,
         status: 'pending',
         createdAt: new Date(),
       });

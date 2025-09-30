@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -16,6 +17,7 @@ const db = getFirestore();
 
 const CreateTribeInputSchema = z.object({
   name: z.string(),
+  chiefId: z.string(),
 });
 export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
@@ -24,28 +26,25 @@ const CreateTribeOutputSchema = z.object({
 });
 export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 
-export async function createTribe(input: CreateTribeInput): Promise<CreateTribeOutput> {
+export async function createTribe(
+  input: CreateTribeInput
+): Promise<CreateTribeOutput> {
   return createTribeFlow(input);
 }
 
-const createTribeFlow = ai.defineFlow(
+export const createTribeFlow = ai.defineFlow(
   {
     name: 'createTribeFlow',
     inputSchema: CreateTribeInputSchema,
     outputSchema: CreateTribeOutputSchema,
   },
-  async (input, context) => {
-    const user = context?.auth;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
+  async (input) => {
     try {
       const tribeRef = db.collection('tribes').doc();
       await tribeRef.set({
         name: input.name,
-        chief: user.uid,
-        members: [user.uid],
+        chief: input.chiefId,
+        members: [input.chiefId],
         createdAt: new Date(),
       });
       return { success: true };
