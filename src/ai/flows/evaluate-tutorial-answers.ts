@@ -8,6 +8,7 @@ import * as path from 'path';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import { FlowContext, Flow } from 'genkit/flow';
 
 if (!getApps().length) {
   initializeApp({
@@ -68,13 +69,13 @@ Respond with the 'passed' and 'feedback' fields in the specified format.
 `,
 });
 
-const evaluateTutorialAnswersFlow = ai.defineFlow(
+const evaluateTutorialAnswersFlow: Flow<typeof EvaluateTutorialAnswersInputSchema, typeof EvaluateTutorialAnswersOutputSchema> = ai.defineFlow(
   {
     name: 'evaluateTutorialAnswersFlow',
     inputSchema: EvaluateTutorialAnswersInputSchema,
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
-  async (input, _, context) => {
+  async (input: EvaluateTutorialAnswersInput, context?: FlowContext) => {
     const user = context?.auth;
     if (!user) {
       throw new Error('User not authenticated');
