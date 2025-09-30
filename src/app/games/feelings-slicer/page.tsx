@@ -132,8 +132,14 @@ export default function FeelingsSlicerPage() {
 
         if (item.type === 'principle') {
             playSound('bomb');
-            setGameState('gameOver');
-            return currentItems.map(i => ({...i, sliced: true}));
+            setLives(l => {
+                const newLives = l - 1;
+                if (newLives <= 0) {
+                    setGameState('gameOver');
+                }
+                return newLives;
+            });
+            return currentItems.map(i => i.id === id ? {...i, sliced: true} : i);
         }
 
         playSound('slice');
@@ -265,3 +271,5 @@ export default function FeelingsSlicerPage() {
     </div>
   );
 }
+
+    
