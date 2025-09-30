@@ -12,6 +12,8 @@ const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const ITEM_SIZE = 120;
 const BOMB_CHANCE = 0.2; // 20% chance for an item to be a bomb
+const GRAVITY = 0.075; // Reduced gravity
+const MAX_PEAK_HEIGHT = 100; // The closest items get to the top of the screen
 
 const feelings = ["Anger", "Fear", "Sadness", "Envy", "Judgement", "Resentment", "Guilt"];
 const principles = ["Support", "Willingness", "Honesty", "Feedback", "Accountability", "Acknowledgment"];
@@ -44,11 +46,13 @@ export default function FeelingsSlicerPage() {
       ? principles[Math.floor(Math.random() * principles.length)]
       : feelings[Math.floor(Math.random() * feelings.length)];
 
-    const x = GAME_WIDTH / 2; // Start from the center
-    const y = GAME_HEIGHT; // Start from the bottom
+    const x = GAME_WIDTH / 2;
+    const y = GAME_HEIGHT;
 
-    const angle = Math.random() * (Math.PI / 2) + Math.PI / 4; // Launch between 45 and 135 degrees
-    const speed = Math.random() * 3 + 12; // Reduced initial speed
+    // Calculate vertical velocity to ensure it reaches a certain height but not off-screen
+    const targetPeakY = MAX_PEAK_HEIGHT + Math.random() * (GAME_HEIGHT / 3);
+    const deltaY = y - targetPeakY;
+    const verticalVelocity = -Math.sqrt(2 * GRAVITY * deltaY);
 
     return {
       id: nextItemId.current++,
@@ -57,7 +61,7 @@ export default function FeelingsSlicerPage() {
       x,
       y,
       vx: (Math.random() - 0.5) * 4, // Gentle horizontal movement
-      vy: -speed, // Apply vertical speed
+      vy: verticalVelocity, // Calculated vertical speed
       rotation: Math.random() * 360,
     };
   }, []);
@@ -103,7 +107,7 @@ export default function FeelingsSlicerPage() {
                 ...item,
                 x: item.x + item.vx,
                 y: item.y + item.vy,
-                vy: item.vy + 0.15, // Gravity
+                vy: item.vy + GRAVITY, // Apply gravity
                 rotation: item.rotation + item.vx,
             };
             return newItem;
