@@ -61,24 +61,28 @@ export default function FeelingsSlicerPage() {
   const gameLoopRef = useRef<number>();
   const lastSpawnTimeRef = useRef<number>(0);
   const nextItemId = useRef(0);
-  const lastSoundTime = useRef(0);
+  const soundCooldown = useRef(false);
 
-  const playSound = (synth: Tone.NoiseSynth | Tone.MembraneSynth | undefined, ...args: any[]) => {
-      if (!synth) return;
-      if (Tone.context.state !== 'running') {
+  const playSound = (type: 'slice' | 'bomb' | 'miss') => {
+    if (soundCooldown.current) return;
+
+    if (Tone.context.state !== 'running') {
         Tone.start();
-      }
-      let now = Tone.now();
-      if (now <= lastSoundTime.current) {
-        now = lastSoundTime.current + 0.05; // Add a small delay
-      }
-      lastSoundTime.current = now;
+    }
+    
+    const synth = synths[type];
+    if (!synth) return;
 
-      if (synth instanceof Tone.MembraneSynth) {
-          synth.triggerAttackRelease(args[0], args[1], now);
-      } else {
-          synth.triggerAttack(now);
-      }
+    if (synth instanceof Tone.MembraneSynth) {
+        synth.triggerAttackRelease("C1", "1n");
+    } else {
+        synth.triggerAttack();
+    }
+    
+    soundCooldown.current = true;
+    setTimeout(() => {
+        soundCooldown.current = false;
+    }, 50); // 50ms cooldown
   };
 
   const createItem = useCallback(() => {
@@ -127,12 +131,12 @@ export default function FeelingsSlicerPage() {
         if (!item || item.sliced) return currentItems;
 
         if (item.type === 'principle') {
-            playSound(synths.bomb, "C1", "1n");
+            playSound('bomb');
             setGameState('gameOver');
             return currentItems.map(i => ({...i, sliced: true}));
         }
 
-        playSound(synths.slice);
+        playSound('slice');
         setScore(s => s + 10);
         return currentItems.map(i => i.id === id ? {...i, sliced: true} : i);
     })
@@ -164,7 +168,7 @@ export default function FeelingsSlicerPage() {
         // Check for missed items
         const missedFeelings = newItems.filter(item => item.y > GAME_HEIGHT + ITEM_SIZE && !item.sliced && item.type === 'feeling');
         if (missedFeelings.length > 0) {
-            playSound(synths.miss);
+            playSound('miss');
             setLives(l => {
                 const newLives = l - missedFeelings.length;
                 if (newLives <= 0) {
@@ -259,3 +263,5 @@ export default function FeelingsSlicerPage() {
     </div>
   );
 }
+
+    
