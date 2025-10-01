@@ -51,10 +51,9 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.40,
     title: "Graduate",
     req: "",
-    description: "",
+    description: "As a Graduate, you are now ready to fully participate. You can apply to join an existing Tribe or take the initiative to start your own.",
     actions: [
-      { id: "join-tribe", label: "Join a Tribe", next: "member" },
-      { id: "start-tribe", label: "Start a Tribe", next: "chief" }
+      { id: "go-to-my-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe" },
     ],
     panelPos: "right"
   },
@@ -64,7 +63,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.60,
     title: "Tribe Member",
     req: "",
-    description: "",
+    description: "You are now a member of a Tribe. Participate in meetings, support your fellow members, and continue your journey of growth.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
@@ -76,7 +75,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.8,
     title: "Tribe Chief",
     req: "",
-    description: "",
+    description: "As Chief, you lead your Tribe. You are responsible for holding meetings, guiding members, and maintaining the Tribe's focus.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
@@ -88,7 +87,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 1.0,
     title: "Mentor",
     req: "",
-    description: "",
+    description: "As a Mentor, you have achieved a high level of understanding and now guide new Chiefs, helping to grow the wider Tribe community.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],

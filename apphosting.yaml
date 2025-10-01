@@ -6,4 +6,5 @@ env:
     secret: GEMINI_API_KEY
   - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     secret: GOOGLE_MAPS_API_KEY
-    availability: RUNTIME
+    availability:
+      - RUNTIME

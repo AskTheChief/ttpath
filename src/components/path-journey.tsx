@@ -11,8 +11,6 @@ import ChatbotModal from './modals/chatbot-modal';
 import TutorialModal from './modals/tutorial-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
-import CreateTribeModal from './modals/create-tribe-modal';
-import JoinTribeModal from './modals/join-tribe-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +21,7 @@ import LoginModal from './modals/login-modal';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import MenuSheet from './menu-sheet';
-import { useLoadScript, Libraries } from '@react-google-maps/api';
+import { useRouter } from 'next/navigation';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -46,8 +44,6 @@ const actionIcons: { [key: string]: React.FC<any> } = {
   'complete-tutorial': FileCheck,
 };
 
-const libraries: Libraries = ['places'];
-
 export default function PathJourney() {
   const [currentUserLevel, setCurrentUserLevel] = useState(1);
   const [requirementsState, setRequirementsState] = useState<Record<string, boolean>>({});
@@ -59,16 +55,13 @@ export default function PathJourney() {
   const [showCurtain, setShowCurtain] = useState(true);
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
+  const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
   
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
 
   const [modalState, setModalState] = useState({
     signup: false,
@@ -77,8 +70,6 @@ export default function PathJourney() {
     tutorial: false,
     feedback: false,
     link: false,
-    createTribe: false,
-    joinTribe: false,
     menu: false,
   });
 
@@ -351,7 +342,7 @@ export default function PathJourney() {
   const handleActionClick = (action: PathAction) => {
     playSound('action', 'C4', '8n');
     
-    const requiresAuth = action.id === 'complete-tutorial' || action.id === 'join-tribe' || action.id === 'start-tribe';
+    const requiresAuth = action.id === 'complete-tutorial' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -376,12 +367,8 @@ export default function PathJourney() {
       return;
     }
     
-    if (action.id === 'join-tribe') {
-        setModalState(s => ({...s, joinTribe: true}));
-        return;
-    }
-    if (action.id === 'start-tribe') {
-        setModalState(s => ({...s, createTribe: true}));
+    if (action.action === 'navigate-my-tribe') {
+        router.push('/my-tribe');
         return;
     }
     
@@ -393,7 +380,6 @@ export default function PathJourney() {
 
         const isCompleted = requirementsState[action.id];
         if (!isCompleted) {
-            // This case handles advancing after completing a multi-step action like signup
             completeRequirement(action.id);
         } else {
              const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
@@ -751,21 +737,6 @@ export default function PathJourney() {
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
-      <CreateTribeModal
-        isOpen={(modalState.createTribe || showCreateTribeModalForTest) && isLoaded}
-        onClose={() => {
-          setModalState(s => ({ ...s, createTribe: false }));
-          setShowCreateTribeModalForTest(false);
-        }}
-        onComplete={() => completeRequirement('start-tribe')}
-      />
-      <JoinTribeModal
-        isOpen={modalState.joinTribe}
-        onClose={() => setModalState(s => ({ ...s, joinTribe: false }))}
-        onComplete={() => completeRequirement('join-tribe')}
-      />
     </TooltipProvider>
   );
 }
-
-    
