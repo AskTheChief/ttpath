@@ -22,7 +22,7 @@ import { Terminal } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
-import { useLoadScript, Libraries, GoogleMap, MarkerF } from '@react-google-maps/api';
+import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import type { Tribe } from '@/lib/types';
 
@@ -33,6 +33,12 @@ const mapContainerStyle = {
   height: '200px',
   borderRadius: '0.5rem',
 };
+
+const overviewMapContainerStyle = {
+    width: '100%',
+    height: '300px',
+    borderRadius: '0.5rem',
+}
 
 const defaultCenter = {
     lat: 39.8283,
@@ -50,6 +56,8 @@ export default function MyTribePage() {
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
+  const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
+
   const { toast } = useToast();
   
   const { isLoaded, loadError } = useLoadScript({
@@ -148,6 +156,7 @@ export default function MyTribePage() {
     try {
       await joinTribe({ tribeId });
       toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+      setSelectedTribe(null); // Close info card on success
       if (user) fetchTribesAndUserData(user);
     } catch (error) {
       console.error("Error joining tribe: ", error);
@@ -221,6 +230,8 @@ export default function MyTribePage() {
     );
   }
 
+  const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
+
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex justify-between items-center mb-8">
@@ -268,6 +279,9 @@ export default function MyTribePage() {
                             mapContainerStyle={mapContainerStyle}
                             center={newTribeCoords || defaultCenter}
                             zoom={newTribeCoords ? 12 : 4}
+                            options={{
+                                disableDefaultUI: true,
+                            }}
                         >
                             {newTribeCoords && <MarkerF position={newTribeCoords} />}
                         </GoogleMap>
@@ -297,8 +311,8 @@ export default function MyTribePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {tribes.filter(t => t.id !== userTribe?.id).length > 0 ? (
-                  tribes.filter(t => t.id !== userTribe?.id).map((tribe) => (
+                {availableTribes.length > 0 ? (
+                  availableTribes.map((tribe) => (
                     <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <h3 className="font-semibold">{tribe.name}</h3>
@@ -315,6 +329,53 @@ export default function MyTribePage() {
               </div>
             </CardContent>
           </Card>
+          
+          <Card>
+             <CardHeader>
+                <CardTitle>Tribes Overview</CardTitle>
+                <CardDescription>Click a marker to learn more about a tribe.</CardDescription>
+            </CardHeader>
+            <CardContent className="relative">
+                <div style={overviewMapContainerStyle}>
+                    <GoogleMap
+                        mapContainerStyle={{ height: '100%', width: '100%' }}
+                        center={defaultCenter}
+                        zoom={4}
+                        options={{ disableDefaultUI: true }}
+                        onClick={() => setSelectedTribe(null)}
+                    >
+                        <MarkerClustererF>
+                            {(clusterer) => availableTribes.map((tribe) => (
+                                tribe.lat && tribe.lng && (
+                                    <MarkerF
+                                        key={tribe.id}
+                                        position={{ lat: tribe.lat, lng: tribe.lng }}
+                                        onClick={() => setSelectedTribe(tribe)}
+                                        clusterer={clusterer}
+                                    />
+                                )
+                            ))}
+                        </MarkerClustererF>
+                    </GoogleMap>
+                </div>
+                {selectedTribe && (
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)]">
+                        <Card className="shadow-lg">
+                            <CardHeader className="p-3">
+                                <CardTitle className="text-base">{selectedTribe.name}</CardTitle>
+                                <CardDescription className="text-xs">{selectedTribe.location}</CardDescription>
+                            </CardHeader>
+                            <CardFooter className="p-3">
+                                <Button size="sm" className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe}>
+                                    Request to Join
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
+            </CardContent>
+          </Card>
+
         </aside>
 
         <main className="lg:col-span-2 space-y-8">
@@ -376,3 +437,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
