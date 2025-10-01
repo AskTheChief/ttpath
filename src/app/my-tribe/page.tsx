@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -56,44 +55,35 @@ export default function MyTribePage() {
     libraries,
   });
 
-  const fetchTribes = useCallback(async (userId: string) => {
-    const allTribes = await getTribes({});
-    setTribes(allTribes);
-    const currentUserTribe = allTribes.find(tribe => (tribe.members || []).includes(userId));
-    setUserTribe(currentUserTribe || null);
-  }, []);
+  const fetchTribesAndUserData = useCallback(async (userId: string) => {
+    try {
+      const [allTribes, answers, feedback] = await Promise.all([
+        getTribes({}),
+        getTutorialAnswers({}),
+        getTutorialFeedback(),
+      ]);
 
-  const fetchTutorialAnswers = useCallback(async () => {
-    try {
-      const answers = await getTutorialAnswers({});
+      setTribes(allTribes);
+      const currentUserTribe = allTribes.find(tribe => (tribe.members || []).includes(userId));
+      setUserTribe(currentUserTribe || null);
       setTutorialAnswers(answers);
-    } catch (error) {
-      console.error("Error fetching tutorial answers: ", error);
-      toast({ title: 'Error', description: 'Could not load your tutorial answers.', variant: 'destructive' });
-    }
-  }, [toast]);
-  
-  const fetchTutorialFeedback = useCallback(async () => {
-    try {
-      const feedback = await getTutorialFeedback();
       setTutorialFeedback(feedback);
+
     } catch (error) {
-      console.error("Error fetching tutorial feedback: ", error);
-      toast({ title: 'Error', description: 'Could not load your tutorial feedback.', variant: 'destructive' });
+        console.error("Error fetching page data: ", error);
+        toast({ title: 'Error', description: 'Could not load your tribe and tutorial data.', variant: 'destructive' });
     }
   }, [toast]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       setIsLoading(true);
+      setUser(currentUser);
       if (currentUser) {
-        await Promise.all([
-          fetchTribes(currentUser.uid),
-          fetchTutorialAnswers(),
-          fetchTutorialFeedback(),
-        ]);
+        await fetchTribesAndUserData(currentUser.uid);
       } else {
+        // Clear all data if user logs out
         setTribes([]);
         setUserTribe(null);
         setTutorialAnswers({});
@@ -102,28 +92,35 @@ export default function MyTribePage() {
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchTribes, fetchTutorialAnswers, fetchTutorialFeedback]);
+  }, [fetchTribesAndUserData]);
 
   const handleCreateTribe = async () => {
-    if (newTribeName.trim() === '' || newTribeLocation.trim() === '' || !newTribeCoords || !user) {
+    if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords || !user) {
         toast({ title: 'Error', description: 'Please provide a valid name and select a location from the dropdown.', variant: 'destructive' });
         return;
     }
+    setIsLoading(true);
     try {
-      await createTribe({ 
+      const result = await createTribe({ 
         name: newTribeName, 
         location: newTribeLocation,
         lat: newTribeCoords.lat,
         lng: newTribeCoords.lng
       });
-      toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
-      setNewTribeName('');
-      setNewTribeLocation('');
-      setNewTribeCoords(null);
-      if (user) fetchTribes(user.uid);
+      if (result.success) {
+        toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
+        setNewTribeName('');
+        setNewTribeLocation('');
+        setNewTribeCoords(null);
+        if (user) fetchTribesAndUserData(user.uid);
+      } else {
+        throw new Error(result.message || 'Failed to create tribe.');
+      }
     } catch (error: any) {
       console.error("Error creating tribe: ", error);
       toast({ title: 'Error', description: error.message || 'Failed to create tribe.', variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -131,8 +128,8 @@ export default function MyTribePage() {
     if (!user) return;
     try {
       await joinTribe({ tribeId });
-      toast({ title: 'Joined Tribe', description: 'You have successfully joined the tribe.' });
-      if (user) fetchTribes(user.uid);
+      toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+      if (user) fetchTribesAndUserData(user.uid);
     } catch (error) {
       console.error("Error joining tribe: ", error);
       toast({ title: 'Error', description: 'Failed to join tribe.', variant: 'destructive' });
@@ -144,7 +141,7 @@ export default function MyTribePage() {
     try {
       await leaveTribe(tribeId, user.uid);
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      if (user) fetchTribes(user.uid);
+      if (user) fetchTribesAndUserData(user.uid);
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -169,9 +166,7 @@ export default function MyTribePage() {
   };
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    if (place.formatted_address) {
-      setNewTribeLocation(place.formatted_address);
-    }
+    setNewTribeLocation(place.formatted_address || '');
     if (place.geometry?.location) {
       const newCoords = {
         lat: place.geometry.location.lat(),
@@ -182,7 +177,12 @@ export default function MyTribePage() {
   };
   
   if (isLoading || !isLoaded) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="text-2xl font-semibold">Loading Your Dashboard...</div>
+        <p className="text-muted-foreground">Please wait a moment.</p>
+      </div>
+    );
   }
   
   if (loadError) {
@@ -192,7 +192,7 @@ export default function MyTribePage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="mb-4">You must be logged in to view your tribe and tutorial answers.</p>
+        <p className="text-xl mb-4">You must be logged in to view your tribe dashboard.</p>
         <Link href="/" passHref>
           <Button>Back to Path</Button>
         </Link>
@@ -201,28 +201,35 @@ export default function MyTribePage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Link href="/" passHref>
-        <Button className="absolute top-4 left-4">Back to Path</Button>
-      </Link>
-      <h1 className="text-3xl font-bold text-center my-8">My Tribe</h1>
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">My Tribe Dashboard</h1>
+        <Link href="/" passHref>
+          <Button variant="outline">Back to Path</Button>
+        </Link>
+      </header>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-8">
+        <aside className="lg:col-span-1 space-y-8">
           {userTribe ? (
             <Card>
               <CardHeader>
-                <CardTitle>Your Current Tribe: {userTribe.name}</CardTitle>
+                <CardTitle>Your Tribe</CardTitle>
+                <CardDescription>You are a member of {userTribe.name}.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p>Members: {userTribe.members.length}</p>
-                <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="destructive" className="mt-4">Leave Tribe</Button>
+                <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
+                <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
               </CardContent>
+              <CardFooter>
+                <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="destructive" className="w-full">Leave Tribe</Button>
+              </CardFooter>
             </Card>
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle>Create a New Tribe</CardTitle>
+                <CardDescription>Start your own tribe and invite others to join.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -237,7 +244,6 @@ export default function MyTribePage() {
                  <div className="space-y-2">
                     <Label htmlFor="tribe-location">Location</Label>
                     <LocationAutocomplete
-                        id="tribe-location"
                         onPlaceSelected={handlePlaceSelected}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}
@@ -252,39 +258,47 @@ export default function MyTribePage() {
                 >
                     {newTribeCoords && <MarkerF position={newTribeCoords} />}
                 </GoogleMap>
-                <Button onClick={handleCreateTribe} className="w-full">Create Tribe</Button>
               </CardContent>
+              <CardFooter>
+                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Creating...' : 'Create Tribe'}
+                </Button>
+              </CardFooter>
             </Card>
           )}
 
           <Card>
             <CardHeader>
               <CardTitle>Available Tribes</CardTitle>
+              <CardDescription>Find other tribes you can apply to join.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {tribes.map((tribe) => (
-                  <div key={tribe.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h3 className="font-semibold">{tribe.name}</h3>
-                      <p className="text-sm text-muted-foreground">Members: {(tribe.members || []).length}</p>
+              <div className="space-y-4 max-h-60 overflow-y-auto">
+                {tribes.filter(t => t.id !== userTribe?.id).length > 0 ? (
+                  tribes.filter(t => t.id !== userTribe?.id).map((tribe) => (
+                    <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h3 className="font-semibold">{tribe.name}</h3>
+                        <p className="text-sm text-muted-foreground">{tribe.location}</p>
+                      </div>
+                      <Button size="sm" onClick={() => handleJoinTribe(tribe.id)} disabled={!!userTribe}>
+                        Apply
+                      </Button>
                     </div>
-                    {!userTribe && user && (
-                      <Button onClick={() => handleJoinTribe(tribe.id)}>Join</Button>
-                    )}
-                  </div>
-                ))}
-                {tribes.length === 0 && <p>No tribes available to join right now.</p>}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No other tribes available to join right now.</p>
+                )}
               </div>
             </CardContent>
           </Card>
-        </div>
+        </aside>
 
-        <div className="lg:col-span-2 space-y-8">
+        <main className="lg:col-span-2 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>My Living Tutorial</CardTitle>
-              <CardDescription>Review and edit your answers. Your progress saves automatically.</CardDescription>
+              <CardDescription>Review and edit your answers. Your progress is saved as you type.</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
@@ -315,7 +329,7 @@ export default function MyTribePage() {
               <CardTitle>Guidance from The Chief</CardTitle>
               <CardDescription>Review your past tutorial submissions and guidance.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
               {tutorialFeedback.length > 0 ? (
                 tutorialFeedback.map(fb => (
                   <Alert key={fb.id}>
@@ -330,11 +344,11 @@ export default function MyTribePage() {
                   </Alert>
                 ))
               ) : (
-                <p>No guidance from The Chief yet.</p>
+                <p className="text-sm text-muted-foreground">You have not received any guidance from The Chief yet.</p>
               )}
             </CardContent>
           </Card>
-        </div>
+        </main>
       </div>
     </div>
   );
