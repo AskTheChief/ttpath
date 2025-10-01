@@ -356,7 +356,7 @@ export default function PathJourney() {
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
       const url = action.action === 'open-pamphlet' 
         ? 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/'
-        : 'https://docs.google.com/document/d/e/2PACX-1vSynbRUG7OY7U2579zMdkkWWJz8_GNDUydqlIM_TBzOQwZUmf6FTIwPugj8AenLORbuKVSql4uAu1cq/pub?embedded=true';
+        : 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0';
       
       setLinkModalData({ title: action.label, url: url, requirementId: action.id });
       setModalState(s => ({ ...s, link: true }));
