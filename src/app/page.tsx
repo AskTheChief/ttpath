@@ -11,7 +11,7 @@ export default function Home() {
       <Accordion type="single" collapsible className="w-full max-w-4xl mb-8">
         <AccordionItem value="item-1">
           <AccordionTrigger className="text-center justify-center text-muted-foreground">
-            This Journey Shows A Path
+            This path guides you
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground text-sm text-center">
             <p className="mb-4">
