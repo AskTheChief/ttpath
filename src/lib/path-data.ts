@@ -40,7 +40,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "",
     actions: [
-      { id: "read-full-book", label: "The Trading Tribe Book", action: "open-full-book" },
+      { id: "read-full-book", label: "Read the Trading Tribe Book", action: "open-full-book" },
       { id: "complete-tutorial", label: "Take the Tutorial", next: "graduate", requires: "tutorial", dependsOn: "read-full-book" }
     ],
     panelPos: "left"
