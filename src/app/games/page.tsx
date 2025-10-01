@@ -1,10 +1,14 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gamepad2, Puzzle } from 'lucide-react';
 import Link from 'next/link';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUserProgress } from '@/ai/flows/get-user-progress';
 
 const games = [
   {
@@ -22,6 +26,30 @@ const games = [
 ]
 
 export default function GamesPage() {
+  const [userLevel, setUserLevel] = useState(1);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const progress = await getUserProgress({});
+        setUserLevel(progress.currentUserLevel);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const getBackToPathText = () => {
+    if (userLevel >= 5) { // Chief or Mentor
+      return "Back to Path (Tribe Chief)";
+    }
+    if (userLevel >= 4) { // Member
+      return "Back to Path (Tribe Member)";
+    }
+    return "Back to Path";
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <div className="text-center mb-12">
@@ -37,6 +65,7 @@ export default function GamesPage() {
                 <game.icon className="h-10 w-10 text-primary" />
                 <div>
                   <CardTitle>{game.title}</CardTitle>
+
                   <CardDescription>{game.description}</CardDescription>
                 </div>
               </CardHeader>
@@ -49,7 +78,7 @@ export default function GamesPage() {
       </div>
        <Button asChild variant="link" className="mt-12">
         <Link href="/">
-          Back to Path
+          {getBackToPathText()}
         </Link>
       </Button>
     </div>
