@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { createTribe, getTribes, joinTribe, leaveTribe, Tribe } from '@/lib/tribes';
+import { getTribes, leaveTribe, Tribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/lib/tutorial';
 import { tutorialQuestions } from '@/lib/data';
 import { saveTutorialAnswers } from '@/ai/flows/save-tutorial-answers';
@@ -19,11 +19,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { createTribe } from '@/ai/flows/create-tribe';
+import { joinTribe } from '@/ai/flows/join-tribe';
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [newTribeName, setNewTribeName] = useState('');
+  const [newTribeLocation, setNewTribeLocation] = useState('');
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>[]>([]);
@@ -31,7 +34,7 @@ export default function MyTribePage() {
   const { toast } = useToast();
 
   const fetchTribes = useCallback(async (userId: string) => {
-    const allTribes = await getTribes();
+    const allTribes = await getTribes({});
     setTribes(allTribes);
     const currentUserTribe = allTribes.find(tribe => tribe.members.includes(userId));
     setUserTribe(currentUserTribe || null);
@@ -79,22 +82,26 @@ export default function MyTribePage() {
   }, [fetchTribes, fetchTutorialAnswers, fetchTutorialFeedback]);
 
   const handleCreateTribe = async () => {
-    if (newTribeName.trim() === '' || !user) return;
+    if (newTribeName.trim() === '' || newTribeLocation.trim() === '' || !user) {
+        toast({ title: 'Error', description: 'Please provide both a name and a location.', variant: 'destructive' });
+        return;
+    }
     try {
-      await createTribe(newTribeName, user.uid);
+      await createTribe({ name: newTribeName, location: newTribeLocation });
       toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
       setNewTribeName('');
+      setNewTribeLocation('');
       if (user) fetchTribes(user.uid);
     } catch (error) {
       console.error("Error creating tribe: ", error);
-      toast({ title: 'Error', description: 'Failed to create tribe.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to create tribe. The location may not be valid.', variant: 'destructive' });
     }
   };
 
   const handleJoinTribe = async (tribeId: string) => {
     if (!user) return;
     try {
-      await joinTribe(tribeId, user.uid);
+      await joinTribe({ tribeId });
       toast({ title: 'Joined Tribe', description: 'You have successfully joined the tribe.' });
       if (user) fetchTribes(user.uid);
     } catch (error) {
@@ -171,16 +178,26 @@ export default function MyTribePage() {
               <CardHeader>
                 <CardTitle>Create a New Tribe</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={newTribeName}
-                    onChange={(e) => setNewTribeName(e.target.value)}
-                    placeholder="Enter tribe name"
-                  />
-                  <Button onClick={handleCreateTribe}>Create Tribe</Button>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="tribe-name">Tribe Name</Label>
+                    <Input
+                        id="tribe-name"
+                        value={newTribeName}
+                        onChange={(e) => setNewTribeName(e.target.value)}
+                        placeholder="Enter tribe name"
+                    />
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="tribe-location">Location</Label>
+                    <Input
+                        id="tribe-location"
+                        value={newTribeLocation}
+                        onChange={(e) => setNewTribeLocation(e.target.value)}
+                        placeholder="e.g., New York, NY"
+                    />
+                </div>
+                <Button onClick={handleCreateTribe} className="w-full">Create Tribe</Button>
               </CardContent>
             </Card>
           )}
