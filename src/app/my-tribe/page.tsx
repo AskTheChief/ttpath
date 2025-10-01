@@ -58,9 +58,10 @@ export default function MyTribePage() {
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
+      const idToken = await currentUser.getIdToken();
       const [allTribes, answers, feedback] = await Promise.all([
         getTribes({}),
-        getTutorialAnswers(),
+        getTutorialAnswers({ idToken }),
         getTutorialFeedback(),
       ]);
 
@@ -313,23 +314,20 @@ export default function MyTribePage() {
               <CardTitle>My Living Tutorial</CardTitle>
               <CardDescription>Review and edit your answers. Your progress is saved as you type.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                {tutorialQuestions.map((q, i) => (
-                  <AccordionItem key={i} value={`item-${i}`}>
-                    <AccordionTrigger>{i + 1}. {q}</AccordionTrigger>
-                    <AccordionContent>
-                        <Textarea
-                          rows={5}
-                          value={tutorialAnswers[q] || ''}
-                          onChange={(e) => handleAnswerChange(q, e.target.value)}
-                          placeholder="Your answer..."
-                          disabled={isLoading}
-                        />
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+            <CardContent className="space-y-6">
+              {tutorialQuestions.map((q, i) => (
+                <div key={i} className="grid w-full gap-1.5">
+                  <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                  <Textarea
+                    id={`question-${i}`}
+                    rows={5}
+                    value={tutorialAnswers[q] || ''}
+                    onChange={(e) => handleAnswerChange(q, e.target.value)}
+                    placeholder="Your answer..."
+                    disabled={isLoading}
+                  />
+                </div>
+              ))}
             </CardContent>
             <CardFooter>
               <Button onClick={handleSaveAnswers} disabled={isLoading}>
@@ -366,3 +364,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
