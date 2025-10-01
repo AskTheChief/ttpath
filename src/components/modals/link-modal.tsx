@@ -45,7 +45,7 @@ export default function LinkModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Click the link below to open the document.
+            This link opens the document.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 break-all">
@@ -65,7 +65,7 @@ export default function LinkModal({
               className="bg-primary hover:bg-primary/90"
               onClick={handleComplete}
             >
-              I've Read This
+              I Read This
             </Button>
           )}
         </DialogFooter>
