@@ -103,7 +103,6 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                 <LocationAutocomplete
                   id="tribe-location"
                   value={location}
-                  onChange={setLocation}
                   onPlaceSelected={(place) => {
                     if (place.formatted_address) {
                       setLocation(place.formatted_address);
@@ -116,6 +115,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                       setCoords(newCoords);
                     }
                   }}
+                  onChange={setLocation}
                   placeholder="e.g., New York, NY"
                   required
                 />

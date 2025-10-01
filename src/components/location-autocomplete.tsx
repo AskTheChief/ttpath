@@ -9,7 +9,7 @@ type LocationAutocompleteProps = Omit<InputProps, 'onChange'> & {
   onChange: (value: string) => void;
 };
 
-export default function LocationAutocomplete({ onPlaceSelected, onChange, ...props }: LocationAutocompleteProps) {
+export default function LocationAutocomplete({ onPlaceSelected, onChange, value, ...props }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete>();
 
@@ -25,17 +25,12 @@ export default function LocationAutocomplete({ onPlaceSelected, onChange, ...pro
 
     autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address && place.geometry?.location) {
-        onChange(place.formatted_address); // Directly update the parent's state
+      if (place) {
         onPlaceSelected(place);
       }
     });
 
-  }, [onPlaceSelected, onChange]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  }
-
-  return <Input ref={inputRef} onChange={handleChange} {...props} />;
+  }, [onPlaceSelected]);
+  
+  return <Input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)} {...props} />;
 }

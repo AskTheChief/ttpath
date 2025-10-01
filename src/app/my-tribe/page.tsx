@@ -221,7 +221,6 @@ export default function MyTribePage() {
                     <LocationAutocomplete
                         id="tribe-location"
                         value={newTribeLocation}
-                        onChange={setNewTribeLocation}
                         onPlaceSelected={(place) => {
                             if (place.formatted_address) {
                                 setNewTribeLocation(place.formatted_address);
@@ -234,6 +233,7 @@ export default function MyTribePage() {
                                 setNewTribeCoords(newCoords);
                             }
                         }}
+                        onChange={setNewTribeLocation}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}
                     />
