@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { leaveTribe } from '@/lib/tribes';
-import { getTutorialAnswers } from '@/lib/tutorial';
+import { getTutorialAnswers } from '@/ai/flows/get-tutorial-answers';
 import { tutorialQuestions } from '@/lib/data';
 import { saveTutorialAnswers } from '@/ai/flows/save-tutorial-answers';
 import { Button } from '@/components/ui/button';
@@ -84,7 +84,8 @@ export default function MyTribePage() {
         await fetchTribesAndUserData(currentUser);
         setIsFetchingAnswers(true);
         try {
-            const answers = await getTutorialAnswers();
+            const idToken = await currentUser.getIdToken();
+            const answers = await getTutorialAnswers({ idToken });
             setTutorialAnswers(answers);
         } catch (error) {
             console.error("Failed to fetch answers:", error);
@@ -367,8 +368,7 @@ export default function MyTribePage() {
                   </Alert>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">You have not received any guidance from The Chief yet.</p>
-              )}
+                <p className="text-sm text-muted-foreground">You have not received any guidance from The Chief yet.</p>              )}
             </CardContent>
           </Card>
         </main>
@@ -376,5 +376,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
