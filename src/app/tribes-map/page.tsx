@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GoogleMap, useLoadScript, MarkerClustererF, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerClustererF, MarkerF, Libraries } from '@react-google-maps/api';
 import { getTribes } from '@/ai/flows/get-tribes';
 import type { GetTribesOutput } from '@/ai/flows/get-tribes';
 import Link from 'next/link';
@@ -24,9 +24,12 @@ const center = {
   lng: -98.5795,
 };
 
+const libraries: Libraries = ['places'];
+
 export default function TribesMapPage() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
   });
 
   const [tribes, setTribes] = useState<GetTribesOutput>([]);
