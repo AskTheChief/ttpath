@@ -56,17 +56,18 @@ export default function MyTribePage() {
     libraries,
   });
 
-  const fetchTribesAndUserData = useCallback(async (userId: string) => {
+  const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
+      const idToken = await currentUser.getIdToken();
       const [allTribes, answers, feedback] = await Promise.all([
         getTribes({}),
-        getTutorialAnswers({}),
+        getTutorialAnswers({ idToken }),
         getTutorialFeedback(),
       ]);
 
       const tribesWithMembers = allTribes.map(t => ({...t, members: t.members || []}));
       setTribes(tribesWithMembers as Tribe[]);
-      const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(userId));
+      const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
       setTutorialAnswers(answers);
       setTutorialFeedback(feedback);
@@ -83,7 +84,7 @@ export default function MyTribePage() {
       setIsLoading(true);
       setUser(currentUser);
       if (currentUser) {
-        await fetchTribesAndUserData(currentUser.uid);
+        await fetchTribesAndUserData(currentUser);
       } else {
         // Clear all data if user logs out
         setTribes([]);
@@ -121,7 +122,7 @@ export default function MyTribePage() {
         setNewTribeName('');
         setNewTribeLocation('');
         setNewTribeCoords(null);
-        if (user) fetchTribesAndUserData(user.uid);
+        if (user) fetchTribesAndUserData(user);
       } else {
         throw new Error('Failed to create tribe.');
       }
@@ -138,7 +139,7 @@ export default function MyTribePage() {
     try {
       await joinTribe({ tribeId });
       toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
-      if (user) fetchTribesAndUserData(user.uid);
+      if (user) fetchTribesAndUserData(user);
     } catch (error) {
       console.error("Error joining tribe: ", error);
       toast({ title: 'Error', description: 'Failed to join tribe.', variant: 'destructive' });
@@ -150,7 +151,7 @@ export default function MyTribePage() {
     try {
       await leaveTribe(tribeId, user.uid);
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      if (user) fetchTribesAndUserData(user.uid);
+      if (user) fetchTribesAndUserData(user);
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -162,8 +163,10 @@ export default function MyTribePage() {
   };
 
   const handleSaveAnswers = async () => {
+    if (!user) return;
     setIsLoading(true);
     try {
+      const idToken = await user.getIdToken();
       await saveTutorialAnswers({ answers: tutorialAnswers });
       toast({ title: 'Success', description: 'Your tutorial answers have been saved.' });
     } catch (error) {
@@ -250,7 +253,16 @@ export default function MyTribePage() {
                         placeholder="Enter tribe name"
                     />
                 </div>
-                <div className="space-y-2">
+                 <div className="space-y-2">
+                    <div className="mb-2">
+                        <GoogleMap
+                            mapContainerStyle={mapContainerStyle}
+                            center={newTribeCoords || defaultCenter}
+                            zoom={newTribeCoords ? 12 : 4}
+                        >
+                            {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                        </GoogleMap>
+                    </div>
                     <Label htmlFor="tribe-location">Location</Label>
                     <LocationAutocomplete
                         id="tribe-location"
@@ -259,15 +271,6 @@ export default function MyTribePage() {
                         disabled={!isLoaded}
                         initialValue={newTribeLocation}
                     />
-                </div>
-                <div>
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={newTribeCoords || defaultCenter}
-                        zoom={newTribeCoords ? 12 : 4}
-                    >
-                        {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                    </GoogleMap>
                 </div>
               </CardContent>
               <CardFooter>

@@ -1,8 +1,8 @@
 
 'use server';
 
-import { getTutorialAnswers as getTutorialAnswersFlow } from "@/ai/flows/get-tutorial-answers";
+import { getTutorialAnswers as getTutorialAnswersFlow, GetTutorialAnswersInput } from "@/ai/flows/get-tutorial-answers";
 
-export async function getTutorialAnswers(input: {}) {
+export async function getTutorialAnswers(input: GetTutorialAnswersInput) {
     return getTutorialAnswersFlow(input);
 }

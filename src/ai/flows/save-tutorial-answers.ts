@@ -4,7 +4,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, getAuth } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
 
 if (!getApps().length) {
@@ -14,9 +14,12 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
+
 
 const SaveTutorialAnswersInputSchema = z.object({
   answers: z.record(z.string()),
+  idToken: z.string().optional(),
 });
 export type SaveTutorialAnswersInput = z.infer<typeof SaveTutorialAnswersInputSchema>;
 
@@ -35,11 +38,21 @@ const saveTutorialAnswersFlow = ai.defineFlow(
     inputSchema: SaveTutorialAnswersInputSchema,
     outputSchema: SaveTutorialAnswersOutputSchema,
   },
-  async (input, _, context) => {
-    const user = context?.auth;
-    if (!user) {
-      return { success: true };
+  async (input) => {
+    if (!input.idToken) {
+        // Silently succeed if no user is authenticated, as there's nothing to save.
+        return { success: true };
     }
+    
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+      console.error('Error verifying ID token:', error);
+      throw new Error('User not authenticated. Invalid token.');
+    }
+    const user = { uid: decodedToken.uid };
+
 
     try {
       const docRef = db.collection('user_tutorials').doc(user.uid);
