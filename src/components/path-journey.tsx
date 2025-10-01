@@ -143,24 +143,6 @@ export default function PathJourney() {
         (synth as Tone.Synth).triggerAttackRelease(note, duration, now);
     }
   }, []);
-  
-  const completeRequirement = useCallback((reqId: string) => {
-    setRequirementsState(prev => {
-      if (prev[reqId]) return prev;
-      const newState = { ...prev, [reqId]: true };
-      setJustCompletedActionId(reqId);
-      playSound('complete');
-      
-      const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-      if (action?.next) {
-        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-        if (nextNode) {
-          animateUserIcon(nextNode);
-        }
-      }
-      return newState;
-    });
-  }, [playSound]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -221,39 +203,6 @@ export default function PathJourney() {
     }, 0);
 
   }, [mapSvgPointToCss, currentUserLevel, isAnimating]);
-
-  useEffect(() => {
-    const observer = new ResizeObserver(() => {
-        placeElementsOnPath();
-    });
-
-    if (pathContainerRef.current) {
-        observer.observe(pathContainerRef.current);
-    }
-    
-    const rafId = requestAnimationFrame(() => {
-        placeElementsOnPath();
-        setIsMounted(true);
-        setTimeout(() => {
-            setShowSplash(false);
-            setTimeout(() => {
-              setShowCurtain(false);
-              setTimeout(() => {
-                setLogoZIndex(0);
-              }, 1000);
-            }, 1000);
-        }, 1000);
-    });
-
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(rafId);
-    }
-  }, [placeElementsOnPath]);
-  
-  useEffect(() => {
-      setSelectedNodeId(null);
-  }, [currentUserLevel]);
 
   const triggerConfetti = useCallback((x: number, y: number) => {
     if (!confettiContainerRef.current) return;
@@ -344,6 +293,57 @@ export default function PathJourney() {
     };
     requestAnimationFrame(animationStep);
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
+
+  const completeRequirement = useCallback((reqId: string) => {
+    setRequirementsState(prev => {
+      if (prev[reqId]) return prev;
+      const newState = { ...prev, [reqId]: true };
+      setJustCompletedActionId(reqId);
+      playSound('complete');
+      
+      const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+      if (action?.next) {
+        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        if (nextNode) {
+          animateUserIcon(nextNode);
+        }
+      }
+      return newState;
+    });
+  }, [playSound, animateUserIcon]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+        placeElementsOnPath();
+    });
+
+    if (pathContainerRef.current) {
+        observer.observe(pathContainerRef.current);
+    }
+    
+    const rafId = requestAnimationFrame(() => {
+        placeElementsOnPath();
+        setIsMounted(true);
+        setTimeout(() => {
+            setShowSplash(false);
+            setTimeout(() => {
+              setShowCurtain(false);
+              setTimeout(() => {
+                setLogoZIndex(0);
+              }, 1000);
+            }, 1000);
+        }, 1000);
+    });
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    }
+  }, [placeElementsOnPath]);
+  
+  useEffect(() => {
+      setSelectedNodeId(null);
+  }, [currentUserLevel]);
 
   const handleActionClick = (action: PathAction) => {
     playSound('action', 'C4', '8n');
@@ -451,6 +451,11 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
+          // Hide "Start a Tribe" and "Join a Tribe" for non-guests.
+          if ((action.id === 'start-tribe' || action.id === 'join-tribe') && !isGuest) {
+            return null;
+          }
+          
           const isCompleted = requirementsState[action.id];
           const isNextStepAction = !!action.next;
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);

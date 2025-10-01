@@ -234,7 +234,7 @@ export default function MyTribePage() {
                       <h3 className="font-semibold">{tribe.name}</h3>
                       <p className="text-sm text-muted-foreground">Members: {(tribe.members || []).length}</p>
                     </div>
-                    {!userTribe && (
+                    {!userTribe && user && (
                       <Button onClick={() => handleJoinTribe(tribe.id)}>Join</Button>
                     )}
                   </div>
