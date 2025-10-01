@@ -347,6 +347,17 @@ export default function PathJourney() {
 
   const handleActionClick = (action: PathAction) => {
     playSound('action', 'C4', '8n');
+    
+    const requiresAuth = action.id === 'complete-tutorial' || action.id === 'join-tribe' || action.id === 'start-tribe';
+    if (requiresAuth && !isGuest) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to perform this action.",
+      });
+      setModalState(s => ({...s, login: true}));
+      return;
+    }
 
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
       const url = action.action === 'open-pamphlet' 
@@ -451,11 +462,6 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
-          // Hide "Start a Tribe" and "Join a Tribe" for non-guests.
-          if ((action.id === 'start-tribe' || action.id === 'join-tribe') && !isGuest) {
-            return null;
-          }
-          
           const isCompleted = requirementsState[action.id];
           const isNextStepAction = !!action.next;
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
