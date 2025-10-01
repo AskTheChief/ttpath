@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App, credential } from 'firebase-admin/app';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { CreateTribeInputSchema, CreateTribeOutputSchema, type CreateTribeInput, type CreateTribeOutput } from '@/lib/types';
 

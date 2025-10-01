@@ -4,7 +4,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, getAuth } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { credential } from 'firebase-admin';
 
 if (!getApps().length) {
