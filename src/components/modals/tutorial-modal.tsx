@@ -167,7 +167,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-2xl font-bold text-slate-800">Tutorial Study Guide</DialogTitle>
             <DialogDescription>
-              You answer the questions below to complete the tutorial. Your answers save as you go. You submit to The Chief for guidance when you are ready.
+              You answer the questions below to complete the tutorial. Your answers save as you go. You submit to The Chief for guidance when you feel ready.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0">
