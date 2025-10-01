@@ -4,7 +4,7 @@
 import { useRef, useEffect } from 'react';
 import { Input, type InputProps } from '@/components/ui/input';
 
-type LocationAutocompleteProps = Omit<InputProps, 'onChange'> & {
+type LocationAutocompleteProps = InputProps & {
   onPlaceSelected: (place: google.maps.places.PlaceResult) => void;
 };
 
@@ -26,9 +26,6 @@ export default function LocationAutocomplete({ onPlaceSelected, ...props }: Loca
       const place = autocompleteRef.current?.getPlace();
       if (place?.geometry?.location && place.formatted_address) {
         onPlaceSelected(place);
-        if(inputRef.current) {
-          inputRef.current.value = place.formatted_address;
-        }
       }
     });
 

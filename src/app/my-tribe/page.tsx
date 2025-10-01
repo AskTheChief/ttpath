@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -19,7 +18,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { createTribe } from '@/ai/flows/create-tribe';
+import { createTribeFlow } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF } from '@react-google-maps/api';
@@ -105,25 +104,25 @@ export default function MyTribePage() {
   }, [fetchTribes, fetchTutorialAnswers, fetchTutorialFeedback]);
 
   const handleCreateTribe = async () => {
-    if (newTribeName.trim() === '' || newTribeLocation.trim() === '' || !user) {
-        toast({ title: 'Error', description: 'Please provide both a name and a location.', variant: 'destructive' });
+    if (newTribeName.trim() === '' || newTribeLocation.trim() === '' || !newTribeCoords || !user) {
+        toast({ title: 'Error', description: 'Please provide a valid name and select a location from the dropdown.', variant: 'destructive' });
         return;
     }
     try {
-      await createTribe({ 
+      await createTribeFlow({ 
         name: newTribeName, 
         location: newTribeLocation,
-        lat: newTribeCoords?.lat,
-        lng: newTribeCoords?.lng
+        lat: newTribeCoords.lat,
+        lng: newTribeCoords.lng
       });
       toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
       setNewTribeName('');
       setNewTribeLocation('');
       setNewTribeCoords(null);
       if (user) fetchTribes(user.uid);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating tribe: ", error);
-      toast({ title: 'Error', description: 'Failed to create tribe. The location may not be valid.', variant: 'destructive' });
+      toast({ title: 'Error', description: error.message || 'Failed to create tribe.', variant: 'destructive' });
     }
   };
 
@@ -241,6 +240,8 @@ export default function MyTribePage() {
                         onPlaceSelected={handlePlaceSelected}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}
+                        value={newTribeLocation}
+                        onChange={(e) => setNewTribeLocation(e.target.value)}
                     />
                 </div>
                 <GoogleMap
@@ -337,5 +338,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-  

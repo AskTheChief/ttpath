@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { createTribe } from '@/ai/flows/create-tribe';
+import { createTribeFlow } from '@/ai/flows/create-tribe';
 import LocationAutocomplete from '../location-autocomplete';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
@@ -38,20 +38,21 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tribeName.trim() || !location.trim()) {
+    if (!tribeName.trim() || !location.trim() || !coords) {
         toast({
             variant: 'destructive',
             title: 'All fields are required',
+            description: 'Please select a valid location from the dropdown.',
         });
         return;
     }
     setIsLoading(true);
     try {
-      const result = await createTribe({ 
+      const result = await createTribeFlow({ 
         name: tribeName, 
         location,
-        lat: coords?.lat,
-        lng: coords?.lng,
+        lat: coords.lat,
+        lng: coords.lng,
       });
       if (result.success) {
         toast({
@@ -61,7 +62,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
         onComplete();
         handleClose();
       } else {
-        throw new Error('Failed to create tribe. The location may not be valid.');
+        throw new Error('Failed to create tribe.');
       }
     } catch (error: any) {
       toast({
@@ -119,6 +120,8 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   onPlaceSelected={handlePlaceSelected}
                   placeholder="e.g., New York, NY"
                   required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                 />
              </div>
               <div className="mt-4">
