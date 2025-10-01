@@ -49,6 +49,7 @@ export default function MyTribePage() {
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const { toast } = useToast();
   
   const { isLoaded, loadError } = useLoadScript({
@@ -58,10 +59,8 @@ export default function MyTribePage() {
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
-      const idToken = await currentUser.getIdToken();
-      const [allTribes, answers, feedback] = await Promise.all([
+      const [allTribes, feedback] = await Promise.all([
         getTribes({}),
-        getTutorialAnswers({ idToken }),
         getTutorialFeedback(),
       ]);
 
@@ -69,7 +68,6 @@ export default function MyTribePage() {
       setTribes(tribesWithMembers as Tribe[]);
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
-      setTutorialAnswers(answers);
       setTutorialFeedback(feedback);
 
     } catch (error) {
@@ -77,14 +75,23 @@ export default function MyTribePage() {
         toast({ title: 'Error', description: 'Could not load your tribe and tutorial data.', variant: 'destructive' });
     }
   }, [toast]);
-
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
       setUser(currentUser);
       if (currentUser) {
         await fetchTribesAndUserData(currentUser);
+        setIsFetchingAnswers(true);
+        try {
+            const answers = await getTutorialAnswers();
+            setTutorialAnswers(answers);
+        } catch (error) {
+            console.error("Failed to fetch answers:", error);
+            toast({ title: 'Error fetching answers', variant: 'destructive' });
+        } finally {
+            setIsFetchingAnswers(false);
+        }
       } else {
         // Clear all data if user logs out
         setTribes([]);
@@ -95,7 +102,8 @@ export default function MyTribePage() {
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchTribesAndUserData]);
+  }, [fetchTribesAndUserData, toast]);
+
 
   const handleCreateTribe = async () => {
     if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
@@ -315,19 +323,23 @@ export default function MyTribePage() {
               <CardDescription>Review and edit your answers. Your progress is saved as you type.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {tutorialQuestions.map((q, i) => (
-                <div key={i} className="grid w-full gap-1.5">
-                  <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                  <Textarea
-                    id={`question-${i}`}
-                    rows={5}
-                    value={tutorialAnswers[q] || ''}
-                    onChange={(e) => handleAnswerChange(q, e.target.value)}
-                    placeholder="Your answer..."
-                    disabled={isLoading}
-                  />
-                </div>
-              ))}
+              {isFetchingAnswers ? (
+                 <p>Loading your answers...</p>
+              ) : (
+                tutorialQuestions.map((q, i) => (
+                  <div key={i} className="grid w-full gap-1.5">
+                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                    <Textarea
+                      id={`question-${i}`}
+                      rows={5}
+                      value={tutorialAnswers[q] || ''}
+                      onChange={(e) => handleAnswerChange(q, e.target.value)}
+                      placeholder="Your answer..."
+                      disabled={isLoading}
+                    />
+                  </div>
+                ))
+              )}
             </CardContent>
             <CardFooter>
               <Button onClick={handleSaveAnswers} disabled={isLoading}>
