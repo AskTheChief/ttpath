@@ -13,6 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, credential } from 'firebase-admin/app';
+import { geocodeLocation } from './geocode-location';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -23,9 +24,10 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
-// Define the input schema for creating a tribe. Only the name is needed from the client.
+// Define the input schema for creating a tribe.
 const CreateTribeInputSchema = z.object({
   name: z.string().describe("The desired name for the new Tribe."),
+  location: z.string().describe("The city and state of the tribe (e.g., 'New York, NY')."),
 });
 export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
@@ -59,10 +61,16 @@ const createTribeFlow = ai.defineFlow(
     }
 
     try {
+      // Geocode the location to get coordinates.
+      const coords = await geocodeLocation({ address: input.location });
+
       // Create a new document in the 'tribes' collection.
       const tribeRef = db.collection('tribes').doc();
       await tribeRef.set({
         name: input.name,
+        location: input.location,
+        lat: coords.lat,
+        lng: coords.lng,
         chief: user.uid, // The user creating the tribe is the chief.
         members: [user.uid], // The chief is automatically a member.
         createdAt: Timestamp.now(),

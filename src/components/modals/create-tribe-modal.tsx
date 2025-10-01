@@ -17,31 +17,31 @@ type CreateTribeModalProps = {
 
 export default function CreateTribeModal({ isOpen, onClose, onComplete }: CreateTribeModalProps) {
   const [tribeName, setTribeName] = useState('');
+  const [location, setLocation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tribeName.trim()) {
+    if (!tribeName.trim() || !location.trim()) {
         toast({
             variant: 'destructive',
-            title: 'Tribe name is required',
+            title: 'All fields are required',
         });
         return;
     }
     setIsLoading(true);
     try {
-      // The chiefId is now handled by the flow context, so we don't pass it here.
-      const result = await createTribe({ name: tribeName });
+      const result = await createTribe({ name: tribeName, location });
       if (result.success) {
         toast({
           title: 'Tribe Created!',
-          description: 'Your tribe has been created.',
+          description: 'Your tribe has been created and will appear on the map.',
         });
         onComplete();
         onClose();
       } else {
-        throw new Error('Failed to create tribe.');
+        throw new Error('Failed to create tribe. The location may not be valid.');
       }
     } catch (error: any) {
       toast({
@@ -53,26 +53,44 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
       setIsLoading(false);
     }
   };
+  
+  const handleClose = () => {
+    setTribeName('');
+    setLocation('');
+    onClose();
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Start a Tribe</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="p-4">
-            <Label htmlFor="tribe-name">Tribe Name</Label>
-            <Input
-              id="tribe-name"
-              value={tribeName}
-              onChange={(e) => setTribeName(e.target.value)}
-              placeholder="Enter your tribe's name"
-              required
-            />
+          <div className="p-4 space-y-4">
+             <div>
+                <Label htmlFor="tribe-name">Tribe Name</Label>
+                <Input
+                  id="tribe-name"
+                  value={tribeName}
+                  onChange={(e) => setTribeName(e.target.value)}
+                  placeholder="Enter your tribe's name"
+                  required
+                />
+             </div>
+             <div>
+                <Label htmlFor="tribe-location">Location</Label>
+                <Input
+                  id="tribe-location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g., New York, NY"
+                  required
+                />
+             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -21,6 +22,9 @@ const GetTribesOutputSchema = z.array(
   z.object({
     id: z.string(),
     name: z.string(),
+    location: z.string().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
   })
 );
 export type GetTribesOutput = z.infer<typeof GetTribesOutputSchema>;
@@ -38,10 +42,16 @@ const getTribesFlow = ai.defineFlow(
   async () => {
     try {
       const tribesSnapshot = await db.collection('tribes').get();
-      const tribes = tribesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        name: doc.data().name,
-      }));
+      const tribes = tribesSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          location: data.location,
+          lat: data.lat,
+          lng: data.lng,
+        };
+      });
       return tribes;
     } catch (error) {
       console.error('Error getting tribes:', error);
