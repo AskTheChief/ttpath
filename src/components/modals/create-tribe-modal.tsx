@@ -9,11 +9,23 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { createTribe } from '@/ai/flows/create-tribe';
 import LocationAutocomplete from '../location-autocomplete';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
 type CreateTribeModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+};
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '200px',
+  borderRadius: '0.5rem',
+};
+
+const defaultCenter = {
+  lat: 39.8283,
+  lng: -98.5795,
 };
 
 export default function CreateTribeModal({ isOpen, onClose, onComplete }: CreateTribeModalProps) {
@@ -46,7 +58,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
           description: 'Your tribe has been created and will appear on the map.',
         });
         onComplete();
-        onClose();
+        handleClose();
       } else {
         throw new Error('Failed to create tribe. The location may not be valid.');
       }
@@ -97,16 +109,28 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                       setLocation(place.formatted_address);
                     }
                     if (place.geometry?.location) {
-                      setCoords({
+                      const newCoords = {
                         lat: place.geometry.location.lat(),
                         lng: place.geometry.location.lng(),
-                      });
+                      };
+                      setCoords(newCoords);
                     }
                   }}
                   placeholder="e.g., New York, NY"
                   required
                 />
              </div>
+             {coords && (
+                <div className="mt-4">
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={coords}
+                    zoom={12}
+                  >
+                    <MarkerF position={coords} />
+                  </GoogleMap>
+                </div>
+              )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>

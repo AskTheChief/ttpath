@@ -22,10 +22,17 @@ import { Terminal } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
-import { useLoadScript, Libraries } from '@react-google-maps/api';
+import { useLoadScript, Libraries, GoogleMap, MarkerF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 
 const libraries: Libraries = ['places'];
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '200px',
+  borderRadius: '0.5rem',
+  marginTop: '1rem',
+};
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -220,16 +227,26 @@ export default function MyTribePage() {
                                 setNewTribeLocation(place.formatted_address);
                             }
                             if (place.geometry?.location) {
-                                setNewTribeCoords({
+                                const newCoords = {
                                   lat: place.geometry.location.lat(),
                                   lng: place.geometry.location.lng(),
-                                });
+                                };
+                                setNewTribeCoords(newCoords);
                             }
                         }}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}
                     />
                 </div>
+                {newTribeCoords && (
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={newTribeCoords}
+                    zoom={12}
+                  >
+                    <MarkerF position={newTribeCoords} />
+                  </GoogleMap>
+                )}
                 <Button onClick={handleCreateTribe} className="w-full">Create Tribe</Button>
               </CardContent>
             </Card>
