@@ -62,6 +62,7 @@ export default function PathJourney() {
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
 
   const [modalState, setModalState] = useState({
@@ -106,20 +107,11 @@ export default function PathJourney() {
     return () => unsubscribe();
   }, []);
 
-  const isInitialLoadRef = useRef(true);
   useEffect(() => {
-    if (isLoadingProgress) {
-        return;
-    }
-    if (isInitialLoadRef.current) {
-        isInitialLoadRef.current = false;
-        return;
-    }
-
-    if (isGuest && isMounted) {
+    if (isGuest && isMounted && !isInitialLoad) {
       updateUserProgress({ currentUserLevel, requirementsState });
     }
-  }, [currentUserLevel, requirementsState, isGuest, isMounted, isLoadingProgress]);
+  }, [currentUserLevel, requirementsState, isGuest, isMounted, isInitialLoad]);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -197,9 +189,9 @@ export default function PathJourney() {
         }
       });
   
-      if (!isLoadingProgress) {
-          const currentUserNode = pathNodesData.find(n => n.level === (isAnimating ? 1 : currentUserLevel));
-          if (currentUserNode && userIconRef.current) {
+      if (!isLoadingProgress && userIconRef.current) {
+          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
+          if (currentUserNode) {
               const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
               const cssPoint = mapSvgPointToCss(point);
               userIconRef.current.style.left = `${cssPoint.x}px`;
@@ -210,7 +202,19 @@ export default function PathJourney() {
 
     setTimeout(place, 0);
 
-  }, [mapSvgPointToCss, currentUserLevel, isAnimating, isLoadingProgress]);
+  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
+  
+    useEffect(() => {
+    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
+      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
+      if (targetNode) {
+        animateUserIcon(targetNode, 1);
+        setIsInitialLoad(false);
+      }
+    } else if (!isLoadingProgress) {
+        setIsInitialLoad(false);
+    }
+  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad]);
 
   const triggerConfetti = useCallback((x: number, y: number) => {
     if (!confettiContainerRef.current) return;
@@ -312,15 +316,8 @@ export default function PathJourney() {
   
   
   useEffect(() => {
-    if (!isLoadingProgress && isMounted) {
-      placeElementsOnPath();
-      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
-      if (targetNode && currentUserLevel > 1) {
-          // Use a timeout to ensure the initial position is rendered before animating
-          setTimeout(() => animateUserIcon(targetNode, 1), 100);
-      }
-    }
-  }, [isLoadingProgress, isMounted]);
+    placeElementsOnPath();
+  }, [placeElementsOnPath]);
 
   const completeRequirement = useCallback((reqId: string) => {
     setRequirementsState(prev => {
@@ -349,25 +346,23 @@ export default function PathJourney() {
         observer.observe(pathContainerRef.current);
     }
     
-    // Initial placement when the component mounts and after loading is complete
     placeElementsOnPath();
-    if (!isLoadingProgress) {
-        setIsMounted(true);
+    
+    setIsMounted(true);
+    setTimeout(() => {
+        setShowSplash(false);
         setTimeout(() => {
-            setShowSplash(false);
-            setTimeout(() => {
-              setShowCurtain(false);
-              setTimeout(() => {
-                setLogoZIndex(0);
-              }, 1000);
-            }, 1000);
+          setShowCurtain(false);
+          setTimeout(() => {
+            setLogoZIndex(0);
+          }, 1000);
         }, 1000);
-    }
+    }, 1000);
 
     return () => {
       observer.disconnect();
     }
-  }, [placeElementsOnPath, isLoadingProgress]);
+  }, [placeElementsOnPath]);
   
   useEffect(() => {
       setSelectedNodeId(null);
