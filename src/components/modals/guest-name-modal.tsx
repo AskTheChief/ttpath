@@ -27,7 +27,7 @@ export default function GuestNameModal({ isOpen, onClose, onNameSubmit }: GuestN
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md z-40">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Welcome, Guest</DialogTitle>
         </DialogHeader>

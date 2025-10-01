@@ -49,7 +49,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md z-40">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Become a Guest</DialogTitle>
         </DialogHeader>

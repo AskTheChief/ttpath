@@ -31,7 +31,7 @@ export default function LinkModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="z-40">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>

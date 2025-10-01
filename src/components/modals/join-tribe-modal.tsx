@@ -72,7 +72,7 @@ export default function JoinTribeModal({ isOpen, onClose, onComplete }: JoinTrib
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="z-40">
         <DialogHeader>
           <DialogTitle>Join a Tribe</DialogTitle>
         </DialogHeader>

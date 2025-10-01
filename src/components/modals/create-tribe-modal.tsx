@@ -97,7 +97,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent>
+      <DialogContent className="z-40">
         <DialogHeader>
           <DialogTitle>Start a Tribe</DialogTitle>
         </DialogHeader>
@@ -121,9 +121,11 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   placeholder="e.g., New York, NY"
                   required
                   value={location}
-                  onChange={(e) => {
+                   onChange={(e) => {
                     setLocation(e.target.value);
-                    setCoords(null); // Clear coords if user types manually
+                    if (e.target.value === '') {
+                        setCoords(null);
+                    }
                   }}
                 />
              </div>
