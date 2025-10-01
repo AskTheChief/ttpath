@@ -112,10 +112,10 @@ export default function PathJourney() {
   }, []);
 
   useEffect(() => {
-    if (isGuest) {
+    if (isGuest && isMounted) {
       updateUserProgress({ currentUserLevel, requirementsState });
     }
-  }, [currentUserLevel, requirementsState, isGuest]);
+  }, [currentUserLevel, requirementsState, isGuest, isMounted]);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
