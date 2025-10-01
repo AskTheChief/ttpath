@@ -65,7 +65,7 @@ export default function LinkModal({
               className="bg-primary hover:bg-primary/90"
               onClick={handleComplete}
             >
-              I Read This
+              I Understand
             </Button>
           )}
         </DialogFooter>
