@@ -4,13 +4,11 @@
 import { useRef, useEffect } from 'react';
 import { Input, type InputProps } from '@/components/ui/input';
 
-type LocationAutocompleteProps = Omit<InputProps, 'onChange' | 'value'> & {
+type LocationAutocompleteProps = Omit<InputProps, 'onChange'> & {
   onPlaceSelected: (place: google.maps.places.PlaceResult) => void;
-  onChange: (value: string) => void;
-  value: string;
 };
 
-export default function LocationAutocomplete({ onPlaceSelected, onChange, value, ...props }: LocationAutocompleteProps) {
+export default function LocationAutocomplete({ onPlaceSelected, ...props }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete>();
 
@@ -26,12 +24,15 @@ export default function LocationAutocomplete({ onPlaceSelected, onChange, value,
 
     autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place) {
+      if (place?.geometry?.location && place.formatted_address) {
         onPlaceSelected(place);
+        if(inputRef.current) {
+          inputRef.current.value = place.formatted_address;
+        }
       }
     });
 
   }, [onPlaceSelected]);
   
-  return <Input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)} {...props} />;
+  return <Input ref={inputRef} {...props} />;
 }

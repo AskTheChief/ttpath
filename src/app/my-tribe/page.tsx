@@ -34,6 +34,11 @@ const mapContainerStyle = {
   marginTop: '1rem',
 };
 
+const defaultCenter = {
+    lat: 39.8283,
+    lng: -98.5795,
+};
+
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
   const [tribes, setTribes] = useState<Tribe[]>([]);
@@ -233,22 +238,18 @@ export default function MyTribePage() {
                     <Label htmlFor="tribe-location">Location</Label>
                     <LocationAutocomplete
                         id="tribe-location"
-                        value={newTribeLocation}
                         onPlaceSelected={handlePlaceSelected}
-                        onChange={setNewTribeLocation}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}
                     />
                 </div>
-                {newTribeCoords && (
-                  <GoogleMap
+                <GoogleMap
                     mapContainerStyle={mapContainerStyle}
-                    center={newTribeCoords}
-                    zoom={12}
-                  >
-                    <MarkerF position={newTribeCoords} />
-                  </GoogleMap>
-                )}
+                    center={newTribeCoords || defaultCenter}
+                    zoom={newTribeCoords ? 12 : 4}
+                >
+                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                </GoogleMap>
                 <Button onClick={handleCreateTribe} className="w-full">Create Tribe</Button>
               </CardContent>
             </Card>
