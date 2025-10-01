@@ -84,7 +84,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                 <LocationAutocomplete
                   id="tribe-location"
                   value={location}
-                  onValueChange={setLocation}
+                  onChange={setLocation}
                   onPlaceSelected={(place) => {
                     if (place.formatted_address) {
                       setLocation(place.formatted_address);

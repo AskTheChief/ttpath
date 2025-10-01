@@ -207,7 +207,7 @@ export default function MyTribePage() {
                     <LocationAutocomplete
                         id="tribe-location"
                         value={newTribeLocation}
-                        onValueChange={setNewTribeLocation}
+                        onChange={setNewTribeLocation}
                         onPlaceSelected={(place) => {
                             if (place.formatted_address) {
                                 setNewTribeLocation(place.formatted_address);
