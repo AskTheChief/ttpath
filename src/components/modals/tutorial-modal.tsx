@@ -105,8 +105,8 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       }
       
       toast({
-        title: "Answers Saved",
-        description: "The Chief Reviews Your Answers",
+        title: "The Chief Reviews Your Answers",
+        description: "The Chief provides some feedback for you to consider.",
       });
 
       const evaluation = await evaluateTutorialAnswers({ answers });
@@ -115,7 +115,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       setShowReviewButton(true);
       
       toast({
-        title: "Guidance Received",
+        title: "You Receive Guidance",
         description: "The Chief provides some feedback for you to consider.",
       });
 
@@ -231,7 +231,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
             )}
             {showReviewButton && (
                 <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
-                    I Have Reviewed the Chief's Guidance
+                    These answers represent my knowledge
                 </Button>
             )}
           </DialogFooter>
@@ -240,7 +240,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you ready to graduate?</AlertDialogTitle>
+            <AlertDialogTitle>These answers represent my knowledge</AlertDialogTitle>
             <AlertDialogDescription>
               Do you believe you have sufficient understanding of the source book to be able to join an existing tribe or start a tribe of your own successfully?
             </AlertDialogDescription>
