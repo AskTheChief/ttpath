@@ -372,7 +372,7 @@ export default function MyTribePage() {
                         onClick={() => setSelectedTribe(null)}
                     >
                         <MarkerClustererF>
-                            {(clusterer) => availableTribes.map((tribe) => (
+                            {(clusterer) => tribes.map((tribe) => (
                                 tribe.lat && tribe.lng && (
                                     <MarkerF
                                         key={tribe.id}
@@ -393,8 +393,8 @@ export default function MyTribePage() {
                                 <CardDescription className="text-xs">{selectedTribe.location}</CardDescription>
                             </CardHeader>
                             <CardFooter className="p-3">
-                                <Button size="sm" className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe}>
-                                    Request to Join
+                                <Button size="sm" className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || selectedTribe.id === userTribe?.id}>
+                                    {selectedTribe.id === userTribe?.id ? 'Your Tribe' : 'Request to Join'}
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -464,3 +464,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
