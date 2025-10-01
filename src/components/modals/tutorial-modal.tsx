@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
 import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
-import { getTutorialAnswers } from "@/lib/tutorial";
+import { getTutorialAnswers } from "@/ai/flows/get-tutorial-answers";
 import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -25,14 +25,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { User } from "firebase/auth";
 
 type TutorialModalProps = {
   isOpen: boolean;
+  user: User | null;
   onClose: () => void;
   onComplete: (reqId: string) => void;
 };
 
-export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialModalProps) {
+export default function TutorialModal({ isOpen, user, onClose, onComplete }: TutorialModalProps) {
   const { toast } = useToast();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [agreeMeetings, setAgreeMeetings] = useState(false);
@@ -45,12 +47,13 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
 
   useEffect(() => {
     async function fetchAnswers() {
-      if (isOpen) {
+      if (isOpen && user) {
         setIsFetching(true);
         setFeedback(null);
         setShowReviewButton(false);
         try {
-          const existingAnswers = await getTutorialAnswers({});
+          const idToken = await user.getIdToken();
+          const existingAnswers = await getTutorialAnswers({ idToken });
           setAnswers(existingAnswers);
         } catch (error) {
           console.error("Failed to fetch previous answers", error);
@@ -62,10 +65,13 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
         } finally {
           setIsFetching(false);
         }
+      } else if (isOpen && !user) {
+        // If the modal is open but there's no user, clear answers.
+        setAnswers({});
       }
     }
     fetchAnswers();
-  }, [isOpen, toast]);
+  }, [isOpen, user, toast]);
 
   const allAgreed = agreeMeetings && agreeMentor;
 
@@ -82,13 +88,18 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
       });
       return;
     }
+    if (!user) {
+        toast({ title: 'Error', description: 'You must be logged in.', variant: 'destructive'});
+        return;
+    }
     
     setIsLoading(true);
     setFeedback(null);
     setShowReviewButton(false);
 
     try {
-      const saveResult = await saveTutorialAnswers({ answers });
+      const idToken = await user.getIdToken();
+      const saveResult = await saveTutorialAnswers({ answers, idToken });
       if (!saveResult.success) {
         throw new Error("Failed to save your answers. Please try again.");
       }

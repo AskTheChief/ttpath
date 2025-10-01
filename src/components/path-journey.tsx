@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -730,6 +731,7 @@ export default function PathJourney() {
       />
       <TutorialModal
         isOpen={modalState.tutorial}
+        user={currentUser}
         onClose={() => setModalState(s => ({ ...s, tutorial: false }))}
         onComplete={() => completeRequirement('complete-tutorial')}
       />
