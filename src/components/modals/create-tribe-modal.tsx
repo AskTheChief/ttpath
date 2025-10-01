@@ -23,6 +23,7 @@ const mapContainerStyle = {
   width: '100%',
   height: '200px',
   borderRadius: '0.5rem',
+  marginTop: '1rem',
 };
 
 const defaultCenter = {
@@ -131,15 +132,6 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                 />
              </div>
              <div className="space-y-2">
-                <div className="mb-2">
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={newTribeCoords || defaultCenter}
-                        zoom={newTribeCoords ? 12 : 4}
-                    >
-                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                    </GoogleMap>
-                </div>
                 <Label htmlFor="tribe-location">Location</Label>
                 <LocationAutocomplete
                     id="tribe-location"
@@ -148,6 +140,13 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                     required
                     initialValue={newTribeLocation}
                 />
+                <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={newTribeCoords || defaultCenter}
+                    zoom={newTribeCoords ? 12 : 4}
+                >
+                {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                </GoogleMap>
              </div>
           </div>
           <DialogFooter>
