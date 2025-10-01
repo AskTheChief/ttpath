@@ -32,6 +32,7 @@ export default function MyTribePage() {
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [newTribeName, setNewTribeName] = useState('');
   const [newTribeLocation, setNewTribeLocation] = useState('');
+  const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>[]>([]);
@@ -97,10 +98,16 @@ export default function MyTribePage() {
         return;
     }
     try {
-      await createTribe({ name: newTribeName, location: newTribeLocation });
+      await createTribe({ 
+        name: newTribeName, 
+        location: newTribeLocation,
+        lat: newTribeCoords?.lat,
+        lng: newTribeCoords?.lng
+      });
       toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
       setNewTribeName('');
       setNewTribeLocation('');
+      setNewTribeCoords(null);
       if (user) fetchTribes(user.uid);
     } catch (error) {
       console.error("Error creating tribe: ", error);
@@ -211,6 +218,12 @@ export default function MyTribePage() {
                         onPlaceSelected={(place) => {
                             if (place.formatted_address) {
                                 setNewTribeLocation(place.formatted_address);
+                            }
+                            if (place.geometry?.location) {
+                                setNewTribeCoords({
+                                  lat: place.geometry.location.lat(),
+                                  lng: place.geometry.location.lng(),
+                                });
                             }
                         }}
                         placeholder="e.g., New York, NY"

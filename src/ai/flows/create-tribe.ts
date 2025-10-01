@@ -28,6 +28,8 @@ const db = getFirestore();
 const CreateTribeInputSchema = z.object({
   name: z.string().describe("The desired name for the new Tribe."),
   location: z.string().describe("The city and state of the tribe (e.g., 'New York, NY')."),
+  lat: z.number().optional().describe("The latitude of the tribe location."),
+  lng: z.number().optional().describe("The longitude of the tribe location."),
 });
 export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
@@ -61,16 +63,27 @@ const createTribeFlow = ai.defineFlow(
     }
 
     try {
-      // Geocode the location to get coordinates.
-      const coords = await geocodeLocation({ address: input.location });
+      let lat = input.lat;
+      let lng = input.lng;
+
+      // If lat/lng are not provided, geocode the location string.
+      if (lat === undefined || lng === undefined) {
+        const coords = await geocodeLocation({ address: input.location });
+        lat = coords.lat;
+        lng = coords.lng;
+      }
+      
+      if (lat === undefined || lng === undefined) {
+        throw new Error('Could not determine coordinates for the provided location.');
+      }
 
       // Create a new document in the 'tribes' collection.
       const tribeRef = db.collection('tribes').doc();
       await tribeRef.set({
         name: input.name,
         location: input.location,
-        lat: coords.lat,
-        lng: coords.lng,
+        lat: lat,
+        lng: lng,
         chief: user.uid, // The user creating the tribe is the chief.
         members: [user.uid], // The chief is automatically a member.
         createdAt: Timestamp.now(),

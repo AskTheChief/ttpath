@@ -19,6 +19,7 @@ type CreateTribeModalProps = {
 export default function CreateTribeModal({ isOpen, onClose, onComplete }: CreateTribeModalProps) {
   const [tribeName, setTribeName] = useState('');
   const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{lat: number; lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -33,7 +34,12 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     }
     setIsLoading(true);
     try {
-      const result = await createTribe({ name: tribeName, location });
+      const result = await createTribe({ 
+        name: tribeName, 
+        location,
+        lat: coords?.lat,
+        lng: coords?.lng,
+      });
       if (result.success) {
         toast({
           title: 'Tribe Created!',
@@ -58,6 +64,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
   const handleClose = () => {
     setTribeName('');
     setLocation('');
+    setCoords(null);
     onClose();
   }
 
@@ -88,6 +95,12 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   onPlaceSelected={(place) => {
                     if (place.formatted_address) {
                       setLocation(place.formatted_address);
+                    }
+                    if (place.geometry?.location) {
+                      setCoords({
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                      });
                     }
                   }}
                   placeholder="e.g., New York, NY"
