@@ -61,6 +61,7 @@ export default function PathJourney() {
   const { toast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   
   const { isLoaded, loadError } = useLoadScript({
@@ -107,15 +108,16 @@ export default function PathJourney() {
         setCurrentUserLevel(1);
         setRequirementsState({});
       }
+      setIsLoadingProgress(false);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (isGuest && isMounted) {
+    if (isGuest && isMounted && !isLoadingProgress) {
       updateUserProgress({ currentUserLevel, requirementsState });
     }
-  }, [currentUserLevel, requirementsState, isGuest, isMounted]);
+  }, [currentUserLevel, requirementsState, isGuest, isMounted, isLoadingProgress]);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -177,7 +179,7 @@ export default function PathJourney() {
 
   const placeElementsOnPath = useCallback(() => {
     const container = pathContainerRef.current;
-    if (!pathRef.current || !container) return;
+    if (!pathRef.current || !container || isLoadingProgress) return;
     
     setTimeout(() => {
       if (!pathRef.current) return;
@@ -202,7 +204,7 @@ export default function PathJourney() {
       }
     }, 0);
 
-  }, [mapSvgPointToCss, currentUserLevel, isAnimating]);
+  }, [mapSvgPointToCss, currentUserLevel, isAnimating, isLoadingProgress]);
 
   const triggerConfetti = useCallback((x: number, y: number) => {
     if (!confettiContainerRef.current) return;
@@ -651,53 +653,58 @@ export default function PathJourney() {
                 </CardContent>
             </Card>
         )}
+        
+        {!isLoadingProgress && (
+          <>
+            <div id="user-icon" ref={userIconRef}>
+              <div id="you-are-here">
+                {currentUserLevel === 1 ? 'Start Here' : 'You Are Here'}
+              </div>
+              <User className="w-5 h-5" />
+            </div>
 
-        <div id="user-icon" ref={userIconRef}>
-          <div id="you-are-here">
-            {currentUserLevel === 1 ? 'Start Here' : 'You Are Here'}
-          </div>
-          <User className="w-5 h-5" />
-        </div>
+            {pathNodesData.map(node => {
+              const Icon = nodeIcons[node.id.split('-')[1]] || Users;
+              const isLocked = node.level > currentUserLevel;
+              const isNextStep = node.level === currentUserLevel + 1;
+              const isActive = node.level === currentUserLevel;
+              const isSelected = selectedNodeId === node.id;
 
-        {pathNodesData.map(node => {
-          const Icon = nodeIcons[node.id.split('-')[1]] || Users;
-          const isLocked = node.level > currentUserLevel;
-          const isNextStep = node.level === currentUserLevel + 1;
-          const isActive = node.level === currentUserLevel;
-          const isSelected = selectedNodeId === node.id;
+              return (
+                <Tooltip key={node.id} delayDuration={100} open={isSelected ? false : undefined}>
+                  <TooltipTrigger asChild>
+                    <div
+                      ref={(el) => {
+                        nodeRefs.current[node.id] = el;
+                      }}
+                      className={cn('path-node', {
+                        'active': isActive,
+                        'locked': isLocked,
+                        'next-step': isNextStep,
+                      })}
+                      onClick={() => handleNodeClick(node)}
+                    >
+                      <Icon className={cn("h-8 w-8", (node.level > 4) ? "text-accent" : "text-muted-foreground")} />
+                      <span className="node-label">{node.title}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-card text-card-foreground p-0 border-border w-80 shadow-2xl" sideOffset={15}>
+                      <CardHeader className="relative">
+                          <CardTitle>{node.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
+                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
+                          <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
+                          {renderAbilities(node)}
+                      </CardContent>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </>
+        )}
 
-          return (
-            <Tooltip key={node.id} delayDuration={100} open={isSelected ? false : undefined}>
-              <TooltipTrigger asChild>
-                <div
-                  ref={(el) => {
-                    nodeRefs.current[node.id] = el;
-                  }}
-                  className={cn('path-node', {
-                    'active': isActive,
-                    'locked': isLocked,
-                    'next-step': isNextStep,
-                  })}
-                  onClick={() => handleNodeClick(node)}
-                >
-                  <Icon className={cn("h-8 w-8", (node.level > 4) ? "text-accent" : "text-muted-foreground")} />
-                  <span className="node-label">{node.title}</span>
-                </div>
-              </TooltipTrigger>
-               <TooltipContent side="top" className="bg-card text-card-foreground p-0 border-border w-80 shadow-2xl" sideOffset={15}>
-                  <CardHeader className="relative">
-                      <CardTitle>{node.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
-                      {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
-                      <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
-                      {renderAbilities(node)}
-                  </CardContent>
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
       </div>
       <MenuSheet 
         isOpen={modalState.menu}
@@ -750,3 +757,5 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
+
+    
