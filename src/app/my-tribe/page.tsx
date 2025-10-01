@@ -270,7 +270,7 @@ export default function MyTribePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Tribe</CardTitle>
-                <CardDescription>You are a member of {userTribe.name}.</CardDescription>
+                <CardDescription>You attend the {userTribe.name} tribe.</CardDescription>
               </CardHeader>
               <CardContent>
                 <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
