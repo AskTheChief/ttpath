@@ -152,3 +152,5 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     </Dialog>
   );
 }
+
+    
