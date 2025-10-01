@@ -5,3 +5,6 @@ env:
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
     version: latest
+  - variable: GOOGLE_MAPS_API_KEY
+    secret: GOOGLE_MAPS_API_KEY
+    version: latest
