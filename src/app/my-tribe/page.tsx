@@ -389,10 +389,10 @@ export default function MyTribePage() {
             </Card>
           )}
 
-          {userTribe && !isChief && (
+          {userTribe && (
             <Card>
                 <CardHeader>
-                    <CardTitle>Tribe Meetings</CardTitle>
+                    <CardTitle>Upcoming Meetings</CardTitle>
                 </CardHeader>
                 <CardContent>
                      {upcomingMeetings.length > 0 ? (
@@ -583,3 +583,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
