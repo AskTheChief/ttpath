@@ -584,13 +584,15 @@ export default function PathJourney() {
           </button>
           <span className="node-label">Send Feedback</span>
         </div>
-
-        <div className="chatbot-icon-container">
-            <button className="action-icon" onClick={() => openModal('chatbot')}>
-                <MessageSquare className="h-8 w-8 text-muted-foreground" />
-            </button>
-            <span className="node-label">The Chief</span>
-        </div>
+        
+        {isGuest && (
+          <div className="chatbot-icon-container">
+              <button className="action-icon" onClick={() => openModal('chatbot')}>
+                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
+              </button>
+              <span className="node-label">The Chief</span>
+          </div>
+        )}
         
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
