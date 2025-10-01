@@ -108,10 +108,11 @@ export default function PathJourney() {
 
   const isInitialLoadRef = useRef(true);
   useEffect(() => {
-    if (isLoadingProgress || isInitialLoadRef.current) {
-        if (!isLoadingProgress) {
-            isInitialLoadRef.current = false;
-        }
+    if (isLoadingProgress) {
+        return;
+    }
+    if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
         return;
     }
 
@@ -180,9 +181,9 @@ export default function PathJourney() {
 
   const placeElementsOnPath = useCallback(() => {
     const container = pathContainerRef.current;
-    if (!pathRef.current || !container || isLoadingProgress) return;
+    if (!pathRef.current || !container) return;
     
-    setTimeout(() => {
+    const place = () => {
       if (!pathRef.current) return;
       const totalLength = pathRef.current.getTotalLength();
       
@@ -196,14 +197,19 @@ export default function PathJourney() {
         }
       });
   
-      const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
-      if (currentUserNode && userIconRef.current && !isAnimating) {
-          const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
-          const cssPoint = mapSvgPointToCss(point);
-          userIconRef.current.style.left = `${cssPoint.x}px`;
-          userIconRef.current.style.top = `${cssPoint.y}px`;
+      if (!isLoadingProgress) {
+          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
+          if (currentUserNode && userIconRef.current && !isAnimating) {
+              const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
+              const cssPoint = mapSvgPointToCss(point);
+              userIconRef.current.style.left = `${cssPoint.x}px`;
+              userIconRef.current.style.top = `${cssPoint.y}px`;
+          }
       }
-    }, 0);
+    };
+
+    // Use a small timeout to ensure the SVG path has been rendered and has dimensions.
+    setTimeout(place, 0);
 
   }, [mapSvgPointToCss, currentUserLevel, isAnimating, isLoadingProgress]);
 
@@ -324,8 +330,9 @@ export default function PathJourney() {
         observer.observe(pathContainerRef.current);
     }
     
-    const rafId = requestAnimationFrame(() => {
-        placeElementsOnPath();
+    // Initial placement when the component mounts and after loading is complete
+    placeElementsOnPath();
+    if (!isLoadingProgress) {
         setIsMounted(true);
         setTimeout(() => {
             setShowSplash(false);
@@ -336,13 +343,12 @@ export default function PathJourney() {
               }, 1000);
             }, 1000);
         }, 1000);
-    });
+    }
 
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(rafId);
     }
-  }, [placeElementsOnPath]);
+  }, [placeElementsOnPath, isLoadingProgress]);
   
   useEffect(() => {
       setSelectedNodeId(null);
