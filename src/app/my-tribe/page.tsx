@@ -175,14 +175,14 @@ export default function MyTribePage() {
   };
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    setNewTribeLocation(place.formatted_address || '');
-    if (place.geometry?.location) {
-      const newCoords = {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      };
-      setNewTribeCoords(newCoords);
-    }
+    const location = place.formatted_address || '';
+    const coords = place.geometry?.location ? {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+    } : null;
+    
+    setNewTribeLocation(location);
+    setNewTribeCoords(coords);
   };
   
   if (isLoading || !isLoaded) {
@@ -250,6 +250,16 @@ export default function MyTribePage() {
                         placeholder="Enter tribe name"
                     />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="tribe-location">Location</Label>
+                    <LocationAutocomplete
+                        id="tribe-location"
+                        onPlaceSelected={handlePlaceSelected}
+                        placeholder="e.g., New York, NY"
+                        disabled={!isLoaded}
+                        initialValue={newTribeLocation}
+                    />
+                </div>
                 <div>
                     <GoogleMap
                         mapContainerStyle={mapContainerStyle}
@@ -258,16 +268,6 @@ export default function MyTribePage() {
                     >
                         {newTribeCoords && <MarkerF position={newTribeCoords} />}
                     </GoogleMap>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="tribe-location">Location</Label>
-                    <LocationAutocomplete
-                        onPlaceSelected={handlePlaceSelected}
-                        placeholder="e.g., New York, NY"
-                        disabled={!isLoaded}
-                        value={newTribeLocation}
-                        onChange={(e) => setNewTribeLocation(e.target.value)}
-                    />
                 </div>
               </CardContent>
               <CardFooter>

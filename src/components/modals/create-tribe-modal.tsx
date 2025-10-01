@@ -82,16 +82,14 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
   }
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    if (place.formatted_address) {
-      setLocation(place.formatted_address);
-    }
-    if (place.geometry?.location) {
-      const newCoords = {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      };
-      setCoords(newCoords);
-    }
+    const newLocation = place.formatted_address || '';
+    const newCoords = place.geometry?.location ? {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+    } : null;
+
+    setLocation(newLocation);
+    setCoords(newCoords);
   };
 
   return (
@@ -102,7 +100,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="p-4 space-y-4">
-             <div>
+             <div className="space-y-2">
                 <Label htmlFor="tribe-name">Tribe Name</Label>
                 <Input
                   id="tribe-name"
@@ -112,7 +110,17 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   required
                 />
              </div>
-              <div>
+             <div className="space-y-2">
+                <Label htmlFor="tribe-location">Location</Label>
+                <LocationAutocomplete
+                  id="tribe-location"
+                  onPlaceSelected={handlePlaceSelected}
+                  placeholder="e.g., New York, NY"
+                  required
+                  initialValue={location}
+                />
+             </div>
+             <div>
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
                   center={coords || defaultCenter}
@@ -121,22 +129,6 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   {coords && <MarkerF position={coords} />}
                 </GoogleMap>
               </div>
-             <div>
-                <Label htmlFor="tribe-location">Location</Label>
-                <LocationAutocomplete
-                  id="tribe-location"
-                  onPlaceSelected={handlePlaceSelected}
-                  placeholder="e.g., New York, NY"
-                  required
-                  value={location}
-                   onChange={(e) => {
-                    setLocation(e.target.value);
-                    if (e.target.value === '') {
-                        setCoords(null);
-                    }
-                  }}
-                />
-             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
