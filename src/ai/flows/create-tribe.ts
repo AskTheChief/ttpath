@@ -39,9 +39,6 @@ export const CreateTribeOutputSchema = z.object({
 });
 export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 
-export async function createTribe(input: CreateTribeInput): Promise<CreateTribeOutput> {
-    return createTribeFlow(input);
-}
 
 const createTribeFlow = ai.defineFlow(
   {
@@ -83,3 +80,8 @@ const createTribeFlow = ai.defineFlow(
     }
   }
 );
+
+
+export async function createTribe(input: CreateTribeInput): Promise<CreateTribeOutput> {
+    return createTribeFlow(input);
+}
