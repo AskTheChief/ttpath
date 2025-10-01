@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -67,7 +68,7 @@ export default function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg h-[70vh] flex flex-col p-0 z-40">
+      <DialogContent className="max-w-lg h-[70vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="text-2xl font-bold text-foreground">
             Chat with the Chief

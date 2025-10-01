@@ -152,7 +152,7 @@ export default function TutorialModal({ isOpen, onClose, onComplete }: TutorialM
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 z-40">
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-2xl font-bold text-slate-800">Tutorial Study Guide</DialogTitle>
             <DialogDescription>
