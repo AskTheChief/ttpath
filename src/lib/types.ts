@@ -7,6 +7,7 @@ export const CreateTribeInputSchema = z.object({
   location: z.string().describe("The city and state of the tribe (e.g., 'New York, NY')."),
   lat: z.number().describe("The latitude of the tribe location."),
   lng: z.number().describe("The longitude of the tribe location."),
+  idToken: z.string().optional().describe("The user's Firebase ID token for authentication."),
 });
 export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
@@ -39,6 +40,7 @@ export const GetTribesOutputSchema = z.array(
     location: z.string().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
+    members: z.array(z.string()).optional(),
   })
 );
 export type GetTribesOutput = z.infer<typeof GetTribesOutputSchema>;

@@ -8,9 +8,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, credential } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { CreateTribeInputSchema, CreateTribeOutputSchema, type CreateTribeInput, type CreateTribeOutput } from '@/lib/types';
 
 
@@ -22,6 +22,7 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
 
 const createTribeFlow = ai.defineFlow(
   {
@@ -29,13 +30,21 @@ const createTribeFlow = ai.defineFlow(
     inputSchema: CreateTribeInputSchema,
     outputSchema: CreateTribeOutputSchema,
   },
-  async (input, _, context) => {
-    // Get the authenticated user from the context.
-    const user = context?.auth;
-    if (!user) {
-      throw new Error('User not authenticated. You must be logged in to create a tribe.');
+  async (input) => {
+    if (!input.idToken) {
+        throw new Error('Authentication token is missing.');
     }
 
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+        console.error('Error verifying ID token:', error);
+        throw new Error('User not authenticated. Invalid token.');
+    }
+
+    const user = { uid: decodedToken.uid };
+    
     try {
       const { name, location, lat, lng } = input;
 

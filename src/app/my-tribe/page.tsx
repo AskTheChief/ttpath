@@ -48,7 +48,7 @@ export default function MyTribePage() {
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
-  const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>[]>([]);
+  const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
@@ -109,11 +109,13 @@ export default function MyTribePage() {
 
     setIsLoading(true);
     try {
+      const idToken = await user.getIdToken();
       const result = await createTribe({ 
         name: newTribeName, 
         location: newTribeLocation,
         lat: newTribeCoords.lat,
-        lng: newTribeCoords.lng
+        lng: newTribeCoords.lng,
+        idToken: idToken,
       });
       if (result.success) {
         toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
