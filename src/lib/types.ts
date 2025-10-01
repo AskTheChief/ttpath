@@ -5,7 +5,6 @@ import { z } from 'zod';
 export const MeetingSchema = z.object({
   id: z.string(),
   date: z.union([z.date(), z.string()]), // Accept both Date objects and ISO strings
-  description: z.string().optional(),
 });
 export type Meeting = z.infer<typeof MeetingSchema>;
 
@@ -82,7 +81,6 @@ export const UpdateTribeMeetingsInputSchema = z.object({
   meetings: z.array(z.object({
       id: z.string(),
       date: z.string(), // Pass dates as ISO strings
-      description: z.string().optional(),
   })).describe("The full list of meetings for the tribe."),
   idToken: z.string().describe("The user's Firebase ID token for authentication."),
 });

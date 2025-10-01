@@ -63,7 +63,6 @@ export default function MyTribePage() {
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [meetingDescription, setMeetingDescription] = useState('');
 
   const { toast } = useToast();
   
@@ -242,10 +241,9 @@ export default function MyTribePage() {
     const handleAddMeeting = async () => {
     if (!userTribe || !user || !selectedDate) return;
 
-    const newMeeting: Meeting = {
+    const newMeeting: Omit<Meeting, 'description'> = {
         id: new Date().toISOString(), // Temporary unique ID
         date: selectedDate,
-        description: meetingDescription
     };
 
     const updatedMeetings = [...(userTribe.meetings || []), newMeeting];
@@ -256,7 +254,6 @@ export default function MyTribePage() {
         if (result.success) {
             toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
             if (user) await fetchTribesAndUserData(user);
-            setMeetingDescription('');
         } else {
             throw new Error(result.message);
         }
@@ -403,7 +400,6 @@ export default function MyTribePage() {
                             {upcomingMeetings.map(meeting => (
                                 <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
                                     <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
-                                    {meeting.description && <p className="text-sm text-muted-foreground">{meeting.description}</p>}
                                 </li>
                             ))}
                         </ul>
@@ -504,10 +500,6 @@ export default function MyTribePage() {
                                 className="rounded-md border"
                                 disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                             />
-                            <div className="space-y-2 mt-4">
-                                <Label htmlFor="meeting-desc">Meeting Description (Optional)</Label>
-                                <Textarea id="meeting-desc" value={meetingDescription} onChange={(e) => setMeetingDescription(e.target.value)} placeholder="e.g., Topic of discussion"/>
-                            </div>
                              <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
                         </div>
                         <div>
@@ -518,7 +510,6 @@ export default function MyTribePage() {
                                         <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
                                             <div className="flex-1">
                                                 <p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p>
-                                                {meeting.description && <p className="text-sm text-muted-foreground">{meeting.description}</p>}
                                             </div>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}>
                                                 <Trash2 className="h-4 w-4" />
@@ -575,7 +566,7 @@ export default function MyTribePage() {
                   <Alert key={fb.id}>
                     <Terminal className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
-                      <span>Guidance Received</span>
+                      <span>You Receive Guidance</span>
                       <span className="text-sm font-normal text-muted-foreground">{new Date(fb.createdAt).toLocaleString()}</span>
                     </AlertTitle>
                     <AlertDescription>
