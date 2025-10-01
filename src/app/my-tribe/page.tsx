@@ -367,7 +367,7 @@ export default function MyTribePage() {
                     <GoogleMap
                         mapContainerStyle={{ height: '100%', width: '100%' }}
                         center={defaultCenter}
-                        zoom={2}
+                        zoom={1}
                         options={{ disableDefaultUI: true }}
                         onClick={() => setSelectedTribe(null)}
                     >
