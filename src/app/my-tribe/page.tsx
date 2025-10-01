@@ -250,7 +250,16 @@ export default function MyTribePage() {
                         placeholder="Enter tribe name"
                     />
                 </div>
-                 <div className="space-y-2">
+                <div>
+                    <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={newTribeCoords || defaultCenter}
+                        zoom={newTribeCoords ? 12 : 4}
+                    >
+                        {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                    </GoogleMap>
+                </div>
+                <div className="space-y-2">
                     <Label htmlFor="tribe-location">Location</Label>
                     <LocationAutocomplete
                         onPlaceSelected={handlePlaceSelected}
@@ -259,15 +268,6 @@ export default function MyTribePage() {
                         value={newTribeLocation}
                         onChange={(e) => setNewTribeLocation(e.target.value)}
                     />
-                </div>
-                <div className="mt-4">
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={newTribeCoords || defaultCenter}
-                        zoom={newTribeCoords ? 12 : 4}
-                    >
-                        {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                    </GoogleMap>
                 </div>
               </CardContent>
               <CardFooter>

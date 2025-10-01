@@ -112,6 +112,15 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   required
                 />
              </div>
+              <div>
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={coords || defaultCenter}
+                  zoom={coords ? 12 : 4}
+                >
+                  {coords && <MarkerF position={coords} />}
+                </GoogleMap>
+              </div>
              <div>
                 <Label htmlFor="tribe-location">Location</Label>
                 <LocationAutocomplete
@@ -128,15 +137,6 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   }}
                 />
              </div>
-              <div className="mt-4">
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={coords || defaultCenter}
-                  zoom={coords ? 12 : 4}
-                >
-                  {coords && <MarkerF position={coords} />}
-                </GoogleMap>
-              </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
