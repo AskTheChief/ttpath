@@ -40,6 +40,7 @@ export const GetTribesOutputSchema = z.array(
     location: z.string().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
+    chief: z.string().optional(),
     members: z.array(z.string()).optional(),
   })
 );
@@ -52,5 +53,19 @@ export interface Tribe {
   location?: string;
   lat?: number;
   lng?: number;
+  chief: string;
   members: string[];
 }
+
+// src/ai/flows/delete-tribe.ts
+export const DeleteTribeInputSchema = z.object({
+  tribeId: z.string().describe("The ID of the tribe to delete."),
+  idToken: z.string().describe("The user's Firebase ID token for authentication."),
+});
+export type DeleteTribeInput = z.infer<typeof DeleteTribeInputSchema>;
+
+export const DeleteTribeOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type DeleteTribeOutput = z.infer<typeof DeleteTribeOutputSchema>;

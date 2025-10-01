@@ -25,12 +25,13 @@ import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import type { Tribe } from '@/lib/types';
+import { deleteTribe } from '@/ai/flows/delete-tribe';
 
 const libraries: Libraries = ['places'];
 
 const mapContainerStyle = {
   width: '100%',
-  height: '200px',
+  height: '300px',
   borderRadius: '0.5rem',
 };
 
@@ -176,6 +177,27 @@ export default function MyTribePage() {
     }
   };
 
+  const handleDeleteTribe = async (tribeId: string) => {
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+      return;
+    }
+    
+    try {
+      const idToken = await user.getIdToken();
+      const result = await deleteTribe({ tribeId, idToken });
+      if (result.success) {
+        toast({ title: 'Tribe Deleted', description: 'The tribe has been successfully deleted.' });
+        if (user) fetchTribesAndUserData(user);
+      } else {
+        throw new Error(result.message || 'Failed to delete tribe.');
+      }
+    } catch (error: any) {
+      console.error("Error deleting tribe: ", error);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleAnswerChange = (question: string, value: string) => {
     setTutorialAnswers(prev => ({ ...prev, [question]: value }));
   };
@@ -231,6 +253,7 @@ export default function MyTribePage() {
   }
 
   const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
+  const isChief = userTribe && userTribe.chief === user.uid;
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -253,8 +276,11 @@ export default function MyTribePage() {
                 <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
                 <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
               </CardContent>
-              <CardFooter>
-                <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="destructive" className="w-full">Leave Tribe</Button>
+              <CardFooter className="flex flex-col space-y-2">
+                {isChief && (
+                   <Button onClick={() => handleDeleteTribe(userTribe.id)} variant="destructive" className="w-full">Delete Tribe</Button>
+                )}
+                <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="outline" className="w-full">Leave Tribe</Button>
               </CardFooter>
             </Card>
           ) : (
@@ -275,7 +301,15 @@ export default function MyTribePage() {
                     />
                 </div>
                  <div className="space-y-2">
-                    <div className="mb-2">
+                    <Label htmlFor="tribe-location">Location</Label>
+                    <LocationAutocomplete
+                        id="tribe-location"
+                        onPlaceSelected={handlePlaceSelected}
+                        placeholder="e.g., New York, NY"
+                        disabled={!isLoaded}
+                        initialValue={newTribeLocation}
+                    />
+                     <div className="mt-2">
                         <GoogleMap
                             mapContainerStyle={mapContainerStyle}
                             center={newTribeCoords || defaultCenter}
@@ -287,14 +321,6 @@ export default function MyTribePage() {
                             {newTribeCoords && <MarkerF position={newTribeCoords} />}
                         </GoogleMap>
                     </div>
-                    <Label htmlFor="tribe-location">Location</Label>
-                    <LocationAutocomplete
-                        id="tribe-location"
-                        onPlaceSelected={handlePlaceSelected}
-                        placeholder="e.g., New York, NY"
-                        disabled={!isLoaded}
-                        initialValue={newTribeLocation}
-                    />
                 </div>
               </CardContent>
               <CardFooter>
@@ -383,7 +409,7 @@ export default function MyTribePage() {
           <Card>
             <CardHeader>
               <CardTitle>My Living Tutorial</CardTitle>
-              <CardDescription>Review and edit your answers. Your progress is saved as you type.</CardDescription>
+              <CardDescription>Review and edit your answers. Your progress is saved as you go.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {isFetchingAnswers ? (
@@ -438,5 +464,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    

@@ -36,6 +36,8 @@ const getTribesFlow = ai.defineFlow(
           location: data.location,
           lat: data.lat,
           lng: data.lng,
+          chief: data.chief,
+          members: data.members,
         };
       });
       return tribes;
