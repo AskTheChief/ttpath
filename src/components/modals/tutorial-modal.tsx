@@ -242,7 +242,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
           <AlertDialogHeader>
             <AlertDialogTitle>These answers represent my knowledge</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you ready to become part of a Tribe?
+              Do you now feel ready for a tribe?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
