@@ -1,6 +1,15 @@
 
 import { z } from 'zod';
 
+// Base Meeting Schema
+export const MeetingSchema = z.object({
+  id: z.string(),
+  date: z.union([z.date(), z.string()]), // Accept both Date objects and ISO strings
+  description: z.string().optional(),
+});
+export type Meeting = z.infer<typeof MeetingSchema>;
+
+
 // src/ai/flows/create-tribe.ts
 export const CreateTribeInputSchema = z.object({
   name: z.string().describe("The desired name for the new Tribe."),
@@ -33,29 +42,26 @@ export type JoinTribeOutput = z.infer<typeof JoinTribeOutputSchema>;
 export const GetTribesInputSchema = z.object({});
 export type GetTribesInput = z.infer<typeof GetTribesInputSchema>;
 
-export const GetTribesOutputSchema = z.array(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    location: z.string().optional(),
-    lat: z.number().optional(),
-    lng: z.number().optional(),
-    chief: z.string().optional(),
-    members: z.array(z.string()).optional(),
-  })
-);
+export const TribeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  location: z.string().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  chief: z.string().optional(),
+  members: z.array(z.string()).optional(),
+  meetings: z.array(MeetingSchema).optional(),
+});
+
+export const GetTribesOutputSchema = z.array(TribeSchema);
 export type GetTribesOutput = z.infer<typeof GetTribesOutputSchema>;
 
-// src/lib/tribes.ts
-export interface Tribe {
-  id: string;
-  name: string;
-  location?: string;
-  lat?: number;
-  lng?: number;
-  chief: string;
+// This is the primary Tribe interface used in the client-side application.
+export interface Tribe extends z.infer<typeof TribeSchema> {
   members: string[];
+  meetings: Meeting[];
 }
+
 
 // src/ai/flows/delete-tribe.ts
 export const DeleteTribeInputSchema = z.object({
@@ -69,3 +75,21 @@ export const DeleteTribeOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type DeleteTribeOutput = z.infer<typeof DeleteTribeOutputSchema>;
+
+// src/ai/flows/update-tribe-meetings.ts
+export const UpdateTribeMeetingsInputSchema = z.object({
+  tribeId: z.string().describe("The ID of the tribe to update."),
+  meetings: z.array(z.object({
+      id: z.string(),
+      date: z.string(), // Pass dates as ISO strings
+      description: z.string().optional(),
+  })).describe("The full list of meetings for the tribe."),
+  idToken: z.string().describe("The user's Firebase ID token for authentication."),
+});
+export type UpdateTribeMeetingsInput = z.infer<typeof UpdateTribeMeetingsInputSchema>;
+
+export const UpdateTribeMeetingsOutputSchema = z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+});
+export type UpdateTribeMeetingsOutput = z.infer<typeof UpdateTribeMeetingsOutputSchema>;

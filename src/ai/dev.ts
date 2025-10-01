@@ -14,3 +14,4 @@ import '@/ai/flows/get-tribes.ts';
 import '@/ai/flows/join-tribe.ts';
 import '@/ai/flows/get-tutorial-feedback.ts';
 import '@/ai/flows/delete-tribe.ts';
+import '@/ai/flows/update-tribe-meetings.ts';

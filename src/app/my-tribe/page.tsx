@@ -18,14 +18,17 @@ import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe } from '@/lib/types';
+import type { Tribe, Meeting } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
+import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 const libraries: Libraries = ['places'];
 
@@ -59,6 +62,9 @@ export default function MyTribePage() {
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
 
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [meetingDescription, setMeetingDescription] = useState('');
+
   const { toast } = useToast();
   
   const { isLoaded, loadError } = useLoadScript({
@@ -73,7 +79,12 @@ export default function MyTribePage() {
         getTutorialFeedback(),
       ]);
 
-      const tribesWithMembers = allTribes.map(t => ({...t, members: t.members || []}));
+      const tribesWithMembers = allTribes.map(t => ({
+        ...t,
+        members: t.members || [],
+        meetings: t.meetings?.map(m => ({ ...m, date: new Date(m.date) })) || []
+      }));
+
       setTribes(tribesWithMembers as Tribe[]);
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
@@ -227,6 +238,51 @@ export default function MyTribePage() {
     setNewTribeLocation(location);
     setNewTribeCoords(coords);
   };
+
+    const handleAddMeeting = async () => {
+    if (!userTribe || !user || !selectedDate) return;
+
+    const newMeeting: Meeting = {
+        id: new Date().toISOString(), // Temporary unique ID
+        date: selectedDate,
+        description: meetingDescription
+    };
+
+    const updatedMeetings = [...(userTribe.meetings || []), newMeeting];
+    
+    try {
+        const idToken = await user.getIdToken();
+        const result = await updateTribeMeetings({ tribeId: userTribe.id, meetings: updatedMeetings.map(m => ({...m, date: m.date.toISOString()})), idToken });
+        if (result.success) {
+            toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
+            if (user) await fetchTribesAndUserData(user);
+            setMeetingDescription('');
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ title: 'Error Scheduling Meeting', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!userTribe || !user) return;
+
+    const updatedMeetings = (userTribe.meetings || []).filter(m => m.id !== meetingId);
+    
+    try {
+        const idToken = await user.getIdToken();
+        const result = await updateTribeMeetings({ tribeId: userTribe.id, meetings: updatedMeetings.map(m => ({...m, date: m.date.toISOString()})), idToken });
+        if (result.success) {
+            toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
+            if (user) await fetchTribesAndUserData(user);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
+    }
+  };
   
   if (isLoading || !isLoaded) {
     return (
@@ -254,6 +310,11 @@ export default function MyTribePage() {
 
   const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
   const isChief = userTribe && userTribe.chief === user.uid;
+
+  const upcomingMeetings = (userTribe?.meetings || [])
+    .filter(m => new Date(m.date) >= new Date())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -328,6 +389,28 @@ export default function MyTribePage() {
                     {isLoading ? 'Creating...' : 'Create Tribe'}
                 </Button>
               </CardFooter>
+            </Card>
+          )}
+
+          {userTribe && !isChief && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tribe Meetings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     {upcomingMeetings.length > 0 ? (
+                        <ul className="space-y-3">
+                            {upcomingMeetings.map(meeting => (
+                                <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
+                                    <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
+                                    {meeting.description && <p className="text-sm text-muted-foreground">{meeting.description}</p>}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No upcoming meetings scheduled.</p>
+                    )}
+                </CardContent>
             </Card>
           )}
 
@@ -406,6 +489,51 @@ export default function MyTribePage() {
         </aside>
 
         <main className="lg:col-span-2 space-y-8">
+            {isChief && userTribe && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manage Meetings</CardTitle>
+                        <CardDescription>Schedule and view meetings for your tribe.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-6">
+                        <div>
+                             <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                className="rounded-md border"
+                                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                            />
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor="meeting-desc">Meeting Description (Optional)</Label>
+                                <Textarea id="meeting-desc" value={meetingDescription} onChange={(e) => setMeetingDescription(e.target.value)} placeholder="e.g., Topic of discussion"/>
+                            </div>
+                             <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
+                            {upcomingMeetings.length > 0 ? (
+                                <ul className="space-y-2 max-h-80 overflow-y-auto">
+                                    {upcomingMeetings.map(meeting => (
+                                        <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
+                                            <div className="flex-1">
+                                                <p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p>
+                                                {meeting.description && <p className="text-sm text-muted-foreground">{meeting.description}</p>}
+                                            </div>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
           <Card>
             <CardHeader>
               <CardTitle>My Living Tutorial</CardTitle>
