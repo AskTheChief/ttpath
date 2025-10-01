@@ -97,7 +97,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="z-40">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Start a Tribe</DialogTitle>
         </DialogHeader>
