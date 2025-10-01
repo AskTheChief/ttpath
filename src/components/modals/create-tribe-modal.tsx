@@ -21,7 +21,6 @@ const mapContainerStyle = {
   width: '100%',
   height: '200px',
   borderRadius: '0.5rem',
-  marginTop: '1rem',
 };
 
 const defaultCenter = {
@@ -152,5 +151,3 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     </Dialog>
   );
 }
-
-    

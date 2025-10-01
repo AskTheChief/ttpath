@@ -32,7 +32,6 @@ const mapContainerStyle = {
   width: '100%',
   height: '200px',
   borderRadius: '0.5rem',
-  marginTop: '1rem',
 };
 
 const defaultCenter = {
@@ -261,13 +260,15 @@ export default function MyTribePage() {
                         onChange={(e) => setNewTribeLocation(e.target.value)}
                     />
                 </div>
-                <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={newTribeCoords || defaultCenter}
-                    zoom={newTribeCoords ? 12 : 4}
-                >
-                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                </GoogleMap>
+                <div className="mt-4">
+                    <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={newTribeCoords || defaultCenter}
+                        zoom={newTribeCoords ? 12 : 4}
+                    >
+                        {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                    </GoogleMap>
+                </div>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>
@@ -363,5 +364,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
