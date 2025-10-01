@@ -25,12 +25,13 @@ export default function LocationAutocomplete({ onPlaceSelected, onChange, ...pro
 
     autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) {
+      if (place?.formatted_address && place.geometry?.location) {
+        onChange(place.formatted_address); // Directly update the parent's state
         onPlaceSelected(place);
       }
     });
 
-  }, [onPlaceSelected]);
+  }, [onPlaceSelected, onChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
