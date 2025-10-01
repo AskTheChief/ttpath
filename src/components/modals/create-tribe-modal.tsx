@@ -121,7 +121,10 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                   placeholder="e.g., New York, NY"
                   required
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    setCoords(null); // Clear coords if user types manually
+                  }}
                 />
              </div>
               <div className="mt-4">
