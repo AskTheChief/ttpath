@@ -9,6 +9,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { joinTribe } from '@/ai/flows/join-tribe';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const mapContainerStyle = {
   width: '100%',
@@ -27,6 +31,8 @@ export default function TribesMapPage() {
 
   const [tribes, setTribes] = useState<GetTribesOutput>([]);
   const [selectedTribe, setSelectedTribe] = useState<GetTribesOutput[0] | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchTribes() {
@@ -34,10 +40,36 @@ export default function TribesMapPage() {
       setTribes(fetchedTribes.filter(t => t.lat && t.lng));
     }
     fetchTribes();
+    
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleMarkerClick = (tribe: GetTribesOutput[0]) => {
     setSelectedTribe(tribe);
+  };
+  
+  const handleJoinTribe = async (tribeId: string) => {
+    try {
+      const result = await joinTribe({ tribeId });
+      if (result.success) {
+        toast({
+          title: 'Application Sent!',
+          description: 'The tribe chief has been notified of your request.',
+        });
+        setSelectedTribe(null); // Close the info window
+      } else {
+        throw new Error('Failed to send application');
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error joining tribe',
+        description: error.message || 'An unknown error occurred',
+      });
+    }
   };
 
   const renderMap = () => (
@@ -50,6 +82,7 @@ export default function TribesMapPage() {
         streetViewControl: false,
         mapTypeControl: false,
       }}
+      onClick={() => setSelectedTribe(null)}
     >
       <MarkerClustererF>
         {(clusterer) =>
@@ -93,9 +126,13 @@ export default function TribesMapPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{selectedTribe.location}</p>
-                <Button className="w-full mt-4" onClick={() => alert('Join functionality coming soon!')}>
-                    Request to Join
-                </Button>
+                {user ? (
+                   <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)}>
+                      Request to Join
+                  </Button>
+                ) : (
+                  <p className="text-sm text-center mt-4 text-muted-foreground">Please log in to request to join a tribe.</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -104,4 +141,3 @@ export default function TribesMapPage() {
     </div>
   );
 }
-
