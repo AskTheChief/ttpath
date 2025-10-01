@@ -1,9 +1,10 @@
+
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { Input, type InputProps } from '@/components/ui/input';
 
-type LocationAutocompleteProps = Omit<InputProps, 'onChange' | 'value'> & {
+type LocationAutocompleteProps = InputProps & {
   onPlaceSelected: (place: google.maps.places.PlaceResult) => void;
   initialValue?: string;
 };
@@ -11,11 +12,11 @@ type LocationAutocompleteProps = Omit<InputProps, 'onChange' | 'value'> & {
 export default function LocationAutocomplete({ onPlaceSelected, initialValue = '', ...props }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete>();
-  const [inputValue, setInputValue] = useState(initialValue);
 
-  // When the initial value changes from the parent, update the input
   useEffect(() => {
-    setInputValue(initialValue);
+    if (inputRef.current && initialValue) {
+        inputRef.current.value = initialValue;
+    }
   }, [initialValue]);
 
   useEffect(() => {
@@ -24,15 +25,14 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
     }
 
     autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-      types: ['(cities)'],
+      types: ['address'],
       fields: ['formatted_address', 'geometry'],
     });
 
     const placeChangedListener = autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.geometry?.location && place.formatted_address) {
-        setInputValue(place.formatted_address); // Update local state
-        onPlaceSelected(place); // Propagate to parent
+        onPlaceSelected(place);
       }
     });
     
@@ -46,9 +46,7 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
   }, [onPlaceSelected]);
   
   return <Input 
-    ref={inputRef} 
-    value={inputValue}
-    onChange={(e) => setInputValue(e.target.value)}
+    ref={inputRef}
     {...props} 
   />;
 }
