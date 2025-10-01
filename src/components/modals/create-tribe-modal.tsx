@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { createTribe } from '@/ai/flows/create-tribe';
+import LocationAutocomplete from '../location-autocomplete';
 
 type CreateTribeModalProps = {
   isOpen: boolean;
@@ -80,10 +81,15 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
              </div>
              <div>
                 <Label htmlFor="tribe-location">Location</Label>
-                <Input
+                <LocationAutocomplete
                   id="tribe-location"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onValueChange={setLocation}
+                  onPlaceSelected={(place) => {
+                    if (place.formatted_address) {
+                      setLocation(place.formatted_address);
+                    }
+                  }}
                   placeholder="e.g., New York, NY"
                   required
                 />

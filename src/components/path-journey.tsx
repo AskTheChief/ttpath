@@ -1,3 +1,4 @@
+
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -22,6 +23,7 @@ import LoginModal from './modals/login-modal';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import MenuSheet from './menu-sheet';
+import { useLoadScript, Libraries } from '@react-google-maps/api';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -44,6 +46,8 @@ const actionIcons: { [key: string]: React.FC<any> } = {
   'complete-tutorial': FileCheck,
 };
 
+const libraries: Libraries = ['places'];
+
 export default function PathJourney() {
   const [currentUserLevel, setCurrentUserLevel] = useState(1);
   const [requirementsState, setRequirementsState] = useState<Record<string, boolean>>({});
@@ -58,6 +62,11 @@ export default function PathJourney() {
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const isGuest = currentUser !== null;
+  
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const [modalState, setModalState] = useState({
     signup: false,
@@ -716,7 +725,7 @@ export default function PathJourney() {
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
       <CreateTribeModal
-        isOpen={modalState.createTribe}
+        isOpen={modalState.createTribe && isLoaded}
         onClose={() => setModalState(s => ({ ...s, createTribe: false }))}
         onComplete={() => completeRequirement('start-tribe')}
       />

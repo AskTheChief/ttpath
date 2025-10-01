@@ -22,6 +22,10 @@ import { Terminal } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
+import { useLoadScript, Libraries } from '@react-google-maps/api';
+import LocationAutocomplete from '@/components/location-autocomplete';
+
+const libraries: Libraries = ['places'];
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -33,6 +37,11 @@ export default function MyTribePage() {
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const fetchTribes = useCallback(async (userId: string) => {
     const allTribes = await getTribes({});
@@ -140,8 +149,12 @@ export default function MyTribePage() {
     }
   };
   
-  if (isLoading) {
+  if (isLoading || !isLoaded) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (loadError) {
+    return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
   }
 
   if (!user) {
@@ -191,11 +204,17 @@ export default function MyTribePage() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="tribe-location">Location</Label>
-                    <Input
+                    <LocationAutocomplete
                         id="tribe-location"
                         value={newTribeLocation}
-                        onChange={(e) => setNewTribeLocation(e.target.value)}
+                        onValueChange={setNewTribeLocation}
+                        onPlaceSelected={(place) => {
+                            if (place.formatted_address) {
+                                setNewTribeLocation(place.formatted_address);
+                            }
+                        }}
                         placeholder="e.g., New York, NY"
+                        disabled={!isLoaded}
                     />
                 </div>
                 <Button onClick={handleCreateTribe} className="w-full">Create Tribe</Button>
