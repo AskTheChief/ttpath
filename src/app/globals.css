@@ -63,6 +63,11 @@ body {
   }
 }
 
+/* Fix for Google Places Autocomplete dropdown z-index issue */
+.pac-container {
+    z-index: 9999 !important;
+}
+
 @layer components {
   .path-container {
     position: relative;
@@ -431,3 +436,4 @@ body {
     
 
     
+
