@@ -242,7 +242,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
           <AlertDialogHeader>
             <AlertDialogTitle>These answers represent my knowledge</AlertDialogTitle>
             <AlertDialogDescription>
-              Do you believe you have sufficient understanding of the source book to be able to join an existing tribe or start a tribe of your own successfully?
+              Are you ready to become part of a Tribe?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
