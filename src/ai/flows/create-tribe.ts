@@ -1,11 +1,12 @@
+
 'use server';
 
 /**
  * @fileOverview A Genkit flow for creating a new Tribe.
  *
- * - createTribeFlow - A function that allows an authenticated user to create a new Tribe.
- * - CreateTribeFlowInput - The input type for the createTribeFlow function.
- * - CreateTribeFlowOutput - The return type for the createTribeFlow function.
+ * - createTribe - A function that allows an authenticated user to create a new Tribe.
+ * - CreateTribeInput - The input type for the createTribe function.
+ * - CreateTribeOutput - The return type for the createTribe function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -23,27 +24,30 @@ if (!getApps().length) {
 const db = getFirestore();
 
 // Define the input schema for creating a tribe.
-export const CreateTribeFlowInputSchema = z.object({
+export const CreateTribeInputSchema = z.object({
   name: z.string().describe("The desired name for the new Tribe."),
   location: z.string().describe("The city and state of the tribe (e.g., 'New York, NY')."),
   lat: z.number().describe("The latitude of the tribe location."),
   lng: z.number().describe("The longitude of the tribe location."),
 });
-export type CreateTribeFlowInput = z.infer<typeof CreateTribeFlowInputSchema>;
+export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
 // Define the output schema.
-export const CreateTribeFlowOutputSchema = z.object({
+export const CreateTribeOutputSchema = z.object({
   success: z.boolean(),
   tribeId: z.string().optional(),
 });
-export type CreateTribeFlowOutput = z.infer<typeof CreateTribeFlowOutputSchema>;
+export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 
-// Define the Genkit flow.
-export const createTribeFlow = ai.defineFlow(
+export async function createTribe(input: CreateTribeInput): Promise<CreateTribeOutput> {
+    return createTribeFlow(input);
+}
+
+const createTribeFlow = ai.defineFlow(
   {
     name: 'createTribeFlow',
-    inputSchema: CreateTribeFlowInputSchema,
-    outputSchema: CreateTribeFlowOutputSchema,
+    inputSchema: CreateTribeInputSchema,
+    outputSchema: CreateTribeOutputSchema,
   },
   async (input, _, context) => {
     // Get the authenticated user from the context.

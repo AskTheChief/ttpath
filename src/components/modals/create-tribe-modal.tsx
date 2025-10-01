@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { createTribeFlow } from '@/ai/flows/create-tribe';
+import { createTribe } from '@/ai/flows/create-tribe';
 import LocationAutocomplete from '../location-autocomplete';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
@@ -48,7 +48,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     }
     setIsLoading(true);
     try {
-      const result = await createTribeFlow({ 
+      const result = await createTribe({ 
         name: tribeName, 
         location,
         lat: coords.lat,

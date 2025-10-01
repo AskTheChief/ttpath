@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,7 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { createTribeFlow } from '@/ai/flows/create-tribe';
+import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF } from '@react-google-maps/api';
@@ -109,7 +110,7 @@ export default function MyTribePage() {
         return;
     }
     try {
-      await createTribeFlow({ 
+      await createTribe({ 
         name: newTribeName, 
         location: newTribeLocation,
         lat: newTribeCoords.lat,
