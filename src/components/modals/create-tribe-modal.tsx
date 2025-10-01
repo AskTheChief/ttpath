@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -37,7 +38,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
 
-  useState(() => {
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser);
     });
