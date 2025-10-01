@@ -1,6 +1,6 @@
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, getDoc } from 'firebase/firestore';
 
 export interface Tribe {
   id: string;

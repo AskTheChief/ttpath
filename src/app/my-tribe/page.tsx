@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { getTribes, leaveTribe, Tribe } from '@/lib/tribes';
+import { leaveTribe, Tribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/lib/tutorial';
 import { tutorialQuestions } from '@/lib/data';
 import { saveTutorialAnswers } from '@/ai/flows/save-tutorial-answers';
@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
+import { getTribes } from '@/ai/flows/get-tribes';
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -36,7 +37,7 @@ export default function MyTribePage() {
   const fetchTribes = useCallback(async (userId: string) => {
     const allTribes = await getTribes({});
     setTribes(allTribes);
-    const currentUserTribe = allTribes.find(tribe => tribe.members.includes(userId));
+    const currentUserTribe = allTribes.find(tribe => (tribe.members || []).includes(userId));
     setUserTribe(currentUserTribe || null);
   }, []);
 
@@ -212,7 +213,7 @@ export default function MyTribePage() {
                   <div key={tribe.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <h3 className="font-semibold">{tribe.name}</h3>
-                      <p className="text-sm text-muted-foreground">Members: {tribe.members.length}</p>
+                      <p className="text-sm text-muted-foreground">Members: {(tribe.members || []).length}</p>
                     </div>
                     {!userTribe && (
                       <Button onClick={() => handleJoinTribe(tribe.id)}>Join</Button>
