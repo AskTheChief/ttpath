@@ -367,12 +367,12 @@ export default function MyTribePage() {
                     <GoogleMap
                         mapContainerStyle={{ height: '100%', width: '100%' }}
                         center={defaultCenter}
-                        zoom={4}
+                        zoom={2}
                         options={{ disableDefaultUI: true }}
                         onClick={() => setSelectedTribe(null)}
                     >
                         <MarkerClustererF>
-                            {(clusterer) => tribes.map((tribe) => (
+                            {tribes.map((tribe) => (
                                 tribe.lat && tribe.lng && (
                                     <MarkerF
                                         key={tribe.id}
@@ -465,4 +465,5 @@ export default function MyTribePage() {
   );
 }
 
+    
     
