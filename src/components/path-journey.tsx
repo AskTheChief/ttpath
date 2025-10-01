@@ -198,8 +198,8 @@ export default function PathJourney() {
       });
   
       if (!isLoadingProgress) {
-          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
-          if (currentUserNode && userIconRef.current && !isAnimating) {
+          const currentUserNode = pathNodesData.find(n => n.level === (isAnimating ? 1 : currentUserLevel));
+          if (currentUserNode && userIconRef.current) {
               const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
               const cssPoint = mapSvgPointToCss(point);
               userIconRef.current.style.left = `${cssPoint.x}px`;
@@ -208,7 +208,6 @@ export default function PathJourney() {
       }
     };
 
-    // Use a small timeout to ensure the SVG path has been rendered and has dimensions.
     setTimeout(place, 0);
 
   }, [mapSvgPointToCss, currentUserLevel, isAnimating, isLoadingProgress]);
@@ -242,15 +241,21 @@ export default function PathJourney() {
     }
   }, []);
 
-  const animateUserIcon = useCallback((targetNode: PathNodeData) => {
+  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
 
-    const startNode = pathNodesData.find(n => n.level === currentUserLevel)!;
+    const startNode = pathNodesData.find(n => n.level === (startLevel || currentUserLevel))!;
     const totalLength = pathRef.current.getTotalLength();
     const startLength = totalLength * startNode.pathPos;
     const endLength = totalLength * targetNode.pathPos;
+    
+    if (startLength === endLength) {
+        setIsAnimating(false);
+        return;
+    }
+
     const duration = 2000;
     const hopCount = 15;
     let startTime: number | null = null;
@@ -284,16 +289,18 @@ export default function PathJourney() {
              userIconRef.current!.style.top = `${finalPoint.y}px`;
              userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
             setIsAnimating(false);
-            playSound('progress');
+            if (!startLevel) {
+                playSound('progress');
+                triggerConfetti(finalPoint.x, finalPoint.y);
+            }
             setCurrentUserLevel(targetNode.level);
-            triggerConfetti(finalPoint.x, finalPoint.y);
 
-            if (targetNode.id === 'node-guest') {
+            if (!startLevel && targetNode.id === 'node-guest') {
                 toast({
                     title: "Welcome, Guest!",
                     description: `You can now proceed on your journey.`,
                 });
-            } else if (targetNode.id === 'node-graduate') {
+            } else if (!startLevel && targetNode.id === 'node-graduate') {
                 toast({
                     title: "Congratulations, You Graduate!",
                 });
@@ -302,6 +309,18 @@ export default function PathJourney() {
     };
     requestAnimationFrame(animationStep);
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
+  
+  
+  useEffect(() => {
+    if (!isLoadingProgress && isMounted) {
+      placeElementsOnPath();
+      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
+      if (targetNode && currentUserLevel > 1) {
+          // Use a timeout to ensure the initial position is rendered before animating
+          setTimeout(() => animateUserIcon(targetNode, 1), 100);
+      }
+    }
+  }, [isLoadingProgress, isMounted]);
 
   const completeRequirement = useCallback((reqId: string) => {
     setRequirementsState(prev => {
