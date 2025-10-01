@@ -106,7 +106,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       
       toast({
         title: "Answers Saved",
-        description: "The Chief is now reviewing your submission.",
+        description: "The Chief reviews your submission.",
       });
 
       const evaluation = await evaluateTutorialAnswers({ answers });
@@ -116,7 +116,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       
       toast({
         title: "Guidance Received",
-        description: "The Chief has provided some feedback for you to consider.",
+        description: "The Chief provides some feedback for you to consider.",
       });
 
     } catch (error: any) {
