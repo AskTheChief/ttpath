@@ -312,6 +312,8 @@ export default function MyTribePage() {
     .filter(m => new Date(m.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
+
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -499,6 +501,8 @@ export default function MyTribePage() {
                                 onSelect={setSelectedDate}
                                 className="rounded-md border"
                                 disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                modifiers={{ meetings: meetingDates }}
+                                modifiersStyles={{ meetings: { textDecoration: 'underline' } }}
                             />
                              <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
                         </div>
@@ -583,5 +587,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
