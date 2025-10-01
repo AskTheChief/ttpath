@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { createTribe } from '@/ai/flows/create-tribe';
 import LocationAutocomplete from '../location-autocomplete';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 type CreateTribeModalProps = {
   isOpen: boolean;
@@ -30,14 +31,22 @@ const defaultCenter = {
 
 export default function CreateTribeModal({ isOpen, onClose, onComplete }: CreateTribeModalProps) {
   const [tribeName, setTribeName] = useState('');
-  const [location, setLocation] = useState('');
-  const [coords, setCoords] = useState<{lat: number; lng: number} | null>(null);
+  const [newTribeLocation, setNewTribeLocation] = useState('');
+  const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  useState(() => {
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tribeName.trim() || !location.trim() || !coords) {
+    if (!tribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
         toast({
             variant: 'destructive',
             title: 'All fields are required',
@@ -45,13 +54,23 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
         });
         return;
     }
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to create a tribe.',
+        });
+        return;
+    }
     setIsLoading(true);
     try {
+      const idToken = await user.getIdToken();
       const result = await createTribe({ 
         name: tribeName, 
-        location,
-        lat: coords.lat,
-        lng: coords.lng,
+        location: newTribeLocation,
+        lat: newTribeCoords.lat,
+        lng: newTribeCoords.lng,
+        idToken,
       });
       if (result.success) {
         toast({
@@ -76,20 +95,20 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
   
   const handleClose = () => {
     setTribeName('');
-    setLocation('');
-    setCoords(null);
+    setNewTribeLocation('');
+    setNewTribeCoords(null);
     onClose();
   }
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    const newLocation = place.formatted_address || '';
-    const newCoords = place.geometry?.location ? {
+    const location = place.formatted_address || '';
+    const coords = place.geometry?.location ? {
       lat: place.geometry.location.lat(),
       lng: place.geometry.location.lng(),
     } : null;
-
-    setLocation(newLocation);
-    setCoords(newCoords);
+    
+    setNewTribeLocation(location);
+    setNewTribeCoords(coords);
   };
 
   return (
@@ -111,24 +130,24 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                 />
              </div>
              <div className="space-y-2">
+                <div className="mb-2">
+                    <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={newTribeCoords || defaultCenter}
+                        zoom={newTribeCoords ? 12 : 4}
+                    >
+                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                    </GoogleMap>
+                </div>
                 <Label htmlFor="tribe-location">Location</Label>
                 <LocationAutocomplete
-                  id="tribe-location"
-                  onPlaceSelected={handlePlaceSelected}
-                  placeholder="e.g., New York, NY"
-                  required
-                  initialValue={location}
+                    id="tribe-location"
+                    onPlaceSelected={handlePlaceSelected}
+                    placeholder="e.g., New York, NY"
+                    required
+                    initialValue={newTribeLocation}
                 />
              </div>
-             <div>
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={coords || defaultCenter}
-                  zoom={coords ? 12 : 4}
-                >
-                  {coords && <MarkerF position={coords} />}
-                </GoogleMap>
-              </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
