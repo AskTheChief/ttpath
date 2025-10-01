@@ -45,7 +45,7 @@ export default function LinkModal({
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
           >
-            Open Document
+            Open Quick Start Guide
           </a>
         </div>
         <DialogFooter className="gap-2 sm:justify-end">
@@ -63,4 +63,3 @@ export default function LinkModal({
     </Dialog>
   );
 }
-
