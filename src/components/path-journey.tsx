@@ -106,8 +106,16 @@ export default function PathJourney() {
     return () => unsubscribe();
   }, []);
 
+  const isInitialLoadRef = useRef(true);
   useEffect(() => {
-    if (isGuest && isMounted && !isLoadingProgress) {
+    if (isLoadingProgress) return;
+    
+    if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
+        return;
+    }
+
+    if (isGuest && isMounted) {
       updateUserProgress({ currentUserLevel, requirementsState });
     }
   }, [currentUserLevel, requirementsState, isGuest, isMounted, isLoadingProgress]);
