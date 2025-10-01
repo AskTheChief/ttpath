@@ -45,7 +45,7 @@ export default function LinkModal({
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
           >
-            Open {title}
+            {title === 'Read Quick-Start Guide' ? 'Open Quick-Start Guide' : `Open ${title}`}
           </a>
         </div>
         <DialogFooter className="gap-2 sm:justify-end">
