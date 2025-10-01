@@ -12,6 +12,7 @@ type MenuSheetProps = {
   onClose: () => void;
   openModal: (modalName: string) => void;
   isGuest: boolean;
+  onTestCreateTribe: () => void;
 };
 
 const menuItems = [
@@ -23,7 +24,7 @@ const menuItems = [
     { id: 'trading', icon: CandlestickChart, label: 'Trading', href: '/trading' },
 ];
 
-export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuSheetProps) {
+export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe }: MenuSheetProps) {
 
   const handleItemClick = (item: (typeof menuItems)[0]) => {
     if (item.href) {
@@ -74,7 +75,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest }: MenuS
           {menuItems.map(renderMenuItem)}
           {isGuest && (
             <div className="p-2">
-              <DevDropdown />
+              <DevDropdown onTestCreateTribe={onTestCreateTribe} />
               <span className="ml-3 text-lg">Dev Den</span>
             </div>
           )}

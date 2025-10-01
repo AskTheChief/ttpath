@@ -63,6 +63,7 @@ export default function PathJourney() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
+  const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
   
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -545,6 +546,11 @@ export default function PathJourney() {
     }
   };
 
+  const handleTestCreateTribe = () => {
+    setModalState(s => ({ ...s, menu: false }));
+    setShowCreateTribeModalForTest(true);
+  };
+
   return (
     <TooltipProvider>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
@@ -711,6 +717,7 @@ export default function PathJourney() {
         onClose={() => setModalState(s => ({...s, menu: false}))}
         openModal={openModal}
         isGuest={isGuest}
+        onTestCreateTribe={handleTestCreateTribe}
       />
       <LinkModal
         isOpen={modalState.link}
@@ -745,8 +752,11 @@ export default function PathJourney() {
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
       <CreateTribeModal
-        isOpen={modalState.createTribe && isLoaded}
-        onClose={() => setModalState(s => ({ ...s, createTribe: false }))}
+        isOpen={(modalState.createTribe || showCreateTribeModalForTest) && isLoaded}
+        onClose={() => {
+          setModalState(s => ({ ...s, createTribe: false }));
+          setShowCreateTribeModalForTest(false);
+        }}
         onComplete={() => completeRequirement('start-tribe')}
       />
       <JoinTribeModal

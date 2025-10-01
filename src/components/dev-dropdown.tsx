@@ -12,10 +12,13 @@ import {
 import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { resetUserProgress } from "@/ai/flows/reset-user-progress";
-import { updateUserProgress } from "@/ai/flows/update-user-progress";
 import { useToast } from "@/hooks/use-toast";
 
-export default function DevDropdown() {
+type DevDropdownProps = {
+  onTestCreateTribe: () => void;
+};
+
+export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   const { toast } = useToast();
 
   const handleReset = async () => {
@@ -30,31 +33,6 @@ export default function DevDropdown() {
       toast({
         variant: "destructive",
         title: "Error resetting progress",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleJumpToGraduate = async () => {
-    try {
-      await updateUserProgress({
-        currentUserLevel: 3,
-        requirementsState: {
-          'read-book': true,
-          'sign-up': true,
-          'read-full-book': true,
-          'complete-tutorial': true,
-        },
-      });
-      toast({
-        title: "Jumped to Graduate",
-        description: "You are now at the Graduate level.",
-      });
-      window.location.reload();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error jumping to graduate",
         description: error.message,
       });
     }
@@ -77,7 +55,7 @@ export default function DevDropdown() {
           <DropdownMenuItem>Chief Sessions</DropdownMenuItem>
         </Link>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleJumpToGraduate}>Jump to Graduate</DropdownMenuItem>
+        <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
         <DropdownMenuItem onClick={handleReset}>Reset Progress</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
