@@ -58,10 +58,9 @@ export default function MyTribePage() {
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
-      const idToken = await currentUser.getIdToken();
       const [allTribes, answers, feedback] = await Promise.all([
         getTribes({}),
-        getTutorialAnswers({ idToken }),
+        getTutorialAnswers(),
         getTutorialFeedback(),
       ]);
 
@@ -167,7 +166,7 @@ export default function MyTribePage() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await saveTutorialAnswers({ answers: tutorialAnswers });
+      await saveTutorialAnswers({ answers: tutorialAnswers, idToken });
       toast({ title: 'Success', description: 'Your tutorial answers have been saved.' });
     } catch (error) {
       console.error("Error saving tutorial answers: ", error);
