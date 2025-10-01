@@ -372,7 +372,7 @@ export default function MyTribePage() {
                         onClick={() => setSelectedTribe(null)}
                     >
                         <MarkerClustererF>
-                            {tribes.map((tribe) => (
+                            {(clusterer) => tribes.map((tribe) => (
                                 tribe.lat && tribe.lng && (
                                     <MarkerF
                                         key={tribe.id}
@@ -464,6 +464,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
-    
