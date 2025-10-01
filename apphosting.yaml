@@ -4,12 +4,8 @@ runConfig:
 env:
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
-  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    secret: GOOGLE_MAPS_API_KEY
     availability:
       - RUNTIME
 
 # Specifies the project that stores the secrets.
-secretManager:
-- secret: GOOGLE_MAPS_API_KEY
-  project: '7790315517'
+secretManager: []
