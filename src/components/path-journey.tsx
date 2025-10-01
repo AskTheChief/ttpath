@@ -108,10 +108,10 @@ export default function PathJourney() {
 
   const isInitialLoadRef = useRef(true);
   useEffect(() => {
-    if (isLoadingProgress) return;
-    
-    if (isInitialLoadRef.current) {
-        isInitialLoadRef.current = false;
+    if (isLoadingProgress || isInitialLoadRef.current) {
+        if (!isLoadingProgress) {
+            isInitialLoadRef.current = false;
+        }
         return;
     }
 
