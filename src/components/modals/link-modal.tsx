@@ -29,6 +29,16 @@ export default function LinkModal({
     onClose();
   };
 
+  const getLinkText = () => {
+    if (title === 'Read Quick-Start Guide') {
+      return 'Open Quick-Start Guide';
+    }
+    if (title === 'Read the Trading Tribe Book') {
+      return 'Open the Trading Tribe Book';
+    }
+    return `Open ${title}`;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -45,7 +55,7 @@ export default function LinkModal({
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
           >
-            {title === 'Read Quick-Start Guide' ? 'Open Quick-Start Guide' : `Open ${title}`}
+            {getLinkText()}
           </a>
         </div>
         <DialogFooter className="gap-2 sm:justify-end">
