@@ -37,7 +37,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md z-40">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Submit Feedback</DialogTitle>
           <DialogDescription>
