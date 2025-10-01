@@ -106,7 +106,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       
       toast({
         title: "Answers Saved",
-        description: "The Chief reviews your submission.",
+        description: "The Chief Reviews Your Answers",
       });
 
       const evaluation = await evaluateTutorialAnswers({ answers });
