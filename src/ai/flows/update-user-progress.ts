@@ -46,10 +46,8 @@ const updateUserProgressFlow = ai.defineFlow(
     try {
       const userDocRef = db.collection('users').doc(user.uid);
       
-      // To prevent race conditions or overwriting unrelated progress,
-      // it's often better to merge with existing data.
-      // However, for a dev shortcut like this, a direct set/merge is fine.
-      await userDocRef.set(input, { merge: true });
+      // Overwrite the document completely to ensure a clean state for dev shortcuts.
+      await userDocRef.set(input);
 
       return { success: true };
     } catch (error) {
