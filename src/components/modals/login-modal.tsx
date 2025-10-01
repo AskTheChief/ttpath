@@ -47,7 +47,7 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md z-40">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Guest Login</DialogTitle>
           <DialogDescription>
