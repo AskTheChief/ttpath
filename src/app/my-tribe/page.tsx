@@ -238,46 +238,58 @@ export default function MyTribePage() {
     setNewTribeCoords(coords);
   };
 
-    const handleAddMeeting = async () => {
+  const handleAddMeeting = async () => {
     if (!userTribe || !user || !selectedDate) return;
-
-    const newMeeting: Omit<Meeting, 'description'> = {
-        id: new Date().toISOString(), // Temporary unique ID
-        date: selectedDate,
+  
+    const newMeeting = {
+      id: new Date().toISOString(), // Temporary unique ID, will be overwritten by server
+      date: selectedDate,
     };
-
+  
     const updatedMeetings = [...(userTribe.meetings || []), newMeeting];
-    
+  
     try {
-        const idToken = await user.getIdToken();
-        const result = await updateTribeMeetings({ tribeId: userTribe.id, meetings: updatedMeetings.map(m => ({...m, date: m.date.toISOString()})), idToken });
-        if (result.success) {
-            toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
-            if (user) await fetchTribesAndUserData(user);
-        } else {
-            throw new Error(result.message);
-        }
+      const idToken = await user.getIdToken();
+      const result = await updateTribeMeetings({
+        tribeId: userTribe.id,
+        meetings: updatedMeetings.map(m => ({ ...m, date: m.date.toISOString() })),
+        idToken,
+      });
+  
+      if (result.success) {
+        toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
+        // Optimistically update local state
+        setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error: any) {
-        toast({ title: 'Error Scheduling Meeting', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error Scheduling Meeting', description: error.message, variant: 'destructive' });
     }
   };
-
+  
   const handleDeleteMeeting = async (meetingId: string) => {
     if (!userTribe || !user) return;
-
+  
     const updatedMeetings = (userTribe.meetings || []).filter(m => m.id !== meetingId);
-    
+  
     try {
-        const idToken = await user.getIdToken();
-        const result = await updateTribeMeetings({ tribeId: userTribe.id, meetings: updatedMeetings.map(m => ({...m, date: m.date.toISOString()})), idToken });
-        if (result.success) {
-            toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
-            if (user) await fetchTribesAndUserData(user);
-        } else {
-            throw new Error(result.message);
-        }
+      const idToken = await user.getIdToken();
+      const result = await updateTribeMeetings({
+        tribeId: userTribe.id,
+        meetings: updatedMeetings.map(m => ({ ...m, date: m.date.toISOString() })),
+        idToken,
+      });
+  
+      if (result.success) {
+        toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
+        // Optimistically update local state
+        setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error: any) {
-        toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
     }
   };
   
