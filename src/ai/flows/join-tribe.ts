@@ -2,10 +2,10 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import { JoinTribeInputSchema, JoinTribeOutputSchema, type JoinTribeInput, type JoinTribeOutput } from '@/lib/types';
 
 if (!getApps().length) {
   initializeApp({
@@ -14,16 +14,6 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
-
-const JoinTribeInputSchema = z.object({
-  tribeId: z.string(),
-});
-export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
-
-const JoinTribeOutputSchema = z.object({
-  success: z.boolean(),
-});
-export type JoinTribeOutput = z.infer<typeof JoinTribeOutputSchema>;
 
 export async function joinTribe(input: JoinTribeInput): Promise<JoinTribeOutput> {
   return joinTribeFlow(input);

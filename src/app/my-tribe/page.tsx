@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { leaveTribe, Tribe } from '@/lib/tribes';
+import { leaveTribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/lib/tutorial';
 import { tutorialQuestions } from '@/lib/data';
 import { saveTutorialAnswers } from '@/ai/flows/save-tutorial-answers';
@@ -23,6 +24,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
+import type { Tribe } from '@/lib/types';
 
 const libraries: Libraries = ['places'];
 
@@ -63,8 +65,9 @@ export default function MyTribePage() {
         getTutorialFeedback(),
       ]);
 
-      setTribes(allTribes);
-      const currentUserTribe = allTribes.find(tribe => (tribe.members || []).includes(userId));
+      const tribesWithMembers = allTribes.map(t => ({...t, members: t.members || []}));
+      setTribes(tribesWithMembers as Tribe[]);
+      const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(userId));
       setUserTribe(currentUserTribe || null);
       setTutorialAnswers(answers);
       setTutorialFeedback(feedback);
@@ -95,10 +98,15 @@ export default function MyTribePage() {
   }, [fetchTribesAndUserData]);
 
   const handleCreateTribe = async () => {
-    if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords || !user) {
+    if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
         toast({ title: 'Error', description: 'Please provide a valid name and select a location from the dropdown.', variant: 'destructive' });
         return;
     }
+    if (!user) {
+        toast({ title: 'Authentication Error', description: 'You must be logged in to create a tribe.', variant: 'destructive' });
+        return;
+    }
+
     setIsLoading(true);
     try {
       const result = await createTribe({ 
@@ -114,7 +122,7 @@ export default function MyTribePage() {
         setNewTribeCoords(null);
         if (user) fetchTribesAndUserData(user.uid);
       } else {
-        throw new Error(result.message || 'Failed to create tribe.');
+        throw new Error('Failed to create tribe.');
       }
     } catch (error: any) {
       console.error("Error creating tribe: ", error);

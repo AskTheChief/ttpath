@@ -8,17 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { ScrollArea } from '../ui/scroll-area';
+import { Tribe } from '@/lib/types';
 
 type JoinTribeModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
 };
-
-interface Tribe {
-  id: string;
-  name: string;
-}
 
 export default function JoinTribeModal({ isOpen, onClose, onComplete }: JoinTribeModalProps) {
   const [tribes, setTribes] = useState<Tribe[]>([]);
@@ -32,7 +28,7 @@ export default function JoinTribeModal({ isOpen, onClose, onComplete }: JoinTrib
         setIsLoading(true);
         try {
             const fetchedTribes = await getTribes({});
-            setTribes(fetchedTribes);
+            setTribes(fetchedTribes as Tribe[]);
         } catch (error) {
             toast({
                 variant: 'destructive',

@@ -1,15 +1,6 @@
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, getDoc } from 'firebase/firestore';
-
-export interface Tribe {
-  id: string;
-  name: string;
-  location?: string;
-  lat?: number;
-  lng?: number;
-  members: string[];
-}
+import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 
 export const leaveTribe = async (tribeId: string, userId: string) => {
   const tribeRef = doc(db, 'tribes', tribeId);

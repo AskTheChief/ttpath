@@ -2,10 +2,10 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
+import { GetTribesInputSchema, GetTribesOutputSchema, type GetTribesInput, type GetTribesOutput } from '@/lib/types';
 
 if (!getApps().length) {
   initializeApp({
@@ -14,20 +14,6 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
-
-const GetTribesInputSchema = z.object({});
-export type GetTribesInput = z.infer<typeof GetTribesInputSchema>;
-
-const GetTribesOutputSchema = z.array(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    location: z.string().optional(),
-    lat: z.number().optional(),
-    lng: z.number().optional(),
-  })
-);
-export type GetTribesOutput = z.infer<typeof GetTribesOutputSchema>;
 
 export async function getTribes(input: GetTribesInput): Promise<GetTribesOutput> {
   return getTribesFlow(input);

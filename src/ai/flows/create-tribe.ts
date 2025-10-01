@@ -5,14 +5,14 @@
  * @fileOverview A Genkit flow for creating a new Tribe.
  *
  * - createTribe - A function that allows an authenticated user to create a new Tribe.
- * - CreateTribeInput - The input type for the createTribe function.
- * - CreateTribeOutput - The return type for the createTribe function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, credential } from 'firebase-admin/app';
+import { CreateTribeInputSchema, CreateTribeOutputSchema, type CreateTribeInput, type CreateTribeOutput } from '@/lib/types';
+
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -22,23 +22,6 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
-
-// Define the input schema for creating a tribe.
-export const CreateTribeInputSchema = z.object({
-  name: z.string().describe("The desired name for the new Tribe."),
-  location: z.string().describe("The city and state of the tribe (e.g., 'New York, NY')."),
-  lat: z.number().describe("The latitude of the tribe location."),
-  lng: z.number().describe("The longitude of the tribe location."),
-});
-export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
-
-// Define the output schema.
-export const CreateTribeOutputSchema = z.object({
-  success: z.boolean(),
-  tribeId: z.string().optional(),
-});
-export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
-
 
 const createTribeFlow = ai.defineFlow(
   {

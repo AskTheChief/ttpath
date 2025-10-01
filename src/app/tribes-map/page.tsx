@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleMap, useLoadScript, MarkerClustererF, MarkerF, Libraries } from '@react-google-maps/api';
 import { getTribes } from '@/ai/flows/get-tribes';
-import type { GetTribesOutput } from '@/ai/flows/get-tribes';
+import type { GetTribesOutput } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
