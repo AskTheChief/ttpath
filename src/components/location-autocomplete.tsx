@@ -4,9 +4,10 @@
 import { useRef, useEffect } from 'react';
 import { Input, type InputProps } from '@/components/ui/input';
 
-type LocationAutocompleteProps = Omit<InputProps, 'onChange'> & {
+type LocationAutocompleteProps = Omit<InputProps, 'onChange' | 'value'> & {
   onPlaceSelected: (place: google.maps.places.PlaceResult) => void;
   onChange: (value: string) => void;
+  value: string;
 };
 
 export default function LocationAutocomplete({ onPlaceSelected, onChange, value, ...props }: LocationAutocompleteProps) {

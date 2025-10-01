@@ -162,6 +162,19 @@ export default function MyTribePage() {
       setIsLoading(false);
     }
   };
+
+  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
+    if (place.formatted_address) {
+      setNewTribeLocation(place.formatted_address);
+    }
+    if (place.geometry?.location) {
+      const newCoords = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      };
+      setNewTribeCoords(newCoords);
+    }
+  };
   
   if (isLoading || !isLoaded) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -221,18 +234,7 @@ export default function MyTribePage() {
                     <LocationAutocomplete
                         id="tribe-location"
                         value={newTribeLocation}
-                        onPlaceSelected={(place) => {
-                            if (place.formatted_address) {
-                                setNewTribeLocation(place.formatted_address);
-                            }
-                            if (place.geometry?.location) {
-                                const newCoords = {
-                                  lat: place.geometry.location.lat(),
-                                  lng: place.geometry.location.lng(),
-                                };
-                                setNewTribeCoords(newCoords);
-                            }
-                        }}
+                        onPlaceSelected={handlePlaceSelected}
                         onChange={setNewTribeLocation}
                         placeholder="e.g., New York, NY"
                         disabled={!isLoaded}

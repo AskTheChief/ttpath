@@ -80,6 +80,19 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
     onClose();
   }
 
+  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
+    if (place.formatted_address) {
+      setLocation(place.formatted_address);
+    }
+    if (place.geometry?.location) {
+      const newCoords = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      };
+      setCoords(newCoords);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
@@ -103,18 +116,7 @@ export default function CreateTribeModal({ isOpen, onClose, onComplete }: Create
                 <LocationAutocomplete
                   id="tribe-location"
                   value={location}
-                  onPlaceSelected={(place) => {
-                    if (place.formatted_address) {
-                      setLocation(place.formatted_address);
-                    }
-                    if (place.geometry?.location) {
-                      const newCoords = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                      };
-                      setCoords(newCoords);
-                    }
-                  }}
+                  onPlaceSelected={handlePlaceSelected}
                   onChange={setLocation}
                   placeholder="e.g., New York, NY"
                   required
