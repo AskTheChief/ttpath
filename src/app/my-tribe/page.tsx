@@ -271,6 +271,7 @@ export default function MyTribePage() {
                         value={newTribeName}
                         onChange={(e) => setNewTribeName(e.target.value)}
                         placeholder="Enter tribe name"
+                        autoFocus
                     />
                 </div>
                  <div className="space-y-2">
