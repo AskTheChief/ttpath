@@ -198,7 +198,7 @@ export default function MyTribePage() {
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
       } else {
-        throw new Error("Failed to send application.");
+        throw new Error(result.message || "Failed to send application.");
       }
       setSelectedTribe(null); // Close info card on success
       if (user) fetchTribesAndUserData(user);

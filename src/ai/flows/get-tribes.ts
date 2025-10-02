@@ -30,6 +30,17 @@ const getTribesFlow = ai.defineFlow(
       const tribesSnapshot = await db.collection('tribes').get();
       const tribes = tribesSnapshot.docs.map(doc => {
         const data = doc.data();
+        
+        // Ensure meetings and their dates are serializable
+        const meetings = (data.meetings || []).map((meeting: any) => {
+          const meetingDate = meeting.date;
+          return {
+            ...meeting,
+            // Convert Firestore Timestamp to ISO string if it's a Timestamp object
+            date: meetingDate?.toDate ? meetingDate.toDate().toISOString() : meetingDate,
+          };
+        });
+
         return {
           id: doc.id,
           name: data.name,
@@ -38,6 +49,7 @@ const getTribesFlow = ai.defineFlow(
           lng: data.lng,
           chief: data.chief,
           members: data.members,
+          meetings: meetings,
         };
       });
       return tribes;
