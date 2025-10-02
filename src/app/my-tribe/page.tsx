@@ -165,7 +165,8 @@ export default function MyTribePage() {
   const handleJoinTribe = async (tribeId: string) => {
     if (!user) return;
     try {
-      await joinTribe({ tribeId });
+      const idToken = await user.getIdToken();
+      await joinTribe({ tribeId, idToken });
       toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
       setSelectedTribe(null); // Close info card on success
       if (user) fetchTribesAndUserData(user);

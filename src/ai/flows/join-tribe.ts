@@ -3,8 +3,8 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { JoinTribeInputSchema, JoinTribeOutputSchema, type JoinTribeInput, type JoinTribeOutput } from '@/lib/types';
 
 if (!getApps().length) {
@@ -14,6 +14,7 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
 
 export async function joinTribe(input: JoinTribeInput): Promise<JoinTribeOutput> {
   return joinTribeFlow(input);
@@ -25,11 +26,19 @@ const joinTribeFlow = ai.defineFlow(
     inputSchema: JoinTribeInputSchema,
     outputSchema: JoinTribeOutputSchema,
   },
-  async (input, _, context) => {
-    const user = context?.auth;
-    if (!user) {
-      throw new Error('User not authenticated');
+  async (input) => {
+    if (!input.idToken) {
+        throw new Error('Authentication token is missing.');
     }
+
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+        console.error('Error verifying ID token:', error);
+        throw new Error('User not authenticated. Invalid token.');
+    }
+    const user = { uid: decodedToken.uid };
     
     try {
       const tribeRef = db.collection('tribes').doc(input.tribeId);

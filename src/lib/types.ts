@@ -29,6 +29,7 @@ export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 // src/ai/flows/join-tribe.ts
 export const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
+  idToken: z.string().optional(),
 });
 export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 
