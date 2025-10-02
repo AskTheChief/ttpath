@@ -52,7 +52,7 @@ const updateTribeMeetingsFlow = ai.defineFlow(
       // Convert meeting dates from string to Firestore Timestamps
       const meetingsWithTimestamps = meetings.map(meeting => ({
         ...meeting,
-        date: new Date(meeting.date),
+        date: new Date(meeting.date), // Firestore Admin SDK handles JS Date conversion
       }));
 
       await tribeRef.update({

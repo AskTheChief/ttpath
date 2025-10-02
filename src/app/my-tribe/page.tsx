@@ -274,7 +274,7 @@ export default function MyTribePage() {
     if (!userTribe || !user || !selectedDate) return;
   
     const newMeeting = {
-      id: new Date().toISOString(), // Temporary unique ID
+      id: new Date().toISOString(), // Generate a unique ID for the meeting
       date: selectedDate,
     };
   
@@ -290,6 +290,7 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
+        // Optimistically update local state to reflect the change immediately
         setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
       } else {
         throw new Error(result.message);
@@ -314,6 +315,7 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
+        // Optimistically update local state
         setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
       } else {
         throw new Error(result.message);
