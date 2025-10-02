@@ -104,7 +104,7 @@ export const ApplicationSchema = z.object({
     applicantId: z.string(),
     answers: z.record(z.string()).optional(),
     status: z.string(),
-    createdAt: z.any(),
+    createdAt: z.union([z.date(), z.string()]),
 });
 export type Application = z.infer<typeof ApplicationSchema>;
 

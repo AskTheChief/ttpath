@@ -98,7 +98,11 @@ export default function MyTribePage() {
       setTutorialFeedback(feedback);
 
       if (appsResult.success && appsResult.applications) {
-        setApplications(appsResult.applications);
+        const sortedApps = appsResult.applications.map(app => ({
+          ...app,
+          createdAt: new Date(app.createdAt), // Convert ISO string to Date object
+        })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        setApplications(sortedApps);
       } else if (!appsResult.success) {
         throw new Error(appsResult.message || "Failed to fetch applications.");
       }
@@ -562,7 +566,12 @@ export default function MyTribePage() {
                             <Accordion type="single" collapsible className="w-full">
                                 {applications.map(app => (
                                     <AccordionItem key={app.id} value={app.id}>
-                                        <AccordionTrigger>Applicant: {app.applicantId.substring(0, 8)}...</AccordionTrigger>
+                                        <AccordionTrigger>
+                                          <div className="flex flex-col items-start">
+                                            <span>Applicant: {app.applicantId.substring(0, 8)}...</span>
+                                            <span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span>
+                                          </div>
+                                        </AccordionTrigger>
                                         <AccordionContent>
                                             <div className="space-y-4">
                                                 <div>
@@ -574,6 +583,7 @@ export default function MyTribePage() {
                                                                 <p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p>
                                                             </div>
                                                         ))}
+                                                        {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-end gap-2 pt-2">

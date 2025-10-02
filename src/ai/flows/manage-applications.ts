@@ -5,7 +5,7 @@ import { ai } from '@/ai/genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps, credential } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { ManageApplicationInputSchema, ManageApplicationOutputSchema, type ManageApplicationInput, type ManageApplicationOutput } from '@/lib/types';
+import { ManageApplicationInputSchema, ManageApplicationOutputSchema, type ManageApplicationInput, type ManageApplicationOutput, ApplicationSchema } from '@/lib/types';
 import { z } from 'zod';
 
 if (!getApps().length) {
@@ -50,9 +50,20 @@ const manageApplicationFlow = ai.defineFlow(
 
         const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
         const applicationsSnapshot = await db.collection('tribe_applications').where('tribeId', 'in', tribeIds).get();
-        const applications = applicationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const applications = applicationsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const createdAt = data.createdAt;
+          
+          return { 
+            id: doc.id, 
+            ...data,
+            // Ensure createdAt is a serializable string
+            createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : createdAt,
+          };
+        });
 
-        return { success: true, applications: applications as any };
+        return { success: true, applications: applications as z.infer<typeof ApplicationSchema>[] };
       } catch (error) {
         console.error('Error fetching applications:', error);
         return { success: false, message: 'Failed to fetch applications.' };
