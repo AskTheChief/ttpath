@@ -259,14 +259,11 @@ export default function MyTribePage() {
   };
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    const location = place.formatted_address || '';
-    const coords = place.geometry?.location ? {
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng(),
-    } : null;
-    
-    setNewTribeLocation(location);
-    setNewTribeCoords(coords);
+    setNewTribeLocation(place.formatted_address || '');
+    setNewTribeCoords(place.geometry?.location ? {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+    } : null);
   };
 
   const handleAddMeeting = async () => {
