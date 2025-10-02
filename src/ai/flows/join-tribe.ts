@@ -57,21 +57,22 @@ const joinTribeFlow = ai.defineFlow(
           chief: user.uid,
           members: FieldValue.arrayUnion(user.uid),
         });
+        return { success: true };
       } else {
         // If tribe has members, create an application.
         const applicationRef = db.collection('tribe_applications').doc();
         await applicationRef.set({
           tribeId: input.tribeId,
           applicantId: user.uid,
+          answers: input.answers,
           status: 'pending',
           createdAt: Timestamp.now(),
         });
+        return { success: true };
       }
-      
-      return { success: true };
     } catch (error) {
       console.error('Error joining tribe:', error);
-      return { success: false };
+      return { success: false, message: 'An unexpected error occurred while trying to join the tribe.' };
     }
   }
 );

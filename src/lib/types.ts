@@ -30,13 +30,16 @@ export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 export const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
   idToken: z.string().optional(),
+  answers: z.record(z.string()).optional().describe("The user's answers to the tutorial questions."),
 });
 export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 
 export const JoinTribeOutputSchema = z.object({
   success: z.boolean(),
+  message: z.string().optional(),
 });
 export type JoinTribeOutput = z.infer<typeof JoinTribeOutputSchema>;
+
 
 // src/ai/flows/get-tribes.ts
 export const GetTribesInputSchema = z.object({});
@@ -92,3 +95,31 @@ export const UpdateTribeMeetingsOutputSchema = z.object({
     message: z.string().optional(),
 });
 export type UpdateTribeMeetingsOutput = z.infer<typeof UpdateTribeMeetingsOutputSchema>;
+
+
+// src/ai/flows/manage-applications.ts
+export const ApplicationSchema = z.object({
+    id: z.string(),
+    tribeId: z.string(),
+    applicantId: z.string(),
+    answers: z.record(z.string()).optional(),
+    status: z.string(),
+    createdAt: z.any(),
+});
+export type Application = z.infer<typeof ApplicationSchema>;
+
+export const ManageApplicationInputSchema = z.object({
+  action: z.enum(['get', 'approve', 'deny']),
+  idToken: z.string(),
+  applicationId: z.string().optional(),
+  tribeId: z.string().optional(),
+  applicantId: z.string().optional(),
+});
+export type ManageApplicationInput = z.infer<typeof ManageApplicationInputSchema>;
+
+export const ManageApplicationOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  applications: z.array(ApplicationSchema).optional(),
+});
+export type ManageApplicationOutput = z.infer<typeof ManageApplicationOutputSchema>;

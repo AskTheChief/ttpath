@@ -1,0 +1,100 @@
+
+'use server';
+
+import { ai } from '@/ai/genkit';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { ManageApplicationInputSchema, ManageApplicationOutputSchema, type ManageApplicationInput, type ManageApplicationOutput } from '@/lib/types';
+import { z } from 'zod';
+
+if (!getApps().length) {
+  initializeApp({
+    credential: credential.applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
+}
+const db = getFirestore();
+const adminAuth = getAuth();
+
+export async function manageApplication(input: ManageApplicationInput): Promise<ManageApplicationOutput> {
+  return manageApplicationFlow(input);
+}
+
+const manageApplicationFlow = ai.defineFlow(
+  {
+    name: 'manageApplicationFlow',
+    inputSchema: ManageApplicationInputSchema,
+    outputSchema: ManageApplicationOutputSchema,
+  },
+  async (input) => {
+    if (!input.idToken) {
+      throw new Error('User not authenticated. Invalid token.');
+    }
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+      throw new Error('User not authenticated. Invalid token.');
+    }
+    const user = { uid: decodedToken.uid };
+
+    const { action, applicationId, tribeId, applicantId } = input;
+
+    if (action === 'get') {
+      try {
+        const tribesSnapshot = await db.collection('tribes').where('chief', '==', user.uid).get();
+        if (tribesSnapshot.empty) {
+          return { success: true, applications: [] };
+        }
+
+        const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
+        const applicationsSnapshot = await db.collection('tribe_applications').where('tribeId', 'in', tribeIds).get();
+        const applications = applicationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        return { success: true, applications: applications as any };
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+        return { success: false, message: 'Failed to fetch applications.' };
+      }
+    }
+
+    if (!applicationId || !tribeId || !applicantId) {
+        return { success: false, message: 'Missing required fields for this action.' };
+    }
+
+    const tribeRef = db.collection('tribes').doc(tribeId);
+    const applicationRef = db.collection('tribe_applications').doc(applicationId);
+
+    // Verify chief permission for approve/deny actions
+    const tribeDoc = await tribeRef.get();
+    if (!tribeDoc.exists || tribeDoc.data()?.chief !== user.uid) {
+        return { success: false, message: 'You do not have permission to manage this application.' };
+    }
+
+    if (action === 'approve') {
+      try {
+        await tribeRef.update({
+          members: FieldValue.arrayUnion(applicantId),
+        });
+        await applicationRef.delete();
+        return { success: true };
+      } catch (error) {
+        console.error('Error approving application:', error);
+        return { success: false, message: 'Failed to approve application.' };
+      }
+    }
+
+    if (action === 'deny') {
+      try {
+        await applicationRef.delete();
+        return { success: true };
+      } catch (error) {
+        console.error('Error denying application:', error);
+        return { success: false, message: 'Failed to deny application.' };
+      }
+    }
+    
+    return { success: false, message: 'Invalid action.' };
+  }
+);

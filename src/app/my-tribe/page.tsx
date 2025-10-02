@@ -24,9 +24,10 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting } from '@/lib/types';
+import type { Tribe, Meeting, Application } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
+import { manageApplication } from '@/ai/flows/manage-applications';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 
@@ -58,9 +59,11 @@ export default function MyTribePage() {
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
   const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
@@ -71,11 +74,16 @@ export default function MyTribePage() {
     libraries,
   });
 
+  const isChief = userTribe && userTribe.chief === user?.uid;
+
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
-      const [allTribes, feedback] = await Promise.all([
+      setIsLoading(true);
+      const idToken = await currentUser.getIdToken();
+      const [allTribes, feedback, appsResult] = await Promise.all([
         getTribes({}),
         getTutorialFeedback(),
+        manageApplication({ action: 'get', idToken }),
       ]);
 
       const tribesWithMembers = allTribes.map(t => ({
@@ -89,15 +97,22 @@ export default function MyTribePage() {
       setUserTribe(currentUserTribe || null);
       setTutorialFeedback(feedback);
 
+      if (appsResult.success && appsResult.applications) {
+        setApplications(appsResult.applications);
+      } else if (!appsResult.success) {
+        throw new Error(appsResult.message || "Failed to fetch applications.");
+      }
+
     } catch (error) {
         console.error("Error fetching page data: ", error);
         toast({ title: 'Error', description: 'Could not load your tribe and tutorial data.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   }, [toast]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setIsLoading(true);
       setUser(currentUser);
       if (currentUser) {
         await fetchTribesAndUserData(currentUser);
@@ -118,10 +133,17 @@ export default function MyTribePage() {
         setUserTribe(null);
         setTutorialAnswers({});
         setTutorialFeedback([]);
+        setApplications([]);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
-    return () => unsubscribe();
+
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+    };
   }, [fetchTribesAndUserData, toast]);
 
 
@@ -164,15 +186,23 @@ export default function MyTribePage() {
 
   const handleJoinTribe = async (tribeId: string) => {
     if (!user) return;
+    setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await joinTribe({ tribeId, idToken });
-      toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+      const userAnswers = await getTutorialAnswers({ idToken });
+      const result = await joinTribe({ tribeId, idToken, answers: userAnswers });
+      if (result.success) {
+        toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+      } else {
+        throw new Error("Failed to send application.");
+      }
       setSelectedTribe(null); // Close info card on success
       if (user) fetchTribesAndUserData(user);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error joining tribe: ", error);
-      toast({ title: 'Error', description: 'Failed to join tribe.', variant: 'destructive' });
+      toast({ title: 'Error', description: error.message || 'Failed to join tribe.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -243,7 +273,7 @@ export default function MyTribePage() {
     if (!userTribe || !user || !selectedDate) return;
   
     const newMeeting = {
-      id: new Date().toISOString(), // Temporary unique ID, will be overwritten by server
+      id: new Date().toISOString(), // Temporary unique ID
       date: selectedDate,
     };
   
@@ -259,7 +289,6 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
-        // Optimistically update local state
         setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
       } else {
         throw new Error(result.message);
@@ -284,7 +313,6 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
-        // Optimistically update local state
         setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
       } else {
         throw new Error(result.message);
@@ -293,6 +321,32 @@ export default function MyTribePage() {
       toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
     }
   };
+
+  const handleApplicationAction = async (action: 'approve' | 'deny', application: Application) => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        const result = await manageApplication({
+            action,
+            applicationId: application.id,
+            tribeId: application.tribeId,
+            applicantId: application.applicantId,
+            idToken
+        });
+        if (result.success) {
+            toast({ title: `Application ${action}d`, description: 'The list has been updated.' });
+            fetchTribesAndUserData(user); // Refresh all data
+        } else {
+            throw new Error(result.message || `Failed to ${action} application.`);
+        }
+    } catch (error: any) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+};
+
   
   if (isLoading || !isLoaded) {
     return (
@@ -319,7 +373,6 @@ export default function MyTribePage() {
   }
 
   const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
-  const isChief = userTribe && userTribe.chief === user.uid;
 
   const upcomingMeetings = (userTribe?.meetings || [])
     .filter(m => new Date(m.date) >= new Date())
@@ -343,7 +396,7 @@ export default function MyTribePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Tribe</CardTitle>
-                <CardDescription>You attend the {userTribe.name} tribe.</CardDescription>
+                <CardDescription>You are a {isChief ? 'Chief' : 'Member'} of the <span className="font-bold text-primary">{userTribe.name}</span> tribe.</CardDescription>
               </CardHeader>
               <CardContent>
                 <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
@@ -439,7 +492,7 @@ export default function MyTribePage() {
                         <h3 className="font-semibold">{tribe.name}</h3>
                         <p className="text-sm text-muted-foreground">{tribe.location}</p>
                       </div>
-                      <Button size="sm" onClick={() => handleJoinTribe(tribe.id)} disabled={!!userTribe}>
+                      <Button size="sm" onClick={() => handleJoinTribe(tribe.id)} disabled={!!userTribe || isLoading}>
                         Apply
                       </Button>
                     </div>
@@ -501,10 +554,48 @@ export default function MyTribePage() {
 
         <main className="lg:col-span-2 space-y-8">
             {isChief && userTribe && (
+              <>
+                {applications && applications.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pending Applications</CardTitle>
+                            <CardDescription>Review and respond to applicants for your tribe.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Accordion type="single" collapsible className="w-full">
+                                {applications.map(app => (
+                                    <AccordionItem key={app.id} value={app.id}>
+                                        <AccordionTrigger>Applicant: {app.applicantId.substring(0, 8)}...</AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Tutorial Answers</h4>
+                                                    <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">
+                                                        {Object.entries(app.answers || {}).map(([question, answer]) => (
+                                                            <div key={question}>
+                                                                <p className="font-medium">{question}</p>
+                                                                <p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button>
+                                                    <Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        </CardContent>
+                    </Card>
+                )}
                 <Card>
                     <CardHeader>
                         <CardTitle>Manage Meetings</CardTitle>
                         <CardDescription>Schedule and view meetings for your tribe.</CardDescription>
+                        <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                         <div>
@@ -540,6 +631,7 @@ export default function MyTribePage() {
                         </div>
                     </CardContent>
                 </Card>
+            </>
             )}
 
           <Card>
