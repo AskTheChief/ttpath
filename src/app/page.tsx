@@ -11,14 +11,11 @@ export default function Home() {
       <Accordion type="single" collapsible className="w-full max-w-4xl mb-8">
         <AccordionItem value="item-1">
           <AccordionTrigger className="text-center justify-center text-muted-foreground">
-            This path guides you
+            Overview
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground text-sm text-center">
             <p className="mb-4">
-              The Trading Tribe Path supports your personal growth. It guides you through the principles of the Trading Tribe. The path helps you discover how your feelings and experiences shape your results. You engage with core concepts and take on challenges to advance. This journey supports you in joining or leading a Tribe. This page supports the growth and maintenance of Tribes as they develop.
-            </p>
-            <p>
-              To facilitate your journey, the system uses your email for registration and to save your progress. This function creates a personalized experience. It also manages your advancement through the levels and your participation in Tribes. We commit to protecting your privacy. We do not share your data with third parties.
+              An individual Trading Tribe has about eight members who meet to support each other in working through issues and devoting to serving others. This app connects people who wish to join or start a Tribe in their area. Follow the wheel to find out how you might fit with the Trading Tribe, and how to participate.
             </p>
           </AccordionContent>
         </AccordionItem>
