@@ -9,9 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { evaluateComprehensionTestAnswers } from "@/ai/flows/evaluate-comprehension-test-answers";
-import { saveComprehensionTestAnswers } from "@/ai/flows/save-comprehension-test-answers";
-import { getComprehensionTestAnswers } from "@/ai/flows/get-comprehension-test-answers";
+import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
+import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
+import { getTutorialAnswers } from "@/ai/flows/get-tutorial-answers";
 import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -53,7 +53,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setShowReviewButton(false);
         try {
           const idToken = await user.getIdToken();
-          const existingAnswers = await getComprehensionTestAnswers({ idToken });
+          const existingAnswers = await getTutorialAnswers({ idToken });
           setAnswers(existingAnswers);
         } catch (error) {
           console.error("Failed to fetch previous answers", error);
@@ -99,7 +99,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
 
     try {
       const idToken = await user.getIdToken();
-      const saveResult = await saveComprehensionTestAnswers({ answers, idToken });
+      const saveResult = await saveTutorialAnswers({ answers, idToken });
       if (!saveResult.success) {
         throw new Error("Failed to save your answers. Please try again.");
       }
@@ -109,7 +109,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         description: "The Chief provides some feedback for you to consider.",
       });
 
-      const evaluation = await evaluateComprehensionTestAnswers({ answers });
+      const evaluation = await evaluateTutorialAnswers({ answers });
       
       setFeedback({ message: evaluation.feedback });
       setShowReviewButton(true);

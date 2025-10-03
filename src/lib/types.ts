@@ -30,7 +30,7 @@ export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 export const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
   idToken: z.string().optional(),
-  answers: z.record(z.string()).optional().describe("The user's answers to the tutorial questions."),
+  answers: z.record(z.string()).optional().describe("The user's answers to the Comprehension Test questions."),
 });
 export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 

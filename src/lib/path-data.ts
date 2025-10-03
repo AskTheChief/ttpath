@@ -42,7 +42,7 @@ export const pathNodesData: PathNodeData[] = [
     description: "",
     actions: [
       { id: "read-full-book", label: "Read the Trading Tribe Source Manual", action: "open-full-book" },
-      { id: "complete-tutorial", label: "Take the Tutorial", next: "graduate", requires: "tutorial", dependsOn: "read-full-book" }
+      { id: "complete-comprehension-test", label: "Take the Comprehension Test", next: "graduate", requires: "comprehension-test", dependsOn: "read-full-book" }
     ],
     panelPos: "left"
   },
@@ -64,7 +64,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.60,
     title: "Tribe Member",
     req: "",
-    description: "You are now a member of a Tribe. Participate in meetings, support your fellow members, and continue your journey of growth.",
+    description: "You also have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
