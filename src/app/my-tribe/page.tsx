@@ -434,7 +434,7 @@ export default function MyTribePage() {
                     <LocationAutocomplete
                         id="tribe-location"
                         onPlaceSelected={handlePlaceSelected}
-                        placeholder="e.g., New York, NY"
+                        placeholder="e.g., 123 Main St, Anytown, USA"
                         disabled={!isLoaded}
                         initialValue={newTribeLocation}
                     />
@@ -701,5 +701,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    

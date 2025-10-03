@@ -25,7 +25,7 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
 
     if (!autocompleteRef.current) {
       autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-        types: ['(cities)'], // Changed to cities for better tribe location context
+        types: ['address'],
         fields: ['formatted_address', 'geometry'],
       });
     }
