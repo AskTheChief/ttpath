@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,9 +10,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
-import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
-import { getTutorialAnswers } from "@/ai/flows/get-tutorial-answers";
+import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-comprehension-test-answers";
+import { saveTutorialAnswers } from "@/ai/flows/save-comprehension-test-answers";
+import { getTutorialAnswers } from "@/ai/flows/get-comprehension-test-answers";
 import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -27,14 +28,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { User } from "firebase/auth";
 
-type TutorialModalProps = {
+type ComprehensionTestModalProps = {
   isOpen: boolean;
   user: User | null;
   onClose: () => void;
   onComplete: (reqId: string) => void;
 };
 
-export default function TutorialModal({ isOpen, user, onClose, onComplete }: TutorialModalProps) {
+export default function ComprehensionTestModal({ isOpen, user, onClose, onComplete }: ComprehensionTestModalProps) {
   const { toast } = useToast();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [agreeMeetings, setAgreeMeetings] = useState(false);
@@ -142,14 +143,14 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
   };
 
   const handleProceedToGraduate = () => {
-    onComplete("complete-tutorial");
+    onComplete("complete-comprehension-test");
     handleClose();
   };
 
   const handleNeedsMoreTime = () => {
     toast({
       title: "Self-Reflection",
-      description: "Please read over the source book again, reflect, and update your tutorial until you feel ready.",
+      description: "Please read over the source book again, reflect, and update your comprehension test until you feel ready.",
       duration: 5000,
     });
     setShowConfirmation(false);
@@ -165,7 +166,7 @@ export default function TutorialModal({ isOpen, user, onClose, onComplete }: Tut
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-4 border-b">
-            <DialogTitle className="text-2xl font-bold text-slate-800">Study Guide</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-800">Comprehension Test Study Guide</DialogTitle>
             <DialogDescription>
               You answer the questions below to complete the comprehension test. Your answers save as you go. You submit to The Chief for guidance when you feel ready.
             </DialogDescription>

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
-import TutorialModal from './modals/tutorial-modal';
+import ComprehensionTestModal from './modals/comprehension-test-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -42,7 +43,7 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 };
 
 const actionIcons: { [key: string]: React.FC<any> } = {
-  'complete-tutorial': FileCheck,
+  'complete-comprehension-test': FileCheck,
 };
 
 export default function PathJourney() {
@@ -64,12 +65,13 @@ export default function PathJourney() {
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
+  const [showLockedAlert, setShowLockedAlert] = useState(false);
 
   const [modalState, setModalState] = useState({
     signup: false,
     login: false,
     chatbot: false,
-    tutorial: false,
+    comprehensionTest: false,
     feedback: false,
     link: false,
     menu: false,
@@ -203,18 +205,6 @@ export default function PathJourney() {
     setTimeout(place, 0);
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
-  
-    useEffect(() => {
-    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
-      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
-      if (targetNode) {
-        animateUserIcon(targetNode, 1);
-        setIsInitialLoad(false);
-      }
-    } else if (!isLoadingProgress) {
-        setIsInitialLoad(false);
-    }
-  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad]);
 
   const triggerConfetti = useCallback((x: number, y: number) => {
     if (!confettiContainerRef.current) return;
@@ -314,6 +304,17 @@ export default function PathJourney() {
     requestAnimationFrame(animationStep);
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
   
+  useEffect(() => {
+    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
+      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
+      if (targetNode) {
+        animateUserIcon(targetNode, 1);
+        setIsInitialLoad(false);
+      }
+    } else if (!isLoadingProgress) {
+        setIsInitialLoad(false);
+    }
+  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad, animateUserIcon]);
   
   useEffect(() => {
     placeElementsOnPath();
@@ -371,7 +372,7 @@ export default function PathJourney() {
   const handleActionClick = (action: PathAction) => {
     playSound('action', 'C4', '8n');
     
-    const requiresAuth = action.id === 'complete-tutorial' || action.action === 'navigate-my-tribe';
+    const requiresAuth = action.id === 'complete-comprehension-test' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -391,8 +392,8 @@ export default function PathJourney() {
       setModalState(s => ({ ...s, link: true }));
       return;
     }
-     if (action.id === 'complete-tutorial') {
-      setModalState(s => ({...s, tutorial: true}));
+     if (action.id === 'complete-comprehension-test') {
+      setModalState(s => ({...s, comprehensionTest: true}));
       return;
     }
     
@@ -515,11 +516,7 @@ export default function PathJourney() {
                   const buttonEl = e.currentTarget;
                   buttonEl.classList.add('button-shake');
                   setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
-                  toast({
-                    variant: "destructive",
-                    title: "Prerequisite not met",
-                    description: "You must complete the previous steps first.",
-                  });
+                  setShowLockedAlert(true);
                 } else {
                   handleActionClick(action);
                 }
@@ -548,7 +545,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu'> | 'pamphlet') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest'> | 'pamphlet' | 'comprehensionTest') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -757,16 +754,31 @@ export default function PathJourney() {
         isOpen={modalState.chatbot}
         onClose={() => setModalState(s => ({ ...s, chatbot: false }))}
       />
-      <TutorialModal
-        isOpen={modalState.tutorial}
+      <ComprehensionTestModal
+        isOpen={modalState.comprehensionTest}
         user={currentUser}
-        onClose={() => setModalState(s => ({ ...s, tutorial: false }))}
-        onComplete={() => completeRequirement('complete-tutorial')}
+        onClose={() => setModalState(s => ({ ...s, comprehensionTest: false }))}
+        onComplete={() => completeRequirement('complete-comprehension-test')}
       />
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
       />
+      <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Prerequisite Not Met</AlertDialogTitle>
+            <AlertDialogDescription>
+              You must complete the previous steps on the path before you can perform this action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowLockedAlert(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }
+
+    
