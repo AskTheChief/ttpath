@@ -52,7 +52,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.40,
     title: "Graduate",
     req: "",
-    description: "As a Graduate, you now participate fully. You can apply to join an existing Tribe or take the initiative to start your own.",
+    description: "As a Graduate, you may apply to join an existing Tribe. You may also take the initiative to start your own.",
     actions: [
       { id: "go-to-my-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe" },
     ],
