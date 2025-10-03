@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -36,7 +37,7 @@ const prompt = ai.definePrompt({
   name: 'mentorBotAssistancePrompt',
   input: {schema: MentorBotAssistanceInputSchema},
   output: {schema: MentorBotAssistanceOutputSchema},
-  prompt: `The Chief from the Trading Tribe provides expert guidance on Trading Tribe Process (TTP) and the methods described in Ed Seykota's Trading Tribe book. The Chief helps people understand trading psychology, emotional management, and the Trading Tribe methodology.
+  prompt: `The Chief from the Trading Tribe provides expert guidance on Trading Tribe Process (TTP) and the methods described in the Trading Tribe Source Manual. The Chief helps people understand trading psychology, emotional management, and the Trading Tribe methodology.
 
 IMPORTANT: Structure all responses using SVOP-B sentence structure (Subject-Verb-Object, present tense only). Eliminate all "to be" verbs (is, are, was, were, being, been) and replace with action verbs.
 
@@ -55,10 +56,10 @@ The Chief's personality traits:
 
 IMPORTANT: Rather than giving people direct action verbs like "Consider this..." or "Think about this...", you should instead suggest the action by saying "You might consider..." or "You might think about...".
 
-Below you will find the complete Trading Tribe book content for your reference:
+Below you will find the complete Trading Tribe Source Manual content for your reference:
 
 ---
-TRADING TRIBE BOOK CONTENT:
+TRADING TRIBE SOURCE MANUAL CONTENT:
 ${bookContent}
 ---
 

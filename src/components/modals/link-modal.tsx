@@ -33,8 +33,8 @@ export default function LinkModal({
     if (title === 'Read Quick-Start Guide') {
       return 'Open Quick-Start Guide';
     }
-    if (title === 'Read the Trading Tribe Book') {
-      return 'Open the Trading Tribe Book';
+    if (title === 'Read the Trading Tribe Source Manual') {
+      return 'Open the Trading Tribe Source Manual';
     }
     return `Open ${title}`;
   }
