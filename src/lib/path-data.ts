@@ -1,3 +1,4 @@
+
 export type PathAction = {
   id: string;
   label: string;
@@ -75,7 +76,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.8,
     title: "Tribe Chief",
     req: "",
-    description: "As Chief, you lead your Tribe. You are responsible for holding meetings, guiding members, and maintaining the Tribe's focus.",
+    description: "As a Tribe Chief, you lead your Tribe.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
