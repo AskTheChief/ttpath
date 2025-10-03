@@ -438,6 +438,9 @@ export default function MyTribePage() {
                         disabled={!isLoaded}
                         initialValue={newTribeLocation}
                     />
+                    <p className="text-sm text-muted-foreground pt-1">
+                      Enter your house number, street, city, and state. Click your address from the dropdown when you see it.
+                    </p>
                      <div className="mt-2">
                         <GoogleMap
                             mapContainerStyle={mapContainerStyle}
@@ -701,3 +704,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
