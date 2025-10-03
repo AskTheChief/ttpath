@@ -87,7 +87,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 1.0,
     title: "Mentor",
     req: "",
-    description: "As a Mentor, you have achieved a high level of understanding and now guide new Chiefs, helping to grow the wider Tribe community.",
+    description: "As a Mentor, you help guide new Chiefs.",
     actions: [
       { id: "go-to-page", label: "Go to my page" }
     ],
