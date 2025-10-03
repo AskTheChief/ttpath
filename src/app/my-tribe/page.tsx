@@ -645,8 +645,8 @@ export default function MyTribePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>My Living Tutorial</CardTitle>
-              <CardDescription>Review and edit your answers. Your progress is saved as you go.</CardDescription>
+              <CardTitle>Comprehension Test</CardTitle>
+              <CardDescription>You may review and edit your answers and save your work below.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {isFetchingAnswers ? (
@@ -701,3 +701,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
