@@ -748,7 +748,7 @@ export default function PathJourney() {
         isOpen={modalState.video}
         onClose={() => setModalState(s => ({ ...s, video: false }))}
         title="Introduction Video"
-        videoSrc="/videos/TribePath.mp4"
+        videoSrc="/Videos/couch.mp4"
       />
       <SignupModal 
         isOpen={modalState.signup}
@@ -791,5 +791,3 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
-
-    
