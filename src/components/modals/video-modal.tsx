@@ -26,6 +26,7 @@ export default function VideoModal({ isOpen, onClose, title, videoSrc }: VideoMo
             src={videoSrc}
             controls
             autoPlay
+            muted
             playsInline
           />
         </div>
