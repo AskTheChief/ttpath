@@ -3,7 +3,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -12,6 +12,7 @@ import ChatbotModal from './modals/chatbot-modal';
 import ComprehensionTestModal from './modals/comprehension-test-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
+import VideoModal from './modals/video-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,7 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 
 const actionIcons: { [key: string]: React.FC<any> } = {
   'complete-comprehension-test': FileCheck,
+  'watch-video': Video,
 };
 
 export default function PathJourney() {
@@ -74,6 +76,7 @@ export default function PathJourney() {
     comprehensionTest: false,
     feedback: false,
     link: false,
+    video: false,
     menu: false,
   });
 
@@ -92,28 +95,6 @@ export default function PathJourney() {
 
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        const progress = await getUserProgress({});
-        setCurrentUserLevel(progress.currentUserLevel);
-        setRequirementsState(progress.requirementsState);
-      } else {
-        setCurrentUserLevel(1);
-        setRequirementsState({});
-      }
-      setIsLoadingProgress(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (isGuest && isMounted && !isInitialLoad) {
-      updateUserProgress({ currentUserLevel, requirementsState });
-    }
-  }, [currentUserLevel, requirementsState, isGuest, isMounted, isInitialLoad]);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -142,19 +123,6 @@ export default function PathJourney() {
     }
   }, []);
 
-  useEffect(() => {
-    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
-    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    
-    return () => {
-      Object.values(synths.current).forEach(synth => synth?.dispose());
-    };
-  }, []);
-
   const mapSvgPointToCss = useCallback((svgPoint: DOMPoint) => {
     if (!pathRef.current || !pathContainerRef.current) return { x: 0, y: 0 };
     const svg = pathRef.current.ownerSVGElement;
@@ -172,39 +140,6 @@ export default function PathJourney() {
   
     return { x: cssX, y: cssY };
   }, []);
-
-  const placeElementsOnPath = useCallback(() => {
-    const container = pathContainerRef.current;
-    if (!pathRef.current || !container) return;
-    
-    const place = () => {
-      if (!pathRef.current) return;
-      const totalLength = pathRef.current.getTotalLength();
-      
-      pathNodesData.forEach(nodeData => {
-        const nodeEl = nodeRefs.current[nodeData.id];
-        if (nodeEl) {
-          const point = pathRef.current!.getPointAtLength(totalLength * nodeData.pathPos);
-          const cssPoint = mapSvgPointToCss(point);
-          nodeEl.style.left = `${cssPoint.x}px`;
-          nodeEl.style.top = `${cssPoint.y}px`;
-        }
-      });
-  
-      if (!isLoadingProgress && userIconRef.current) {
-          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
-          if (currentUserNode) {
-              const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
-              const cssPoint = mapSvgPointToCss(point);
-              userIconRef.current.style.left = `${cssPoint.x}px`;
-              userIconRef.current.style.top = `${cssPoint.y}px`;
-          }
-      }
-    };
-
-    setTimeout(place, 0);
-
-  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const triggerConfetti = useCallback((x: number, y: number) => {
     if (!confettiContainerRef.current) return;
@@ -303,22 +238,39 @@ export default function PathJourney() {
     };
     requestAnimationFrame(animationStep);
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
+
+  const placeElementsOnPath = useCallback(() => {
+    const container = pathContainerRef.current;
+    if (!pathRef.current || !container) return;
+    
+    const place = () => {
+      if (!pathRef.current) return;
+      const totalLength = pathRef.current.getTotalLength();
+      
+      pathNodesData.forEach(nodeData => {
+        const nodeEl = nodeRefs.current[nodeData.id];
+        if (nodeEl) {
+          const point = pathRef.current!.getPointAtLength(totalLength * nodeData.pathPos);
+          const cssPoint = mapSvgPointToCss(point);
+          nodeEl.style.left = `${cssPoint.x}px`;
+          nodeEl.style.top = `${cssPoint.y}px`;
+        }
+      });
   
-  useEffect(() => {
-    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
-      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
-      if (targetNode) {
-        animateUserIcon(targetNode, 1);
-        setIsInitialLoad(false);
+      if (!isLoadingProgress && userIconRef.current) {
+          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
+          if (currentUserNode) {
+              const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
+              const cssPoint = mapSvgPointToCss(point);
+              userIconRef.current.style.left = `${cssPoint.x}px`;
+              userIconRef.current.style.top = `${cssPoint.y}px`;
+          }
       }
-    } else if (!isLoadingProgress) {
-        setIsInitialLoad(false);
-    }
-  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad, animateUserIcon]);
-  
-  useEffect(() => {
-    placeElementsOnPath();
-  }, [placeElementsOnPath]);
+    };
+
+    setTimeout(place, 0);
+
+  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const completeRequirement = useCallback((reqId: string) => {
     setRequirementsState(prev => {
@@ -339,6 +291,54 @@ export default function PathJourney() {
   }, [playSound, animateUserIcon]);
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        const progress = await getUserProgress({});
+        setCurrentUserLevel(progress.currentUserLevel);
+        setRequirementsState(progress.requirementsState);
+      } else {
+        setCurrentUserLevel(1);
+        setRequirementsState({});
+      }
+      setIsLoadingProgress(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (isGuest && isMounted && !isInitialLoad) {
+      updateUserProgress({ currentUserLevel, requirementsState });
+    }
+  }, [currentUserLevel, requirementsState, isGuest, isMounted, isInitialLoad]);
+
+  useEffect(() => {
+    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
+    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    
+    return () => {
+      Object.values(synths.current).forEach(synth => synth?.dispose());
+    };
+  }, []);
+  
+  useEffect(() => {
+    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
+      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
+      if (targetNode) {
+        animateUserIcon(targetNode, 1);
+        setIsInitialLoad(false);
+      }
+    } else if (!isLoadingProgress) {
+        setIsInitialLoad(false);
+    }
+  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad, animateUserIcon]);
+  
+  useEffect(() => {
+    placeElementsOnPath();
     const observer = new ResizeObserver(() => {
         placeElementsOnPath();
     });
@@ -346,8 +346,6 @@ export default function PathJourney() {
     if (pathContainerRef.current) {
         observer.observe(pathContainerRef.current);
     }
-    
-    placeElementsOnPath();
     
     setIsMounted(true);
     setTimeout(() => {
@@ -361,7 +359,9 @@ export default function PathJourney() {
     }, 1000);
 
     return () => {
-      observer.disconnect();
+      if(pathContainerRef.current) {
+        observer.unobserve(pathContainerRef.current);
+      }
     }
   }, [placeElementsOnPath]);
   
@@ -394,6 +394,10 @@ export default function PathJourney() {
     }
      if (action.id === 'complete-comprehension-test') {
       setModalState(s => ({...s, comprehensionTest: true}));
+      return;
+    }
+    if (action.id === 'watch-video') {
+      setModalState(s => ({...s, video: true}));
       return;
     }
     
@@ -435,10 +439,11 @@ export default function PathJourney() {
         nodeEl.classList.add('shake');
         setTimeout(() => nodeEl.classList.remove('shake'), 500);
       }
+      setShowLockedAlert(true);
     } else {
       playSound('click', 'C4', '8n');
+      setSelectedNodeId(nodeData.id);
     }
-    setSelectedNodeId(nodeData.id);
   };
   
   const selectedNode = pathNodesData.find(n => n.id === selectedNodeId);
@@ -545,7 +550,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest'> | 'pamphlet' | 'comprehensionTest') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -738,6 +743,12 @@ export default function PathJourney() {
         url={linkModalData.url}
         requirementId={linkModalData.requirementId}
         onComplete={completeRequirement}
+      />
+       <VideoModal
+        isOpen={modalState.video}
+        onClose={() => setModalState(s => ({ ...s, video: false }))}
+        title="Introduction Video"
+        videoSrc="/videos/TribePath.mp4"
       />
       <SignupModal 
         isOpen={modalState.signup}
