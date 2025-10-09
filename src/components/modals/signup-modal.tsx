@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, User } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { useState } from "react";
+import { createUserWithEmailAndPassword, User, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { useState }from "react";
 import LocationAutocomplete from "../location-autocomplete";
-import { useLoadScript, Libraries } from "@react-google-maps/api";
+import { useLoadScript, Libraries, GoogleMap, MarkerF } from "@react-google-maps/api";
 import { cn } from "@/lib/utils";
 
 type SignupModalProps = {
@@ -32,6 +32,18 @@ type UserProfile = {
 }
 
 const libraries: Libraries = ["places"];
+
+const defaultCenter = {
+  lat: 39.8283,
+  lng: -98.5795,
+};
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+  minHeight: '150px',
+  borderRadius: '0.5rem',
+};
 
 export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: SignupModalProps) {
   const { toast } = useToast();
@@ -55,8 +67,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     libraries,
   });
 
-  const handleClose = () => {
-    // Reset state on close
+  const resetState = () => {
     setStep(1);
     setEmail('');
     setPassword('');
@@ -65,7 +76,55 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     setUser(null);
     setProfile({});
     setCoords(null);
+  };
+  
+  const handleClose = () => {
+    resetState();
     onClose();
+  };
+
+  const processUserRegistration = async (user: User) => {
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      // User already exists, treat as login
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back to the Tribe!",
+      });
+      onComplete("sign-up");
+      handleClose();
+    } else {
+      // New user, proceed to profile completion
+      setUser(user);
+      setProfile(prev => ({ 
+        ...prev, 
+        email: user.email || '',
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ')[1] || '',
+      }));
+      setStep(2);
+    }
+  }
+
+  const handleGoogleSignup = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      await processUserRegistration(result.user);
+    } catch (error: any) {
+      setError(error.message);
+      toast({
+        variant: "destructive",
+        title: "Google Sign-In Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -74,9 +133,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      setUser(userCredential.user);
-      setProfile(prev => ({ ...prev, email: userCredential.user.email || '' }));
-      setStep(2); // Move to profile details step
+      await processUserRegistration(userCredential.user);
     } catch (error: any) {
       setError(error.message);
       toast({
@@ -124,8 +181,9 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         description: "Welcome to the Tribe! You are now a Guest.",
       });
       onComplete("sign-up");
-      handleClose(); // Close and reset modal
-    } catch (error: any) {
+      handleClose();
+    } catch (error: any)
+      {
       setError(error.message);
       toast({
         variant: "destructive",
@@ -153,7 +211,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={cn("max-w-md", step === 2 && "max-w-2xl")}>
+      <DialogContent className={cn("max-w-md", step === 2 && "max-w-3xl")}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {step === 1 ? 'Become a Guest (Step 1/2)' : 'Complete Your Profile (Step 2/2)'}
@@ -166,30 +224,45 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         </DialogHeader>
 
         {step === 1 && (
-          <form onSubmit={handleEmailSignup}>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email-signup">Email Address</Label>
-                <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password-signup">Password</Label>
-                <Input type="password" id="password-signup" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
+          <div>
+            <div className="p-6">
+                <Button onClick={handleGoogleSignup} variant="outline" className="w-full mb-4" disabled={isLoading}>
+                    {isLoading ? 'Loading...' : 'Sign up with Google'}
+                </Button>
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                </div>
             </div>
-            <div className="p-4 border-t flex flex-col gap-2">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Registering..." : "Continue"}
-              </Button>
-              <Button type="button" variant="link" onClick={showLogin} disabled={isLoading} className="w-full">
-                Already have an account? Log In
-              </Button>
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading} className="w-full">
-                Cancel
-              </Button>
-            </div>
-          </form>
+            <form onSubmit={handleEmailSignup}>
+              <div className="p-6 pt-0 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-signup">Email Address</Label>
+                  <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-signup">Password</Label>
+                  <Input type="password" id="password-signup" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+              </div>
+              <div className="p-4 border-t flex flex-col gap-2">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Registering..." : "Continue"}
+                </Button>
+                <Button type="button" variant="link" onClick={showLogin} disabled={isLoading} className="w-full">
+                  Already have an account? Log In
+                </Button>
+                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading} className="w-full">
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
         )}
 
         {step === 2 && (
@@ -198,27 +271,44 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" required value={profile.firstName} onChange={handleProfileChange} />
+                    <Input id="firstName" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" required value={profile.lastName} onChange={handleProfileChange} />
+                    <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} />
                 </div>
              </div>
              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone} onChange={handleProfileChange} />
+                <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} />
              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <LocationAutocomplete 
-                    id="address"
-                    onPlaceSelected={handlePlaceSelected}
-                    placeholder="Search for your address..."
-                    disabled={!isLoaded}
-                    initialValue={profile.address}
-                />
-                {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <LocationAutocomplete 
+                      id="address"
+                      onPlaceSelected={handlePlaceSelected}
+                      placeholder="Search for your address..."
+                      disabled={!isLoaded}
+                      initialValue={profile.address}
+                  />
+                  {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
+                </div>
+                <div className="w-full h-full rounded-md overflow-hidden">
+                   {isLoaded && (
+                    <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={coords || defaultCenter}
+                        zoom={coords ? 15 : 4}
+                        options={{
+                            disableDefaultUI: true,
+                            zoomControl: true,
+                        }}
+                    >
+                        {coords && <MarkerF position={coords} />}
+                    </GoogleMap>
+                   )}
+                </div>
               </div>
              {error && <p className="text-sm text-destructive">{error}</p>}
            </div>
@@ -234,4 +324,5 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     </Dialog>
   );
 }
-    
+
+  
