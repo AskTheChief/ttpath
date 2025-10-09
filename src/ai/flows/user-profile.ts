@@ -48,7 +48,7 @@ const getUserProfileFlow = ai.defineFlow(
     const userDocRef = db.collection('users').doc(user.uid);
     const docSnap = await userDocRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return {};
     }
 
