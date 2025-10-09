@@ -11,7 +11,7 @@ import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import LocationAutocomplete from "../location-autocomplete";
-import { GoogleMap, useLoadScript, Libraries } from "@react-google-maps/api";
+import { useLoadScript, Libraries } from "@react-google-maps/api";
 import { cn } from "@/lib/utils";
 
 type SignupModalProps = {
@@ -32,13 +32,6 @@ type UserProfile = {
 }
 
 const libraries: Libraries = ["places"];
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '200px',
-  borderRadius: '0.5rem',
-  marginTop: '1rem'
-};
 
 export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: SignupModalProps) {
   const { toast } = useToast();
@@ -226,16 +219,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
                     initialValue={profile.address}
                 />
                 {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
-                {isLoaded && (
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={coords || { lat: 39.8283, lng: -98.5795 }}
-                        zoom={coords ? 15 : 4}
-                        options={{ disableDefaultUI: true, gestureHandling: 'none' }}
-                    >
-                        {coords && <google.maps.Marker position={coords} />}
-                    </GoogleMap>
-                )}
               </div>
              {error && <p className="text-sm text-destructive">{error}</p>}
            </div>
