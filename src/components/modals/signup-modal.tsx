@@ -11,7 +11,7 @@ import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useState }from "react";
 import LocationAutocomplete from "../location-autocomplete";
-import { useLoadScript, Libraries, GoogleMap, MarkerF } from "@react-google-maps/api";
+import { useLoadScript, Libraries } from "@react-google-maps/api";
 import { cn } from "@/lib/utils";
 
 type SignupModalProps = {
@@ -32,18 +32,6 @@ type UserProfile = {
 }
 
 const libraries: Libraries = ["places"];
-
-const defaultCenter = {
-  lat: 39.8283,
-  lng: -98.5795,
-};
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-  minHeight: '150px',
-  borderRadius: '0.5rem',
-};
 
 export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: SignupModalProps) {
   const { toast } = useToast();
@@ -190,7 +178,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={cn("max-w-md", step === 2 && "max-w-3xl")}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {step === 1 ? 'Become a Guest (Step 1/2)' : 'Complete Your Profile (Step 2/2)'}
@@ -248,33 +236,16 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} />
              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <LocationAutocomplete 
-                      id="address"
-                      onPlaceSelected={handlePlaceSelected}
-                      placeholder="Search for your address..."
-                      disabled={!isLoaded}
-                      initialValue={profile.address}
-                  />
-                  {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
-                </div>
-                <div className="w-full h-full rounded-md overflow-hidden">
-                   {isLoaded && (
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={coords || defaultCenter}
-                        zoom={coords ? 15 : 4}
-                        options={{
-                            disableDefaultUI: true,
-                            zoomControl: true,
-                        }}
-                    >
-                        {coords && <MarkerF position={coords} />}
-                    </GoogleMap>
-                   )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <LocationAutocomplete 
+                    id="address"
+                    onPlaceSelected={handlePlaceSelected}
+                    placeholder="Search for your address..."
+                    disabled={!isLoaded}
+                    initialValue={profile.address}
+                />
+                {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
               </div>
              {error && <p className="text-sm text-destructive">{error}</p>}
            </div>
@@ -290,7 +261,3 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     </Dialog>
   );
 }
-
-    
-
-    
