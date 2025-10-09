@@ -9,9 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { useState }from "react";
-import LocationAutocomplete from "../location-autocomplete";
-import { useLoadScript, Libraries } from "@react-google-maps/api";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type SignupModalProps = {
@@ -25,13 +23,9 @@ type UserProfile = {
   firstName: string;
   lastName: string;
   address: string;
-  lat?: number;
-  lng?: number;
   phone: string;
   email: string;
-}
-
-const libraries: Libraries = ["places"];
+};
 
 export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: SignupModalProps) {
   const { toast } = useToast();
@@ -48,12 +42,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     address: '',
     phone: '',
   });
-  const [coords, setCoords] = useState<{lat: number; lng: number} | null>(null);
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
 
   const resetState = () => {
     setStep(1);
@@ -63,7 +51,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     setIsLoading(false);
     setUser(null);
     setProfile({});
-    setCoords(null);
   };
   
   const handleClose = () => {
@@ -76,7 +63,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      // User already exists, treat as login
       toast({
         title: "Login Successful!",
         description: "Welcome back to the Tribe!",
@@ -84,7 +70,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
       onComplete("sign-up");
       handleClose();
     } else {
-      // New user, proceed to profile completion
       setUser(user);
       setProfile(prev => ({ 
         ...prev, 
@@ -123,10 +108,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         setError("All fields are required.");
         return;
     }
-    if (!coords) {
-        setError("Please select a valid address from the dropdown.");
-        return;
-    }
 
     setIsLoading(true);
     setError(null);
@@ -135,8 +116,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         firstName: profile.firstName,
         lastName: profile.lastName,
         address: profile.address,
-        lat: coords.lat,
-        lng: coords.lng,
         phone: profile.phone,
         email: user.email!,
       };
@@ -166,15 +145,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     const { id, value } = e.target;
     setProfile(prev => ({ ...prev, [id]: value }));
   };
-
-  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    setProfile(prev => ({...prev, address: place.formatted_address || ''}));
-    setCoords(place.geometry?.location ? {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-    } : null);
-  };
-
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -232,26 +202,19 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
                     <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} />
                 </div>
              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" placeholder="123 Main St, Anytown, USA" required value={profile.address || ''} onChange={handleProfileChange} />
+              </div>
              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} />
              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <LocationAutocomplete 
-                    id="address"
-                    onPlaceSelected={handlePlaceSelected}
-                    placeholder="Search for your address..."
-                    disabled={!isLoaded}
-                    initialValue={profile.address}
-                />
-                {loadError && <p className="text-sm text-destructive">Could not load maps.</p>}
-              </div>
              {error && <p className="text-sm text-destructive">{error}</p>}
            </div>
            <div className="p-4 border-t flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
-             <Button type="submit" className="w-full" disabled={isLoading || !isLoaded}>
+             <Button type="submit" className="w-full" disabled={isLoading}>
                {isLoading ? "Saving Profile..." : "Complete Registration"}
              </Button>
            </div>
