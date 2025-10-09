@@ -40,7 +40,7 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
     
     return () => {
         if (placeChangedListener) {
-            placeChangedListener.remove();
+            google.maps.event.removeListener(placeChangedListener);
         }
     };
 
@@ -53,3 +53,5 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
     {...props} 
   />;
 }
+
+    
