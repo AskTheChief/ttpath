@@ -11,12 +11,8 @@ type LocationAutocompleteProps = InputProps & {
 
 export default function LocationAutocomplete({ onPlaceSelected, initialValue = '', ...props }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete>();
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [inputValue, setInputValue] = useState(initialValue);
-
-  useEffect(() => {
-    setInputValue(initialValue);
-  }, [initialValue]);
 
   useEffect(() => {
     if (!inputRef.current || !window.google || !window.google.maps.places) {
@@ -30,38 +26,29 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
       });
     }
 
-    // Set z-index for pac-container
-    const pacContainer = document.querySelector('.pac-container');
-    if (pacContainer) {
-      (pacContainer as HTMLElement).style.zIndex = '10000';
-    }
-
-
-    const placeChangedListener = autocompleteRef.current.addListener('place_changed', () => {
+    const listener = autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place?.geometry?.location && place.formatted_address) {
+      if (place && place.geometry && place.formatted_address) {
         setInputValue(place.formatted_address);
         onPlaceSelected(place);
       }
     });
-    
-    return () => {
-        if (placeChangedListener) {
-            google.maps.event.removeListener(placeChangedListener);
-        }
-        // Clean up z-index when component unmounts
-        const pacContainer = document.querySelector('.pac-container');
-        if (pacContainer) {
-             (pacContainer as HTMLElement).style.zIndex = '';
-        }
-    };
 
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
   }, [onPlaceSelected]);
-  
-  return <Input 
-    ref={inputRef}
-    value={inputValue}
-    onChange={(e) => setInputValue(e.target.value)}
-    {...props} 
-  />;
+
+  useEffect(() => {
+    setInputValue(initialValue);
+  }, [initialValue]);
+
+  return (
+    <Input
+      ref={inputRef}
+      value={inputValue}
+      onChange={(e) => setInputValue(e.target.value)}
+      {...props}
+    />
+  );
 }
