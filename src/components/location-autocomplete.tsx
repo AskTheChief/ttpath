@@ -30,6 +30,13 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
       });
     }
 
+    // Set z-index for pac-container
+    const pacContainer = document.querySelector('.pac-container');
+    if (pacContainer) {
+      (pacContainer as HTMLElement).style.zIndex = '10000';
+    }
+
+
     const placeChangedListener = autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.geometry?.location && place.formatted_address) {
@@ -42,6 +49,11 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
         if (placeChangedListener) {
             google.maps.event.removeListener(placeChangedListener);
         }
+        // Clean up z-index when component unmounts
+        const pacContainer = document.querySelector('.pac-container');
+        if (pacContainer) {
+             (pacContainer as HTMLElement).style.zIndex = '';
+        }
     };
 
   }, [onPlaceSelected]);
@@ -53,5 +65,3 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
     {...props} 
   />;
 }
-
-    
