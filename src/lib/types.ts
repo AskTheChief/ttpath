@@ -123,3 +123,33 @@ export const ManageApplicationOutputSchema = z.object({
   applications: z.array(ApplicationSchema).optional(),
 });
 export type ManageApplicationOutput = z.infer<typeof ManageApplicationOutputSchema>;
+
+// src/ai/flows/user-profile.ts
+export const UserProfileSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+});
+export type UserProfile = z.infer<typeof UserProfileSchema>;
+
+export const GetUserProfileInputSchema = z.object({
+  idToken: z.string(),
+});
+export type GetUserProfileInput = z.infer<typeof GetUserProfileInputSchema>;
+
+export const GetUserProfileOutputSchema = UserProfileSchema;
+export type GetUserProfileOutput = z.infer<typeof GetUserProfileOutputSchema>;
+
+export const UpdateUserProfileInputSchema = z.object({
+  idToken: z.string(),
+  profile: UserProfileSchema,
+});
+export type UpdateUserProfileInput = z.infer<typeof UpdateUserProfileInputSchema>;
+
+export const UpdateUserProfileOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type UpdateUserProfileOutput = z.infer<typeof UpdateUserProfileOutputSchema>;

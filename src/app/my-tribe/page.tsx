@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { leaveTribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/ai/flows/get-tutorial-answers';
@@ -24,12 +24,14 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { doc, getDoc } from 'firebase/firestore';
+import { getUserProfile, updateUserProfile } from '@/ai/flows/user-profile';
 
 const libraries: Libraries = ['places'];
 
@@ -52,6 +54,7 @@ const defaultCenter = {
 
 export default function MyTribePage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [newTribeName, setNewTribeName] = useState('');
   const [newTribeLocation, setNewTribeLocation] = useState('');
@@ -80,11 +83,14 @@ export default function MyTribePage() {
     try {
       setIsLoading(true);
       const idToken = await currentUser.getIdToken();
-      const [allTribes, feedback, appsResult] = await Promise.all([
+      const [allTribes, feedback, appsResult, profile] = await Promise.all([
         getTribes({}),
         getTutorialFeedback(),
         manageApplication({ action: 'get', idToken }),
+        getUserProfile({ idToken }),
       ]);
+
+      setUserProfile(profile);
 
       const tribesWithMembers = allTribes.map(t => ({
         ...t,
@@ -138,6 +144,7 @@ export default function MyTribePage() {
         setTutorialAnswers({});
         setTutorialFeedback([]);
         setApplications([]);
+        setUserProfile({});
         setIsLoading(false);
       }
     });
@@ -350,6 +357,29 @@ export default function MyTribePage() {
     }
 };
 
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setUserProfile(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const idToken = await user.getIdToken();
+      const result = await updateUserProfile({ idToken, profile: userProfile as UserProfile });
+      if (result.success) {
+        toast({ title: 'Profile Updated', description: 'Your information has been saved.' });
+      } else {
+        throw new Error(result.message || 'Failed to update profile.');
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   
   if (isLoading || !isLoaded) {
     return (
@@ -559,6 +589,42 @@ export default function MyTribePage() {
         </aside>
 
         <main className="lg:col-span-2 space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Profile</CardTitle>
+                <CardDescription>View and update your personal information.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={userProfile.email || ''} disabled />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveProfile} disabled={isLoading}>
+                  {isLoading ? 'Saving...' : 'Save Profile'}
+                </Button>
+              </CardFooter>
+            </Card>
+
             {isChief && userTribe && (
               <>
                 {applications && applications.length > 0 && (
@@ -704,5 +770,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
