@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, User, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useState }from "react";
 import LocationAutocomplete from "../location-autocomplete";
@@ -101,31 +101,10 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
       setProfile(prev => ({ 
         ...prev, 
         email: user.email || '',
-        firstName: user.displayName?.split(' ')[0] || '',
-        lastName: user.displayName?.split(' ')[1] || '',
       }));
       setStep(2);
     }
   }
-
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      await processUserRegistration(result.user);
-    } catch (error: any) {
-      setError(error.message);
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,28 +197,15 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
           </DialogTitle>
           <DialogDescription>
             {step === 1 
-              ? "First, create your account credentials."
+              ? "Create your account credentials to join as a Guest."
               : "Now, let's get your profile details."}
           </DialogDescription>
         </DialogHeader>
 
         {step === 1 && (
           <div>
-            <div className="p-6">
-                <Button onClick={handleGoogleSignup} variant="outline" className="w-full mb-4" disabled={isLoading}>
-                    {isLoading ? 'Loading...' : 'Sign up with Google'}
-                </Button>
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                    </div>
-                </div>
-            </div>
             <form onSubmit={handleEmailSignup}>
-              <div className="p-6 pt-0 space-y-4">
+              <div className="p-6 space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email-signup">Email Address</Label>
                   <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -325,4 +291,4 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
   );
 }
 
-  
+    
