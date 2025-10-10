@@ -46,7 +46,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     const content = (
         <Button
             variant="ghost"
-            className="w-full justify-start text-lg p-6 h-auto"
+            className="w-full justify-start text-xl p-6 h-auto"
             onClick={() => !isLink && handleItemClick(item)}
         >
             <item.icon className="mr-4 w-10 h-10" />
@@ -71,10 +71,10 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         <SheetHeader className="p-6 border-b">
           <SheetTitle className="text-2xl">Menu</SheetTitle>
         </SheetHeader>
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-1">
           {menuItems.map(renderMenuItem)}
           {isGuest && (
-            <div className="relative flex w-full items-center justify-start text-lg p-6 h-auto rounded-md hover:bg-accent hover:text-accent-foreground">
+            <div className="relative flex w-full items-center justify-start text-xl p-6 h-auto rounded-md hover:bg-accent hover:text-accent-foreground">
                 <Shield className="mr-4 w-10 h-10" />
                 <span className="font-medium">Dev Den</span>
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
