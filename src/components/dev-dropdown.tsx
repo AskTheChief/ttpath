@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
@@ -19,11 +19,12 @@ import { Button } from './ui/button';
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
+  children: React.ReactNode;
 };
 
 const DEV_PIN = '3141';
 
-export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
+export default function DevDropdown({ onTestCreateTribe, children }: DevDropdownProps) {
   const { toast } = useToast();
   const [showPinModal, setShowPinModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -76,9 +77,9 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
     <>
       <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" onClick={handleTriggerClick}>
-             <MoreVertical className="h-5 w-5" />
-          </Button>
+          <button onClick={handleTriggerClick} className="w-full h-full absolute inset-0 focus:outline-none">
+            {children}
+          </button>
         </DropdownMenuTrigger>
         {isUnlocked && (
           <DropdownMenuContent>
