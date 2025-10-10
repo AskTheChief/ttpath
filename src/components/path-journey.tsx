@@ -178,7 +178,7 @@ export default function PathJourney() {
     }
   }, []);
 
-  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
+  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number, updatedReqsState?: Record<string, boolean>) => {
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -228,29 +228,32 @@ export default function PathJourney() {
             setIsAnimating(false);
 
             const newLevel = targetNode.level;
-            setCurrentUserLevel(newLevel);
             
-            if (!startLevel) {
+            if (!startLevel) { // Only run these side-effects for actual progress, not the initial catch-up animation.
+                setCurrentUserLevel(newLevel);
                 playSound('progress');
                 triggerConfetti(finalPoint.x, finalPoint.y);
 
                 if (isGuest) {
-                  updateUserProgress({
-                    currentUserLevel: newLevel,
-                    requirementsState: requirementsState,
-                  });
+                    const finalReqsState = updatedReqsState || requirementsState;
+                    updateUserProgress({
+                        currentUserLevel: newLevel,
+                        requirementsState: finalReqsState,
+                    });
                 }
-            }
-
-            if (!startLevel && targetNode.id === 'node-guest') {
-                toast({
-                    title: "Welcome, Guest!",
-                    description: `You can now proceed on your journey.`,
-                });
-            } else if (!startLevel && targetNode.id === 'node-graduate') {
-                toast({
-                    title: "Congratulations, You Graduate!",
-                });
+                if (targetNode.id === 'node-guest') {
+                    toast({
+                        title: "Welcome, Guest!",
+                        description: `You can now proceed on your journey.`,
+                    });
+                } else if (targetNode.id === 'node-graduate') {
+                    toast({
+                        title: "Congratulations, You Graduate!",
+                    });
+                }
+            } else {
+                // For initial animation, just set the level at the end without side effects.
+                setCurrentUserLevel(newLevel);
             }
         }
     };
@@ -298,7 +301,8 @@ export default function PathJourney() {
     if (action?.next) {
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
-            animateUserIcon(nextNode);
+            // Pass the newly updated requirements state directly to the animation function
+            animateUserIcon(nextNode, undefined, newReqs);
         }
     } else {
         setJustCompletedActionId(reqId);
@@ -357,12 +361,12 @@ export default function PathJourney() {
       if (currentUserLevel > 1) {
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
         if (targetNode) {
-          animateUserIcon(targetNode, 1);
+          animateUserIcon(targetNode, 1, requirementsState);
         }
       }
       initialAnimationPlayed.current = true;
     }
-  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
+  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon, requirementsState]);
   
   useEffect(() => {
     placeElementsOnPath();
