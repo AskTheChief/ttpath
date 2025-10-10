@@ -226,11 +226,21 @@ export default function PathJourney() {
              userIconRef.current!.style.top = `${finalPoint.y}px`;
              userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
             setIsAnimating(false);
+
+            const newLevel = targetNode.level;
+            setCurrentUserLevel(newLevel);
+            
             if (!startLevel) {
                 playSound('progress');
                 triggerConfetti(finalPoint.x, finalPoint.y);
+
+                if (isGuest) {
+                  updateUserProgress({
+                    currentUserLevel: newLevel,
+                    requirementsState: requirementsState,
+                  });
+                }
             }
-            setCurrentUserLevel(targetNode.level);
 
             if (!startLevel && targetNode.id === 'node-guest') {
                 toast({
@@ -245,7 +255,7 @@ export default function PathJourney() {
         }
     };
     requestAnimationFrame(animationStep);
-  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
+  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast, isGuest, requirementsState]);
 
   const placeElementsOnPath = useCallback(() => {
     const container = pathContainerRef.current;
@@ -281,36 +291,27 @@ export default function PathJourney() {
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const completeRequirement = useCallback((reqId: string) => {
-    // Construct the new state
     const newReqs = { ...requirementsState, [reqId]: true };
-    let newLevel = currentUserLevel;
-    const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    let nextNode;
-    
-    if (action?.next) {
-        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-        if (nextNode) {
-            newLevel = nextNode.level;
-        }
-    }
-  
-    // Update local state
     setRequirementsState(newReqs);
-    if (nextNode) {
-        animateUserIcon(nextNode);
+
+    const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+    if (action?.next) {
+        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        if (nextNode) {
+            animateUserIcon(nextNode);
+        }
     } else {
         setJustCompletedActionId(reqId);
         playSound('complete');
+        // If it doesn't move the user, we still need to save the requirement state.
+        if (isGuest) {
+            updateUserProgress({
+                currentUserLevel: currentUserLevel,
+                requirementsState: newReqs,
+            });
+        }
     }
-  
-    // Persist the new state to the database if the user is logged in
-    if (isGuest) {
-        updateUserProgress({
-            currentUserLevel: newLevel,
-            requirementsState: newReqs,
-        });
-    }
-  }, [requirementsState, currentUserLevel, isGuest, animateUserIcon, playSound]);
+  }, [requirementsState, animateUserIcon, playSound, isGuest, currentUserLevel]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
