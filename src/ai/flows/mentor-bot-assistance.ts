@@ -14,6 +14,17 @@ import {z} from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
 import {saveQAndA} from './save-q-and-a';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { credential } from 'firebase-admin';
+
+if (!getApps().length) {
+  initializeApp({
+    credential: credential.applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
+}
+const db = getFirestore();
 
 const MentorBotAssistanceInputSchema = z.object({
   question: z.string().describe('The user’s question for the mentor bot.'),
@@ -76,13 +87,25 @@ const mentorBotAssistanceFlow = ai.defineFlow(
     inputSchema: MentorBotAssistanceInputSchema,
     outputSchema: MentorBotAssistanceOutputSchema,
   },
-  async input => {
+  async (input, context) => {
     const {output} = await prompt(input);
 
     if (output) {
+      const user = context?.auth;
+      let userName: string | undefined = undefined;
+
+      if (user?.uid) {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          userName = userDoc.data()?.firstName;
+        }
+      }
+
       await saveQAndA({
         question: input.question,
         answer: output.answer,
+        userId: user?.uid,
+        userName: userName,
       });
     }
     

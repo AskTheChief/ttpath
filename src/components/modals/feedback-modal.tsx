@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { submitFeedback } from "@/ai/flows/submit-feedback";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { getUserProfile } from "@/ai/flows/user-profile";
 
 type FeedbackModalProps = {
   isOpen: boolean;
@@ -16,11 +20,36 @@ type FeedbackModalProps = {
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [feedback, setFeedback] = useState("");
   const [email, setEmail] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [userName, setUserName] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setEmail(currentUser.email || "");
+        const idToken = await currentUser.getIdToken();
+        const profile = await getUserProfile({ idToken });
+        setUserName(profile.firstName || '');
+      } else {
+        setEmail('');
+        setUserName('');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
 
   const handleSubmit = async () => {
     try {
-      await submitFeedback({ feedback, email });
+      await submitFeedback({ 
+        feedback, 
+        email,
+        userId: user?.uid,
+        userName: userName,
+       });
       toast({
         title: "Feedback submitted!",
         description: "Thanks for your feedback.",
@@ -54,6 +83,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             placeholder="Email (optional)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={!!user} // Disable if user is logged in
           />
         </div>
         <DialogFooter>

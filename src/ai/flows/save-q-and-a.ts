@@ -1,3 +1,4 @@
+
 'use server';
 
 import {ai} from '@/ai/genkit';
@@ -17,6 +18,8 @@ const db = getFirestore();
 const SaveQAndAInputSchema = z.object({
   question: z.string(),
   answer: z.string(),
+  userId: z.string().optional(),
+  userName: z.string().optional(),
 });
 export type SaveQAndAInput = z.infer<typeof SaveQAndAInputSchema>;
 
@@ -39,9 +42,8 @@ const saveQAndAFlow = ai.defineFlow(
     try {
       const chatSessionRef = db.collection('chat_sessions').doc();
       await chatSessionRef.set({
+        ...input,
         createdAt: new Date(),
-        question: input.question,
-        answer: input.answer,
       });
       return {success: true};
     } catch (error) {

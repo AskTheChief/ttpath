@@ -1,8 +1,9 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, orderBy, query, collection, getDocs } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
 
@@ -19,6 +20,8 @@ const FeedbackSchema = z.object({
   id: z.string(),
   feedback: z.string(),
   email: z.string().optional(),
+  userName: z.string().optional(),
+  userId: z.string().optional(),
   createdAt: z.string(),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
@@ -37,13 +40,18 @@ const getFeedbackFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const feedbackSnapshot = await db.collection('feedback').get();
+      const feedbackCollection = collection(db, 'feedback');
+      const q = query(feedbackCollection, orderBy('createdAt', 'desc'));
+      const feedbackSnapshot = await getDocs(q);
+
       const feedback = feedbackSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           feedback: data.feedback,
           email: data.email,
+          userName: data.userName,
+          userId: data.userId,
           createdAt: data.createdAt.toDate().toISOString(),
         };
       });

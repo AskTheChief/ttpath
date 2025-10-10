@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -20,6 +21,8 @@ const db = getFirestore();
 const SubmitFeedbackInputSchema = z.object({
   feedback: z.string().describe('The user feedback text.'),
   email: z.string().optional().describe('The user\'s email address (optional).'),
+  userId: z.string().optional().describe('The user\'s ID (optional).'),
+  userName: z.string().optional().describe('The user\'s name (optional).'),
 });
 export type SubmitFeedbackInput = z.infer<typeof SubmitFeedbackInputSchema>;
 
@@ -29,7 +32,7 @@ const SubmitFeedbackOutputSchema = z.object({
 });
 export type SubmitFeedbackOutput = z.infer<typeof SubmitFeedbackOutputSchema>;
 
-async function sendEmailNotification(feedback: string, fromEmail?: string) {
+async function sendEmailNotification(feedback: string, fromEmail?: string, fromName?: string) {
   const mailgunApiKey = process.env.MAILGUN_API_KEY;
   const mailgunDomain = process.env.MAILGUN_DOMAIN;
   const recipientEmails = process.env.FEEDBACK_RECIPIENT_EMAIL;
@@ -46,13 +49,13 @@ async function sendEmailNotification(feedback: string, fromEmail?: string) {
 
   const toEmails = recipientEmails.split(',').map(email => email.trim());
 
+  const fromUser = fromName ? `${fromName} (${fromEmail || 'no email'})` : fromEmail || 'Anonymous';
+
   const messageData = {
     from: `Feedback Bot <noreply@${mailgunDomain}>`,
     to: toEmails,
     subject: 'New Feedback Submitted',
-    text: `You have received new feedback:\n\n${feedback}\n\nFrom: ${
-      fromEmail || 'Anonymous'
-    }`,
+    text: `You have received new feedback:\n\n${feedback}\n\nFrom: ${fromUser}`,
   };
 
   try {
@@ -87,7 +90,7 @@ const submitFeedbackFlow = ai.defineFlow(
       });
 
       // Send email notification
-      await sendEmailNotification(input.feedback, input.email);
+      await sendEmailNotification(input.feedback, input.email, input.userName);
 
       return { success: true, message: 'Feedback submitted successfully!' };
     } catch (error) {
