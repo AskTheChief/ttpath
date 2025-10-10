@@ -4,8 +4,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 if (!getApps().length) {
   initializeApp({
@@ -14,8 +14,11 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
 
-const GetUserProgressInputSchema = z.object({});
+const GetUserProgressInputSchema = z.object({
+  idToken: z.string().optional(),
+});
 export type GetUserProgressInput = z.infer<typeof GetUserProgressInputSchema>;
 
 const GetUserProgressOutputSchema = z.object({
@@ -34,14 +37,27 @@ const getUserProgressFlow = ai.defineFlow(
     inputSchema: GetUserProgressInputSchema,
     outputSchema: GetUserProgressOutputSchema,
   },
-  async (input, _, context) => {
-    const user = context?.auth;
-    if (!user) {
+  async (input) => {
+    if (!input.idToken) {
       return {
         currentUserLevel: 1,
         requirementsState: {},
       };
     }
+
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+      console.error("Error verifying ID token in getUserProgressFlow:", error);
+      // If token is invalid, return default state
+      return {
+        currentUserLevel: 1,
+        requirementsState: {},
+      };
+    }
+    
+    const user = { uid: decodedToken.uid };
 
     try {
       const userDoc = await db.collection('users').doc(user.uid).get();
@@ -52,13 +68,14 @@ const getUserProgressFlow = ai.defineFlow(
           requirementsState: data?.requirementsState || {},
         };
       } else {
+        // If user document doesn't exist, they are a new user at level 1
         return {
           currentUserLevel: 1,
           requirementsState: {},
         };
       }
     } catch (error) {
-      console.error('Error getting user progress:', error);
+      console.error('Error getting user progress from Firestore:', error);
       return {
         currentUserLevel: 1,
         requirementsState: {},
