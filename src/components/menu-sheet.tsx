@@ -46,10 +46,10 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     const content = (
         <Button
             variant="ghost"
-            className="w-full justify-start text-xl p-6 h-auto"
+            className="w-full justify-start text-xl p-4 h-auto"
             onClick={() => !isLink && handleItemClick(item)}
         >
-            <item.icon className="mr-4 w-10 h-10" />
+            <item.icon className="mr-4 w-8 h-8" />
             {item.label}
         </Button>
     );
@@ -75,14 +75,15 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
           {menuItems.map(renderMenuItem)}
           {isGuest && (
             <div className="relative">
+              <Button
+                  variant="ghost"
+                  className="w-full justify-start text-xl p-4 h-auto"
+              >
+                  <Shield className="mr-4 w-8 h-8" />
+                  Dev Den
+              </Button>
               <DevDropdown onTestCreateTribe={onTestCreateTribe}>
-                 <Button
-                    variant="ghost"
-                    className="w-full justify-start text-xl p-6 h-auto"
-                 >
-                    <Shield className="mr-4 w-10 h-10" />
-                    Dev Den
-                 </Button>
+                 <></>
               </DevDropdown>
             </div>
           )}

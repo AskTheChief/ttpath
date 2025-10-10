@@ -15,7 +15,6 @@ import Link from 'next/link';
 import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
 import PinModal from './modals/pin-modal';
-import { Button } from './ui/button';
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
@@ -77,9 +76,9 @@ export default function DevDropdown({ onTestCreateTribe, children }: DevDropdown
     <>
       <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
         <DropdownMenuTrigger asChild>
-          <button onClick={handleTriggerClick} className="w-full h-full absolute inset-0 focus:outline-none">
+          <div onClick={handleTriggerClick} className="w-full h-full absolute inset-0 focus:outline-none cursor-pointer">
             {children}
-          </button>
+          </div>
         </DropdownMenuTrigger>
         {isUnlocked && (
           <DropdownMenuContent>
