@@ -179,6 +179,7 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
+    console.log('animateUserIcon called. Target:', targetNode.title, 'Start Level:', startLevel);
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -232,7 +233,6 @@ export default function PathJourney() {
                 playSound('progress');
                 triggerConfetti(finalPoint.x, finalPoint.y);
 
-                const newLevel = targetNode.level;
                 if (targetNode.id === 'node-guest') {
                     toast({
                         title: "Welcome, Guest!",
@@ -284,62 +284,69 @@ export default function PathJourney() {
 
   const completeRequirement = useCallback((reqId: string) => {
     const newReqs = { ...requirementsState, [reqId]: true };
+    setJustCompletedActionId(reqId);
+    
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
 
     if (action?.next) {
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
             const newLevel = nextNode.level;
-            
-            // Save progress to DB immediately.
+            const newProgress = {
+                currentUserLevel: newLevel,
+                requirementsState: newReqs,
+            };
             if (isGuest) {
-                updateUserProgress({
-                    currentUserLevel: newLevel,
-                    requirementsState: newReqs,
-                });
+                console.log('Saving progress:', newProgress);
+                updateUserProgress(newProgress);
             }
-            
-            // Then, update local state to trigger animation.
-            setRequirementsState(newReqs);
             setCurrentUserLevel(newLevel);
+            setRequirementsState(newReqs);
             animateUserIcon(nextNode);
         }
     } else {
-        // If the action doesn't advance the user level, just save the requirement state.
+        const newProgress = {
+            currentUserLevel: currentUserLevel,
+            requirementsState: newReqs,
+        };
         if (isGuest) {
-            updateUserProgress({
-                currentUserLevel: currentUserLevel,
-                requirementsState: newReqs,
-            });
+            console.log('Saving progress (no level change):', newProgress);
+            updateUserProgress(newProgress);
         }
         setRequirementsState(newReqs);
-        setJustCompletedActionId(reqId);
         playSound('complete');
     }
-}, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
+  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
   
   useEffect(() => {
+    console.log('Auth state change listener attached.');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('onAuthStateChanged triggered. User:', user ? user.uid : 'null');
       setCurrentUser(user);
       if (user) {
+        setIsLoadingProgress(true);
+        console.log('User found, fetching progress...');
         const idToken = await user.getIdToken();
         const [progress, profile] = await Promise.all([
           getUserProgress({}),
           getUserProfile({ idToken }),
         ]);
 
+        console.log('Fetched progress from DB:', progress);
         setCurrentUserLevel(progress.currentUserLevel);
         setRequirementsState(progress.requirementsState);
         setUserFirstName(profile.firstName || null);
 
       } else {
         // Reset state for logged-out users
+        console.log('No user. Resetting state to default.');
         setCurrentUserLevel(1);
         setRequirementsState({});
         setUserFirstName(null);
         initialAnimationPlayed.current = false;
       }
       setIsLoadingProgress(false);
+      console.log('Finished loading progress.');
     });
     return () => unsubscribe();
   }, []);
@@ -358,8 +365,17 @@ export default function PathJourney() {
   }, []);
   
   useEffect(() => {
+    console.log('Initial animation useEffect triggered.');
+    console.log({
+      isMounted,
+      isLoadingProgress,
+      splashHasFinished,
+      initialAnimationPlayed: initialAnimationPlayed.current,
+      currentUserLevel,
+    });
     if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
       if (currentUserLevel > 1) {
+        console.log('Conditions met, animating to user level:', currentUserLevel);
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
         if (targetNode) {
           animateUserIcon(targetNode, 1);
@@ -370,6 +386,7 @@ export default function PathJourney() {
   }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
+    console.log('Splash screen useEffect triggered.');
     placeElementsOnPath();
     const observer = new ResizeObserver(() => {
         placeElementsOnPath();
@@ -380,11 +397,15 @@ export default function PathJourney() {
     }
     
     setIsMounted(true);
+    console.log('Component mounted.');
     setTimeout(() => {
+        console.log('Hiding splash screen.');
         setShowSplash(false);
         setTimeout(() => {
+          console.log('Hiding loading curtain.');
           setShowCurtain(false);
           setSplashHasFinished(true); // Signal that the splash animation is over
+          console.log('splashHasFinished set to true.');
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
