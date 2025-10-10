@@ -179,7 +179,7 @@ export default function PathJourney() {
     }
   }, []);
 
-  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
+  const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number, newReqs?: Record<string, boolean>) => {
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -188,6 +188,7 @@ export default function PathJourney() {
     const totalLength = pathRef.current.getTotalLength();
     const startLength = totalLength * startNode.pathPos;
     const endLength = totalLength * targetNode.pathPos;
+    const newLevel = targetNode.level;
     
     if (startLength === endLength) {
         setIsAnimating(false);
@@ -296,7 +297,7 @@ export default function PathJourney() {
             newLevel = nextNode.level;
         }
     }
-
+    
     const newProgress = {
         currentUserLevel: newLevel,
         requirementsState: newReqs,
@@ -308,6 +309,7 @@ export default function PathJourney() {
     }
     
     setRequirementsState(newReqs);
+    
     if (nextNode) {
         setCurrentUserLevel(newLevel);
         animateUserIcon(nextNode);
@@ -321,14 +323,20 @@ export default function PathJourney() {
       setIsAuthLoading(true);
       if (user) {
         setCurrentUser(user);
-        const [progress, profile] = await Promise.all([
-          getUserProgress({}),
-          getUserProfile({ idToken: await user.getIdToken() }),
-        ]);
-
-        setCurrentUserLevel(progress.currentUserLevel);
-        setRequirementsState(progress.requirementsState);
-        setUserFirstName(profile.firstName || null);
+        try {
+          const [progress, profile] = await Promise.all([
+            getUserProgress({}),
+            getUserProfile({ idToken: await user.getIdToken() }),
+          ]);
+          setCurrentUserLevel(progress.currentUserLevel);
+          setRequirementsState(progress.requirementsState);
+          setUserFirstName(profile.firstName || null);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setCurrentUserLevel(1);
+          setRequirementsState({});
+          setUserFirstName(null);
+        }
       } else {
         setCurrentUser(null);
         setCurrentUserLevel(1);
@@ -779,8 +787,8 @@ export default function PathJourney() {
                           <CardTitle>{node.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{selectedNode.description}</p>}
-                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>}
+                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
+                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
                           <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                           {renderAbilities(node)}
                       </CardContent>
