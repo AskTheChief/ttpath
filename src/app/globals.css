@@ -306,18 +306,18 @@ body {
   }
   #you-are-here {
       position: absolute;
-      background-color: hsl(var(--accent));
-      color: white;
-      padding: 4px 10px;
-      border-radius: 12px;
+      background-color: transparent;
+      color: black;
+      padding: 0;
+      border-radius: 0;
       font-size: 0.75rem;
       font-weight: 600;
       white-space: nowrap;
-      transform: translate(-50%, -100%);
+      transform: translate(-50%, -150%);
       top: 0;
       left: 50%;
       z-index: 21;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: none;
   }
   
   .shake {
