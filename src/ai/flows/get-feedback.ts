@@ -4,8 +4,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, orderBy, query, collection, getDocs } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
