@@ -103,7 +103,6 @@ export default function PathJourney() {
 
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
-  const initialAnimationPlayed = useRef(false);
   
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -188,7 +187,6 @@ export default function PathJourney() {
     const totalLength = pathRef.current.getTotalLength();
     const startLength = totalLength * startNode.pathPos;
     const endLength = totalLength * targetNode.pathPos;
-    const newLevel = targetNode.level;
     
     if (startLength === endLength) {
         setIsAnimating(false);
@@ -229,21 +227,19 @@ export default function PathJourney() {
              userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
              setIsAnimating(false);
 
-             if (!startLevel) {
-                playSound('progress');
-                triggerConfetti(finalPoint.x, finalPoint.y);
+            playSound('progress');
+            triggerConfetti(finalPoint.x, finalPoint.y);
 
-                if (targetNode.id === 'node-guest') {
-                    toast({
-                        title: "Welcome, Guest!",
-                        description: `You can now proceed on your journey.`,
-                    });
-                } else if (targetNode.id === 'node-graduate') {
-                    toast({
-                        title: "Congratulations, You Graduate!",
-                    });
-                }
-             }
+            if (targetNode.id === 'node-guest') {
+                toast({
+                    title: "Welcome, Guest!",
+                    description: `You can now proceed on your journey.`,
+                });
+            } else if (targetNode.id === 'node-graduate') {
+                toast({
+                    title: "Congratulations, You Graduate!",
+                });
+            }
         }
     };
     requestAnimationFrame(animationStep);
@@ -278,16 +274,17 @@ export default function PathJourney() {
       }
     };
 
-    setTimeout(place, 0);
+    // RAF to ensure layout is calculated
+    requestAnimationFrame(place);
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
-  const completeRequirement = useCallback(async (reqId: string) => {
+  const completeRequirement = useCallback(async (reqId: string, newReqs?: Record<string, boolean>) => {
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    
-    const newReqs = { ...requirementsState, [reqId]: true };
+    const updatedReqs = newReqs || { ...requirementsState, [reqId]: true };
+
     let nextNode: PathNodeData | undefined;
     let newLevel = currentUserLevel;
 
@@ -300,23 +297,34 @@ export default function PathJourney() {
     
     const newProgress = {
         currentUserLevel: newLevel,
-        requirementsState: newReqs,
+        requirementsState: updatedReqs,
     };
     
     if (isGuest && auth.currentUser) {
-        const idToken = await auth.currentUser.getIdToken();
-        await updateUserProgress({ ...newProgress, idToken });
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            await updateUserProgress({ ...newProgress, idToken });
+        } catch (error) {
+            console.error("Failed to save progress:", error);
+            toast({
+                title: "Save Error",
+                description: "Could not save your progress. Please try again.",
+                variant: "destructive",
+            });
+            // Optionally, revert local state if save fails
+            return; 
+        }
     }
     
-    setRequirementsState(newReqs);
+    setRequirementsState(updatedReqs);
     
     if (nextNode) {
+        animateUserIcon(nextNode, currentUserLevel);
         setCurrentUserLevel(newLevel);
-        animateUserIcon(nextNode);
     } else {
         playSound('complete');
     }
-  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
+  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -324,12 +332,13 @@ export default function PathJourney() {
       if (user) {
         setCurrentUser(user);
         try {
+          const idToken = await user.getIdToken();
           const [progress, profile] = await Promise.all([
-            getUserProgress({}),
-            getUserProfile({ idToken: await user.getIdToken() }),
+            getUserProgress({ idToken }),
+            getUserProfile({ idToken }),
           ]);
-          setCurrentUserLevel(progress.currentUserLevel);
-          setRequirementsState(progress.requirementsState);
+          setCurrentUserLevel(progress.currentUserLevel || 1);
+          setRequirementsState(progress.requirementsState || {});
           setUserFirstName(profile.firstName || null);
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -342,7 +351,6 @@ export default function PathJourney() {
         setCurrentUserLevel(1);
         setRequirementsState({});
         setUserFirstName(null);
-        initialAnimationPlayed.current = false;
       }
       setIsAuthLoading(false);
       setIsLoadingProgress(false);
@@ -352,33 +360,12 @@ export default function PathJourney() {
   }, []);
 
   useEffect(() => {
-    if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
-      if (currentUserLevel > 1) {
-        const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
-        if (targetNode) {
-          animateUserIcon(targetNode, 1);
-        }
-      }
-      initialAnimationPlayed.current = true;
-    }
-  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
-  
-  useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
     synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
     synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
     synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
     synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
     synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    
-    placeElementsOnPath();
-    const observer = new ResizeObserver(() => {
-        placeElementsOnPath();
-    });
-
-    if (pathContainerRef.current) {
-        observer.observe(pathContainerRef.current);
-    }
     
     setIsMounted(true);
 
@@ -393,14 +380,29 @@ export default function PathJourney() {
         }, 1000);
     }, 1000);
 
+  }, []);
+  
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const observer = new ResizeObserver(() => {
+        placeElementsOnPath();
+    });
+
+    if (pathContainerRef.current) {
+        observer.observe(pathContainerRef.current);
+    }
+    
+    placeElementsOnPath();
+
     return () => {
-      Object.values(synths.current).forEach(synth => synth?.dispose());
       if(pathContainerRef.current) {
         observer.unobserve(pathContainerRef.current);
       }
     }
-  }, [placeElementsOnPath]);
-  
+  }, [isMounted, placeElementsOnPath, currentUserLevel, isLoadingProgress]);
+
+
   useEffect(() => {
       setSelectedNodeId(null);
   }, [currentUserLevel]);
