@@ -26,9 +26,9 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.0,
     title: "Visitor",
     req: "",
-    description: "Welcome to the Tribe Path. To find out how the Tribe works, read the Quick-Start Guide. You may also watch the video. Then, if you wish to proceed, you may register as a Guest. As a guest, you have access to Tribe resources, such as The Chief, The Library, Feedback, Trading, Games and The Store. You may also proceed along the path to join a Tribe or to run one as a Chief.",
+    description: "Welcome to the Tribe Path. To find out how the Tribe works, read the Quick-Start Guide.  You may also watch the video.  Then, if you wish to proceed, you may register as a Guest. As a guest, you have access to Tribe resources, such as The Chief, The Library, Feedback, Trading, Games and The Store. You may also proceed along the path to join a Tribe or to run one as a Chief.",
     actions: [
-      { id: "read-book", label: "Read Quick-Start Guide", action: "open-pamphlet" },
+      { id: "read-book", label: "Read the Quick-Start Guide", action: "open-pamphlet" },
       { id: "watch-video", label: "Watch the video", action: "open-video" },
       { id: "sign-up", label: "Register as Guest", next: "guest", requires: "signup-form", dependsOn: "read-book" }
     ],

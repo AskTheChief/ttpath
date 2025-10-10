@@ -30,13 +30,20 @@ export default function LinkModal({
   };
 
   const getLinkText = () => {
-    if (title === 'Read Quick-Start Guide') {
-      return 'Open Quick-Start Guide';
+    if (title === 'Read the Quick-Start Guide') {
+      return 'Open the Quick-Start Guide';
     }
     if (title === 'Read the Trading Tribe Source Manual') {
       return 'Open the Trading Tribe Source Manual';
     }
     return `Open ${title}`;
+  }
+
+  const getButtonText = () => {
+    if (title === 'Read the Quick-Start Guide') {
+        return "I understand the Quick-Start Guide";
+    }
+    return "I Understand";
   }
 
   return (
@@ -65,7 +72,7 @@ export default function LinkModal({
               className="bg-primary hover:bg-primary/90"
               onClick={handleComplete}
             >
-              I Understand
+              {getButtonText()}
             </Button>
           )}
         </DialogFooter>
