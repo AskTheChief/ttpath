@@ -15,15 +15,15 @@ import Link from 'next/link';
 import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
 import PinModal from './modals/pin-modal';
+import { Button } from './ui/button';
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
-  children: React.ReactNode;
 };
 
 const DEV_PIN = '3141';
 
-export default function DevDropdown({ onTestCreateTribe, children }: DevDropdownProps) {
+export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   const { toast } = useToast();
   const [showPinModal, setShowPinModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -76,9 +76,14 @@ export default function DevDropdown({ onTestCreateTribe, children }: DevDropdown
     <>
       <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
         <DropdownMenuTrigger asChild>
-          <div onClick={handleTriggerClick} className="w-full h-full absolute inset-0 focus:outline-none cursor-pointer">
-            {children}
-          </div>
+           <Button
+              variant="ghost"
+              className="w-full justify-start text-xl p-4 h-auto"
+              onClick={handleTriggerClick}
+          >
+              <Shield className="mr-4 w-10 h-10" />
+              Dev Den
+          </Button>
         </DropdownMenuTrigger>
         {isUnlocked && (
           <DropdownMenuContent>
