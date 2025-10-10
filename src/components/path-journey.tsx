@@ -68,6 +68,11 @@ export default function PathJourney() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const [showLockedAlert, setShowLockedAlert] = useState(false);
+  const [lockedAlertContent, setLockedAlertContent] = useState({
+    title: "Prerequisite Not Met",
+    description: "You must complete the previous steps on the path before you can perform this action."
+  });
+
 
   const [modalState, setModalState] = useState({
     signup: false,
@@ -369,9 +374,28 @@ export default function PathJourney() {
       setSelectedNodeId(null);
   }, [currentUserLevel]);
 
-  const handleActionClick = (action: PathAction) => {
+  const handleActionClick = (action: PathAction, node: PathNodeData) => {
     playSound('action', 'C4', '8n');
     
+    const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
+
+    if (isLocked) {
+      if (node.id === 'node-visitor' && action.id === 'sign-up') {
+        setLockedAlertContent({
+          title: "Hint",
+          description: "Please read the Quick-Start Guide before registering."
+        });
+      } else {
+        setLockedAlertContent({
+          title: "Prerequisite Not Met",
+          description: "You must complete the previous steps on the path before you can perform this action."
+        });
+      }
+      setShowLockedAlert(true);
+      return;
+    }
+
+
     const requiresAuth = action.id === 'complete-comprehension-test' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
@@ -439,6 +463,10 @@ export default function PathJourney() {
         nodeEl.classList.add('shake');
         setTimeout(() => nodeEl.classList.remove('shake'), 500);
       }
+      setLockedAlertContent({
+        title: "Prerequisite Not Met",
+        description: "You must complete the previous steps on the path before you can perform this action."
+      });
       setShowLockedAlert(true);
     } else {
       playSound('click', 'C4', '8n');
@@ -521,9 +549,20 @@ export default function PathJourney() {
                   const buttonEl = e.currentTarget;
                   buttonEl.classList.add('button-shake');
                   setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
+                  if (node.id === 'node-visitor' && action.id === 'sign-up') {
+                    setLockedAlertContent({
+                      title: "Hint",
+                      description: "Please read the Quick-Start Guide before registering."
+                    });
+                  } else {
+                    setLockedAlertContent({
+                      title: "Prerequisite Not Met",
+                      description: "You must complete the previous steps on the path before you can perform this action."
+                    });
+                  }
                   setShowLockedAlert(true);
                 } else {
-                  handleActionClick(action);
+                  handleActionClick(action, node);
                 }
               }}
               disabled={isLocked && action.id !== 'sign-up'}
@@ -778,9 +817,9 @@ export default function PathJourney() {
       <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Prerequisite Not Met</AlertDialogTitle>
+            <AlertDialogTitle>{lockedAlertContent.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              You must complete the previous steps on the path before you can perform this action.
+              {lockedAlertContent.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
