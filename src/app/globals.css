@@ -406,6 +406,20 @@ body {
       box-shadow: 0 0 10px #34d399, 0 0 20px #34d399, 0 0 30px #34d399;
     }
   }
+
+  @keyframes start-node-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(var(--accent) / 0.7), 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+      border-color: hsl(var(--accent));
+    }
+    50% {
+      box-shadow: 0 0 35px hsl(var(--accent) / 1), 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+      border-color: hsl(var(--accent));
+    }
+  }
+  .path-node.start-node {
+    animation: start-node-glow 2s infinite;
+  }
   
   @media (max-width: 768px) {
     .path-node, .action-icon {

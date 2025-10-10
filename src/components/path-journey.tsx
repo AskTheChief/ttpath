@@ -739,9 +739,7 @@ export default function PathJourney() {
             <div id="user-icon" ref={userIconRef}>
               <div id="you-are-here">
                 {currentUserLevel === 1 ? (
-                   <span className="flex items-center gap-1">
-                      Start Here <ArrowRight className="h-3 w-3" />
-                   </span>
+                   <span>Start Here</span>
                 ) : 'Your Location'}
               </div>
               <User className="w-5 h-5" />
@@ -753,6 +751,7 @@ export default function PathJourney() {
               const isNextStep = node.level === currentUserLevel + 1;
               const isActive = node.level === currentUserLevel;
               const isSelected = selectedNodeId === node.id;
+              const isStartNode = node.id === 'node-visitor' && currentUserLevel === 1;
 
               return (
                 <Tooltip key={node.id} delayDuration={100} open={isSelected ? false : undefined}>
@@ -765,6 +764,7 @@ export default function PathJourney() {
                         'active': isActive,
                         'locked': isLocked,
                         'next-step': isNextStep,
+                        'start-node': isStartNode,
                       })}
                       onClick={() => handleNodeClick(node)}
                     >
