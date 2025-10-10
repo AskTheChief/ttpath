@@ -22,7 +22,7 @@ import { Terminal, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
-import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
+import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF, InfoWindowF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import type { Tribe, Meeting, Application, UserProfile } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
@@ -567,7 +567,7 @@ export default function MyTribePage() {
                 <CardTitle>Tribes Overview</CardTitle>
                 <CardDescription>Click a marker to learn more about a tribe.</CardDescription>
             </CardHeader>
-            <CardContent className="relative">
+            <CardContent>
                 <div style={overviewMapContainerStyle}>
                     <GoogleMap
                         mapContainerStyle={{ height: '100%', width: '100%' }}
@@ -588,23 +588,27 @@ export default function MyTribePage() {
                                 )
                             ))}
                         </MarkerClustererF>
+                        {selectedTribe && selectedTribe.lat && selectedTribe.lng && (
+                            <InfoWindowF
+                                position={{ lat: selectedTribe.lat, lng: selectedTribe.lng }}
+                                onCloseClick={() => setSelectedTribe(null)}
+                            >
+                                <div className="p-2">
+                                    <h3 className="font-bold text-base mb-1">{selectedTribe.name}</h3>
+                                    <p className="text-sm text-muted-foreground mb-2">{selectedTribe.location}</p>
+                                    <Button 
+                                        size="sm" 
+                                        className="w-full" 
+                                        onClick={() => handleJoinTribe(selectedTribe.id)} 
+                                        disabled={!!userTribe || selectedTribe.id === userTribe?.id || isLoading}
+                                    >
+                                        {selectedTribe.id === userTribe?.id ? 'Your Tribe' : 'Request to Join'}
+                                    </Button>
+                                </div>
+                            </InfoWindowF>
+                        )}
                     </GoogleMap>
                 </div>
-                {selectedTribe && (
-                    <div className="absolute bottom:2 left:1/2 -translate-x-1/2 w-[calc(100%-1rem)]">
-                        <Card className="shadow-lg">
-                            <CardHeader className="p:3">
-                                <CardTitle className="text-base">{selectedTribe.name}</CardTitle>
-                                <CardDescription className="text-xs">{selectedTribe.location}</CardDescription>
-                            </CardHeader>
-                            <CardFooter className="p:3">
-                                <Button size="sm" className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || selectedTribe.id === userTribe?.id}>
-                                    {selectedTribe.id === userTribe?.id ? 'Your Tribe' : 'Request to Join'}
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </div>
-                )}
             </CardContent>
           </Card>
 
