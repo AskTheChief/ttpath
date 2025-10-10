@@ -67,6 +67,7 @@ export default function MyTribePage() {
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState('12:00');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
@@ -280,9 +281,13 @@ export default function MyTribePage() {
   const handleAddMeeting = async () => {
     if (!userTribe || !user || !selectedDate) return;
   
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const combinedDateTime = new Date(selectedDate);
+    combinedDateTime.setHours(hours, minutes, 0, 0);
+
     const newMeeting = {
       id: new Date().toISOString(), // Generate a unique ID for the meeting
-      date: selectedDate,
+      date: combinedDateTime,
     };
   
     const updatedMeetings = [...(userTribe.meetings || []), newMeeting];
@@ -415,16 +420,16 @@ export default function MyTribePage() {
 
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="flex justify-between items-center mb-8">
+    <div className="container mx-auto p-4 sm:p:6 lg:p:8">
+      <header className="flex justify-between items-center mb:8">
         <h1 className="text-3xl font-bold">My Tribe Dashboard</h1>
         <Link href="/" passHref>
           <Button variant="outline">Back to Path</Button>
         </Link>
       </header>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <aside className="lg:col-span-1 space-y-8">
+      <div className="grid lg:grid-cols-3 gap:8">
+        <aside className="lg:col-span-1 space-y:8">
           {userTribe ? (
             <Card>
               <CardHeader>
@@ -435,7 +440,7 @@ export default function MyTribePage() {
                 <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
                 <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
+              <CardFooter className="flex flex-col space-y:2">
                 {isChief && (
                    <Button onClick={() => handleDeleteTribe(userTribe.id)} variant="destructive" className="w-full">Delete Tribe</Button>
                 )}
@@ -448,8 +453,8 @@ export default function MyTribePage() {
                 <CardTitle>Create a New Tribe</CardTitle>
                 <CardDescription>Start your own tribe and invite others to join.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+              <CardContent className="space-y:4">
+                <div className="space-y:2">
                     <Label htmlFor="tribe-name">Tribe Name</Label>
                     <Input
                         id="tribe-name"
@@ -459,19 +464,19 @@ export default function MyTribePage() {
                         autoFocus
                     />
                 </div>
-                 <div className="space-y-2">
+                 <div className="space-y:2">
                     <Label htmlFor="tribe-location">Location</Label>
                     <LocationAutocomplete
                         id="tribe-location"
                         onPlaceSelected={handlePlaceSelected}
-                        placeholder="e.g., 123 Main St, Anytown, USA"
+                        placeholder="e:g:, 123 Main St, Anytown, USA"
                         disabled={!isLoaded}
                         initialValue={newTribeLocation}
                     />
-                    <p className="text-sm text-muted-foreground pt-1">
+                    <p className="text-sm text-muted-foreground pt:1">
                       Enter your house number, street, city, and state. Click your address from the dropdown when you see it.
                     </p>
-                     <div className="mt-2">
+                     <div className="mt:2">
                         <GoogleMap
                             mapContainerStyle={mapContainerStyle}
                             center={newTribeCoords || defaultCenter}
@@ -500,9 +505,9 @@ export default function MyTribePage() {
                 </CardHeader>
                 <CardContent>
                      {upcomingMeetings.length > 0 ? (
-                        <ul className="space-y-3">
+                        <ul className="space-y:3">
                             {upcomingMeetings.map(meeting => (
-                                <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
+                                <li key={meeting.id} className="flex flex-col p:2 border rounded-md">
                                     <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
                                 </li>
                             ))}
@@ -520,10 +525,10 @@ export default function MyTribePage() {
               <CardDescription>Find other tribes you can apply to join.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 max-h-60 overflow-y-auto">
+              <div className="space-y:4 max-h:60 overflow-y:auto">
                 {availableTribes.length > 0 ? (
                   availableTribes.map((tribe) => (
-                    <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={tribe.id} className="flex items-center justify-between p:3 border rounded-lg">
                       <div>
                         <h3 className="font-semibold">{tribe.name}</h3>
                         <p className="text-sm text-muted-foreground">{tribe.location}</p>
@@ -569,13 +574,13 @@ export default function MyTribePage() {
                     </GoogleMap>
                 </div>
                 {selectedTribe && (
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)]">
+                    <div className="absolute bottom:2 left:1/2 -translate-x-1/2 w-[calc(100%-1rem)]">
                         <Card className="shadow-lg">
-                            <CardHeader className="p-3">
+                            <CardHeader className="p:3">
                                 <CardTitle className="text-base">{selectedTribe.name}</CardTitle>
                                 <CardDescription className="text-xs">{selectedTribe.location}</CardDescription>
                             </CardHeader>
-                            <CardFooter className="p-3">
+                            <CardFooter className="p:3">
                                 <Button size="sm" className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || selectedTribe.id === userTribe?.id}>
                                     {selectedTribe.id === userTribe?.id ? 'Your Tribe' : 'Request to Join'}
                                 </Button>
@@ -588,32 +593,32 @@ export default function MyTribePage() {
 
         </aside>
 
-        <main className="lg:col-span-2 space-y-8">
+        <main className="lg:col-span-2 space-y:8">
             <Card>
               <CardHeader>
                 <CardTitle>My Profile</CardTitle>
                 <CardDescription>View and update your personal information.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+              <CardContent className="space-y:4">
+                <div className="grid sm:grid-cols-2 gap:4">
+                  <div className="space-y:2">
                     <Label htmlFor="firstName">First Name</Label>
                     <Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y:2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y:2">
                   <Label htmlFor="address">Address</Label>
                   <Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y:2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y:2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" value={userProfile.email || ''} disabled />
                 </div>
@@ -644,10 +649,10 @@ export default function MyTribePage() {
                                           </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
-                                            <div className="space-y-4">
+                                            <div className="space-y:4">
                                                 <div>
-                                                    <h4 className="font-semibold mb-2">Tutorial Answers</h4>
-                                                    <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">
+                                                    <h4 className="font-semibold mb:2">Tutorial Answers</h4>
+                                                    <div className="space-y:2 text-sm p:3 border rounded-md max-h:60 overflow-y:auto">
                                                         {Object.entries(app.answers || {}).map(([question, answer]) => (
                                                             <div key={question}>
                                                                 <p className="font-medium">{question}</p>
@@ -657,7 +662,7 @@ export default function MyTribePage() {
                                                         {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                                     </div>
                                                 </div>
-                                                <div className="flex justify-end gap-2 pt-2">
+                                                <div className="flex justify-end gap:2 pt:2">
                                                     <Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button>
                                                     <Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button>
                                                 </div>
@@ -673,9 +678,9 @@ export default function MyTribePage() {
                     <CardHeader>
                         <CardTitle>Manage Meetings</CardTitle>
                         <CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                        <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
+                        <p className="text-sm font-semibold pt:2">Current Time: {currentTime.toLocaleTimeString()}</p>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6">
+                    <CardContent className="grid md:grid-cols-2 gap:6">
                         <div>
                              <Calendar
                                 mode="single"
@@ -686,25 +691,35 @@ export default function MyTribePage() {
                                 modifiers={{ meetings: meetingDates }}
                                 modifiersStyles={{ meetings: { textDecoration: 'underline' } }}
                             />
-                             <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
+                            <div className="flex items-center gap:2 mt:4">
+                               <Label htmlFor="meeting-time" className="mb:0">Time:</Label>
+                               <Input
+                                  id="meeting-time"
+                                  type="time"
+                                  value={selectedTime}
+                                  onChange={(e) => setSelectedTime(e.target.value)}
+                                  className="w-full"
+                                />
+                            </div>
+                             <Button onClick={handleAddMeeting} className="w-full mt:4" disabled={!selectedDate}>Schedule Meeting</Button>
                         </div>
                         <div>
-                            <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
+                            <h3 className="font-semibold mb:2">Upcoming Meetings</h3>
                             {upcomingMeetings.length > 0 ? (
-                                <ul className="space-y-2 max-h-80 overflow-y-auto">
+                                <ul className="space-y:2 max-h:80 overflow-y:auto">
                                     {upcomingMeetings.map(meeting => (
-                                        <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
+                                        <li key={meeting.id} className="flex items-center justify-between p:2 border rounded-md">
                                             <div className="flex-1">
                                                 <p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p>
                                             </div>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}>
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="h:4 w:4" />
                                             </Button>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>
+                                <p className="text-sm text-center text-muted-foreground bg-gray-50 p:4 rounded-md">No upcoming meetings.</p>
                             )}
                         </div>
                     </CardContent>
@@ -717,12 +732,12 @@ export default function MyTribePage() {
               <CardTitle>Comprehension Test</CardTitle>
               <CardDescription>You may review and edit your answers and save your work below.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y:6">
               {isFetchingAnswers ? (
                  <p>Loading your answers...</p>
               ) : (
                 tutorialQuestions.map((q, i) => (
-                  <div key={i} className="grid w-full gap-1.5">
+                  <div key={i} className="grid w-full gap:1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
                     <Textarea
                       id={`question-${i}`}
@@ -747,11 +762,11 @@ export default function MyTribePage() {
               <CardTitle>Guidance from The Chief</CardTitle>
               <CardDescription>Review your past tutorial submissions and guidance.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+            <CardContent className="space-y:4 max-h:96 overflow-y:auto">
               {tutorialFeedback.length > 0 ? (
                 tutorialFeedback.map(fb => (
                   <Alert key={fb.id}>
-                    <Terminal className="h-4 w-4" />
+                    <Terminal className="h:4 w:4" />
                     <AlertTitle className="flex justify-between">
                       <span>You Receive Guidance</span>
                       <span className="text-sm font-normal text-muted-foreground">{new Date(fb.createdAt).toLocaleString()}</span>
@@ -770,3 +785,5 @@ export default function MyTribePage() {
     </div>
   );
 }
+
+    
