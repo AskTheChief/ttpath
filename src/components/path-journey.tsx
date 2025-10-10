@@ -103,6 +103,7 @@ export default function PathJourney() {
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
   const initialAnimationPlayed = useRef(false);
+  const isInitialLoad = useRef(true);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -297,6 +298,21 @@ export default function PathJourney() {
       return newState;
     });
   }, [playSound, animateUserIcon]);
+  
+  // Effect for saving progress to the database
+  useEffect(() => {
+    // We don't want to save on the initial render, only on subsequent updates.
+    if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        return;
+    }
+
+    // Only save if the user is logged in.
+    if (isGuest) {
+        updateUserProgress({ currentUserLevel, requirementsState });
+    }
+  }, [currentUserLevel, requirementsState, isGuest]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -318,15 +334,10 @@ export default function PathJourney() {
         setUserFirstName(null);
       }
       setIsLoadingProgress(false);
+      isInitialLoad.current = true; // Reset for the next user session
     });
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (isGuest && isMounted && !initialAnimationPlayed.current) {
-      updateUserProgress({ currentUserLevel, requirementsState });
-    }
-  }, [currentUserLevel, requirementsState, isGuest, isMounted]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
