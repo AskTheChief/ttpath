@@ -3,7 +3,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, ArrowRight } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -737,8 +737,12 @@ export default function PathJourney() {
         {!isLoadingProgress && (
           <>
             <div id="user-icon" ref={userIconRef}>
-              <div id="you-are-here" onClick={handleStartHereClick} style={{ cursor: currentUserLevel === 1 ? 'pointer' : 'default' }}>
-                {currentUserLevel === 1 ? 'Start Here' : 'Your Location'}
+              <div id="you-are-here">
+                {currentUserLevel === 1 ? (
+                   <span className="flex items-center gap-1">
+                      Start Here <ArrowRight className="h-3 w-3" />
+                   </span>
+                ) : 'Your Location'}
               </div>
               <User className="w-5 h-5" />
             </div>
