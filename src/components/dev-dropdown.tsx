@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,13 +27,6 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   const [showPinModal, setShowPinModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
 
-  useEffect(() => {
-    // Check if unlocked state is saved in session storage
-    if (sessionStorage.getItem('dev-unlocked') === 'true') {
-      setIsUnlocked(true);
-    }
-  }, []);
-
   const handleReset = async () => {
     try {
       await resetUserProgress({});
@@ -53,14 +46,29 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   
   const handlePinSuccess = () => {
     setIsUnlocked(true);
-    sessionStorage.setItem('dev-unlocked', 'true');
     setShowPinModal(false);
     toast({ title: 'Dev Den Unlocked' });
   };
 
+  const handleCloseModal = () => {
+    setShowPinModal(false);
+    // Reset unlock state when modal is closed without success
+    // This is important if the user just closes the dialog
+    if (!isUnlocked) {
+      setIsUnlocked(false);
+    }
+  }
+
+  const handleDropdownOpenChange = (open: boolean) => {
+    // When the dropdown closes, re-lock it.
+    if (!open) {
+      setIsUnlocked(false);
+    }
+  };
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={handleDropdownOpenChange}>
         <DropdownMenuTrigger asChild>
           <button className="chat-icon" onClick={(e) => {
             if (!isUnlocked) {
@@ -90,7 +98,7 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
 
       <PinModal
         isOpen={showPinModal}
-        onClose={() => setShowPinModal(false)}
+        onClose={handleCloseModal}
         correctPin={DEV_PIN}
         onSuccess={handlePinSuccess}
       />
