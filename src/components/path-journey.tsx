@@ -730,7 +730,7 @@ export default function PathJourney() {
           <>
             <div id="user-icon" ref={userIconRef}>
               <div id="you-are-here">
-                {currentUserLevel === 1 ? 'Start Here' : 'You Are Here'}
+                {currentUserLevel === 1 ? 'Start Here' : 'Your Location'}
               </div>
               <User className="w-5 h-5" />
             </div>
