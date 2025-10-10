@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 export default function Home() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h2 className="journey-title">The Trading Tribe Path</h2>
+      <h2 className="journey-title text-4xl font-bold">The Trading Tribe Path</h2>
 
       <Accordion type="single" collapsible className="w-full max-w-4xl mb-8">
         <AccordionItem value="item-1">
