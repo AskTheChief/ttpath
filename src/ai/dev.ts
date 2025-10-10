@@ -17,3 +17,5 @@ import '@/ai/flows/delete-tribe.ts';
 import '@/ai/flows/update-tribe-meetings.ts';
 import '@/ai/flows/manage-applications.ts';
 import '@/ai/flows/user-profile.ts';
+import '@/ai/flows/get-feedback.ts';
+import '@/ai/flows/get-chat-sessions.ts';

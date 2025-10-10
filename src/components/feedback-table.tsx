@@ -2,19 +2,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { getFeedback } from '@/ai/flows/get-feedback';
+import { getFeedback, type Feedback } from '@/ai/flows/get-feedback';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-// Extended Feedback type to include optional user info
-type Feedback = {
-  id: string;
-  feedback: string;
-  email?: string;
-  userName?: string;
-  userId?: string;
-  createdAt: string;
-};
-
 
 export default function FeedbackTable() {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
@@ -24,8 +13,7 @@ export default function FeedbackTable() {
     async function loadFeedback() {
       try {
         const feedbackData = await getFeedback();
-        // The flow already returns the correct shape, but we cast it here for type safety
-        setFeedback(feedbackData as Feedback[]);
+        setFeedback(feedbackData);
       } catch (error) {
         console.error("Error loading feedback:", error);
       } finally {

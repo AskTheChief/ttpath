@@ -52,11 +52,6 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
 
   const handleCloseModal = () => {
     setShowPinModal(false);
-    // Reset unlock state when modal is closed without success
-    // This is important if the user just closes the dialog
-    if (!isUnlocked) {
-      setIsUnlocked(false);
-    }
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
@@ -83,11 +78,8 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
           <DropdownMenuContent>
             <DropdownMenuLabel>Dev Den</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link href="/admin/feedback" passHref>
-              <DropdownMenuItem>Feedback</DropdownMenuItem>
-            </Link>
-            <Link href="/admin/dev-den" passHref>
-              <DropdownMenuItem>Chief Sessions</DropdownMenuItem>
+            <Link href="/admin" passHref>
+              <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
