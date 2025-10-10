@@ -11,12 +11,15 @@ export default function FeedbackTable() {
 
   useEffect(() => {
     async function loadFeedback() {
+      console.log('Attempting to load feedback...');
       try {
         const feedbackData = await getFeedback();
+        console.log('Feedback data received:', feedbackData);
         setFeedback(feedbackData);
       } catch (error) {
-        console.error("Error loading feedback:", error);
+        console.error("Error loading feedback in component:", error);
       } finally {
+        console.log('Finished loading attempt.');
         setLoading(false);
       }
     }
@@ -38,14 +41,20 @@ export default function FeedbackTable() {
           <TableRow>
             <TableCell colSpan={4} className="text-center">Loading feedback...</TableCell>
           </TableRow>
-        ) : feedback.map(item => (
-          <TableRow key={item.id}>
-            <TableCell>{item.feedback}</TableCell>
-            <TableCell>{item.userName || 'Anonymous'}</TableCell>
-            <TableCell>{item.email || 'N/A'}</TableCell>
-            <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+        ) : feedback.length > 0 ? (
+          feedback.map(item => (
+            <TableRow key={item.id}>
+              <TableCell>{item.feedback}</TableCell>
+              <TableCell>{item.userName || 'Anonymous'}</TableCell>
+              <TableCell>{item.email || 'N/A'}</TableCell>
+              <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={4} className="text-center">No feedback found.</TableCell>
           </TableRow>
-        ))}
+        )}
       </TableBody>
     </Table>
   );

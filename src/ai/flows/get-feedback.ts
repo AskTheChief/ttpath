@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, orderBy, query, collection, getDocs } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, credential } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
@@ -39,10 +39,9 @@ const getFeedbackFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const feedbackCollection = collection(db, 'feedback');
-      const q = query(feedbackCollection, orderBy('createdAt', 'desc'));
-      const feedbackSnapshot = await getDocs(q);
-
+      const feedbackSnapshot = await db.collection('feedback').orderBy('createdAt', 'desc').get();
+      console.log('Feedback snapshot size:', feedbackSnapshot.size);
+      
       const feedback = feedbackSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -54,6 +53,7 @@ const getFeedbackFlow = ai.defineFlow(
           createdAt: data.createdAt.toDate().toISOString(),
         };
       });
+      console.log('Mapped feedback:', feedback);
       return feedback;
     } catch (error) {
       console.error('Error getting feedback:', error);
