@@ -103,22 +103,6 @@ export default function PathJourney() {
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
   const initialAnimationPlayed = useRef(false);
-  const isInitialMount = useRef(true);
-
-
-  // Effect for saving progress to the database
-  useEffect(() => {
-    // Don't save on the initial render when progress is first loaded.
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-  
-    // Only save if the user is logged in.
-    if (isGuest) {
-      updateUserProgress({ currentUserLevel, requirementsState });
-    }
-  }, [currentUserLevel, requirementsState, isGuest]);
   
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -297,30 +281,40 @@ export default function PathJourney() {
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const completeRequirement = useCallback((reqId: string) => {
-    setRequirementsState(prevReqs => {
-      if (prevReqs[reqId]) return prevReqs; // Already completed
-  
-      const newReqs = { ...prevReqs, [reqId]: true };
-      return newReqs;
-    });
-  
+    // Construct the new state
+    const newReqs = { ...requirementsState, [reqId]: true };
+    let newLevel = currentUserLevel;
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    if (action?.next) {
-      const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-      if (nextNode) {
-        setCurrentUserLevel(nextNode.level);
-        animateUserIcon(nextNode);
-      }
-    }
+    let nextNode;
     
-    setJustCompletedActionId(reqId);
-    playSound('complete');
-  }, [playSound, animateUserIcon]);
+    if (action?.next) {
+        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        if (nextNode) {
+            newLevel = nextNode.level;
+        }
+    }
+  
+    // Update local state
+    setRequirementsState(newReqs);
+    if (nextNode) {
+        animateUserIcon(nextNode);
+    } else {
+        setJustCompletedActionId(reqId);
+        playSound('complete');
+    }
+  
+    // Persist the new state to the database if the user is logged in
+    if (isGuest) {
+        updateUserProgress({
+            currentUserLevel: newLevel,
+            requirementsState: newReqs,
+        });
+    }
+  }, [requirementsState, currentUserLevel, isGuest, animateUserIcon, playSound]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      isInitialMount.current = true; // Reset for user change
       if (user) {
         const idToken = await user.getIdToken();
         const [progress, profile] = await Promise.all([
@@ -333,9 +327,11 @@ export default function PathJourney() {
         setUserFirstName(profile.firstName || null);
 
       } else {
+        // Reset state for logged-out users
         setCurrentUserLevel(1);
         setRequirementsState({});
         setUserFirstName(null);
+        initialAnimationPlayed.current = false;
       }
       setIsLoadingProgress(false);
     });
