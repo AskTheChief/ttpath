@@ -384,6 +384,32 @@ export default function PathJourney() {
       setSelectedNodeId(null);
   }, [currentUserLevel]);
 
+  const handleNodeClick = (nodeData: PathNodeData) => {
+    if (isAnimating) return;
+    
+    if (nodeData.id === selectedNodeId) {
+        setSelectedNodeId(null);
+        return;
+    }
+
+    if (nodeData.level > currentUserLevel) {
+      playSound('locked', 'A2', '16n');
+      const nodeEl = nodeRefs.current[nodeData.id];
+      if (nodeEl) {
+        nodeEl.classList.add('shake');
+        setTimeout(() => nodeEl.classList.remove('shake'), 500);
+      }
+      setLockedAlertContent({
+        title: "Prerequisite Not Met",
+        description: "You must complete the previous steps on the path before you can perform this action."
+      });
+      setShowLockedAlert(true);
+    } else {
+      playSound('click', 'C4', '8n');
+      setSelectedNodeId(nodeData.id);
+    }
+  };
+
   const handleActionClick = (action: PathAction, node: PathNodeData) => {
     playSound('action', 'C4', '8n');
     
@@ -458,31 +484,6 @@ export default function PathJourney() {
     }
   };
 
-  const handleNodeClick = (nodeData: PathNodeData) => {
-    if (isAnimating) return;
-    
-    if (nodeData.id === selectedNodeId) {
-        setSelectedNodeId(null);
-        return;
-    }
-
-    if (nodeData.level > currentUserLevel) {
-      playSound('locked', 'A2', '16n');
-      const nodeEl = nodeRefs.current[nodeData.id];
-      if (nodeEl) {
-        nodeEl.classList.add('shake');
-        setTimeout(() => nodeEl.classList.remove('shake'), 500);
-      }
-      setLockedAlertContent({
-        title: "Prerequisite Not Met",
-        description: "You must complete the previous steps on the path before you can perform this action."
-      });
-      setShowLockedAlert(true);
-    } else {
-      playSound('click', 'C4', '8n');
-      setSelectedNodeId(nodeData.id);
-    }
-  };
   
   const selectedNode = pathNodesData.find(n => n.id === selectedNodeId);
   
@@ -616,6 +617,13 @@ export default function PathJourney() {
     setModalState(s => ({ ...s, menu: false }));
     setShowCreateTribeModalForTest(true);
   };
+  
+  const handleStartHereClick = () => {
+    const visitorNode = pathNodesData.find(node => node.id === 'node-visitor');
+    if (visitorNode) {
+        handleNodeClick(visitorNode);
+    }
+  };
 
   return (
     <TooltipProvider>
@@ -729,7 +737,7 @@ export default function PathJourney() {
         {!isLoadingProgress && (
           <>
             <div id="user-icon" ref={userIconRef}>
-              <div id="you-are-here">
+              <div id="you-are-here" onClick={handleStartHereClick} style={{ cursor: currentUserLevel === 1 ? 'pointer' : 'default' }}>
                 {currentUserLevel === 1 ? 'Start Here' : 'Your Location'}
               </div>
               <User className="w-5 h-5" />
