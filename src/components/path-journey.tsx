@@ -180,6 +180,7 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
+    console.log(`animateUserIcon called. Target: ${targetNode.title}, Start Level: ${startLevel || currentUserLevel}`);
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -282,12 +283,11 @@ export default function PathJourney() {
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
-  const completeRequirement = useCallback((reqId: string) => {
+  const completeRequirement = useCallback((reqId: string, newReqs: Record<string, boolean>) => {
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    const newReqs = { ...requirementsState, [reqId]: true };
-
+    
     let nextNode: PathNodeData | undefined;
     let newLevel = currentUserLevel;
 
@@ -304,6 +304,7 @@ export default function PathJourney() {
     };
     
     if (isGuest) {
+        console.log("Saving progress to DB:", newProgress);
         updateUserProgress(newProgress);
     }
     
@@ -317,49 +318,41 @@ export default function PathJourney() {
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
   
   useEffect(() => {
+    console.log('Auth state change listener attached.');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsAuthLoading(true);
-      setCurrentUser(user);
+      console.log('onAuthStateChanged triggered. User:', user ? user.uid : null);
       if (user) {
+        setCurrentUser(user);
         const idToken = await user.getIdToken();
+        console.log('User is logged in. Fetching progress...');
         const [progress, profile] = await Promise.all([
           getUserProgress({}),
           getUserProfile({ idToken }),
         ]);
 
+        console.log('Fetched progress from DB:', progress);
         setCurrentUserLevel(progress.currentUserLevel);
         setRequirementsState(progress.requirementsState);
         setUserFirstName(profile.firstName || null);
       } else {
-        // Reset state for logged-out users
-        setCurrentUserLevel(1);
-        setRequirementsState({});
-        setUserFirstName(null);
-        initialAnimationPlayed.current = false;
+        if (!isAuthLoading) {
+            console.log('No user. Resetting state to default.');
+            setCurrentUser(null);
+            setCurrentUserLevel(1);
+            setRequirementsState({});
+            setUserFirstName(null);
+            initialAnimationPlayed.current = false;
+        }
       }
       setIsAuthLoading(false);
+      setIsLoadingProgress(false);
+      console.log('Finished loading progress.');
     });
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    setIsLoadingProgress(isAuthLoading);
   }, [isAuthLoading]);
 
   useEffect(() => {
-    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
-    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    
-    return () => {
-      Object.values(synths.current).forEach(synth => synth?.dispose());
-    };
-  }, []);
-  
-  useEffect(() => {
+    console.log('Initial animation useEffect triggered.', { isMounted, isLoadingProgress, splashHasFinished, initialAnimationPlayed: initialAnimationPlayed.current, currentUserLevel });
     if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
       if (currentUserLevel > 1) {
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
@@ -372,6 +365,14 @@ export default function PathJourney() {
   }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
+    console.log('Splash screen useEffect triggered.');
+    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
+    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    
     placeElementsOnPath();
     const observer = new ResizeObserver(() => {
         placeElementsOnPath();
@@ -381,13 +382,17 @@ export default function PathJourney() {
         observer.observe(pathContainerRef.current);
     }
     
+    console.log('Component mounted.');
     setIsMounted(true);
 
     setTimeout(() => {
+        console.log('Hiding splash screen.');
         setShowSplash(false);
         setTimeout(() => {
+          console.log('Hiding loading curtain.');
           setShowCurtain(false);
           setSplashHasFinished(true);
+          console.log('splashHasFinished set to true.');
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
@@ -395,6 +400,7 @@ export default function PathJourney() {
     }, 1000);
 
     return () => {
+      Object.values(synths.current).forEach(synth => synth?.dispose());
       if(pathContainerRef.current) {
         observer.unobserve(pathContainerRef.current);
       }
@@ -492,7 +498,8 @@ export default function PathJourney() {
             setModalState(s => ({...s, signup: true}));
             return;
         }
-        completeRequirement(action.id);
+        const newReqs = { ...requirementsState, [action.id]: true };
+        completeRequirement(action.id, newReqs);
     }
   };
 
@@ -813,7 +820,7 @@ export default function PathJourney() {
         title={linkModalData.title}
         url={linkModalData.url}
         requirementId={linkModalData.requirementId}
-        onComplete={completeRequirement}
+        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
       />
        <VideoModal
         isOpen={modalState.video}
@@ -824,7 +831,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onComplete={() => completeRequirement('sign-up')}
+        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
         showLogin={showLoginModal}
       />
       <LoginModal 
@@ -840,7 +847,7 @@ export default function PathJourney() {
         isOpen={modalState.comprehensionTest}
         user={currentUser}
         onClose={() => setModalState(s => ({ ...s, comprehensionTest: false }))}
-        onComplete={() => completeRequirement('complete-comprehension-test')}
+        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
       />
       <FeedbackModal
         isOpen={modalState.feedback}
