@@ -103,7 +103,6 @@ export default function PathJourney() {
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
   const initialAnimationPlayed = useRef(false);
-  const isInitialLoad = useRef(true);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -282,38 +281,35 @@ export default function PathJourney() {
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const completeRequirement = useCallback((reqId: string) => {
-    setRequirementsState(prev => {
-      if (prev[reqId]) return prev;
-      const newState = { ...prev, [reqId]: true };
-      setJustCompletedActionId(reqId);
-      playSound('complete');
+    setRequirementsState(prevReqs => {
+      if (prevReqs[reqId]) return prevReqs; // Already completed
+  
+      const newReqs = { ...prevReqs, [reqId]: true };
       
       const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+      let newLevel = currentUserLevel;
       if (action?.next) {
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
+          newLevel = nextNode.level;
           animateUserIcon(nextNode);
         }
+      } else {
+         setCurrentUserLevel(currentUserLevel);
       }
-      return newState;
-    });
-  }, [playSound, animateUserIcon]);
   
-  // Effect for saving progress to the database
-  useEffect(() => {
-    // We don't want to save on the initial render, only on subsequent updates.
-    if (isInitialLoad.current) {
-        isInitialLoad.current = false;
-        return;
-    }
-
-    // Only save if the user is logged in.
-    if (isGuest) {
-        updateUserProgress({ currentUserLevel, requirementsState });
-    }
-  }, [currentUserLevel, requirementsState, isGuest]);
-
-
+      // Save progress to DB immediately
+      if (isGuest) {
+        updateUserProgress({ currentUserLevel: newLevel, requirementsState: newReqs });
+      }
+      
+      setJustCompletedActionId(reqId);
+      playSound('complete');
+  
+      return newReqs;
+    });
+  }, [playSound, animateUserIcon, currentUserLevel, isGuest]);
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -334,7 +330,6 @@ export default function PathJourney() {
         setUserFirstName(null);
       }
       setIsLoadingProgress(false);
-      isInitialLoad.current = true; // Reset for the next user session
     });
     return () => unsubscribe();
   }, []);
