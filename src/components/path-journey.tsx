@@ -178,7 +178,7 @@ export default function PathJourney() {
     }
   }, []);
 
-  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number, updatedReqsState?: Record<string, boolean>) => {
+  const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -225,22 +225,14 @@ export default function PathJourney() {
              userIconRef.current!.style.left = `${finalPoint.x}px`;
              userIconRef.current!.style.top = `${finalPoint.y}px`;
              userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
-            setIsAnimating(false);
+             setIsAnimating(false);
 
-            const newLevel = targetNode.level;
-            
-            if (!startLevel) { // Only run these side-effects for actual progress, not the initial catch-up animation.
-                setCurrentUserLevel(newLevel);
+             // Only play sounds and show toasts for real progress, not the initial catch-up animation.
+             if (!startLevel) {
                 playSound('progress');
                 triggerConfetti(finalPoint.x, finalPoint.y);
 
-                if (isGuest) {
-                    const finalReqsState = updatedReqsState || requirementsState;
-                    updateUserProgress({
-                        currentUserLevel: newLevel,
-                        requirementsState: finalReqsState,
-                    });
-                }
+                const newLevel = targetNode.level;
                 if (targetNode.id === 'node-guest') {
                     toast({
                         title: "Welcome, Guest!",
@@ -251,14 +243,11 @@ export default function PathJourney() {
                         title: "Congratulations, You Graduate!",
                     });
                 }
-            } else {
-                // For initial animation, just set the level at the end without side effects.
-                setCurrentUserLevel(newLevel);
-            }
+             }
         }
     };
     requestAnimationFrame(animationStep);
-  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast, isGuest, requirementsState]);
+  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast, isGuest]);
 
   const placeElementsOnPath = useCallback(() => {
     const container = pathContainerRef.current;
@@ -295,27 +284,39 @@ export default function PathJourney() {
 
   const completeRequirement = useCallback((reqId: string) => {
     const newReqs = { ...requirementsState, [reqId]: true };
-    setRequirementsState(newReqs);
-
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+
     if (action?.next) {
         const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
-            // Pass the newly updated requirements state directly to the animation function
-            animateUserIcon(nextNode, undefined, newReqs);
+            const newLevel = nextNode.level;
+            
+            // Save progress to DB immediately.
+            if (isGuest) {
+                updateUserProgress({
+                    currentUserLevel: newLevel,
+                    requirementsState: newReqs,
+                });
+            }
+            
+            // Then, update local state to trigger animation.
+            setRequirementsState(newReqs);
+            setCurrentUserLevel(newLevel);
+            animateUserIcon(nextNode);
         }
     } else {
-        setJustCompletedActionId(reqId);
-        playSound('complete');
-        // If it doesn't move the user, we still need to save the requirement state.
+        // If the action doesn't advance the user level, just save the requirement state.
         if (isGuest) {
             updateUserProgress({
                 currentUserLevel: currentUserLevel,
                 requirementsState: newReqs,
             });
         }
+        setRequirementsState(newReqs);
+        setJustCompletedActionId(reqId);
+        playSound('complete');
     }
-  }, [requirementsState, animateUserIcon, playSound, isGuest, currentUserLevel]);
+}, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -361,12 +362,12 @@ export default function PathJourney() {
       if (currentUserLevel > 1) {
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
         if (targetNode) {
-          animateUserIcon(targetNode, 1, requirementsState);
+          animateUserIcon(targetNode, 1);
         }
       }
       initialAnimationPlayed.current = true;
     }
-  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon, requirementsState]);
+  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
     placeElementsOnPath();
