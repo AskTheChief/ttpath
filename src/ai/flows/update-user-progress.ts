@@ -40,18 +40,15 @@ const updateUserProgressFlow = ai.defineFlow(
     const user = context?.auth;
     if (!user) {
       // For non-authenticated users, we can just return success as there is nothing to update.
-      console.log("updateUserProgress: No authenticated user, skipping update.");
       return { success: true };
     }
 
     try {
-      console.log(`updateUserProgress: Updating progress for user ${user.uid}:`, input);
       const userDocRef = db.collection('users').doc(user.uid);
       
       // Use set with merge: true to update fields without overwriting the entire document.
       await userDocRef.set(input, { merge: true });
 
-      console.log(`updateUserProgress: Successfully updated progress for user ${user.uid}`);
       return { success: true };
     } catch (error) {
       console.error('Error updating user progress:', error);

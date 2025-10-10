@@ -180,7 +180,6 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
-    console.log(`animateUserIcon called. Target: ${targetNode.title}, Start Level: ${startLevel || currentUserLevel}`);
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -305,7 +304,7 @@ export default function PathJourney() {
     };
     
     if (isGuest) {
-        console.log("Saving progress to DB:", newProgress);
+        // Save progress immediately
         updateUserProgress(newProgress);
     }
     
@@ -320,43 +319,33 @@ export default function PathJourney() {
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
   
   useEffect(() => {
-    console.log('Auth state change listener attached.');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('onAuthStateChanged triggered. User:', user ? user.uid : null);
+      setIsAuthLoading(true);
       if (user) {
         setCurrentUser(user);
         const idToken = await user.getIdToken();
-        console.log('User is logged in. Fetching progress...');
         const [progress, profile] = await Promise.all([
           getUserProgress({}),
           getUserProfile({ idToken }),
         ]);
 
-        console.log('Fetched progress from DB:', progress);
         setCurrentUserLevel(progress.currentUserLevel);
         setRequirementsState(progress.requirementsState);
         setUserFirstName(profile.firstName || null);
       } else {
-        // Only reset if auth has finished loading and there's definitely no user.
-        if (!isAuthLoading) {
-            console.log('No user. Resetting state to default.');
-            setCurrentUser(null);
-            setCurrentUserLevel(1);
-            setRequirementsState({});
-            setUserFirstName(null);
-            initialAnimationPlayed.current = false;
-        }
+        setCurrentUser(null);
+        setCurrentUserLevel(1);
+        setRequirementsState({});
+        setUserFirstName(null);
+        initialAnimationPlayed.current = false;
       }
-      // Regardless of user, auth is now loaded.
       setIsAuthLoading(false);
       setIsLoadingProgress(false);
-      console.log('Finished loading progress.');
     });
     return () => unsubscribe();
-  }, [isAuthLoading]); // Rerunning this could be problematic, keep it to mount only.
+  }, []);
 
   useEffect(() => {
-    console.log('Initial animation useEffect triggered.', { isMounted, isLoadingProgress, splashHasFinished, initialAnimationPlayed: initialAnimationPlayed.current, currentUserLevel });
     if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
       if (currentUserLevel > 1) {
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
@@ -369,7 +358,6 @@ export default function PathJourney() {
   }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
-    console.log('Splash screen useEffect triggered.');
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
     synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
     synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
@@ -386,17 +374,13 @@ export default function PathJourney() {
         observer.observe(pathContainerRef.current);
     }
     
-    console.log('Component mounted.');
     setIsMounted(true);
 
     setTimeout(() => {
-        console.log('Hiding splash screen.');
         setShowSplash(false);
         setTimeout(() => {
-          console.log('Hiding loading curtain.');
           setShowCurtain(false);
           setSplashHasFinished(true);
-          console.log('splashHasFinished set to true.');
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
