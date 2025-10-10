@@ -32,6 +32,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { doc, getDoc } from 'firebase/firestore';
 import { getUserProfile, updateUserProfile } from '@/ai/flows/user-profile';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const libraries: Libraries = ['places'];
 
@@ -67,9 +68,11 @@ export default function MyTribePage() {
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState('12:00');
-
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [hour, setHour] = useState('12');
+  const [minute, setMinute] = useState('00');
+  const [ampm, setAmPm] = useState('PM');
 
   const { toast } = useToast();
   
@@ -280,11 +283,25 @@ export default function MyTribePage() {
 
   const handleAddMeeting = async () => {
     if (!userTribe || !user || !selectedDate) return;
-  
-    const [hours, minutes] = selectedTime.split(':').map(Number);
+
+    let hours = parseInt(hour, 10);
+    const minutes = parseInt(minute, 10);
+
+    if (isNaN(hours) || isNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+      toast({ title: 'Invalid Time', description: 'Please enter a valid time.', variant: 'destructive' });
+      return;
+    }
+
+    if (ampm === 'PM' && hours !== 12) {
+      hours += 12;
+    }
+    if (ampm === 'AM' && hours === 12) { // Midnight case
+      hours = 0;
+    }
+
     const combinedDateTime = new Date(selectedDate);
     combinedDateTime.setHours(hours, minutes, 0, 0);
-
+  
     const newMeeting = {
       id: new Date().toISOString(), // Generate a unique ID for the meeting
       date: combinedDateTime,
@@ -692,14 +709,37 @@ export default function MyTribePage() {
                                 modifiersStyles={{ meetings: { textDecoration: 'underline' } }}
                             />
                             <div className="flex items-center gap:2 mt:4">
-                               <Label htmlFor="meeting-time" className="mb:0">Time:</Label>
-                               <Input
-                                  id="meeting-time"
-                                  type="time"
-                                  value={selectedTime}
-                                  onChange={(e) => setSelectedTime(e.target.value)}
-                                  className="w-full"
-                                />
+                               <Label htmlFor="meeting-time" className="mb:0 whitespace-nowrap">Time:</Label>
+                               <div className="flex w-full items-center gap-2">
+                                    <Input
+                                        id="hour"
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={hour}
+                                        onChange={(e) => setHour(e.target.value)}
+                                        className="w-full text-center"
+                                    />
+                                    <span>:</span>
+                                    <Input
+                                        id="minute"
+                                        type="number"
+                                        min="0"
+                                        max="59"
+                                        value={minute}
+                                        onChange={(e) => setMinute(e.target.value.padStart(2, '0'))}
+                                        className="w-full text-center"
+                                    />
+                                    <Select value={ampm} onValueChange={setAmPm}>
+                                        <SelectTrigger className="w-[80px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="AM">AM</SelectItem>
+                                            <SelectItem value="PM">PM</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                              <Button onClick={handleAddMeeting} className="w-full mt:4" disabled={!selectedDate}>Schedule Meeting</Button>
                         </div>
