@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -178,10 +177,11 @@ export default function PathJourney() {
     }
   }, []);
 
-  const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number, newReqs?: Record<string, boolean>) => {
+  const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number) => {
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
+    console.log(`animateUserIcon called. Target: ${targetNode.title}, Start Level: ${startLevel}`);
 
     const startNode = pathNodesData.find(n => n.level === (startLevel || currentUserLevel))!;
     const totalLength = pathRef.current.getTotalLength();
@@ -246,8 +246,11 @@ export default function PathJourney() {
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
 
   const placeElementsOnPath = useCallback(() => {
+    console.log(`placeElementsOnPath called. isMounted: ${isMounted}, isLoadingProgress: ${isLoadingProgress}, currentUserLevel: ${currentUserLevel}`);
     const container = pathContainerRef.current;
-    if (!pathRef.current || !container) return;
+    if (!pathRef.current || !container || !isMounted || isLoadingProgress) return;
+    
+    console.log('--- Placing elements on path now ---');
     
     const place = () => {
       if (!pathRef.current) return;
@@ -263,13 +266,16 @@ export default function PathJourney() {
         }
       });
   
-      if (!isLoadingProgress && userIconRef.current) {
+      if (userIconRef.current) {
           const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
           if (currentUserNode) {
+              console.log(`Placing user icon at level ${currentUserLevel} (Node: ${currentUserNode.title})`);
               const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
               const cssPoint = mapSvgPointToCss(point);
               userIconRef.current.style.left = `${cssPoint.x}px`;
               userIconRef.current.style.top = `${cssPoint.y}px`;
+          } else {
+              console.warn(`Could not find node for level ${currentUserLevel}`);
           }
       }
     };
@@ -277,18 +283,19 @@ export default function PathJourney() {
     // RAF to ensure layout is calculated
     requestAnimationFrame(place);
 
-  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
+  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress, isMounted]);
 
-  const completeRequirement = useCallback(async (reqId: string, newReqs?: Record<string, boolean>) => {
+  const completeRequirement = useCallback(async (reqId: string) => {
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    const updatedReqs = newReqs || { ...requirementsState, [reqId]: true };
+    if (!action) return;
 
+    const newReqs = { ...requirementsState, [reqId]: true };
     let nextNode: PathNodeData | undefined;
     let newLevel = currentUserLevel;
 
-    if (action?.next) {
+    if (action.next) {
         nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
             newLevel = nextNode.level;
@@ -297,9 +304,10 @@ export default function PathJourney() {
     
     const newProgress = {
         currentUserLevel: newLevel,
-        requirementsState: updatedReqs,
+        requirementsState: newReqs,
     };
     
+    console.log("Saving progress to DB:", newProgress);
     if (isGuest && auth.currentUser) {
         try {
             const idToken = await auth.currentUser.getIdToken();
@@ -316,9 +324,10 @@ export default function PathJourney() {
         }
     }
     
-    setRequirementsState(updatedReqs);
+    setRequirementsState(newReqs);
+    console.log(`State updated locally: new level ${newLevel}`);
     
-    if (nextNode) {
+    if (nextNode && nextNode.level > currentUserLevel) {
         animateUserIcon(nextNode, currentUserLevel);
         setCurrentUserLevel(newLevel);
     } else {
@@ -327,37 +336,44 @@ export default function PathJourney() {
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast]);
   
   useEffect(() => {
+    console.log("Auth state change listener attached.");
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsAuthLoading(true);
-      if (user) {
-        setCurrentUser(user);
-        try {
-          const idToken = await user.getIdToken();
-          const [progress, profile] = await Promise.all([
-            getUserProgress({ idToken }),
-            getUserProfile({ idToken }),
-          ]);
-          setCurrentUserLevel(progress.currentUserLevel || 1);
-          setRequirementsState(progress.requirementsState || {});
-          setUserFirstName(profile.firstName || null);
-        } catch (error) {
-          console.error("Error fetching user data:", error);
+      console.log(`onAuthStateChanged triggered. User: ${user?.uid || null}`);
+      if (isAuthLoading) {
+        if (user) {
+          console.log("User is logged in. Fetching progress...");
+          setCurrentUser(user);
+          try {
+            const idToken = await user.getIdToken();
+            const [progress, profile] = await Promise.all([
+              getUserProgress({ idToken }),
+              getUserProfile({ idToken }),
+            ]);
+            console.log("Fetched progress from DB:", progress);
+            setCurrentUserLevel(progress.currentUserLevel || 1);
+            setRequirementsState(progress.requirementsState || {});
+            setUserFirstName(profile.firstName || null);
+          } catch (error) {
+            console.error("Error fetching user data:", error);
+            setCurrentUserLevel(1);
+            setRequirementsState({});
+            setUserFirstName(null);
+          }
+        } else {
+          console.log("No user found during initial auth check.");
+          setCurrentUser(null);
           setCurrentUserLevel(1);
           setRequirementsState({});
           setUserFirstName(null);
         }
-      } else {
-        setCurrentUser(null);
-        setCurrentUserLevel(1);
-        setRequirementsState({});
-        setUserFirstName(null);
+        setIsAuthLoading(false);
+        setIsLoadingProgress(false);
+        console.log("Finished initial auth check and progress loading.");
       }
-      setIsAuthLoading(false);
-      setIsLoadingProgress(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthLoading]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -368,12 +384,17 @@ export default function PathJourney() {
     synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
     
     setIsMounted(true);
+    console.log("Component mounted.");
+
 
     setTimeout(() => {
+        console.log("Hiding splash screen.");
         setShowSplash(false);
         setTimeout(() => {
+          console.log("Hiding loading curtain.");
           setShowCurtain(false);
           setSplashHasFinished(true);
+          console.log("splashHasFinished set to true.");
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
@@ -383,7 +404,13 @@ export default function PathJourney() {
   }, []);
   
   useEffect(() => {
-    if (!isMounted) return;
+    console.log(`Placement useEffect triggered. Dependencies: { isMounted: ${isMounted}, isLoadingProgress: ${isLoadingProgress}, currentUserLevel: ${currentUserLevel} }`);
+    if (!isMounted || isLoadingProgress) {
+        console.log("Placement useEffect: skipping because not mounted or still loading progress.");
+        return;
+    }
+
+    placeElementsOnPath();
 
     const observer = new ResizeObserver(() => {
         placeElementsOnPath();
@@ -392,15 +419,13 @@ export default function PathJourney() {
     if (pathContainerRef.current) {
         observer.observe(pathContainerRef.current);
     }
-    
-    placeElementsOnPath();
 
     return () => {
       if(pathContainerRef.current) {
         observer.unobserve(pathContainerRef.current);
       }
     }
-  }, [isMounted, placeElementsOnPath, currentUserLevel, isLoadingProgress]);
+  }, [isMounted, isLoadingProgress, currentUserLevel, placeElementsOnPath]);
 
 
   useEffect(() => {
@@ -549,7 +574,7 @@ export default function PathJourney() {
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
           const Checkmark = isCompleted ? (
             <span className={`checkmark-container ${checkmarkAnimationClass}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 inline-block mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 inline-block mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points=" ২২ 4 12 14.01 9 11.01"></polyline></svg>
             </span>
           ) : null;
 
