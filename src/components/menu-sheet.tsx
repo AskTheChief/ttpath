@@ -74,12 +74,15 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         <div className="p-4">
           {menuItems.map(renderMenuItem)}
           {isGuest && (
-            <div className="relative text-xl h-auto rounded-md hover:bg-accent hover:text-accent-foreground">
+            <div className="relative">
               <DevDropdown onTestCreateTribe={onTestCreateTribe}>
-                <div className="flex items-center justify-start p-6 text-left">
-                  <Shield className="mr-4 w-10 h-10" />
-                  <span className="font-medium">Dev Den</span>
-                </div>
+                 <Button
+                    variant="ghost"
+                    className="w-full justify-start text-xl p-6 h-auto"
+                 >
+                    <Shield className="mr-4 w-10 h-10" />
+                    Dev Den
+                 </Button>
               </DevDropdown>
             </div>
           )}
