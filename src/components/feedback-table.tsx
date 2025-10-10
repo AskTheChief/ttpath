@@ -54,7 +54,7 @@ export default function FeedbackTable() {
           <TableRow key={item.id}>
             <TableCell>{item.feedback}</TableCell>
             <TableCell>{item.userName || 'Anonymous'}</TableCell>
-            <TableCell>{item.email}</TableCell>
+            <TableCell>{item.email || 'N/A'}</TableCell>
             <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
           </TableRow>
         ))}
