@@ -22,6 +22,7 @@ import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth
 import LoginModal from './modals/login-modal';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
+import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -62,6 +63,7 @@ export default function PathJourney() {
   const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userFirstName, setUserFirstName] = useState<string | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
@@ -299,12 +301,20 @@ export default function PathJourney() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        const progress = await getUserProgress({});
+        const idToken = await user.getIdToken();
+        const [progress, profile] = await Promise.all([
+          getUserProgress({}),
+          getUserProfile({ idToken }),
+        ]);
+
         setCurrentUserLevel(progress.currentUserLevel);
         setRequirementsState(progress.requirementsState);
+        setUserFirstName(profile.firstName || null);
+
       } else {
         setCurrentUserLevel(1);
         setRequirementsState({});
+        setUserFirstName(null);
       }
       setIsLoadingProgress(false);
     });
@@ -640,8 +650,8 @@ export default function PathJourney() {
                     <button className="action-icon" onClick={handleLogout}>
                         <LogOut className="h-8 w-8 text-muted-foreground" />
                     </button>
-                    <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
-                    {currentUser?.email && <span className="node-label text-xs mt-0 truncate max-w-[150px]">{currentUser.email}</span>}
+                    <span className="node-label">Logout</span>
+                    {userFirstName && <span className="node-label text-sm mt-0 truncate max-w-[150px]">Welcome, {userFirstName}!</span>}
                 </>
             ) : (
                 <>
