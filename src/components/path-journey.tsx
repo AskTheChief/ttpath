@@ -228,7 +228,6 @@ export default function PathJourney() {
              userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
              setIsAnimating(false);
 
-             // Only play sounds and show toasts for real progress, not the initial catch-up animation.
              if (!startLevel) {
                 playSound('progress');
                 triggerConfetti(finalPoint.x, finalPoint.y);
@@ -282,7 +281,7 @@ export default function PathJourney() {
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
-  const completeRequirement = useCallback((reqId: string) => {
+  const completeRequirement = useCallback(async (reqId: string) => {
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
@@ -303,12 +302,11 @@ export default function PathJourney() {
         requirementsState: newReqs,
     };
     
-    if (isGuest) {
-        // Save progress immediately
-        updateUserProgress(newProgress);
+    if (isGuest && auth.currentUser) {
+        const idToken = await auth.currentUser.getIdToken();
+        await updateUserProgress({ ...newProgress, idToken });
     }
     
-    // Update local state to trigger UI changes and animation
     setRequirementsState(newReqs);
     if (nextNode) {
         setCurrentUserLevel(newLevel);
@@ -323,10 +321,9 @@ export default function PathJourney() {
       setIsAuthLoading(true);
       if (user) {
         setCurrentUser(user);
-        const idToken = await user.getIdToken();
         const [progress, profile] = await Promise.all([
           getUserProgress({}),
-          getUserProfile({ idToken }),
+          getUserProfile({ idToken: await user.getIdToken() }),
         ]);
 
         setCurrentUserLevel(progress.currentUserLevel);
@@ -342,6 +339,7 @@ export default function PathJourney() {
       setIsAuthLoading(false);
       setIsLoadingProgress(false);
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -781,8 +779,8 @@ export default function PathJourney() {
                           <CardTitle>{node.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
-                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
+                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{selectedNode.description}</p>}
+                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>}
                           <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
                           {renderAbilities(node)}
                       </CardContent>
