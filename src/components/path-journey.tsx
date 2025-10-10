@@ -3,7 +3,7 @@
 "use client";
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, ArrowRight } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -67,7 +67,7 @@ export default function PathJourney() {
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [splashHasFinished, setSplashHasFinished] = useState(false);
   
   const [showLockedAlert, setShowLockedAlert] = useState(false);
   const [lockedAlertContent, setLockedAlertContent] = useState({
@@ -102,6 +102,7 @@ export default function PathJourney() {
 
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
   const lastSoundTime = useRef(0);
+  const initialAnimationPlayed = useRef(false);
 
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
@@ -322,10 +323,10 @@ export default function PathJourney() {
   }, []);
 
   useEffect(() => {
-    if (isGuest && isMounted && !isInitialLoad) {
+    if (isGuest && isMounted && !initialAnimationPlayed.current) {
       updateUserProgress({ currentUserLevel, requirementsState });
     }
-  }, [currentUserLevel, requirementsState, isGuest, isMounted, isInitialLoad]);
+  }, [currentUserLevel, requirementsState, isGuest, isMounted]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -341,16 +342,16 @@ export default function PathJourney() {
   }, []);
   
   useEffect(() => {
-    if (isMounted && isInitialLoad && !isLoadingProgress && currentUserLevel > 1) {
-      const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
-      if (targetNode) {
-        animateUserIcon(targetNode, 1);
-        setIsInitialLoad(false);
+    if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
+      if (currentUserLevel > 1) {
+        const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
+        if (targetNode) {
+          animateUserIcon(targetNode, 1);
+        }
       }
-    } else if (!isLoadingProgress) {
-        setIsInitialLoad(false);
+      initialAnimationPlayed.current = true;
     }
-  }, [currentUserLevel, isLoadingProgress, isMounted, isInitialLoad, animateUserIcon]);
+  }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
     placeElementsOnPath();
@@ -367,6 +368,7 @@ export default function PathJourney() {
         setShowSplash(false);
         setTimeout(() => {
           setShowCurtain(false);
+          setSplashHasFinished(true); // Signal that the splash animation is over
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
@@ -738,9 +740,7 @@ export default function PathJourney() {
           <>
             <div id="user-icon" ref={userIconRef}>
               <div id="you-are-here">
-                {currentUserLevel === 1 ? (
-                   <span>Start Here</span>
-                ) : 'Your Location'}
+                {currentUserLevel === 1 ? 'Start Here' : 'Your Location'}
               </div>
               <User className="w-5 h-5" />
             </div>
