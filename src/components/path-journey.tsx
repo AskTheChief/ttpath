@@ -64,6 +64,7 @@ export default function PathJourney() {
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
@@ -179,7 +180,6 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback((targetNode: PathNodeData, startLevel?: number) => {
-    console.log('animateUserIcon called. Target:', targetNode.title, 'Start Level:', startLevel);
     if (isAnimating || !pathRef.current || !userIconRef.current) return;
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -247,7 +247,7 @@ export default function PathJourney() {
         }
     };
     requestAnimationFrame(animationStep);
-  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast, isGuest]);
+  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
 
   const placeElementsOnPath = useCallback(() => {
     const container = pathContainerRef.current;
@@ -283,73 +283,68 @@ export default function PathJourney() {
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
   const completeRequirement = useCallback((reqId: string) => {
-    const newReqs = { ...requirementsState, [reqId]: true };
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+    const newReqs = { ...requirementsState, [reqId]: true };
+
+    let nextNode: PathNodeData | undefined;
+    let newLevel = currentUserLevel;
 
     if (action?.next) {
-        const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
-            const newLevel = nextNode.level;
-            const newProgress = {
-                currentUserLevel: newLevel,
-                requirementsState: newReqs,
-            };
-            if (isGuest) {
-                console.log('Saving progress:', newProgress);
-                updateUserProgress(newProgress);
-            }
-            setCurrentUserLevel(newLevel);
-            setRequirementsState(newReqs);
-            animateUserIcon(nextNode);
+            newLevel = nextNode.level;
         }
+    }
+
+    const newProgress = {
+        currentUserLevel: newLevel,
+        requirementsState: newReqs,
+    };
+    
+    if (isGuest) {
+        updateUserProgress(newProgress);
+    }
+    
+    setRequirementsState(newReqs);
+    if (nextNode) {
+        setCurrentUserLevel(newLevel);
+        animateUserIcon(nextNode);
     } else {
-        const newProgress = {
-            currentUserLevel: currentUserLevel,
-            requirementsState: newReqs,
-        };
-        if (isGuest) {
-            console.log('Saving progress (no level change):', newProgress);
-            updateUserProgress(newProgress);
-        }
-        setRequirementsState(newReqs);
         playSound('complete');
     }
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel]);
   
   useEffect(() => {
-    console.log('Auth state change listener attached.');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('onAuthStateChanged triggered. User:', user ? user.uid : 'null');
+      setIsAuthLoading(true);
       setCurrentUser(user);
       if (user) {
-        setIsLoadingProgress(true);
-        console.log('User found, fetching progress...');
         const idToken = await user.getIdToken();
         const [progress, profile] = await Promise.all([
           getUserProgress({}),
           getUserProfile({ idToken }),
         ]);
 
-        console.log('Fetched progress from DB:', progress);
         setCurrentUserLevel(progress.currentUserLevel);
         setRequirementsState(progress.requirementsState);
         setUserFirstName(profile.firstName || null);
-
       } else {
         // Reset state for logged-out users
-        console.log('No user. Resetting state to default.');
         setCurrentUserLevel(1);
         setRequirementsState({});
         setUserFirstName(null);
         initialAnimationPlayed.current = false;
       }
-      setIsLoadingProgress(false);
-      console.log('Finished loading progress.');
+      setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    setIsLoadingProgress(isAuthLoading);
+  }, [isAuthLoading]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -365,17 +360,8 @@ export default function PathJourney() {
   }, []);
   
   useEffect(() => {
-    console.log('Initial animation useEffect triggered.');
-    console.log({
-      isMounted,
-      isLoadingProgress,
-      splashHasFinished,
-      initialAnimationPlayed: initialAnimationPlayed.current,
-      currentUserLevel,
-    });
     if (isMounted && !isLoadingProgress && splashHasFinished && !initialAnimationPlayed.current) {
       if (currentUserLevel > 1) {
-        console.log('Conditions met, animating to user level:', currentUserLevel);
         const targetNode = pathNodesData.find(n => n.level === currentUserLevel);
         if (targetNode) {
           animateUserIcon(targetNode, 1);
@@ -386,7 +372,6 @@ export default function PathJourney() {
   }, [currentUserLevel, isLoadingProgress, isMounted, splashHasFinished, animateUserIcon]);
   
   useEffect(() => {
-    console.log('Splash screen useEffect triggered.');
     placeElementsOnPath();
     const observer = new ResizeObserver(() => {
         placeElementsOnPath();
@@ -397,15 +382,12 @@ export default function PathJourney() {
     }
     
     setIsMounted(true);
-    console.log('Component mounted.');
+
     setTimeout(() => {
-        console.log('Hiding splash screen.');
         setShowSplash(false);
         setTimeout(() => {
-          console.log('Hiding loading curtain.');
           setShowCurtain(false);
-          setSplashHasFinished(true); // Signal that the splash animation is over
-          console.log('splashHasFinished set to true.');
+          setSplashHasFinished(true);
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
@@ -510,16 +492,7 @@ export default function PathJourney() {
             setModalState(s => ({...s, signup: true}));
             return;
         }
-
-        const isCompleted = requirementsState[action.id];
-        if (!isCompleted) {
-            completeRequirement(action.id);
-        } else {
-             const nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
-            if (nextNode && !isAnimating && nextNode.level > currentUserLevel) {
-                animateUserIcon(nextNode);
-            }
-        }
+        completeRequirement(action.id);
     }
   };
 
