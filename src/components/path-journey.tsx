@@ -1,6 +1,6 @@
 
 
-"use client";
+'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
 import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video } from 'lucide-react';
@@ -283,11 +283,12 @@ export default function PathJourney() {
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress]);
 
-  const completeRequirement = useCallback((reqId: string, newReqs: Record<string, boolean>) => {
+  const completeRequirement = useCallback((reqId: string) => {
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
+    const newReqs = { ...requirementsState, [reqId]: true };
     let nextNode: PathNodeData | undefined;
     let newLevel = currentUserLevel;
 
@@ -308,6 +309,7 @@ export default function PathJourney() {
         updateUserProgress(newProgress);
     }
     
+    // Update local state to trigger UI changes and animation
     setRequirementsState(newReqs);
     if (nextNode) {
         setCurrentUserLevel(newLevel);
@@ -335,6 +337,7 @@ export default function PathJourney() {
         setRequirementsState(progress.requirementsState);
         setUserFirstName(profile.firstName || null);
       } else {
+        // Only reset if auth has finished loading and there's definitely no user.
         if (!isAuthLoading) {
             console.log('No user. Resetting state to default.');
             setCurrentUser(null);
@@ -344,12 +347,13 @@ export default function PathJourney() {
             initialAnimationPlayed.current = false;
         }
       }
+      // Regardless of user, auth is now loaded.
       setIsAuthLoading(false);
       setIsLoadingProgress(false);
       console.log('Finished loading progress.');
     });
     return () => unsubscribe();
-  }, [isAuthLoading]);
+  }, [isAuthLoading]); // Rerunning this could be problematic, keep it to mount only.
 
   useEffect(() => {
     console.log('Initial animation useEffect triggered.', { isMounted, isLoadingProgress, splashHasFinished, initialAnimationPlayed: initialAnimationPlayed.current, currentUserLevel });
@@ -498,8 +502,7 @@ export default function PathJourney() {
             setModalState(s => ({...s, signup: true}));
             return;
         }
-        const newReqs = { ...requirementsState, [action.id]: true };
-        completeRequirement(action.id, newReqs);
+        completeRequirement(action.id);
     }
   };
 
@@ -820,7 +823,7 @@ export default function PathJourney() {
         title={linkModalData.title}
         url={linkModalData.url}
         requirementId={linkModalData.requirementId}
-        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
+        onComplete={completeRequirement}
       />
        <VideoModal
         isOpen={modalState.video}
@@ -831,7 +834,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
+        onComplete={completeRequirement}
         showLogin={showLoginModal}
       />
       <LoginModal 
@@ -847,7 +850,7 @@ export default function PathJourney() {
         isOpen={modalState.comprehensionTest}
         user={currentUser}
         onClose={() => setModalState(s => ({ ...s, comprehensionTest: false }))}
-        onComplete={(reqId) => completeRequirement(reqId, { ...requirementsState, [reqId]: true })}
+        onComplete={completeRequirement}
       />
       <FeedbackModal
         isOpen={modalState.feedback}
