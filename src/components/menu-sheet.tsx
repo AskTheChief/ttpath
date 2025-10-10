@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, Gamepad2, Store, CandlestickChart, Map } from "lucide-react";
+import { Database, Swords, Gamepad2, Store, CandlestickChart, Map, Shield } from "lucide-react";
 
 type MenuSheetProps = {
   isOpen: boolean;
@@ -74,9 +74,12 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         <div className="p-4 space-y-2">
           {menuItems.map(renderMenuItem)}
           {isGuest && (
-            <div className="p-2">
-              <DevDropdown onTestCreateTribe={onTestCreateTribe} />
-              <span className="ml-3 text-lg">Dev Den</span>
+            <div className="relative flex items-center w-full text-lg p-6">
+              <Shield className="h-6 w-6 mr-4" />
+              <span className="flex-grow">Dev Den</span>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                 <DevDropdown onTestCreateTribe={onTestCreateTribe} />
+              </div>
             </div>
           )}
         </div>

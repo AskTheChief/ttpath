@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Shield } from 'lucide-react';
+import { MoreVertical, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
 import PinModal from './modals/pin-modal';
+import { Button } from './ui/button';
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
@@ -26,6 +27,7 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   const { toast } = useToast();
   const [showPinModal, setShowPinModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleReset = async () => {
     try {
@@ -47,6 +49,7 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   const handlePinSuccess = () => {
     setIsUnlocked(true);
     setShowPinModal(false);
+    setDropdownOpen(true); // Open dropdown after successful PIN
     toast({ title: 'Dev Den Unlocked' });
   };
 
@@ -55,24 +58,27 @@ export default function DevDropdown({ onTestCreateTribe }: DevDropdownProps) {
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
+    setDropdownOpen(open);
     // When the dropdown closes, re-lock it.
     if (!open) {
       setIsUnlocked(false);
     }
   };
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    if (!isUnlocked) {
+      e.preventDefault();
+      setShowPinModal(true);
+    }
+  }
+
   return (
     <>
-      <DropdownMenu onOpenChange={handleDropdownOpenChange}>
+      <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
         <DropdownMenuTrigger asChild>
-          <button className="chat-icon" onClick={(e) => {
-            if (!isUnlocked) {
-              e.preventDefault();
-              setShowPinModal(true);
-            }
-          }}>
-            <Shield className="h-8 w-8 text-muted-foreground" />
-          </button>
+          <Button variant="ghost" size="icon" onClick={handleTriggerClick}>
+             <MoreVertical className="h-5 w-5" />
+          </Button>
         </DropdownMenuTrigger>
         {isUnlocked && (
           <DropdownMenuContent>
