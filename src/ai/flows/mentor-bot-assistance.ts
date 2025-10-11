@@ -15,8 +15,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {saveQAndA} from './save-q-and-a';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { initializeApp, getApps, credential } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 if (!getApps().length) {
   initializeApp({
@@ -25,9 +25,11 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
 
 const MentorBotAssistanceInputSchema = z.object({
   question: z.string().describe('The user’s question for the mentor bot.'),
+  idToken: z.string().optional().describe("The user's Firebase ID token for authentication."),
 });
 export type MentorBotAssistanceInput = z.infer<typeof MentorBotAssistanceInputSchema>;
 
@@ -46,7 +48,7 @@ const bookContent = fs.readFileSync(bookPath, 'utf-8');
 
 const prompt = ai.definePrompt({
   name: 'mentorBotAssistancePrompt',
-  input: {schema: MentorBotAssistanceInputSchema},
+  input: {schema: z.object({ question: MentorBotAssistanceInputSchema.shape.question })},
   output: {schema: MentorBotAssistanceOutputSchema},
   prompt: `The Chief from the Trading Tribe provides expert guidance on Trading Tribe Process (TTP) and the methods described in the Trading Tribe Source Manual. The Chief helps people understand trading psychology, emotional management, and the Trading Tribe methodology.
 
@@ -87,24 +89,31 @@ const mentorBotAssistanceFlow = ai.defineFlow(
     inputSchema: MentorBotAssistanceInputSchema,
     outputSchema: MentorBotAssistanceOutputSchema,
   },
-  async (input, context) => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const {output} = await prompt({ question: input.question });
 
     if (output) {
-      const user = context?.auth;
+      let userId: string | undefined = undefined;
       let userName: string | undefined = undefined;
 
-      if (user?.uid) {
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        if (userDoc.exists) {
-          userName = userDoc.data()?.firstName;
+      if (input.idToken) {
+        try {
+          const decodedToken = await adminAuth.verifyIdToken(input.idToken);
+          userId = decodedToken.uid;
+          const userDoc = await db.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            userName = userDoc.data()?.firstName;
+          }
+        } catch (error) {
+            console.error("Error verifying ID token or fetching user profile in mentorBotAssistanceFlow:", error);
+            // Don't block the chat from being saved, just save it without user info.
         }
       }
 
       await saveQAndA({
         question: input.question,
         answer: output.answer,
-        userId: user?.uid,
+        userId: userId,
         userName: userName,
       });
     }

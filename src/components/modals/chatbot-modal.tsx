@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { mentorBotAssistance } from "@/ai/flows/mentor-bot-assistance";
 import { Send } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 type ChatMessage = {
   sender: "user" | "chief";
@@ -28,7 +30,15 @@ export default function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,7 +57,11 @@ export default function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
     setIsLoading(true);
 
     try {
-      const response = await mentorBotAssistance({ question: userMessage });
+      const idToken = user ? await user.getIdToken() : undefined;
+      const response = await mentorBotAssistance({
+        question: userMessage,
+        idToken,
+      });
       setMessages((prev) => [
         ...prev,
         { sender: "chief", text: response.answer },
