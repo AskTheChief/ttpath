@@ -52,10 +52,10 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: 'host',
-            value: 'www.ttpath.net',
+            value: 'ttpath.net',
           },
         ],
-        destination: 'https://ttpath.net/:path*',
+        destination: 'https://www.ttpath.net/:path*',
         permanent: true,
       },
     ]
