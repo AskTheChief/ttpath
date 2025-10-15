@@ -52,7 +52,7 @@ export default function TermsOfServicePage() {
         <section>
           <h2 className="text-2xl font-semibold mb-2">6. Contact Us</h2>
           <p>
-            If you have any questions about these Terms, please contact us at <a href="mailto:support@ttpath.com" className="text-primary hover:underline">support@ttpath.com</a>.
+            If you have any questions about these Terms, please contact us at <a href="mailto:support@example.com" className="text-primary hover:underline">support@example.com</a>.
           </p>
         </section>
       </div>
