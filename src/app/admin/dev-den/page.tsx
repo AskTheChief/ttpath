@@ -2,10 +2,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
 import UserTable from '@/components/admin/user-table';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function DevDenPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -28,9 +31,19 @@ export default function DevDenPage() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Developer Den</h1>
+         <Button asChild variant="outline">
+            <Link href="/admin">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+            </Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>User Profiles</CardTitle>
+          <CardDescription>A list of all registered users and their contact information.</CardDescription>
         </CardHeader>
         <CardContent>
           <UserTable />
@@ -40,10 +53,11 @@ export default function DevDenPage() {
       <Card>
         <CardHeader>
           <CardTitle>Chief Sessions</CardTitle>
+          <CardDescription>A log of all interactions users have had with The Chief.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p>Loading...</p>
+            <p>Loading sessions...</p>
           ) : (
             <Accordion type="single" collapsible className="w-full">
               {chatSessions.map(session => (
