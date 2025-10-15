@@ -9,7 +9,7 @@ export default function AdminPage() {
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/admin/dev-den">
+        <Link href="/admin/users">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -17,11 +17,27 @@ export default function AdminPage() {
                 User Management
               </CardTitle>
               <CardDescription>
-                View user profiles and their interactions.
+                View user profiles and their contact information.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button>Go to Dev Den</Button>
+              <Button>View Users</Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/chief-qa">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-6 w-6" />
+                Chief Q&A
+              </CardTitle>
+              <CardDescription>
+                See all interactions users have had with The Chief.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>View Sessions</Button>
             </CardContent>
           </Card>
         </Link>

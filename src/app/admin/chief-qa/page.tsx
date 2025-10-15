@@ -5,12 +5,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
-import UserTable from '@/components/admin/user-table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export default function DevDenPage() {
+export default function ChiefQAPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,8 +30,8 @@ export default function DevDenPage() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Developer Den</h1>
+       <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Chief Q&A Sessions</h1>
          <Button asChild variant="outline">
             <Link href="/admin">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -40,15 +39,6 @@ export default function DevDenPage() {
             </Link>
         </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>User Profiles</CardTitle>
-          <CardDescription>A list of all registered users and their contact information.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <UserTable />
-        </CardContent>
-      </Card>
       
       <Card>
         <CardHeader>
