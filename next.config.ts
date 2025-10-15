@@ -24,7 +24,8 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https'
+        ,
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -34,52 +35,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // matching all API routes
+        // This rule allows the frontend (running on .ttpath.net domains)
+        // to make API calls to the backend Genkit flows.
         source: "/api/genkit/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "https://www.ttpath.net, https://ttpath.net, https://www.ttpath.com, https://ttpath.com" },
+          { key: "Access-Control-Allow-Origin", value: "https://www.ttpath.net, https://ttpath.net" },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
         ]
       }
-    ]
-  },
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'ttpath.net',
-          },
-        ],
-        destination: 'https://www.ttpath.net/:path*',
-        permanent: true,
-      },
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'ttpath.com',
-          },
-        ],
-        destination: 'https://www.ttpath.net/:path*',
-        permanent: true,
-      },
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'www.ttpath.com',
-          },
-        ],
-        destination: 'https://www.ttpath.net/:path*',
-        permanent: true,
-      },
     ]
   },
 };
