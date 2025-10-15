@@ -1,11 +1,9 @@
+
 runConfig:
   minInstances: 0
-  env:
-    - variable: GEMINI_API_KEY
-      secret: GEMINI_API_KEY
-      availability:
-        - BUILD
-        - RUNTIME
 secretManager:
   - secret: GEMINI_API_KEY
     pin: latest
+    availability:
+      - BUILD
+      - RUNTIME
