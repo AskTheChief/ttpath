@@ -676,7 +676,7 @@ export default function PathJourney() {
                         <LogOut className="h-8 w-8 text-muted-foreground" />
                     </button>
                     <span className="node-label">Logout</span>
-                    {userFirstName && <span className="node-label text-sm mt-0 truncate max-w-[150px]">Welcome, {userFirstName}!</span>}
+                    {userFirstName && <span className="node-label text-sm mt-8 -ml-1 truncate max-w-[150px] absolute">Welcome, {userFirstName}!</span>}
                 </>
             ) : (
                 <>
