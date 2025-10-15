@@ -645,6 +645,31 @@ export default function PathJourney() {
     }
   };
 
+  const renderChatbotIcon = () => {
+    const content = (
+      <button
+        className={cn('action-icon', !isGuest && 'opacity-50 cursor-not-allowed')}
+        onClick={() => {
+          if (isGuest) {
+            openModal('chatbot');
+          }
+        }}
+      >
+        <MessageSquare className="h-8 w-8 text-muted-foreground" />
+      </button>
+    );
+
+    if (isGuest) {
+      return content;
+    }
+
+    return (
+      <TooltipTrigger asChild>
+        {content}
+      </TooltipTrigger>
+    );
+  }
+
   return (
     <TooltipProvider>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
@@ -698,15 +723,18 @@ export default function PathJourney() {
           <span className="node-label">Send Feedback</span>
         </div>
         
-        {isGuest && (
-          <div className="chatbot-icon-container">
-              <button className="action-icon" onClick={() => openModal('chatbot')}>
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-              </button>
-              <span className="node-label">Ask The Chief</span>
-          </div>
-        )}
-        
+        <div className="chatbot-icon-container">
+          <Tooltip>
+            {renderChatbotIcon()}
+            <span className="node-label">Ask The Chief</span>
+            {!isGuest && (
+              <TooltipContent>
+                <p>Follow the Path to Guest to have access to The Chief</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+
         <div id="confetti-container" ref={confettiContainerRef}></div>
         <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
           <defs>
