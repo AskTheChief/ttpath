@@ -6,12 +6,8 @@ env:
     secret: GEMINI_API_KEY
     availability:
       - RUNTIME
-
-# The new `build` section to make secrets available during the build process
 build:
   env:
     - variable: GEMINI_API_KEY
       secret: GEMINI_API_KEY
-
-# Specifies the project that stores the secrets.
 secretManager: []
