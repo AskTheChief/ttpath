@@ -5,13 +5,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {getFirestore} from 'firebase-admin/firestore';
 import {initializeApp, getApps, App} from 'firebase-admin/app';
-import {credential} from 'firebase-admin';
 
 if (!getApps().length) {
-  initializeApp({
-    credential: credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  initializeApp();
 }
 const db = getFirestore();
 

@@ -9,17 +9,14 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { initializeApp, getApps, credential } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { CreateTribeInputSchema, CreateTribeOutputSchema, type CreateTribeInput, type CreateTribeOutput } from '@/lib/types';
 
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
-  initializeApp({
-    credential: credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();

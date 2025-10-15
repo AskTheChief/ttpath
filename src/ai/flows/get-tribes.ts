@@ -4,14 +4,10 @@
 import { ai } from '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
 import { GetTribesInputSchema, GetTribesOutputSchema, type GetTribesInput, type GetTribesOutput } from '@/lib/types';
 
 if (!getApps().length) {
-  initializeApp({
-    credential: credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  initializeApp();
 }
 const db = getFirestore();
 
