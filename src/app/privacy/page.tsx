@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-2">8. Contact Us</h2>
           <p>
-            For more information about our privacy practices or if you have questions, please contact us by email at <a href="mailto:support@example.com" className="text-primary hover:underline">support@example.com</a>.
+            For more information about our privacy practices or if you have any questions, please contact us by email at <a href="mailto:support@example.com" className="text-primary hover:underline">support@example.com</a>.
           </p>
         </section>
       </div>
