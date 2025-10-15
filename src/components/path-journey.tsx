@@ -671,7 +671,7 @@ export default function PathJourney() {
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={100}>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
         <div className={cn("loading-curtain", !showCurtain && "hide")}></div>
         <div 
