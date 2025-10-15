@@ -277,7 +277,10 @@ export default function PathJourney() {
 
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress, isMounted]);
 
-  const completeRequirement = useCallback(async (reqId: string) => {
+  const completeRequirement = useCallback(async (reqId: string, name?: string) => {
+    if (name) {
+      setUserFirstName(name);
+    }
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);

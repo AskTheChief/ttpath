@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 type SignupModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (reqId: string) => void;
+  onComplete: (reqId: string, name?: string) => void;
   showLogin: () => void;
 };
 
@@ -67,7 +67,8 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         title: "Login Successful!",
         description: "Welcome back to the Tribe!",
       });
-      onComplete("sign-up");
+      const profileData = userDoc.data();
+      onComplete("sign-up", profileData?.firstName);
       handleClose();
     } else {
       setUser(user);
@@ -126,7 +127,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
         title: "Registration Successful!",
         description: "Welcome to the Tribe! You are now a Guest.",
       });
-      onComplete("sign-up");
+      onComplete("sign-up", userProfileData.firstName);
       handleClose();
     } catch (error: any)
       {
