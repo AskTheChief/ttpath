@@ -703,7 +703,7 @@ export default function PathJourney() {
               <button className="action-icon" onClick={() => openModal('chatbot')}>
                   <MessageSquare className="h-8 w-8 text-muted-foreground" />
               </button>
-              <span className="node-label">The Chief</span>
+              <span className="node-label">Ask The Chief</span>
           </div>
         )}
         
