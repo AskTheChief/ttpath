@@ -1,13 +1,9 @@
-# Settings for the backend created by `firebase init apphosting`
 runConfig:
   minInstances: 0
 env:
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
     availability:
+      - BUILD
       - RUNTIME
-build:
-  env:
-    - variable: GEMINI_API_KEY
-      secret: GEMINI_API_KEY
 secretManager: []
