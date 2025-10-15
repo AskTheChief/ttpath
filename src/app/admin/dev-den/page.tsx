@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
+import UserTable from '@/components/admin/user-table';
 
 export default function DevDenPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -26,7 +27,16 @@ export default function DevDenPage() {
   }, []);
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>User Profiles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserTable />
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Chief Sessions</CardTitle>
