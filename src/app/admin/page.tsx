@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, TestTube2 } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileText } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -64,19 +64,19 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/admin/dev-den">
+        <Link href="/admin/tutorial-answers">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TestTube2 className="h-6 w-6" />
-                Dev Den
+                <FileText className="h-6 w-6" />
+                Tutorial Answers
               </CardTitle>
               <CardDescription>
-                Access developer tools, testing utilities, and user answer logs.
+                Review all user submissions for the comprehension test.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button>Enter Dev Den</Button>
+              <Button>View Answers</Button>
             </CardContent>
           </Card>
         </Link>
