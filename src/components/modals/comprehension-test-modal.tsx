@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -41,10 +41,12 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   const [agreeMentor, setAgreeMentor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string } | null>(null);
   const [showReviewButton, setShowReviewButton] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
+  // Fetch initial answers when modal opens
   useEffect(() => {
     async function fetchAnswers() {
       if (isOpen && user) {
@@ -66,12 +68,37 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
           setIsFetching(false);
         }
       } else if (isOpen && !user) {
-        // If the modal is open but there's no user, clear answers.
         setAnswers({});
       }
     }
     fetchAnswers();
   }, [isOpen, user, toast]);
+  
+  // Auto-save answers with debounce
+  useEffect(() => {
+    if (isFetching || !isOpen || !user) {
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      if (Object.keys(answers).length > 0) {
+        setIsSaving(true);
+        try {
+          const idToken = await user.getIdToken();
+          await saveTutorialAnswers({ answers, idToken });
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }, 1500); // Save 1.5 seconds after user stops typing
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [answers, user, isFetching, isOpen]);
+
 
   const allAgreed = agreeMeetings && agreeMentor;
 
@@ -79,7 +106,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     setAnswers(prev => ({ ...prev, [question]: value }));
   };
   
-  const handleSubmit = async () => {
+  const handleSubmitForFeedback = async () => {
     if (!allAgreed) {
       toast({
         title: "Agreement Required",
@@ -98,15 +125,10 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     setShowReviewButton(false);
 
     try {
-      const idToken = await user.getIdToken();
-      const saveResult = await saveTutorialAnswers({ answers, idToken });
-      if (!saveResult.success) {
-        throw new Error("Failed to save your answers. Please try again.");
-      }
-      
+      // Answers are already saved via auto-save, just evaluate them.
       toast({
         title: "The Chief Reviews Your Answers",
-        description: "The Chief provides some feedback for you to consider.",
+        description: "Please wait for feedback.",
       });
 
       const evaluation = await evaluateTutorialAnswers({ answers });
@@ -167,7 +189,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-2xl font-bold text-slate-800">Comprehension Test Study Guide</DialogTitle>
             <DialogDescription>
-              You answer the questions below to complete the comprehension test. Your answers save as you go. You submit to The Chief for guidance when you feel ready.
+              You answer the questions below to complete the comprehension test. Your answers auto-save as you go. You submit to The Chief for guidance when you feel ready.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0">
@@ -220,20 +242,25 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
               </Alert>
             </div>
           )}
-          <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-            {!showReviewButton && (
-              <>
-                <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
-                <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
-                  {isLoading ? "Evaluating..." : "Submit to The Chief"}
-                </Button>
-              </>
-            )}
-            {showReviewButton && (
-                <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
-                    These answers represent my knowledge
-                </Button>
-            )}
+          <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg justify-between">
+            <div>
+              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
+            </div>
+            <div>
+              {!showReviewButton && (
+                <>
+                  <Button variant="outline" onClick={handleClose} disabled={isLoading}>Come Back Later</Button>
+                  <Button className="bg-primary hover:bg-primary/90 ml-2" onClick={handleSubmitForFeedback} disabled={!allAgreed || isLoading || isFetching}>
+                    {isLoading ? "Evaluating..." : "Submit to The Chief"}
+                  </Button>
+                </>
+              )}
+              {showReviewButton && (
+                  <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
+                      These answers represent my knowledge
+                  </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
