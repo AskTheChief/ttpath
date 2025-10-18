@@ -20,4 +20,5 @@ import '@/ai/flows/user-profile.ts';
 import '@/ai/flows/get-feedback.ts';
 import '@/ai/flows/get-chat-sessions.ts';
 import '@/ai/flows/get-users.ts';
-
+import '@/ai/flows/firestore-test.ts';
+import '@/ai/flows/get-all-tutorial-answers.ts';
