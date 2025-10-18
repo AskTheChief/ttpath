@@ -1,13 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
 import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
@@ -37,8 +36,6 @@ type ComprehensionTestModalProps = {
 export default function ComprehensionTestModal({ isOpen, user, onClose, onComplete }: ComprehensionTestModalProps) {
   const { toast } = useToast();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [agreeMeetings, setAgreeMeetings] = useState(false);
-  const [agreeMentor, setAgreeMentor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -100,21 +97,11 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   }, [answers, user, isFetching, isOpen]);
 
 
-  const allAgreed = agreeMeetings && agreeMentor;
-
   const handleAnswerChange = (question: string, value: string) => {
     setAnswers(prev => ({ ...prev, [question]: value }));
   };
   
   const handleSubmitForFeedback = async () => {
-    if (!allAgreed) {
-      toast({
-        title: "Agreement Required",
-        description: "You must agree to both statements to proceed.",
-        variant: "destructive",
-      });
-      return;
-    }
     if (!user) {
         toast({ title: 'Error', description: 'You must be logged in.', variant: 'destructive'});
         return;
@@ -154,8 +141,6 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleClose = () => {
-    setAgreeMeetings(false);
-    setAgreeMentor(false);
     setFeedback(null);
     setIsLoading(false);
     setShowReviewButton(false);
@@ -212,20 +197,6 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
                                 />
                             </div>
                         ))}
-                        <div className="space-y-4 pt-4 border-t">
-                              <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading || showReviewButton} />
-                                  <Label htmlFor="agree-meetings" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      I agree to participate fully in all meetings and to submit reports promptly. (Must Agree to Proceed)
-                                  </Label>
-                              </div>
-                              <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading || showReviewButton} />
-                                  <Label htmlFor="agree-mentor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      I agree to act as a mentor for new chiefs. (Must agree to proceed)
-                                  </Label>
-                              </div>
-                          </div>
                       </>
                     )}
                 </div>
@@ -250,7 +221,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
               {!showReviewButton && (
                 <>
                   <Button variant="outline" onClick={handleClose} disabled={isLoading}>Come Back Later</Button>
-                  <Button className="bg-primary hover:bg-primary/90 ml-2" onClick={handleSubmitForFeedback} disabled={!allAgreed || isLoading || isFetching}>
+                  <Button className="bg-primary hover:bg-primary/90 ml-2" onClick={handleSubmitForFeedback} disabled={isLoading || isFetching}>
                     {isLoading ? "Evaluating..." : "Submit to The Chief"}
                   </Button>
                 </>
