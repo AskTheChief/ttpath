@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquareQuestion } from 'lucide-react';
+import { ArrowLeft, FileQuestion } from 'lucide-react';
 import { getAllTutorialAnswers, type UserAnswers } from '@/ai/flows/get-all-tutorial-answers';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -43,7 +43,7 @@ export default function TutorialAnswersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquareQuestion />
+            <FileQuestion />
             Comprehension Test Submissions
           </CardTitle>
           <CardDescription>Review all user submissions for the comprehension test.</CardDescription>
