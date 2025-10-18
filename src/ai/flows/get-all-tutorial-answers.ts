@@ -18,11 +18,17 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
+const LatestFeedbackSchema = z.object({
+    feedback: z.string(),
+    createdAt: z.string(),
+});
+
 const UserAnswersSchema = z.object({
   userId: z.string(),
   userName: z.string().optional(),
   email: z.string().optional(),
   answers: z.record(z.string()),
+  latestFeedback: LatestFeedbackSchema.optional(),
 });
 export type UserAnswers = z.infer<typeof UserAnswersSchema>;
 
@@ -59,12 +65,24 @@ const getAllTutorialAnswersFlow = ai.defineFlow(
 
       const allAnswers = userTutorialsSnapshot.docs.map(doc => {
         const userId = doc.id;
+        const tutorialData = doc.data();
         const userData = usersMap.get(userId) || {};
+        
+        let latestFeedback;
+        if (tutorialData.latestFeedback) {
+            const createdAt = tutorialData.latestFeedback.createdAt;
+            latestFeedback = {
+                feedback: tutorialData.latestFeedback.feedback,
+                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
+            };
+        }
+
         return {
           userId: userId,
           userName: userData.userName,
           email: userData.email,
-          answers: doc.data().answers || {},
+          answers: tutorialData.answers || {},
+          latestFeedback: latestFeedback,
         };
       });
 

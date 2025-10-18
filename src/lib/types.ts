@@ -153,3 +153,15 @@ export const UpdateUserProfileOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type UpdateUserProfileOutput = z.infer<typeof UpdateUserProfileOutputSchema>;
+
+// src/ai/flows/get-tutorial-answers.ts
+const LatestFeedbackSchema = z.object({
+    feedback: z.string(),
+    createdAt: z.string(),
+});
+
+export const GetTutorialAnswersOutputSchema = z.object({
+    answers: z.record(z.string()),
+    latestFeedback: LatestFeedbackSchema.optional(),
+});
+export type GetTutorialAnswersOutput = z.infer<typeof GetTutorialAnswersOutputSchema>;

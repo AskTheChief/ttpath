@@ -5,9 +5,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, FileQuestion } from 'lucide-react';
+import { ArrowLeft, FileQuestion, Sparkles } from 'lucide-react';
 import { getAllTutorialAnswers, type UserAnswers } from '@/ai/flows/get-all-tutorial-answers';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function TutorialAnswersPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers[]>([]);
@@ -64,18 +65,40 @@ export default function TutorialAnswersPage() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                        <div className="space-y-4">
-                        {Object.entries(user.answers).map(([question, answer]) => (
-                            <div key={question}>
-                            <p className="font-semibold">{question}</p>
-                            <p className="text-muted-foreground whitespace-pre-wrap pl-2 border-l-2">
-                                {answer || 'No answer provided.'}
-                            </p>
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="font-semibold mb-2">Answers</h4>
+                                <div className="space-y-4 pl-4 border-l-2">
+                                {Object.entries(user.answers).map(([question, answer]) => (
+                                    <div key={question}>
+                                    <p className="font-semibold">{question}</p>
+                                    <p className="text-muted-foreground whitespace-pre-wrap pl-2">
+                                        {answer || 'No answer provided.'}
+                                    </p>
+                                    </div>
+                                ))}
+                                {Object.keys(user.answers).length === 0 && (
+                                    <p className="text-muted-foreground">This user has not submitted any answers.</p>
+                                )}
+                                </div>
                             </div>
-                        ))}
-                        {Object.keys(user.answers).length === 0 && (
-                            <p className="text-muted-foreground">This user has not submitted any answers.</p>
-                        )}
+                            {user.latestFeedback && (
+                                <div>
+                                    <h4 className="font-semibold mb-2">Most Recent Feedback</h4>
+                                    <Alert>
+                                        <Sparkles className="h-4 w-4" />
+                                        <AlertTitle>
+                                            Guidance from The Chief
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            <p className="whitespace-pre-wrap">{user.latestFeedback.feedback}</p>
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                {new Date(user.latestFeedback.createdAt).toLocaleString()}
+                                            </p>
+                                        </AlertDescription>
+                                    </Alert>
+                                </div>
+                            )}
                         </div>
                     </AccordionContent>
                     </AccordionItem>

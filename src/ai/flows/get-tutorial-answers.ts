@@ -18,7 +18,15 @@ const GetTutorialAnswersInputSchema = z.object({
 });
 export type GetTutorialAnswersInput = z.infer<typeof GetTutorialAnswersInputSchema>;
 
-const GetTutorialAnswersOutputSchema = z.record(z.string());
+const LatestFeedbackSchema = z.object({
+    feedback: z.string(),
+    createdAt: z.string(),
+});
+
+const GetTutorialAnswersOutputSchema = z.object({
+    answers: z.record(z.string()),
+    latestFeedback: LatestFeedbackSchema.optional(),
+});
 export type GetTutorialAnswersOutput = z.infer<typeof GetTutorialAnswersOutputSchema>;
 
 export async function getTutorialAnswers(input: GetTutorialAnswersInput): Promise<GetTutorialAnswersOutput> {
@@ -33,8 +41,7 @@ const getTutorialAnswersFlow = ai.defineFlow(
   },
   async (input) => {
     if (!input.idToken) {
-      // Return empty if no user is authenticated.
-      return {};
+      return { answers: {} };
     }
 
     let decodedToken;
@@ -51,13 +58,25 @@ const getTutorialAnswersFlow = ai.defineFlow(
       const doc = await docRef.get();
 
       if (doc.exists) {
-        return doc.data()?.answers || {};
+        const data = doc.data();
+        let latestFeedback;
+        if (data?.latestFeedback) {
+            const createdAt = data.latestFeedback.createdAt;
+            latestFeedback = {
+                feedback: data.latestFeedback.feedback,
+                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
+            };
+        }
+        return {
+            answers: data?.answers || {},
+            latestFeedback: latestFeedback,
+        };
       } else {
-        return {};
+        return { answers: {} };
       }
     } catch (error) {
       console.error('Error getting tutorial answers:', error);
-      return {};
+      return { answers: {} };
     }
   }
 );

@@ -5,16 +5,19 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 if (!getApps().length) {
   initializeApp();
 }
 const db = getFirestore();
+const adminAuth = getAuth();
 
 const EvaluateTutorialAnswersInputSchema = z.object({
   answers: z.record(z.string()).describe("A dictionary of questions and the user's answers."),
+  idToken: z.string().describe("The user's Firebase ID token for authentication."),
 });
 export type EvaluateTutorialAnswersInput = z.infer<typeof EvaluateTutorialAnswersInputSchema>;
 
@@ -32,7 +35,7 @@ const bookContent = fs.readFileSync(bookPath, 'utf-8');
 
 const prompt = ai.definePrompt({
   name: 'evaluateTutorialAnswersPrompt',
-  input: { schema: EvaluateTutorialAnswersInputSchema },
+  input: { schema: z.object({ answers: EvaluateTutorialAnswersInputSchema.shape.answers }) },
   output: { schema: EvaluateTutorialAnswersOutputSchema },
   prompt: `You are The Chief from the Trading Tribe, and you are reviewing a potential new member's answers to the tutorial questions. Your role is to guide them toward deeper comprehension through supportive feedback. You do not judge or grade them; you only provide guidance to help them learn. The user determines for themselves when they are ready to proceed.
 
@@ -64,15 +67,22 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
     inputSchema: EvaluateTutorialAnswersInputSchema,
     outputSchema: EvaluateTutorialAnswersOutputSchema,
   },
-  async (input, _, context) => {
-    const user = context?.auth;
+  async (input) => {
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(input.idToken);
+    } catch (error) {
+      console.error('Error verifying ID token:', error);
+      throw new Error('User not authenticated. Invalid token.');
+    }
+    const user = { uid: decodedToken.uid };
     
     let retries = 3;
     let result: EvaluateTutorialAnswersOutput | null = null;
 
     while (retries > 0) {
       try {
-        const { output } = await prompt(input);
+        const { output } = await prompt({ answers: input.answers });
         result = output;
         break; 
       } catch (error: any) {
@@ -91,18 +101,18 @@ const evaluateTutorialAnswersFlow = ai.defineFlow(
 
     const finalResult = result!;
 
-    // Only save feedback if the user is authenticated.
-    if (user) {
-      try {
-        await db.collection('tutorial_feedback').add({
-          userId: user.uid,
+    // Save feedback to the user's tutorial document.
+    try {
+      const userTutorialDocRef = db.collection('user_tutorials').doc(user.uid);
+      await userTutorialDocRef.set({
+        latestFeedback: {
           feedback: finalResult.feedback,
-          createdAt: new Date(),
-        });
-      } catch (error) {
-        // Log the error, but don't block the user from getting their feedback.
-        console.error('Error saving tutorial feedback:', error);
-      }
+          createdAt: FieldValue.serverTimestamp(),
+        }
+      }, { merge: true });
+    } catch (error) {
+      // Log the error, but don't block the user from getting their feedback.
+      console.error('Error saving tutorial feedback to user document:', error);
     }
 
     return finalResult;

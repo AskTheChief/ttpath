@@ -16,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { getTutorialFeedback, TutorialFeedback } from '@/ai/flows/get-tutorial-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
@@ -24,7 +23,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF, InfoWindowF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -61,8 +60,7 @@ export default function MyTribePage() {
   const [newTribeLocation, setNewTribeLocation] = useState('');
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
-  const [tutorialAnswers, setTutorialAnswers] = useState<Record<string, string>>({});
-  const [tutorialFeedback, setTutorialFeedback] = useState<Omit<TutorialFeedback, 'passed'>>([]);
+  const [tutorialData, setTutorialData] = useState<GetTutorialAnswersOutput>({ answers: {} });
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
@@ -87,9 +85,8 @@ export default function MyTribePage() {
     try {
       setIsLoading(true);
       const idToken = await currentUser.getIdToken();
-      const [allTribes, feedback, appsResult, profile] = await Promise.all([
+      const [allTribes, appsResult, profile] = await Promise.all([
         getTribes({}),
-        getTutorialFeedback(),
         manageApplication({ action: 'get', idToken }),
         getUserProfile({ idToken }),
       ]);
@@ -105,8 +102,7 @@ export default function MyTribePage() {
       setTribes(tribesWithMembers as Tribe[]);
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
-      setTutorialFeedback(feedback);
-
+      
       if (appsResult.success && appsResult.applications) {
         const sortedApps = appsResult.applications.map(app => ({
           ...app,
@@ -133,8 +129,8 @@ export default function MyTribePage() {
         setIsFetchingAnswers(true);
         try {
             const idToken = await currentUser.getIdToken();
-            const answers = await getTutorialAnswers({ idToken });
-            setTutorialAnswers(answers);
+            const data = await getTutorialAnswers({ idToken });
+            setTutorialData(data);
         } catch (error) {
             console.error("Failed to fetch answers:", error);
             toast({ title: 'Error fetching answers', variant: 'destructive' });
@@ -145,8 +141,7 @@ export default function MyTribePage() {
         // Clear all data if user logs out
         setTribes([]);
         setUserTribe(null);
-        setTutorialAnswers({});
-        setTutorialFeedback([]);
+        setTutorialData({ answers: {} });
         setApplications([]);
         setUserProfile({});
         setIsLoading(false);
@@ -204,8 +199,8 @@ export default function MyTribePage() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      const userAnswers = await getTutorialAnswers({ idToken });
-      const result = await joinTribe({ tribeId, idToken, answers: userAnswers });
+      const userAnswersData = await getTutorialAnswers({ idToken });
+      const result = await joinTribe({ tribeId, idToken, answers: userAnswersData.answers });
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
       } else {
@@ -255,7 +250,7 @@ export default function MyTribePage() {
   };
 
   const handleAnswerChange = (question: string, value: string) => {
-    setTutorialAnswers(prev => ({ ...prev, [question]: value }));
+    setTutorialData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
   };
 
   const handleSaveAnswers = async () => {
@@ -263,7 +258,7 @@ export default function MyTribePage() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await saveTutorialAnswers({ answers: tutorialAnswers, idToken });
+      await saveTutorialAnswers({ answers: tutorialData.answers, idToken });
       toast({ title: 'Success', description: 'Your tutorial answers have been saved.' });
     } catch (error) {
       console.error("Error saving tutorial answers: ", error);
@@ -786,7 +781,7 @@ export default function MyTribePage() {
                     <Textarea
                       id={`question-${i}`}
                       rows={5}
-                      value={tutorialAnswers[q] || ''}
+                      value={tutorialData.answers[q] || ''}
                       onChange={(e) => handleAnswerChange(q, e.target.value)}
                       placeholder="Your answer..."
                       disabled={isLoading}
@@ -804,24 +799,23 @@ export default function MyTribePage() {
           <Card>
             <CardHeader>
               <CardTitle>Guidance from The Chief</CardTitle>
-              <CardDescription>Review your past tutorial submissions and guidance.</CardDescription>
+              <CardDescription>Review your most recent tutorial submission feedback.</CardDescription>
             </CardHeader>
             <CardContent className="space-y:4 max-h:96 overflow-y:auto">
-              {tutorialFeedback.length > 0 ? (
-                tutorialFeedback.map(fb => (
-                  <Alert key={fb.id}>
+              {tutorialData.latestFeedback ? (
+                  <Alert>
                     <Terminal className="h:4 w:4" />
                     <AlertTitle className="flex justify-between">
                       <span>You Receive Guidance</span>
-                      <span className="text-sm font-normal text-muted-foreground">{new Date(fb.createdAt).toLocaleString()}</span>
+                      <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
                     </AlertTitle>
                     <AlertDescription>
-                      {fb.feedback}
+                      {tutorialData.latestFeedback.feedback}
                     </AlertDescription>
                   </Alert>
-                ))
               ) : (
-                <p className="text-sm text-muted-foreground">You have not received any guidance from The Chief yet.</p>              )}
+                <p className="text-sm text-muted-foreground">You have not received any guidance from The Chief yet.</p>
+              )}
             </CardContent>
           </Card>
         </main>
@@ -829,5 +823,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    

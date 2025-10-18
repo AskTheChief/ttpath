@@ -52,8 +52,8 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setShowReviewButton(false);
         try {
           const idToken = await user.getIdToken();
-          const existingAnswers = await getTutorialAnswers({ idToken });
-          setAnswers(existingAnswers);
+          const existingData = await getTutorialAnswers({ idToken });
+          setAnswers(existingData.answers);
         } catch (error) {
           console.error("Failed to fetch previous answers", error);
           toast({
@@ -112,13 +112,14 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     setShowReviewButton(false);
 
     try {
+      const idToken = await user.getIdToken();
       // Answers are already saved via auto-save, just evaluate them.
       toast({
         title: "The Chief Reviews Your Answers",
         description: "Please wait for feedback.",
       });
 
-      const evaluation = await evaluateTutorialAnswers({ answers });
+      const evaluation = await evaluateTutorialAnswers({ answers, idToken });
       
       setFeedback({ message: evaluation.feedback });
       setShowReviewButton(true);
