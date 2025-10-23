@@ -67,7 +67,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "You also have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
     actions: [
-      { id: "go-to-page", label: "Go to my page" }
+      { id: "go-to-my-account-member", label: "Go to My Account", action: "navigate-my-tribe" }
     ],
     panelPos: "left"
   },
@@ -79,7 +79,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Tribe Chief, you lead your Tribe.",
     actions: [
-      { id: "go-to-page", label: "Go to my page" }
+      { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe" }
     ],
     panelPos: "right"
   },
@@ -91,7 +91,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Mentor, you help guide new Chiefs.",
     actions: [
-      { id: "go-to-page", label: "Go to my page" }
+      { id: "go-to-my-account-mentor", label: "Go to My Account", action: "navigate-my-tribe" }
     ],
     panelPos: "left"
   }
