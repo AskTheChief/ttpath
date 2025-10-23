@@ -9,6 +9,7 @@ import { ArrowLeft, FileQuestion, Sparkles } from 'lucide-react';
 import { getAllTutorialAnswers, type UserAnswers } from '@/ai/flows/get-all-tutorial-answers';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { tutorialQuestions } from '@/lib/data';
 
 export default function TutorialAnswersPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers[]>([]);
@@ -69,11 +70,11 @@ export default function TutorialAnswersPage() {
                             <div>
                                 <h4 className="font-semibold mb-2">Answers</h4>
                                 <div className="space-y-4 pl-4 border-l-2">
-                                {Object.entries(user.answers).map(([question, answer]) => (
+                                {tutorialQuestions.map((question) => (
                                     <div key={question}>
                                     <p className="font-semibold">{question}</p>
                                     <p className="text-muted-foreground whitespace-pre-wrap pl-2">
-                                        {answer || 'No answer provided.'}
+                                        {user.answers[question] || 'No answer provided.'}
                                     </p>
                                     </div>
                                 ))}
