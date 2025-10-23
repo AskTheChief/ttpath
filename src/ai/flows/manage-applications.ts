@@ -46,7 +46,7 @@ const manageApplicationFlow = ai.defineFlow(
         }
 
         const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
-        const applicationsSnapshot = await db.collection('tribe_applications').where('tribeId', 'in', tribeIds).get();
+        const applicationsSnapshot = await db.collection('tribe_applications').where('tribeId', 'in', tribeIds).where('status', '==', 'pending').get();
         
         const applications = await Promise.all(applicationsSnapshot.docs.map(async (doc) => {
           const data = doc.data();
@@ -94,6 +94,7 @@ const manageApplicationFlow = ai.defineFlow(
 
     const tribeRef = db.collection('tribes').doc(tribeId);
     const applicationRef = db.collection('tribe_applications').doc(applicationId);
+    const applicantUserRef = db.collection('users').doc(applicantId);
 
     // Verify chief permission for approve/deny actions
     const tribeDoc = await tribeRef.get();
@@ -103,10 +104,16 @@ const manageApplicationFlow = ai.defineFlow(
 
     if (action === 'approve') {
       try {
-        await tribeRef.update({
-          members: FieldValue.arrayUnion(applicantId),
+        await db.runTransaction(async (transaction) => {
+          // Add user to members list
+          transaction.update(tribeRef, {
+            members: FieldValue.arrayUnion(applicantId),
+          });
+          // Update applicant's level to 4 (Member)
+          transaction.update(applicantUserRef, { currentUserLevel: 4 });
+          // Delete the application
+          transaction.delete(applicationRef);
         });
-        await applicationRef.delete();
         return { success: true };
       } catch (error) {
         console.error('Error approving application:', error);
@@ -116,6 +123,7 @@ const manageApplicationFlow = ai.defineFlow(
 
     if (action === 'deny') {
       try {
+        // Just delete the application document
         await applicationRef.delete();
         return { success: true };
       } catch (error) {

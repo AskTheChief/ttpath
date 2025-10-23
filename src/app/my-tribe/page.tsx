@@ -182,9 +182,9 @@ export default function MyTribePage() {
         setNewTribeName('');
         setNewTribeLocation('');
         setNewTribeCoords(null);
-        if (user) fetchTribesAndUserData(user);
+        if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
-        throw new Error('Failed to create tribe.');
+        throw new Error(result.message || 'Failed to create tribe.');
       }
     } catch (error: any) {
       console.error("Error creating tribe: ", error);
@@ -203,11 +203,11 @@ export default function MyTribePage() {
       const result = await joinTribe({ tribeId, idToken, answers: userAnswersData.answers });
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+        if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
         throw new Error(result.message || "Failed to send application.");
       }
       setSelectedTribe(null); // Close info card on success
-      if (user) fetchTribesAndUserData(user);
     } catch (error: any) {
       console.error("Error joining tribe: ", error);
       toast({ title: 'Error', description: error.message || 'Failed to join tribe.', variant: 'destructive' });
@@ -221,7 +221,7 @@ export default function MyTribePage() {
     try {
       await leaveTribe(tribeId, user.uid);
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      if (user) fetchTribesAndUserData(user);
+      if (user) fetchTribesAndUserData(user); // Refresh data
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -239,7 +239,7 @@ export default function MyTribePage() {
       const result = await deleteTribe({ tribeId, idToken });
       if (result.success) {
         toast({ title: 'Tribe Deleted', description: 'The tribe has been successfully deleted.' });
-        if (user) fetchTribesAndUserData(user);
+        if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
         throw new Error(result.message || 'Failed to delete tribe.');
       }
@@ -314,8 +314,7 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
-        // Optimistically update local state to reflect the change immediately
-        setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
+        if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
         throw new Error(result.message);
       }
@@ -339,8 +338,7 @@ export default function MyTribePage() {
   
       if (result.success) {
         toast({ title: 'Meeting Canceled', description: 'The meeting has been removed.' });
-        // Optimistically update local state
-        setUserTribe(prev => prev ? { ...prev, meetings: updatedMeetings } : null);
+        if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
         throw new Error(result.message);
       }
@@ -781,7 +779,7 @@ export default function MyTribePage() {
                         </div>
                     </CardContent>
                 </Card>
-            </>
+              </>
             )}
 
           <Card>

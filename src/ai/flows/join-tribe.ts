@@ -49,10 +49,14 @@ const joinTribeFlow = ai.defineFlow(
       const hasMembers = tribeData?.members && tribeData.members.length > 0;
 
       if (!hasMembers) {
-        // If tribe has no members, make the applicant the new chief.
-        await tribeRef.update({
-          chief: user.uid,
-          members: FieldValue.arrayUnion(user.uid),
+        const userRef = db.collection('users').doc(user.uid);
+        // If tribe has no members, make the applicant the new chief and update their level.
+        await db.runTransaction(async (transaction) => {
+          transaction.update(tribeRef, {
+            chief: user.uid,
+            members: FieldValue.arrayUnion(user.uid),
+          });
+          transaction.update(userRef, { currentUserLevel: 5 }); // Level 5 for Chief
         });
         return { success: true };
       } else {
