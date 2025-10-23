@@ -446,7 +446,7 @@ export default function MyTribePage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            From this page, you can manage all aspects of your Tribe experience. If you are not yet part of a tribe, you can create a new one, or search the map and available tribes list to apply for an existing one. Once you are in a tribe, this page will update to show your tribe's information, including member and meeting management if you are the Chief.
+            You manage your Tribe experience on this page. You create a new tribe. You search the map for other tribes. You apply to existing tribes. This page updates to show your tribe information after you join. The page also shows meeting and member management if you run a tribe.
           </p>
         </CardContent>
       </Card>
