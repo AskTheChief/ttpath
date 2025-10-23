@@ -55,7 +55,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Graduate, you may apply to join an existing Tribe. You may also take the initiative to start your own.",
     actions: [
-      { id: "go-to-my-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe" },
+      { id: "go-to-my-tribe", label: "Go to My Account", action: "navigate-my-tribe" },
     ],
     panelPos: "right"
   },

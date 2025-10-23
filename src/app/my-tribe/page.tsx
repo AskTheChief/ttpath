@@ -434,7 +434,7 @@ export default function MyTribePage() {
   return (
     <div className="container mx-auto p-4 sm:p:6 lg:p:8">
       <header className="flex justify-between items-center mb:8">
-        <h1 className="text-3xl font-bold">My Tribe Dashboard</h1>
+        <h1 className="text-3xl font-bold">My Account</h1>
         <Link href="/" passHref>
           <Button variant="outline">Back to Path</Button>
         </Link>
