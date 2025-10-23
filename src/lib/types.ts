@@ -168,3 +168,23 @@ export const GetTutorialAnswersOutputSchema = z.object({
     latestFeedback: LatestFeedbackSchema.optional(),
 });
 export type GetTutorialAnswersOutput = z.infer<typeof GetTutorialAnswersOutputSchema>;
+
+
+// src/ai/flows/get-tribe-members.ts
+export const TribeMemberSchema = z.object({
+    uid: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string(),
+    phone: z.string(),
+});
+export type TribeMember = z.infer<typeof TribeMemberSchema>;
+
+export const GetTribeMembersInputSchema = z.object({
+    tribeId: z.string(),
+    idToken: z.string(),
+});
+export type GetTribeMembersInput = z.infer<typeof GetTribeMembersInputSchema>;
+
+export const GetTribeMembersOutputSchema = z.array(TribeMemberSchema);
+export type GetTribeMembersOutput = z.infer<typeof GetTribeMembersOutputSchema>;

@@ -17,13 +17,13 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { Terminal, Calendar as CalendarIcon, Trash2, Users } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF, InfoWindowF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput, TribeMember } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { doc, getDoc } from 'firebase/firestore';
 import { getUserProfile, updateUserProfile } from '@/ai/flows/user-profile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getTribeMembers } from '@/ai/flows/get-tribe-members';
 
 const libraries: Libraries = ['places'];
 
@@ -60,6 +61,7 @@ export default function MyTribePage() {
   const [newTribeLocation, setNewTribeLocation] = useState('');
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
+  const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
   const [tutorialData, setTutorialData] = useState<GetTutorialAnswersOutput>({ answers: {} });
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,6 +105,13 @@ export default function MyTribePage() {
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
       
+      if (currentUserTribe) {
+          const members = await getTribeMembers({ tribeId: currentUserTribe.id, idToken });
+          setTribeMembers(members);
+      } else {
+          setTribeMembers([]);
+      }
+
       if (appsResult.success && appsResult.applications) {
         const sortedApps = appsResult.applications.map(app => ({
           ...app,
@@ -141,6 +150,7 @@ export default function MyTribePage() {
         // Clear all data if user logs out
         setTribes([]);
         setUserTribe(null);
+        setTribeMembers([]);
         setTutorialData({ answers: {} });
         setApplications([]);
         setUserProfile({});
@@ -655,9 +665,32 @@ export default function MyTribePage() {
               </CardFooter>
             </Card>
 
-            {isChief && userTribe && (
+            {userTribe && (
               <>
-                {applications && applications.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users />
+                          Tribe Members
+                        </CardTitle>
+                        <CardDescription>
+                            {isChief ? "You can see full contact details as the Chief." : "Contact information for your fellow tribe members."}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-4">
+                            {tribeMembers.map(member => (
+                                <li key={member.uid} className="p-3 border rounded-lg">
+                                    <p className="font-semibold">{member.firstName} {isChief ? member.lastName : ''}</p>
+                                    <p className="text-sm text-muted-foreground">{member.email}</p>
+                                    {isChief && <p className="text-sm text-muted-foreground">{member.phone}</p>}
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                {applications && applications.length > 0 && isChief && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Pending Applications</CardTitle>
@@ -706,79 +739,81 @@ export default function MyTribePage() {
                         </CardContent>
                     </Card>
                 )}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Manage Meetings</CardTitle>
-                        <CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                        <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
-                    </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6">
-                        <div>
-                             <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={setSelectedDate}
-                                className="rounded-md border"
-                                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                                modifiers={{ meetings: meetingDates }}
-                                modifiersStyles={{ meetings: { textDecoration: 'underline' } }}
-                            />
-                            <div className="flex items-center gap-2 mt-4">
-                               <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
-                               <div className="flex w-full items-center gap-2">
-                                    <Input
-                                        id="hour"
-                                        type="number"
-                                        min="1"
-                                        max="12"
-                                        value={hour}
-                                        onChange={(e) => setHour(e.target.value)}
-                                        className="w-full text-center"
-                                    />
-                                    <span>:</span>
-                                    <Input
-                                        id="minute"
-                                        type="number"
-                                        min="0"
-                                        max="59"
-                                        value={minute}
-                                        onChange={(e) => setMinute(e.target.value.padStart(2, '0'))}
-                                        className="w-full text-center"
-                                    />
-                                    <Select value={ampm} onValueChange={setAmPm}>
-                                        <SelectTrigger className="w-[80px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="AM">AM</SelectItem>
-                                            <SelectItem value="PM">PM</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                             <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
-                            {upcomingMeetings.length > 0 ? (
-                                <ul className="space-y-2 max-h-80 overflow-y-auto">
-                                    {upcomingMeetings.map(meeting => (
-                                        <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
-                                            <div className="flex-1">
-                                                <p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p>
-                                            </div>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                {isChief && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Manage Meetings</CardTitle>
+                          <CardDescription>Schedule and view meetings for your tribe.</CardDescription>
+                          <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
+                      </CardHeader>
+                      <CardContent className="grid md:grid-cols-2 gap-6">
+                          <div>
+                              <Calendar
+                                  mode="single"
+                                  selected={selectedDate}
+                                  onSelect={setSelectedDate}
+                                  className="rounded-md border"
+                                  disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                  modifiers={{ meetings: meetingDates }}
+                                  modifiersStyles={{ meetings: { textDecoration: 'underline' } }}
+                              />
+                              <div className="flex items-center gap-2 mt-4">
+                                <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
+                                <div className="flex w-full items-center gap-2">
+                                      <Input
+                                          id="hour"
+                                          type="number"
+                                          min="1"
+                                          max="12"
+                                          value={hour}
+                                          onChange={(e) => setHour(e.target.value)}
+                                          className="w-full text-center"
+                                      />
+                                      <span>:</span>
+                                      <Input
+                                          id="minute"
+                                          type="number"
+                                          min="0"
+                                          max="59"
+                                          value={minute}
+                                          onChange={(e) => setMinute(e.target.value.padStart(2, '0'))}
+                                          className="w-full text-center"
+                                      />
+                                      <Select value={ampm} onValueChange={setAmPm}>
+                                          <SelectTrigger className="w-[80px]">
+                                              <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                              <SelectItem value="AM">AM</SelectItem>
+                                              <SelectItem value="PM">PM</SelectItem>
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                              </div>
+                              <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
+                          </div>
+                          <div>
+                              <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
+                              {upcomingMeetings.length > 0 ? (
+                                  <ul className="space-y-2 max-h-80 overflow-y-auto">
+                                      {upcomingMeetings.map(meeting => (
+                                          <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
+                                              <div className="flex-1">
+                                                  <p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p>
+                                              </div>
+                                              <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}>
+                                                  <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                          </li>
+                                      ))}
+                                  </ul>
+                              ) : (
+                                  <p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>
+                              )}
+                          </div>
+                      </CardContent>
+                  </Card>
+                )}
               </>
             )}
 
