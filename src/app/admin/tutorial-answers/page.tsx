@@ -70,9 +70,9 @@ export default function TutorialAnswersPage() {
                             <div>
                                 <h4 className="font-semibold mb-2">Answers</h4>
                                 <div className="space-y-4 pl-4 border-l-2">
-                                {tutorialQuestions.map((question) => (
+                                {tutorialQuestions.map((question, index) => (
                                     <div key={question}>
-                                    <p className="font-semibold">{question}</p>
+                                    <p className="font-semibold">{`${index + 1}. ${question}`}</p>
                                     <p className="text-muted-foreground whitespace-pre-wrap pl-2">
                                         {user.answers[question] || 'No answer provided.'}
                                     </p>
