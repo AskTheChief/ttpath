@@ -48,17 +48,38 @@ const manageApplicationFlow = ai.defineFlow(
         const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
         const applicationsSnapshot = await db.collection('tribe_applications').where('tribeId', 'in', tribeIds).get();
         
-        const applications = applicationsSnapshot.docs.map(doc => {
+        const applications = await Promise.all(applicationsSnapshot.docs.map(async (doc) => {
           const data = doc.data();
           const createdAt = data.createdAt;
+
+          // Fetch applicant's user profile
+          let applicantProfile: { name?: string, email?: string, phone?: string } = {};
+          if (data.applicantId) {
+            try {
+              const userDoc = await db.collection('users').doc(data.applicantId).get();
+              if (userDoc.exists) {
+                const userData = userDoc.data();
+                applicantProfile = {
+                  name: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim(),
+                  email: userData?.email,
+                  phone: userData?.phone,
+                };
+              }
+            } catch (userError) {
+              console.error(`Failed to fetch profile for applicant ${data.applicantId}:`, userError);
+              // Continue without profile data if it fails
+            }
+          }
           
           return { 
             id: doc.id, 
             ...data,
-            // Ensure createdAt is a serializable string
+            applicantName: applicantProfile.name || 'Unknown Applicant',
+            applicantEmail: applicantProfile.email,
+            applicantPhone: applicantProfile.phone,
             createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : createdAt,
           };
-        });
+        }));
 
         return { success: true, applications: applications as z.infer<typeof ApplicationSchema>[] };
       } catch (error) {

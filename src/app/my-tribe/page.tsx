@@ -671,12 +671,19 @@ export default function MyTribePage() {
                                     <AccordionItem key={app.id} value={app.id}>
                                         <AccordionTrigger>
                                           <div className="flex flex-col items-start">
-                                            <span>Applicant: {app.applicantId.substring(0, 8)}...</span>
+                                            <span>Applicant: {app.applicantName}</span>
                                             <span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span>
                                           </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
                                             <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Applicant Information</h4>
+                                                    <div className="text-sm space-y-1">
+                                                      <p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p>
+                                                      <p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p>
+                                                    </div>
+                                                </div>
                                                 <div>
                                                     <h4 className="font-semibold mb-2">Tutorial Answers</h4>
                                                     <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">
@@ -834,5 +841,3 @@ export default function MyTribePage() {
     </div>
   );
 }
-
-    
