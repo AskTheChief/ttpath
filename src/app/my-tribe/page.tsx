@@ -23,7 +23,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF, InfoWindowF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput, TribeMember } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput, TribeMember, MeetingReport } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -33,6 +33,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { getUserProfile, updateUserProfile } from '@/ai/flows/user-profile';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTribeMembers } from '@/ai/flows/get-tribe-members';
+import { getMeetingReports } from '@/ai/flows/get-meeting-reports';
+import ReportModal from '@/components/modals/report-modal';
+
 
 const libraries: Libraries = ['places'];
 
@@ -64,6 +67,7 @@ export default function MyTribePage() {
   const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
   const [tutorialData, setTutorialData] = useState<GetTutorialAnswersOutput>({ answers: {} });
   const [applications, setApplications] = useState<Application[]>([]);
+  const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
@@ -73,6 +77,8 @@ export default function MyTribePage() {
   const [hour, setHour] = useState('12');
   const [minute, setMinute] = useState('00');
   const [ampm, setAmPm] = useState('PM');
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
   const { toast } = useToast();
   
@@ -106,10 +112,15 @@ export default function MyTribePage() {
       setUserTribe(currentUserTribe || null);
       
       if (currentUserTribe) {
-          const members = await getTribeMembers({ tribeId: currentUserTribe.id, idToken });
+          const [members, reports] = await Promise.all([
+             getTribeMembers({ tribeId: currentUserTribe.id, idToken }),
+             getMeetingReports({ tribeId: currentUserTribe.id, idToken }),
+          ]);
           setTribeMembers(members);
+          setMeetingReports(reports);
       } else {
           setTribeMembers([]);
+          setMeetingReports([]);
       }
 
       if (appsResult.success && appsResult.applications) {
@@ -405,11 +416,15 @@ export default function MyTribePage() {
     }
   };
 
+  const handleMeetingReportAction = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
+    setIsReportModalOpen(true);
+  };
   
   if (isLoading || !isLoaded) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-2xl font-semibold">Loading Your Dashboard...</div>
+        <div className="text-2xl font-semibold">Loading Your Account...</div>
         <p className="text-muted-foreground">Please wait a moment.</p>
       </div>
     );
@@ -422,7 +437,7 @@ export default function MyTribePage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">You must be logged in to view your tribe dashboard.</p>
+        <p className="text-xl mb-4">You must be logged in to view your account.</p>
         <Link href="/" passHref>
           <Button>Back to Path</Button>
         </Link>
@@ -431,15 +446,20 @@ export default function MyTribePage() {
   }
 
   const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
-
+  const now = new Date();
   const upcomingMeetings = (userTribe?.meetings || [])
-    .filter(m => new Date(m.date) >= new Date())
+    .filter(m => new Date(m.date) >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  const pastMeetings = (userTribe?.meetings || [])
+    .filter(m => new Date(m.date) < now)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
 
 
   return (
+    <>
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Account</h1>
@@ -530,24 +550,50 @@ export default function MyTribePage() {
           )}
 
           {userTribe && (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Upcoming Meetings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     {upcomingMeetings.length > 0 ? (
-                        <ul className="space-y-3">
-                            {upcomingMeetings.map(meeting => (
-                                <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
-                                    <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No upcoming meetings scheduled.</p>
-                    )}
-                </CardContent>
-            </Card>
+            <>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Upcoming Meetings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {upcomingMeetings.length > 0 ? (
+                            <ul className="space-y-3">
+                                {upcomingMeetings.map(meeting => (
+                                    <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
+                                        <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No upcoming meetings scheduled.</p>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Past Meetings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         {pastMeetings.length > 0 ? (
+                            <ul className="space-y-3">
+                                {pastMeetings.map(meeting => {
+                                    const hasReport = meetingReports.some(r => r.meetingId === meeting.id);
+                                    return (
+                                        <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
+                                            <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
+                                            <Button variant="secondary" size="sm" onClick={() => handleMeetingReportAction(meeting)}>
+                                                {hasReport ? 'View Report' : 'Submit Report'}
+                                            </Button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No past meetings.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </>
           )}
 
           <Card>
@@ -872,5 +918,20 @@ export default function MyTribePage() {
         </main>
       </div>
     </div>
+    {userTribe && selectedMeeting && user && (
+        <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            meeting={selectedMeeting}
+            tribeId={userTribe.id}
+            userId={user.uid}
+            existingReport={meetingReports.find(r => r.meetingId === selectedMeeting.id)}
+            onReportSubmitted={() => {
+                setIsReportModalOpen(false);
+                fetchTribesAndUserData(user); // Refresh reports after submission
+            }}
+        />
+    )}
+    </>
   );
 }

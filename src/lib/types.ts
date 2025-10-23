@@ -188,3 +188,38 @@ export type GetTribeMembersInput = z.infer<typeof GetTribeMembersInputSchema>;
 
 export const GetTribeMembersOutputSchema = z.array(TribeMemberSchema);
 export type GetTribeMembersOutput = z.infer<typeof GetTribeMembersOutputSchema>;
+
+// src/ai/flows/submit-meeting-report.ts
+export const SubmitMeetingReportInputSchema = z.object({
+  tribeId: z.string(),
+  meetingId: z.string(),
+  reportContent: z.string(),
+  idToken: z.string(),
+});
+export type SubmitMeetingReportInput = z.infer<typeof SubmitMeetingReportInputSchema>;
+
+export const SubmitMeetingReportOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type SubmitMeetingReportOutput = z.infer<typeof SubmitMeetingReportOutputSchema>;
+
+// src/ai/flows/get-meeting-reports.ts
+export const MeetingReportSchema = z.object({
+  id: z.string(),
+  meetingId: z.string(),
+  tribeId: z.string(),
+  userId: z.string(),
+  reportContent: z.string(),
+  submittedAt: z.string(),
+});
+export type MeetingReport = z.infer<typeof MeetingReportSchema>;
+
+export const GetMeetingReportsInputSchema = z.object({
+  tribeId: z.string(),
+  idToken: z.string(),
+});
+export type GetMeetingReportsInput = z.infer<typeof GetMeetingReportsInputSchema>;
+
+export const GetMeetingReportsOutputSchema = z.array(MeetingReportSchema);
+export type GetMeetingReportsOutput = z.infer<typeof GetMeetingReportsOutputSchema>;

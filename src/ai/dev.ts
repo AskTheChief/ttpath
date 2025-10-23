@@ -22,3 +22,6 @@ import '@/ai/flows/get-chat-sessions.ts';
 import '@/ai/flows/get-users.ts';
 import '@/ai/flows/get-all-tutorial-answers.ts';
 import '@/ai/flows/get-tribe-members.ts';
+import '@/ai/flows/submit-meeting-report.ts';
+import '@/ai/flows/get-meeting-reports.ts';
+
