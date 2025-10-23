@@ -283,6 +283,25 @@ export default function PathJourney() {
     }
     setJustCompletedActionId(reqId);
     
+    // The new logic: an action might not advance the user, just unlock another action.
+    // 'complete-comprehension-test' is the action that now advances the user.
+    if (reqId === 'open-comprehension-test') {
+        const newReqs = { ...requirementsState, [reqId]: true };
+        setRequirementsState(newReqs);
+        if (isGuest && auth.currentUser) {
+            try {
+                const idToken = await auth.currentUser.getIdToken();
+                await updateUserProgress({ currentUserLevel, requirementsState: newReqs, idToken });
+            } catch (error) {
+                console.error("Failed to save progress for opening test:", error);
+            }
+        }
+        playSound('complete');
+        // Re-render the info panel to show the enabled "Path to Graduate" button
+        setSelectedNodeId(selectedNodeId); 
+        return;
+    }
+    
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     if (!action) return;
 
@@ -326,7 +345,7 @@ export default function PathJourney() {
     } else {
         playSound('complete');
     }
-  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast]);
+  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -461,7 +480,7 @@ export default function PathJourney() {
     }
 
 
-    const requiresAuth = action.id === 'complete-comprehension-test' || action.action === 'navigate-my-tribe';
+    const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -481,10 +500,13 @@ export default function PathJourney() {
       setModalState(s => ({ ...s, link: true }));
       return;
     }
-     if (action.id === 'complete-comprehension-test') {
-      setModalState(s => ({...s, comprehensionTest: true}));
+    
+    if (action.action === 'open-comprehension-test') {
+      setModalState(s => ({ ...s, comprehensionTest: true }));
+      // We no longer call completeRequirement here; it's called from inside the modal.
       return;
     }
+    
     if (action.id === 'watch-video') {
       setModalState(s => ({...s, video: true}));
       return;
@@ -546,9 +568,7 @@ export default function PathJourney() {
       <div className="space-y-2">
         {node.actions.map(action => {
           const isCompleted = requirementsState[action.id];
-          const isNextStepAction = !!action.next;
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
-          const isActive = node.level === currentUserLevel;
           
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
@@ -559,22 +579,12 @@ export default function PathJourney() {
             </span>
           ) : null;
 
-          let buttonText = action.label;
-          if (isNextStepAction) {
-            const nextNodeTitle = pathNodesData.find(n => n.id === `node-${action.next}`)?.title;
-            if (isCompleted) {
-                buttonText = `Path to ${nextNodeTitle}`;
-            }
-          }
-          
           return (
             <Button
               key={action.id}
               variant="secondary"
               size="sm"
-              className={cn('w-full justify-start h-auto p-2 text-wrap', {
-                'glow-green': isNextStepAction && isCompleted && isActive,
-              })}
+              className={cn('w-full justify-start h-auto p-2 text-wrap')}
               onClick={(e) => {
                 if (isLocked) {
                   const buttonEl = e.currentTarget;
@@ -596,12 +606,11 @@ export default function PathJourney() {
                   handleActionClick(action, node);
                 }
               }}
-              disabled={isLocked && action.id !== 'sign-up'}
+              disabled={isLocked}
             >
-              {isCompleted && !isNextStepAction ? Checkmark : null}
+              {isCompleted && !action.next ? Checkmark : null}
               {Icon && <Icon className="h-4 w-4 mr-2 shrink-0" />}
-              <span className="flex-grow text-left">{buttonText}</span>
-              {isNextStepAction && (isCompleted || isActive) ? '→' : ''}
+              <span className="flex-grow text-left">{action.label}</span>
             </Button>
           );
         })}
