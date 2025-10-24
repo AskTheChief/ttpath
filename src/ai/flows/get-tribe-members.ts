@@ -58,16 +58,23 @@ const getTribeMembersFlow = ai.defineFlow(
 
       const usersSnapshot = await db.collection('users').where('__name__', 'in', memberIds).get();
       
-      const members = usersSnapshot.docs.map(doc => {
+      const members = await Promise.all(usersSnapshot.docs.map(async (doc) => {
         const data = doc.data();
+        
+        // Fetch tutorial answers for each member
+        const tutorialDocRef = db.collection('user_tutorials').doc(doc.id);
+        const tutorialDoc = await tutorialDocRef.get();
+        const answers = tutorialDoc.exists ? tutorialDoc.data()?.answers || {} : {};
+
         return {
           uid: doc.id,
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           email: data.email || '',
           phone: data.phone || '',
+          answers: answers,
         };
-      });
+      }));
 
       return members;
     } catch (error) {

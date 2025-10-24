@@ -720,19 +720,43 @@ export default function MyTribePage() {
                           Tribe Members
                         </CardTitle>
                         <CardDescription>
-                            {isChief ? "You can see full contact details as the Chief." : "Contact information for your fellow tribe members."}
+                            {isChief ? "As Chief, you can view member details and their test answers." : "Your fellow tribe members."}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ul className="space-y-4">
+                        <Accordion type="single" collapsible className="w-full">
                             {tribeMembers.map(member => (
-                                <li key={member.uid} className="p-3 border rounded-lg">
-                                    <p className="font-semibold">{member.firstName} {isChief ? member.lastName : ''}</p>
-                                    <p className="text-sm text-muted-foreground">{member.email}</p>
-                                    {isChief && <p className="text-sm text-muted-foreground">{member.phone}</p>}
-                                </li>
+                                <AccordionItem key={member.uid} value={member.uid} disabled={!isChief && member.uid !== user.uid}>
+                                    <AccordionTrigger disabled={!isChief && member.uid !== user.uid}>
+                                      {member.firstName} {isChief ? member.lastName : ''}
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p>
+                                                <p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p>
+                                            </div>
+                                            {member.answers && (
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Comprehension Answers</h4>
+                                                    <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
+                                                        {tutorialQuestions.map((q, i) => (
+                                                            <div key={i}>
+                                                                <p className="font-medium">{i + 1}. {q}</p>
+                                                                <p className="text-muted-foreground whitespace-pre-wrap pl-2">
+                                                                    {member.answers?.[q] || "No answer provided."}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                        {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
                             ))}
-                        </ul>
+                        </Accordion>
                     </CardContent>
                 </Card>
 

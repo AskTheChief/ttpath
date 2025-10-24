@@ -177,6 +177,7 @@ export const TribeMemberSchema = z.object({
     lastName: z.string(),
     email: z.string(),
     phone: z.string(),
+    answers: z.record(z.string()).optional(),
 });
 export type TribeMember = z.infer<typeof TribeMemberSchema>;
 
