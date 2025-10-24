@@ -45,7 +45,7 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 };
 
 const actionIcons: { [key: string]: React.FC<any> } = {
-  'complete-comprehension-test': FileCheck,
+  'complete-comprehension-test': GraduationCap,
   'watch-video': Video,
 };
 
@@ -284,9 +284,11 @@ export default function PathJourney() {
     }
     setJustCompletedActionId(reqId);
     
-    // The new logic: an action might not advance the user, just unlock another action.
-    // 'complete-comprehension-test' is the action that now advances the user.
-    if (reqId === 'open-comprehension-test') {
+    const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+    if (!action) return;
+
+    // This handles non-level-advancing requirements
+    if (!action.next) {
         const newReqs = { ...requirementsState, [reqId]: true };
         setRequirementsState(newReqs);
         if (isGuest && auth.currentUser) {
@@ -294,17 +296,14 @@ export default function PathJourney() {
                 const idToken = await auth.currentUser.getIdToken();
                 await updateUserProgress({ currentUserLevel, requirementsState: newReqs, idToken });
             } catch (error) {
-                console.error("Failed to save progress for opening test:", error);
+                console.error("Failed to save requirement progress:", error);
             }
         }
         playSound('complete');
-        // Re-render the info panel to show the enabled "Path to Graduate" button
-        setSelectedNodeId(selectedNodeId); 
+        // Re-render the info panel if open
+        if(selectedNodeId) setSelectedNodeId(selectedNodeId);
         return;
     }
-    
-    const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    if (!action) return;
 
     let newLevel = currentUserLevel;
     let nextNode: PathNodeData | undefined;
@@ -504,7 +503,7 @@ export default function PathJourney() {
     
     if (action.action === 'open-comprehension-test') {
       setModalState(s => ({ ...s, comprehensionTest: true }));
-      // We no longer call completeRequirement here; it's called from inside the modal.
+      completeRequirement(action.id);
       return;
     }
     
@@ -571,6 +570,10 @@ export default function PathJourney() {
           const isCompleted = requirementsState[action.id];
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           
+          if (action.id === 'complete-comprehension-test' && node.level > currentUserLevel) {
+            return null;
+          }
+
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
