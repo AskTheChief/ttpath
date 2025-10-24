@@ -42,10 +42,10 @@ async function sendNewApplicationEmail(chiefId: string, applicantId: string, tri
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
         const messageData = {
-            from: `TribeQuest Notifier <noreply@${mailgunDomain}>`,
+            from: `ttpath Notifier <noreply@${mailgunDomain}>`,
             to: chiefEmail,
             subject: `New Application for Your Tribe: ${tribeName}`,
-            text: `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The TribeQuest Team`,
+            text: `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The ttpath Team`,
         };
 
         await mg.messages.create(mailgunDomain, messageData);
