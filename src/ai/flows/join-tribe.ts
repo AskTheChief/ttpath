@@ -6,12 +6,56 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { JoinTribeInputSchema, JoinTribeOutputSchema, type JoinTribeInput, type JoinTribeOutput } from '@/lib/types';
+import Mailgun from 'mailgun.js';
+import formData from 'form-data';
 
 if (!getApps().length) {
   initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+
+async function sendNewApplicationEmail(chiefId: string, applicantId: string, tribeName: string) {
+    const mailgunApiKey = process.env.MAILGUN_API_KEY;
+    const mailgunDomain = process.env.MAILGUN_DOMAIN;
+
+    if (!mailgunApiKey || !mailgunDomain) {
+        console.error('Mailgun environment variables not set. Skipping email notification.');
+        return;
+    }
+
+    try {
+        const [chiefDoc, applicantDoc] = await Promise.all([
+            db.collection('users').doc(chiefId).get(),
+            db.collection('users').doc(applicantId).get()
+        ]);
+
+        if (!chiefDoc.exists || !chiefDoc.data()?.email) {
+            console.error(`Chief ${chiefId} not found or has no email.`);
+            return;
+        }
+
+        const chiefEmail = chiefDoc.data()?.email;
+        const applicantName = applicantDoc.exists ? `${applicantDoc.data()?.firstName} ${applicantDoc.data()?.lastName}` : 'A new applicant';
+
+        const mailgun = new Mailgun(formData);
+        const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
+
+        const messageData = {
+            from: `TribeQuest Notifier <noreply@${mailgunDomain}>`,
+            to: chiefEmail,
+            subject: `New Application for Your Tribe: ${tribeName}`,
+            text: `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The TribeQuest Team`,
+        };
+
+        await mg.messages.create(mailgunDomain, messageData);
+        console.log(`New application email sent to ${chiefEmail}`);
+    } catch (error) {
+        console.error('Error sending new application email:', error);
+        // Do not throw, as the main flow should still succeed.
+    }
+}
+
 
 export async function joinTribe(input: JoinTribeInput): Promise<JoinTribeOutput> {
   return joinTribeFlow(input);
@@ -47,6 +91,7 @@ const joinTribeFlow = ai.defineFlow(
 
       const tribeData = tribeDoc.data();
       const hasMembers = tribeData?.members && tribeData.members.length > 0;
+      const chiefId = tribeData?.chief;
 
       if (!hasMembers) {
         const userRef = db.collection('users').doc(user.uid);
@@ -69,6 +114,12 @@ const joinTribeFlow = ai.defineFlow(
           status: 'pending',
           createdAt: Timestamp.now(),
         });
+
+        // Send email notification to the chief
+        if (chiefId) {
+            await sendNewApplicationEmail(chiefId, user.uid, tribeData?.name || 'Your Tribe');
+        }
+
         return { success: true };
       }
     } catch (error) {
