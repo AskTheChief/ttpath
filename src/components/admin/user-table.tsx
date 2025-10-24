@@ -27,29 +27,31 @@ export default function UserTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>First Name</TableHead>
           <TableHead>Last Name</TableHead>
-          <TableHead>Phone</TableHead>
+          <TableHead>First Name</TableHead>
           <TableHead>Email</TableHead>
+          <TableHead>Phone</TableHead>
+          <TableHead>Address</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={4} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={5} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
             <TableRow key={user.uid}>
-              <TableCell>{user.firstName || 'N/A'}</TableCell>
               <TableCell>{user.lastName || 'N/A'}</TableCell>
-              <TableCell>{user.phone || 'N/A'}</TableCell>
+              <TableCell>{user.firstName || 'N/A'}</TableCell>
               <TableCell>{user.email || 'N/A'}</TableCell>
+              <TableCell>{user.phone || 'N/A'}</TableCell>
+              <TableCell>{user.address || 'N/A'}</TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={4} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={5} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>
