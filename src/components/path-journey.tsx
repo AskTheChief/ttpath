@@ -14,7 +14,7 @@ import LinkModal from './modals/link-modal';
 import VideoModal from './modals/video-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -25,6 +25,7 @@ import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { sendTestEmail } from '@/ai/flows/send-test-email';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -647,6 +648,39 @@ export default function PathJourney() {
     setShowCreateTribeModalForTest(true);
   };
   
+  const handleSendTestEmail = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test email.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Test Email...",
+      description: `Sending a test email to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendTestEmail({ recipientEmail: currentUser.email });
+      if (result.success) {
+        toast({
+          title: "Email Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Email",
+        description: error.message,
+      });
+    }
+  };
+
   const handleStartHereClick = () => {
     const visitorNode = pathNodesData.find(node => node.id === 'node-visitor');
     if (visitorNode) {
@@ -851,6 +885,7 @@ export default function PathJourney() {
         openModal={openModal}
         isGuest={isGuest}
         onTestCreateTribe={handleTestCreateTribe}
+        onSendTestEmail={handleSendTestEmail}
       />
       <LinkModal
         isOpen={modalState.link}
