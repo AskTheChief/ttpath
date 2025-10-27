@@ -23,7 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 
@@ -61,6 +61,7 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
@@ -348,9 +349,24 @@ export default function PathJourney() {
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
   
   useEffect(() => {
+    const action = searchParams.get('action');
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsAuthLoading(true);
       setIsLoadingProgress(true);
+
+      let initialLevel = 1;
+      let animateToLevel: number | null = null;
+      
+      if (action === 'registered' && !user) {
+        // This can happen in a race condition. Wait for user state.
+      } else if (action === 'registered' && user) {
+        initialLevel = 1;
+        animateToLevel = 2;
+        // Clean up URL
+        router.replace('/', { scroll: false });
+      }
+
       if (user) {
         setCurrentUser(user);
         try {
@@ -361,14 +377,28 @@ export default function PathJourney() {
           ]);
           
           if (!profile.firstName) {
-            // New user who hasn't completed profile
             router.push('/complete-profile');
             return;
           }
 
-          setCurrentUserLevel(progress.currentUserLevel || 1);
+          if (!animateToLevel) {
+            initialLevel = progress.currentUserLevel || 1;
+          }
+          setCurrentUserLevel(initialLevel);
           setRequirementsState(progress.requirementsState || {});
           setUserFirstName(profile.firstName || null);
+
+          if (animateToLevel) {
+            const targetNode = pathNodesData.find(n => n.level === animateToLevel);
+            if (targetNode) {
+                // Use a timeout to ensure initial state is rendered
+                setTimeout(() => {
+                    setCurrentUserLevel(animateToLevel!);
+                    animateUserIcon(targetNode, initialLevel);
+                }, 100);
+            }
+          }
+
         } catch (error) {
           console.error("Error fetching user data:", error);
           setCurrentUserLevel(1);
@@ -386,7 +416,7 @@ export default function PathJourney() {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, searchParams, animateUserIcon]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();

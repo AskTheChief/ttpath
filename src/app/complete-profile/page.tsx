@@ -125,8 +125,8 @@ export default function CompleteProfilePage() {
         description: 'Welcome to the Tribe! You are now a Guest.',
       });
       
-      // Redirect to the main path page after successful completion
-      router.push('/');
+      // Redirect to the main path page with a parameter to trigger animation
+      router.push('/?action=registered');
 
     } catch (error: any) {
       setError(error.message);
