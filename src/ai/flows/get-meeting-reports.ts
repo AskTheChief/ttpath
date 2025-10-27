@@ -51,7 +51,6 @@ const getMeetingReportsFlow = ai.defineFlow(
 
       const reportsSnapshot = await db.collection('meeting_reports')
         .where('tribeId', '==', tribeId)
-        .orderBy('submittedAt', 'desc')
         .get();
 
       if (reportsSnapshot.empty) {
@@ -87,6 +86,9 @@ const getMeetingReportsFlow = ai.defineFlow(
           submittedAt: data.submittedAt.toDate().toISOString(),
         };
       });
+
+      // Sort reports in code to avoid needing a composite index
+      reports.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
       return reports;
     } catch (error: any) {
