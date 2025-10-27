@@ -156,16 +156,16 @@ export default function CompleteProfilePage() {
           <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
           <CardDescription>Let's get your profile details set up.</CardDescription>
         </CardHeader>
-        <form onSubmit={handleProfileSubmit} noValidate>
+        <form onSubmit={handleProfileSubmit} noValidate autoComplete="off">
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} />
+                <Input id="firstName" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} autoComplete="off" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} />
+                <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} autoComplete="off" />
               </div>
             </div>
             <div className="space-y-2">
@@ -195,7 +195,7 @@ export default function CompleteProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} />
+              <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} autoComplete="off" />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </CardContent>
