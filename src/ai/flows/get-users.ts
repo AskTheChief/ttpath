@@ -43,15 +43,15 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
     
     // Safely convert Firestore Timestamp to milliseconds since epoch (number)
     const toMillis = (timestamp: any): number | undefined => {
-        if (timestamp instanceof Timestamp) {
-            return timestamp.toMillis();
-        }
+        // Check if it's a Firestore Timestamp object which has a toDate method
         if (timestamp && typeof timestamp.toDate === 'function') {
             return timestamp.toDate().getTime();
         }
+        // If it's already a number, return it
         if (typeof timestamp === 'number') {
-            return timestamp; // Already a number
+            return timestamp;
         }
+        // Return undefined if it's not a recognizable timestamp format
         return undefined;
     };
 
