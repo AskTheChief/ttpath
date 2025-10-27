@@ -547,7 +547,7 @@ function MyTribePageContent() {
                     <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
                 </Card>
                 
-                <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="item-1">
                         <Card>
                          <AccordionTrigger className="w-full">
@@ -701,7 +701,7 @@ function MyTribePageContent() {
                         <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                         <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
                         <div className="mt-2">
-                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }}><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
                         </div>
                         </div>
                     </CardContent>
@@ -825,5 +825,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
