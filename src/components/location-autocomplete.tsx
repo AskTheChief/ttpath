@@ -48,6 +48,7 @@ export default function LocationAutocomplete({ onPlaceSelected, initialValue = '
       ref={inputRef}
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
+      autoComplete="off"
       {...props}
     />
   );
