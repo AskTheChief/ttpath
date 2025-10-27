@@ -145,8 +145,8 @@ export const UserProfileSchema = z.object({
   email: z.string().optional(),
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
-  createdAt: z.string().optional(),
-  lastLoginAt: z.string().optional(),
+  createdAt: z.number().optional(),
+  lastLoginAt: z.number().optional(),
   myAccountVisits: z.number().optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;

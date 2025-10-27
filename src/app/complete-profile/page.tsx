@@ -34,7 +34,7 @@ type UserProfile = {
   address: string;
   phone: string;
   email: string;
-  createdAt: string;
+  createdAt: number;
 };
 
 // Map non-standard IDs to profile keys
@@ -70,7 +70,7 @@ export default function CompleteProfilePage() {
           setUser(currentUser);
           setProfile({ 
             email: currentUser.email || '',
-            createdAt: currentUser.metadata.creationTime ? new Date(currentUser.metadata.creationTime).toISOString() : new Date().toISOString(),
+            createdAt: new Date(currentUser.metadata.creationTime || Date.now()).getTime(),
            });
           setIsLoading(false);
         }
@@ -132,7 +132,7 @@ export default function CompleteProfilePage() {
         address: profile.address,
         phone: normalizedPhone,
         email: user.email!,
-        createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
+        createdAt: new Date(user.metadata.creationTime || Date.now()).getTime(),
         lastLoginAt: serverTimestamp(),
         myAccountVisits: 0,
       };

@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
+import { getFirestore, DocumentData, DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
@@ -22,8 +22,8 @@ const UserSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   currentUserLevel: z.number().optional(),
-  createdAt: z.string().optional(),
-  lastLoginAt: z.string().optional(),
+  createdAt: z.number().optional(),
+  lastLoginAt: z.number().optional(),
   myAccountVisits: z.number().optional(),
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
@@ -41,14 +41,9 @@ export async function getUsers(): Promise<GetUsersOutput> {
 const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
     const data = doc.data() || {};
     
-    // Robustly convert Firestore Timestamps to ISO strings.
-    const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function' 
-      ? data.createdAt.toDate().toISOString() 
-      : undefined;
-      
-    const lastLoginAt = data.lastLoginAt && typeof data.lastLoginAt.toDate === 'function' 
-      ? data.lastLoginAt.toDate().toISOString() 
-      : undefined;
+    // Convert Firestore Timestamp to milliseconds since epoch (number)
+    const createdAt = data.createdAt ? (data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : (typeof data.createdAt === 'number' ? data.createdAt : undefined)) : undefined;
+    const lastLoginAt = data.lastLoginAt ? (data.lastLoginAt instanceof Timestamp ? data.lastLoginAt.toMillis() : (typeof data.lastLoginAt === 'number' ? data.lastLoginAt : undefined)) : undefined;
 
     return {
       uid: doc.id,

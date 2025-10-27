@@ -33,7 +33,8 @@ export default function UserMetricsPage() {
     const counts: { [key: string]: number } = {};
     users.forEach(user => {
       if (user.createdAt) {
-        const date = format(parseISO(user.createdAt), 'yyyy-MM-dd');
+        // Date constructor handles both ISO string and number (milliseconds)
+        const date = format(new Date(user.createdAt), 'yyyy-MM-dd');
         counts[date] = (counts[date] || 0) + 1;
       }
     });
