@@ -2,7 +2,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { 
@@ -23,6 +23,20 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+
+const toMillis = (timestamp: any): number | undefined => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toMillis();
+    }
+    if (timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().getTime();
+    }
+    if (typeof timestamp === 'number') {
+        return timestamp;
+    }
+    return undefined;
+};
+
 
 export async function getUserProfile(input: GetUserProfileInput): Promise<GetUserProfileOutput> {
   return getUserProfileFlow(input);
@@ -51,7 +65,13 @@ const getUserProfileFlow = ai.defineFlow(
       return {};
     }
 
-    return docSnap.data() as GetUserProfileOutput;
+    const data = docSnap.data();
+
+    return {
+        ...data,
+        createdAt: toMillis(data?.createdAt),
+        lastLoginAt: toMillis(data?.lastLoginAt),
+    } as GetUserProfileOutput;
   }
 );
 
