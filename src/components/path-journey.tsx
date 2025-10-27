@@ -310,9 +310,9 @@ export default function PathJourney() {
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
     if (action?.id === 'open-comprehension-test') {
-      // Don't play complete sound yet, only when "I feel ready" is clicked.
+        // Defer sound until "Proceed" is clicked.
     } else {
-      playSound('complete');
+        playSound('complete');
     }
     
     const newReqs = { ...requirementsState, [reqId]: true };
@@ -360,21 +360,8 @@ export default function PathJourney() {
   const fetchUserProgress = useCallback(async (user: FirebaseUser | null) => {
     setIsAuthLoading(true);
     setIsLoadingProgress(true);
-    
-    const action = searchParams.get('action');
 
-    if (action === 'registered' && user) {
-        setNeedsProfileCompletion(false);
-        const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-        if (targetNode) {
-          await animateUserIcon(targetNode, 1);
-        }
-        setCurrentUserLevel(2);
-        const idToken = await user.getIdToken();
-        const profile = await getUserProfile({ idToken });
-        setUserFirstName(profile.firstName || null);
-        router.replace('/', undefined);
-    } else if (user) {
+    if (user) {
       setCurrentUser(user);
       try {
         const idToken = await user.getIdToken();
@@ -384,16 +371,18 @@ export default function PathJourney() {
         ]);
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
+          // If the profile is incomplete, don't set level/reqs yet.
+          // The modal will handle the progression.
           setNeedsProfileCompletion(true);
-          setIsLoadingProgress(false);
-          setIsAuthLoading(false);
-          return; 
+          setCurrentUserLevel(1);
+          setRequirementsState({});
+          setUserFirstName(null);
+        } else {
+          setNeedsProfileCompletion(false);
+          setCurrentUserLevel(progress.currentUserLevel || 1);
+          setRequirementsState(progress.requirementsState || {});
+          setUserFirstName(profile.firstName || null);
         }
-        
-        setCurrentUserLevel(progress.currentUserLevel || 1);
-        setRequirementsState(progress.requirementsState || {});
-        setUserFirstName(profile.firstName || null);
-
       } catch (error: any) {
         if (error.code === 'auth/quota-exceeded') {
           toast({
@@ -412,10 +401,11 @@ export default function PathJourney() {
       setCurrentUserLevel(1);
       setRequirementsState({});
       setUserFirstName(null);
+      setNeedsProfileCompletion(false);
     }
     setIsAuthLoading(false);
     setIsLoadingProgress(false);
-  }, [toast, searchParams, animateUserIcon, router]);
+  }, [toast]);
 
   const handleSignupSuccess = useCallback((user: FirebaseUser) => {
     setCurrentUser(user);
@@ -531,7 +521,6 @@ export default function PathJourney() {
       return;
     }
     
-    // Play single click sound for opening the test
     if (action.id === 'open-comprehension-test') {
       playSound('click', 'C4', '8n');
     } else {
@@ -624,7 +613,6 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
-          // This is the fix: explicitly hide the button for this action ID.
           if (action.id === 'complete-comprehension-test') {
             return null;
           }
