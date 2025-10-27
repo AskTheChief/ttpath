@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -641,19 +641,18 @@ function MyTribePageContent() {
                   <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
                   <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
                 </CardFooter>
-              </Card>
-               <CardContent>
-                {tutorialData.latestFeedback && (
-                  <Alert>
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle className="flex justify-between">
-                      <span>You Receive Guidance</span>
-                      <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                    </AlertTitle>
-                    <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
-                  </Alert>
+                 {tutorialData.latestFeedback && (
+                  <CardContent>
+                    <Alert>
+                      <Terminal className="h-4 w-4" />
+                      <AlertTitle className="flex justify-between">
+                        <span>You Receive Guidance</span>
+                        <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                      </AlertTitle>
+                      <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
+                    </Alert>
+                  </CardContent>
                 )}
-               </CardContent>
               </Card>
             </main>
           </div>
@@ -670,7 +669,7 @@ function MyTribePageContent() {
                     <Label htmlFor="tribe-location-chief">Location</Label>
                     <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                     <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                    <div className="mt-2"><GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} >{newTribeCoords && <MarkerF position={newTribeCoords} />}</GoogleMap></div>
+                    <div className="mt-2"><GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} >{newTribeCoords && <MarkerF position={newTribeCoords} /></GoogleMap></div>
                   </div>
                 </CardContent>
                 <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Creating...' : 'Create Tribe'}</Button></CardFooter>
@@ -783,7 +782,7 @@ function MyTribePageContent() {
       </Tabs>
     </div>
     {userTribe && selectedMeeting && user && (
-        <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} meeting={selectedMeeting} tribeId={userTribe.id} userId={user.uid} existingReport={meetingReports.find(r => r.meetingId === selectedMeeting.id)} onReportSubmitted={() => {setIsReportModalOpen(false); fetchTribesAndUserData(user);}} />
+        <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} meeting={selectedMeeting} tribeId={userTribe.id} userId={user.uid} existingReport={meetingReports.find(r => r.meetingId === selectedMeeting.id)} onReportSubmitted={() => {setIsReportModalOpen(false); if (user) fetchTribesAndUserData(user);}} />
     )}
     </>
   );
