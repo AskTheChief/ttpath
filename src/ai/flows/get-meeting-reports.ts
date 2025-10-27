@@ -33,7 +33,7 @@ const getMeetingReportsFlow = ai.defineFlow(
       // Fetch the requesting user's profile to check their level
       const userRef = db.collection('users').doc(userId);
       const userDoc = await userRef.get();
-      const userLevel = userDoc.exists() ? userDoc.data()?.currentUserLevel || 1 : 1;
+      const userLevel = userDoc.exists ? userDoc.data()?.currentUserLevel || 1 : 1;
 
       const tribeRef = db.collection('tribes').doc(tribeId);
       const tribeDoc = await tribeRef.get();
