@@ -47,14 +47,20 @@ const getMeetingReportsFlow = ai.defineFlow(
       
       const userIds = [...new Set(reportsSnapshot.docs.map(doc => doc.data().userId))];
       const usersMap = new Map<string, string>();
-      if (userIds.length > 0) {
-          const usersSnapshot = await db.collection('users').where('__name__', 'in', userIds).get();
-          usersSnapshot.forEach(doc => {
-              const data = doc.data();
-              usersMap.set(doc.id, `${data.firstName} ${data.lastName}`);
-          });
+      
+      // Fetch users one by one to avoid query limits
+      for (const uid of userIds) {
+        try {
+          const userDoc = await db.collection('users').doc(uid).get();
+          if (userDoc.exists) {
+            const data = userDoc.data();
+            usersMap.set(uid, `${data.firstName || ''} ${data.lastName || ''}`.trim());
+          }
+        } catch (userError) {
+          console.error(`Failed to fetch user document for UID: ${uid}`, userError);
+          // Continue even if one user lookup fails
+        }
       }
-
 
       const reports = reportsSnapshot.docs.map(doc => {
         const data = doc.data();
