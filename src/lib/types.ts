@@ -218,6 +218,7 @@ export const MeetingReportSchema = z.object({
   meetingId: z.string(),
   tribeId: z.string(),
   userId: z.string(),
+  userName: z.string().optional(),
   reportContent: z.string(),
   submittedAt: z.string(),
 });

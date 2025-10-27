@@ -30,14 +30,31 @@ const getMeetingReportsFlow = ai.defineFlow(
     const userId = decodedToken.uid;
 
     try {
+      const tribeRef = db.collection('tribes').doc(tribeId);
+      const tribeDoc = await tribeRef.get();
+      if (!tribeDoc.exists || !(tribeDoc.data()?.members || []).includes(userId)) {
+          throw new Error("You are not a member of this tribe and cannot view its reports.");
+      }
+
       const reportsSnapshot = await db.collection('meeting_reports')
         .where('tribeId', '==', tribeId)
-        .where('userId', '==', userId)
+        .orderBy('submittedAt', 'desc')
         .get();
 
       if (reportsSnapshot.empty) {
         return [];
       }
+      
+      const userIds = [...new Set(reportsSnapshot.docs.map(doc => doc.data().userId))];
+      const usersMap = new Map<string, string>();
+      if (userIds.length > 0) {
+          const usersSnapshot = await db.collection('users').where('__name__', 'in', userIds).get();
+          usersSnapshot.forEach(doc => {
+              const data = doc.data();
+              usersMap.set(doc.id, `${data.firstName} ${data.lastName}`);
+          });
+      }
+
 
       const reports = reportsSnapshot.docs.map(doc => {
         const data = doc.data();
@@ -46,6 +63,7 @@ const getMeetingReportsFlow = ai.defineFlow(
           meetingId: data.meetingId,
           tribeId: data.tribeId,
           userId: data.userId,
+          userName: usersMap.get(data.userId) || 'Unknown User',
           reportContent: data.reportContent,
           submittedAt: data.submittedAt.toDate().toISOString(),
         };

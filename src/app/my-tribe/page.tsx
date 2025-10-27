@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -88,6 +88,7 @@ function MyTribePageContent() {
   const [ampm, setAmPm] = useState('PM');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [selectedReport, setSelectedReport] = useState<MeetingReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
   const { toast } = useToast();
@@ -430,7 +431,8 @@ function MyTribePageContent() {
     setUserProfile(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
     setIsLoading(true);
     try {
@@ -448,8 +450,9 @@ function MyTribePageContent() {
     }
   };
 
-  const handleMeetingReportAction = (meeting: Meeting) => {
+  const handleMeetingReportAction = (meeting: Meeting, report?: MeetingReport) => {
     setSelectedMeeting(meeting);
+    setSelectedReport(report || null);
     setIsReportModalOpen(true);
   };
 
@@ -509,7 +512,6 @@ function MyTribePageContent() {
     );
   }
 
-  const availableTribes = tribes.filter(t => t.id !== userTribe?.id);
   const now = new Date();
   const upcomingMeetings = (userTribe?.meetings || [])
     .filter(m => new Date(m.date) >= now)
@@ -536,9 +538,13 @@ function MyTribePageContent() {
       tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
     }
     
+    // Filter tabs based on user level
+    const visibleTabs = tabsToShow.filter(tab => userLevel >= tab.level);
+    if(visibleTabs.length <= 1 && userLevel < 4) return null; // Don't show tabs for guests
+
     return (
-      <TabsList className="grid w-full grid-cols-4 gap-4 mb-6">
-        {tabsToShow.map(tab => (
+      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${visibleTabs.length}`)}>
+        {visibleTabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
             </TabsTrigger>
@@ -566,6 +572,7 @@ function MyTribePageContent() {
         <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
                 <Card>
+                  <form onSubmit={handleSaveProfile}>
                     <CardHeader>
                     <CardTitle>My Profile</CardTitle>
                     <CardDescription>View and update your personal information.</CardDescription>
@@ -579,13 +586,14 @@ function MyTribePageContent() {
                     <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
                     <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
                     </CardContent>
-                    <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                  </form>
                 </Card>
                 
                 <Card>
                   <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="item-1" className="border-b-0">
-                      <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium [&[data-state=open]>svg]:rotate-180 hover:no-underline">
+                    <AccordionItem value="item-1">
+                      <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium hover:no-underline [&[data-state=open]>svg]:rotate-180">
                         <div className="flex items-center justify-between w-full">
                             <div>
                                 <CardTitle>Comprehension Test</CardTitle>
@@ -678,21 +686,41 @@ function MyTribePageContent() {
                       <CardHeader><CardTitle>Past Meetings</CardTitle></CardHeader>
                       <CardContent>
                           {pastMeetings.length > 0 ? (
-                          <ul className="space-y-3">
+                            <Accordion type="single" collapsible className="w-full">
                               {pastMeetings.map(meeting => {
-                              const hasReport = meetingReports.some(r => r.meetingId === meeting.id);
-                              return (
-                                  <li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md">
-                                  <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
-                                  <Button variant="secondary" size="sm" onClick={() => handleMeetingReportAction(meeting)}>
-                                      {hasReport ? 'View Report' : 'Submit Report'}
-                                  </Button>
-                                  </li>
-                              );
+                                const reportsForMeeting = meetingReports.filter(r => r.meetingId === meeting.id);
+                                const userReport = reportsForMeeting.find(r => r.userId === user.uid);
+
+                                return (
+                                  <AccordionItem key={meeting.id} value={meeting.id}>
+                                    <AccordionTrigger>
+                                      <div className="flex justify-between items-center w-full">
+                                        <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
+                                        <Button variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleMeetingReportAction(meeting, userReport); }}>
+                                          {userReport ? 'View My Report' : 'Submit My Report'}
+                                        </Button>
+                                      </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                      <div className="space-y-2 pl-4">
+                                        <h4 className="font-semibold text-sm">Submitted Reports:</h4>
+                                        {reportsForMeeting.length > 0 ? (
+                                          reportsForMeeting.map(report => (
+                                            <Button key={report.id} variant="link" className="p-0 h-auto justify-start" onClick={() => handleMeetingReportAction(meeting, report)}>
+                                              <FileText className="h-4 w-4 mr-2" /> Report from {report.userName}
+                                            </Button>
+                                          ))
+                                        ) : (
+                                          <p className="text-xs text-muted-foreground">No reports submitted for this meeting.</p>
+                                        )}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                );
                               })}
-                          </ul>
+                            </Accordion>
                           ) : (
-                          <p className="text-sm text-muted-foreground">No past meetings.</p>
+                            <p className="text-sm text-muted-foreground">No past meetings.</p>
                           )}
                       </CardContent>
                       </Card>
@@ -705,8 +733,8 @@ function MyTribePageContent() {
                       </CardHeader>
                       <CardContent>
                       <div className="space-y-4 max-h-60 overflow-y-auto">
-                          {availableTribes.length > 0 ? (
-                          availableTribes.map((tribe) => (
+                          {tribes.filter(t => t.id !== userTribe?.id).length > 0 ? (
+                          tribes.filter(t => t.id !== userTribe?.id).map((tribe) => (
                               <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
                               <div>
                                   <h3 className="font-semibold">{tribe.name}</h3>
@@ -728,22 +756,24 @@ function MyTribePageContent() {
               </TabsContent>
               <TabsContent value="chief">
               <div className="space-y-8">
-                  <Card>
-                  <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                      <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
-                      <div className="space-y-2">
-                      <Label htmlFor="tribe-location-chief">Location</Label>
-                      <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
-                      <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                      <div className="mt-2">
-                          <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
-                      </div>
-                      </div>
-                  </CardContent>
-                  <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button></CardFooter>
-                  </Card>
-                  {isChief && (
+                  {!userTribe && (
+                    <Card>
+                    <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
+                        <div className="space-y-2">
+                        <Label htmlFor="tribe-location-chief">Location</Label>
+                        <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
+                        <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
+                        <div className="mt-2">
+                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                        </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button></CardFooter>
+                    </Card>
+                  )}
+                  {isChief && userTribe && (
                   <>
                   <Card>
                       <CardHeader>
@@ -881,7 +911,18 @@ function MyTribePageContent() {
       </Tabs>
     </div>
     {userTribe && selectedMeeting && user && (
-        <ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} meeting={selectedMeeting} tribeId={userTribe.id} userId={user.uid} existingReport={meetingReports.find(r => r.meetingId === selectedMeeting.id)} onReportSubmitted={() => {setIsReportModalOpen(false); if (user) fetchTribesAndUserData(user);}} />
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          meeting={selectedMeeting}
+          tribeId={userTribe.id}
+          userId={user.uid}
+          existingReport={selectedReport || meetingReports.find(r => r.meetingId === selectedMeeting.id && r.userId === user.uid)}
+          onReportSubmitted={() => {
+            setIsReportModalOpen(false);
+            if (user) fetchTribesAndUserData(user);
+          }}
+        />
     )}
     </>
   );
@@ -895,5 +936,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
