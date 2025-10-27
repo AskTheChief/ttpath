@@ -531,35 +531,48 @@ function MyTribePageContent() {
             <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
           </Card>
           
-          <Card>
-            <CardHeader><CardTitle>Comprehension Test</CardTitle><CardDescription>You may review and edit your answers and save your work below.</CardDescription></CardHeader>
-            <CardContent className="space-y-6">
-              {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                tutorialQuestions.map((q, i) => (
-                  <div key={i} className="grid w-full gap-1.5">
-                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
-                  </div>
-                ))
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-              <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
-            </CardFooter>
-            {tutorialData.latestFeedback && (
-              <CardContent>
-                <Alert>
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle className="flex justify-between">
-                    <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                  </AlertTitle>
-                  <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
-                </Alert>
-              </CardContent>
-            )}
-          </Card>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1">
+              <Card>
+                <AccordionTrigger className="w-full">
+                  <CardHeader className="flex-row items-center justify-between w-full p-6">
+                    <div>
+                      <CardTitle>Comprehension Test</CardTitle>
+                      <CardDescription>Click to view/edit your answers.</CardDescription>
+                    </div>
+                  </CardHeader>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <CardContent className="space-y-6">
+                    {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                      tutorialQuestions.map((q, i) => (
+                        <div key={i} className="grid w-full gap-1.5">
+                          <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                          <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                    <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
+                  </CardFooter>
+                  {tutorialData.latestFeedback && (
+                    <CardContent>
+                      <Alert>
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle className="flex justify-between">
+                          <span>You Receive Guidance</span>
+                          <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                        </AlertTitle>
+                        <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  )}
+                </AccordionContent>
+              </Card>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         <main className="lg:col-span-2 space-y-8">
