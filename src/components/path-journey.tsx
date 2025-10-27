@@ -14,7 +14,7 @@ import LinkModal from './modals/link-modal';
 import VideoModal from './modals/video-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -214,12 +214,15 @@ export default function PathJourney() {
         const point = pathRef.current.getPointAtLength(currentLength);
         const cssPoint = mapSvgPointToCss(point);
 
-        userIconRef.current.style.left = `${cssPoint.x}px`;
-        userIconRef.current.style.top = `${cssPoint.y}px`;
-        
-        const hopProgress = (progress * hopCount) % 1;
-        const hopY = -Math.sin(hopProgress * Math.PI) * 20;
-        userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
+        if (userIconRef.current) {
+            userIconRef.current.style.left = `${cssPoint.x}px`;
+            userIconRef.current.style.top = `${cssPoint.y}px`;
+            
+            const hopProgress = (progress * hopCount) % 1;
+            const hopY = -Math.sin(hopProgress * Math.PI) * 20;
+            userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
+        }
+
 
         const currentHop = Math.floor(progress * hopCount);
         if (currentHop > lastHop) {
@@ -299,15 +302,20 @@ export default function PathJourney() {
     }
     setJustCompletedActionId(reqId);
     
+    // Defer playing the 'complete' sound until after state updates
+    let soundToPlay: SoundType | null = 'complete';
+
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     if (!action) return;
 
     if (action.id === 'open-comprehension-test') {
-      playSound('click', 'D4', '8n');
-    } else {
-      playSound('complete');
+      soundToPlay = null; // Don't play any sound, just open the modal.
     }
 
+    if (soundToPlay) {
+      playSound(soundToPlay);
+    }
+    
     const newReqs = { ...requirementsState, [reqId]: true };
     setRequirementsState(newReqs);
 
@@ -332,7 +340,6 @@ export default function PathJourney() {
                 description: "Could not save your progress. Please try again.",
                 variant: "destructive",
             });
-            // Revert state if save fails
             setRequirementsState(requirementsState);
             return; 
         }
@@ -343,7 +350,6 @@ export default function PathJourney() {
         setCurrentUserLevel(newLevel);
         animateUserIcon(nextNode, oldLevel);
     } else {
-      // Refresh selected node to update checkmark
       if (selectedNodeId) {
         const currentSelected = selectedNodeId;
         setSelectedNodeId(null); 
@@ -369,7 +375,6 @@ export default function PathJourney() {
           if (justSignedUp) {
             setNeedsProfileCompletion(true);
           }
-          // Don't set state yet, wait for profile completion.
           setIsLoadingProgress(false);
           setIsAuthLoading(false);
           return; 
@@ -404,47 +409,28 @@ export default function PathJourney() {
 
 
   useEffect(() => {
-    let animationFrameId: number;
-
-    const runAnimation = () => {
-      const action = searchParams.get('action');
-      if (action === 'registered' && !isGuest) { // only run animation if not already guest
+    const action = searchParams.get('action');
+    if (action === 'registered') {
         const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-        const startNode = pathNodesData.find(n => n.id === 'node-visitor');
-        if (targetNode && startNode) {
-          setCurrentUserLevel(1);
-          setIsLoadingProgress(false); 
-          animationFrameId = requestAnimationFrame(() => {
-            animateUserIcon(targetNode, startNode.level).then(() => {
-              if(auth.currentUser) fetchUserProgress(auth.currentUser);
+        if (targetNode) {
+            setCurrentUserLevel(1); 
+            setIsLoadingProgress(false);
+            setRequirementsState({ 'sign-up': true, 'read-book': true });
+            
+            requestAnimationFrame(() => {
+                animateUserIcon(targetNode, 1).then(() => {
+                     if (auth.currentUser) fetchUserProgress(auth.currentUser);
+                });
             });
-          });
-          router.replace('/', { scroll: false });
+            router.replace('/', { scroll: false });
         }
-      } else {
-         fetchUserProgress(auth.currentUser);
-      }
+    } else {
+        const unsubscribe = onAuthStateChanged(auth, user => {
+            fetchUserProgress(user);
+        });
+        return () => unsubscribe();
     }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-       if (user) {
-         fetchUserProgress(user);
-       } else {
-         runAnimation();
-       }
-    });
-
-    if(!auth.currentUser) {
-        runAnimation();
-    }
-    
-    return () => {
-        unsubscribe();
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-    };
-  }, [searchParams, router, animateUserIcon, fetchUserProgress, isGuest]);
+  }, []);
   
 
   useEffect(() => {
@@ -523,11 +509,11 @@ export default function PathJourney() {
   };
 
   const handleActionClick = (action: PathAction, node: PathNodeData) => {
-    playSound('action', 'C4', '8n');
     
     const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
 
     if (isLocked) {
+      playSound('locked', 'A2', '16n');
       if (node.id === 'node-visitor' && action.id === 'sign-up') {
         setLockedAlertContent({
           title: "Hint",
@@ -543,7 +529,10 @@ export default function PathJourney() {
       return;
     }
 
-
+    if (action.id !== 'open-comprehension-test') {
+      playSound('action', 'C4', '8n');
+    }
+    
     const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
@@ -566,8 +555,8 @@ export default function PathJourney() {
     }
     
     if (action.action === 'open-comprehension-test') {
+      playSound('click', 'D4', '8n');
       setModalState(s => ({ ...s, comprehensionTest: true }));
-      completeRequirement(action.id);
       return;
     }
     
@@ -634,8 +623,8 @@ export default function PathJourney() {
           const isCompleted = requirementsState[action.id];
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           
-          if (action.id === 'complete-comprehension-test') {
-            return null; // Don't render this button, it's triggered from the modal
+          if (action.id === 'complete-comprehension-test' && currentUserLevel < 3) {
+            return null; // Hide this button until the test modal is used to trigger it.
           }
 
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
@@ -799,7 +788,7 @@ export default function PathJourney() {
               onComplete={(firstName) => {
                 setUserFirstName(firstName);
                 setNeedsProfileCompletion(false);
-                completeRequirement('sign-up');
+                router.push('/?action=registered', { scroll: false });
               }}
             />
         )}
@@ -1014,5 +1003,3 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
-
-    
