@@ -527,25 +527,29 @@ function MyTribePageContent() {
 
   const renderTabs = () => {
     const tabsToShow: { value: string; label: string; icon: React.ElementType; level: number }[] = [];
-
-    if (userLevel >= 2) {
+  
+    if (userLevel >= 2) { // Graduate or higher
       tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
     }
-    if (userLevel >= 4) {
+    if (userLevel >= 4) { // Member or higher
       tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
     }
-    if (userLevel >= 5) {
+    if (userLevel >= 5) { // Chief or higher
       tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
     }
-    if (userLevel >= 6) {
+    if (userLevel >= 6) { // Mentor
       tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
     }
     
-    if(tabsToShow.length <= 1) return null;
-
+    // De-duplicate and sort by level
+    const uniqueTabs = Array.from(new Map(tabsToShow.map(item => [item.value, item])).values())
+        .sort((a, b) => a.level - b.level);
+  
+    if(uniqueTabs.length <= 1 && userLevel < 4) return null;
+  
     return (
-      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${tabsToShow.length}`)}>
-        {tabsToShow.map(tab => (
+      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${uniqueTabs.length}`)}>
+        {uniqueTabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
             </TabsTrigger>
@@ -694,11 +698,11 @@ function MyTribePageContent() {
 
                                 return (
                                   <AccordionItem key={meeting.id} value={meeting.id}>
-                                    <div className="flex items-center w-full">
-                                      <AccordionTrigger className="flex-grow">
+                                    <div className="flex items-center w-full p-4">
+                                      <AccordionTrigger className="flex-grow p-0">
                                           <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
                                       </AccordionTrigger>
-                                      <Button variant="secondary" size="sm" className="ml-4 mr-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
+                                      <Button variant="secondary" size="sm" className="ml-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
                                         {userReport ? 'View My Report' : 'Submit My Report'}
                                       </Button>
                                     </div>
@@ -757,7 +761,7 @@ function MyTribePageContent() {
               </TabsContent>
               <TabsContent value="chief">
               <div className="space-y-8">
-                  {!userTribe && (
+                  {userLevel >= 3 && (
                     <Card>
                     <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
