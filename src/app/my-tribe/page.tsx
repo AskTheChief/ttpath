@@ -532,7 +532,7 @@ function MyTribePageContent() {
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
 
-  const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
+  const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted flex-grow";
 
   const renderTabs = () => {
     const tabsToShow: { value: string; label: string; icon: React.ElementType; level: number }[] = [];
@@ -547,11 +547,8 @@ function MyTribePageContent() {
   
     if(uniqueTabs.length <= 1 && userLevel < 4) return null;
   
-    // Use a dynamic grid class based on the number of tabs
-    const gridColsClass = `grid-cols-${uniqueTabs.length}`;
-
     return (
-      <TabsList className={cn("grid w-full mb-6 h-auto", gridColsClass)}>
+      <TabsList className="flex w-full mb-6 h-auto p-1">
         {uniqueTabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
@@ -958,5 +955,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
 
     
