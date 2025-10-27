@@ -18,7 +18,7 @@ const mapContainerStyle = {
   width: '100%',
   height: '200px',
   borderRadius: '0.5rem',
-  marginTop: '1rem',
+  marginBottom: '1rem',
 };
 const defaultCenter = {
     lat: 39.8283,
@@ -237,14 +237,6 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
              </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
-                <LocationAutocomplete 
-                    id="address" 
-                    placeholder="123 Main St, Anytown, USA"
-                    onPlaceSelected={handlePlaceSelected}
-                    initialValue={profile.address || ''}
-                    required
-                    disabled={!isLoaded}
-                />
                  {isLoaded && !loadError && (
                     <div style={mapContainerStyle}>
                         <GoogleMap
@@ -258,6 +250,14 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
                     </div>
                  )}
                  {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
+                <LocationAutocomplete 
+                    id="address" 
+                    placeholder="123 Main St, Anytown, USA"
+                    onPlaceSelected={handlePlaceSelected}
+                    initialValue={profile.address || ''}
+                    required
+                    disabled={!isLoaded}
+                />
               </div>
              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
