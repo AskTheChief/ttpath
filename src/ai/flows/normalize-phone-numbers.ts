@@ -42,12 +42,27 @@ const normalizePhoneNumbersFlow = ai.defineFlow(
         const originalPhone = data.phone;
 
         if (typeof originalPhone === 'string' && originalPhone.length > 0) {
-          const normalizedPhone = originalPhone.replace(/[^\d+]/g, (char, index) => {
+          // First, strip non-digits, but keep a leading '+'
+          let cleanedPhone = originalPhone.replace(/[^\d+]/g, (char, index) => {
             if (char === '+' && index === 0) {
               return '+';
             }
             return /\d/.test(char) ? char : '';
           }).replace(/(?!^)\+/g, '');
+          
+          let normalizedPhone = cleanedPhone;
+
+          // If it doesn't start with '+', it might need '+1'
+          if (!cleanedPhone.startsWith('+')) {
+            const digitsOnly = cleanedPhone.replace(/\D/g, '');
+            if (digitsOnly.length === 10) {
+              // Assumes a 10-digit number is a US number, prepend +1
+              normalizedPhone = `+1${digitsOnly}`;
+            } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+              // Assumes an 11-digit number starting with 1 is a US number
+              normalizedPhone = `+${digitsOnly}`;
+            }
+          }
           
           if (normalizedPhone !== originalPhone) {
             batch.update(doc.ref, { phone: normalizedPhone });
