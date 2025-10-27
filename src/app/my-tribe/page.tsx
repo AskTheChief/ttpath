@@ -116,13 +116,10 @@ function MyTribePageContent() {
       const idToken = await currentUser.getIdToken();
       
       const userDocRef = doc(db, "users", currentUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      if(userDoc.exists()){
-        await updateDoc(userDocRef, {
-            lastLoginAt: serverTimestamp(),
-            myAccountVisits: increment(1)
-        });
-      }
+      await updateDoc(userDocRef, {
+        lastLoginAt: new Date().getTime(),
+        myAccountVisits: increment(1)
+      }).catch(err => console.log("Could not update last login, probably a new user."));
 
 
       const [progress, allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
@@ -552,7 +549,7 @@ function MyTribePageContent() {
     if(uniqueTabs.length <= 1 && userLevel < 4) return null;
   
     return (
-      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${uniqueTabs.length}`)}>
+      <TabsList className="mb-6 h-auto justify-start overflow-x-auto">
         {uniqueTabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
