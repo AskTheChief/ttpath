@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBpw8RSF3xX-a6xoJrcPmpJI9ExFMyeJuc",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "ttpath.com",
   projectId: "studio-7790315517-f3fe6",
   storageBucket: "studio-7790315517-f3fe6.firebasestorage.app",

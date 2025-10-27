@@ -11,6 +11,19 @@ import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useState } from "react";
 import LocationAutocomplete from '@/components/location-autocomplete';
+import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
+
+const libraries: Libraries = ['places'];
+const mapContainerStyle = {
+  width: '100%',
+  height: '200px',
+  borderRadius: '0.5rem',
+  marginTop: '1rem',
+};
+const defaultCenter = {
+    lat: 39.8283,
+    lng: -98.5795,
+};
 
 type SignupModalProps = {
   isOpen: boolean;
@@ -42,6 +55,12 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     address: '',
     phone: '',
   });
+  const [coords, setCoords] = useState<{lat: number; lng: number} | null>(null);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const resetState = () => {
     setStep(1);
@@ -51,6 +70,7 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     setIsLoading(false);
     setUser(null);
     setProfile({});
+    setCoords(null);
   };
   
   const handleClose = () => {
@@ -151,6 +171,12 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     if (place.formatted_address) {
       setProfile(prev => ({ ...prev, address: place.formatted_address }));
     }
+    if (place.geometry?.location) {
+        setCoords({
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+        });
+    }
   };
 
   return (
@@ -217,7 +243,21 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
                     onPlaceSelected={handlePlaceSelected}
                     initialValue={profile.address || ''}
                     required
+                    disabled={!isLoaded}
                 />
+                 {isLoaded && !loadError && (
+                    <div style={mapContainerStyle}>
+                        <GoogleMap
+                            mapContainerStyle={{ height: '100%', width: '100%' }}
+                            center={coords || defaultCenter}
+                            zoom={coords ? 15 : 4}
+                            options={{ disableDefaultUI: true }}
+                        >
+                            {coords && <MarkerF position={coords} />}
+                        </GoogleMap>
+                    </div>
+                 )}
+                 {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
               </div>
              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
