@@ -542,14 +542,16 @@ function MyTribePageContent() {
     if (userLevel >= 5) tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
     if (userLevel >= 6) tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
     
-    // Sort by level to maintain order, then filter out duplicates (not strictly necessary with this logic but good practice)
     const uniqueTabs = Array.from(new Map(tabsToShow.map(item => [item.value, item])).values())
         .sort((a, b) => a.level - b.level);
   
     if(uniqueTabs.length <= 1 && userLevel < 4) return null;
   
+    // Use a dynamic grid class based on the number of tabs
+    const gridColsClass = `grid-cols-${uniqueTabs.length}`;
+
     return (
-      <TabsList className="mb-6 h-auto justify-start overflow-x-auto">
+      <TabsList className={cn("grid w-full mb-6 h-auto", gridColsClass)}>
         {uniqueTabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
@@ -956,3 +958,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
