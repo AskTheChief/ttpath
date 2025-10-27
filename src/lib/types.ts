@@ -105,6 +105,8 @@ export const ApplicationSchema = z.object({
     tribeId: z.string().optional(), // Optional for new_tribe applications
     tribeName: z.string().optional(), // For new_tribe applications
     location: z.string().optional(), // For new_tribe applications
+    lat: z.number().optional(),
+    lng: z.number().optional(),
     applicantId: z.string(),
     applicantName: z.string().optional(),
     applicantEmail: z.string().optional(),
@@ -229,3 +231,17 @@ export type GetMeetingReportsInput = z.infer<typeof GetMeetingReportsInputSchema
 
 export const GetMeetingReportsOutputSchema = z.array(MeetingReportSchema);
 export type GetMeetingReportsOutput = z.infer<typeof GetMeetingReportsOutputSchema>;
+
+// src/ai/flows/update-user-level.ts
+export const UpdateUserLevelInputSchema = z.object({
+  idToken: z.string().describe("The admin's Firebase ID token for authentication."),
+  targetUserId: z.string().describe("The UID of the user to update."),
+  newLevel: z.number().int().min(1).max(6).describe("The new level to assign to the user."),
+});
+export type UpdateUserLevelInput = z.infer<typeof UpdateUserLevelInputSchema>;
+
+export const UpdateUserLevelOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type UpdateUserLevelOutput = z.infer<typeof UpdateUserLevelOutputSchema>;

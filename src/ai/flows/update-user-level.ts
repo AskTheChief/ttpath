@@ -2,30 +2,17 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { UpdateUserLevelInputSchema, UpdateUserLevelOutputSchema, type UpdateUserLevelInput, type UpdateUserLevelOutput } from '@/lib/types';
+
 
 if (!getApps().length) {
   initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();
-
-export const UpdateUserLevelInputSchema = z.object({
-  idToken: z.string().describe("The admin's Firebase ID token for authentication."),
-  targetUserId: z.string().describe("The UID of the user to update."),
-  newLevel: z.number().int().min(1).max(6).describe("The new level to assign to the user."),
-});
-export type UpdateUserLevelInput = z.infer<typeof UpdateUserLevelInputSchema>;
-
-export const UpdateUserLevelOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string().optional(),
-});
-export type UpdateUserLevelOutput = z.infer<typeof UpdateUserLevelOutputSchema>;
-
 
 export async function updateUserLevel(input: UpdateUserLevelInput): Promise<UpdateUserLevelOutput> {
   return updateUserLevelFlow(input);
