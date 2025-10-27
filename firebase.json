@@ -1,6 +1,6 @@
 {
   "apphosting": {
-    "backendId": "studio",
+    "backendId": "studio-test",
     "rootDir": "/",
     "ignore": [
       "node_modules",
