@@ -37,6 +37,7 @@ import { getMeetingReports } from '@/ai/flows/get-meeting-reports';
 import ReportModal from '@/components/modals/report-modal';
 import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
 
 
 const libraries: Libraries = ['places'];
@@ -497,6 +498,8 @@ function MyTribePageContent() {
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
 
+  const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
+
   return (
     <>
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -511,13 +514,13 @@ function MyTribePageContent() {
 
       <Tabs value={view} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="member">
+          <TabsTrigger value="member" className={tabTriggerClasses}>
             <UserCheck className="mr-2" /> Member
           </TabsTrigger>
-          <TabsTrigger value="chief">
+          <TabsTrigger value="chief" className={tabTriggerClasses}>
             <Shield className="mr-2" /> Chief
           </TabsTrigger>
-          <TabsTrigger value="mentor">
+          <TabsTrigger value="mentor" className={tabTriggerClasses}>
             <Users className="mr-2" /> Mentor
           </TabsTrigger>
         </TabsList>
@@ -800,3 +803,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
