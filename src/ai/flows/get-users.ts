@@ -46,9 +46,15 @@ const getUsersFlow = ai.defineFlow(
       
       const users = usersSnapshot.docs.map(doc => {
         const data = doc.data();
-        // Firestore Timestamps need to be converted to a serializable format (string)
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
-        const lastLoginAt = data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt;
+        
+        // Robustly convert Firestore Timestamps to ISO strings.
+        const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function' 
+          ? data.createdAt.toDate().toISOString() 
+          : data.createdAt;
+          
+        const lastLoginAt = data.lastLoginAt && typeof data.lastLoginAt.toDate === 'function' 
+          ? data.lastLoginAt.toDate().toISOString() 
+          : data.lastLoginAt;
 
         return {
           uid: doc.id,
@@ -72,8 +78,12 @@ const getUsersFlow = ai.defineFlow(
         const usersSnapshot = await db.collection('users').get();
         const users = usersSnapshot.docs.map(doc => {
             const data = doc.data();
-            const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
-            const lastLoginAt = data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt;
+            const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function' 
+              ? data.createdAt.toDate().toISOString() 
+              : data.createdAt;
+            const lastLoginAt = data.lastLoginAt && typeof data.lastLoginAt.toDate === 'function' 
+              ? data.lastLoginAt.toDate().toISOString() 
+              : data.lastLoginAt;
             return {
                 uid: doc.id,
                 firstName: data.firstName,
