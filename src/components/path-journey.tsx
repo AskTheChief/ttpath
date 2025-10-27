@@ -23,7 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import CompleteProfileForm from '@/components/complete-profile-form';
@@ -62,7 +62,6 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
@@ -408,39 +407,11 @@ export default function PathJourney() {
 
 
   useEffect(() => {
-    const action = searchParams.get('action');
-    const justRegistered = action === 'registered';
-
-    if (justRegistered) {
-      router.replace('/', { scroll: false }); // Clean URL
-      const tempUnsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          tempUnsubscribe(); // Stop listening after we get the user
-          setIsLoadingProgress(false);
-          // Manually set state to trigger animation
-          setCurrentUser(user);
-          setCurrentUserLevel(1); // Start at visitor for animation
-          setRequirementsState({ 'sign-up': true });
-          
-          const profile = await getUserProfile({idToken: await user.getIdToken()});
-          setUserFirstName(profile.firstName || null);
-
-          const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-          if (targetNode) {
-            // Animate, then set final level
-            animateUserIcon(targetNode, 1).then(() => {
-              setCurrentUserLevel(2); 
-            });
-          }
-        }
-      });
-    } else {
-      const unsubscribe = onAuthStateChanged(auth, user => {
-        fetchUserProgress(user);
-      });
-      return () => unsubscribe();
-    }
-  }, []); // Only run this once on mount
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      fetchUserProgress(user);
+    });
+    return () => unsubscribe();
+  }, [fetchUserProgress]);
   
 
   useEffect(() => {
@@ -545,7 +516,7 @@ export default function PathJourney() {
     }
 
     if (action.id === 'open-comprehension-test') {
-      playSound('click', 'D4', '8n');
+      playSound('click', 'C4', '8n');
     } else {
       playSound('action', 'C4', '8n');
     }
@@ -783,12 +754,12 @@ export default function PathJourney() {
            <CompleteProfileForm
               user={currentUser}
               onComplete={(firstName) => {
-                setUserFirstName(firstName);
                 setNeedsProfileCompletion(false);
                 const targetNode = pathNodesData.find(n => n.id === 'node-guest');
                 if (targetNode) {
                   animateUserIcon(targetNode, 1).then(() => {
                     setCurrentUserLevel(2);
+                    setUserFirstName(firstName);
                   });
                 }
               }}
