@@ -26,7 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
-import CompleteProfileForm from './complete-profile-form';
+import CompleteProfileForm from '@/components/complete-profile-form';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -182,7 +182,9 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number) => {
-    if (isAnimating || !pathRef.current || !userIconRef.current) return;
+    if (isAnimating || !pathRef.current) return;
+    if (!userIconRef.current) return;
+
     setIsAnimating(true);
     setSelectedNodeId(null);
 
@@ -203,14 +205,14 @@ export default function PathJourney() {
 
     const animationStep = (timestamp: number) => {
         if (!startTime) startTime = timestamp;
-        if (!userIconRef.current) {
+        if (!userIconRef.current || !pathRef.current) {
           setIsAnimating(false);
           return;
         }
 
         const progress = Math.min((timestamp - startTime) / duration, 1);
         const currentLength = startLength + (endLength - startLength) * progress;
-        const point = pathRef.current!.getPointAtLength(currentLength);
+        const point = pathRef.current.getPointAtLength(currentLength);
         const cssPoint = mapSvgPointToCss(point);
 
         userIconRef.current.style.left = `${cssPoint.x}px`;
@@ -229,10 +231,16 @@ export default function PathJourney() {
         if (progress < 1) {
             requestAnimationFrame(animationStep);
         } else {
-             const finalPoint = mapSvgPointToCss(pathRef.current!.getPointAtLength(endLength));
-             userIconRef.current.style.left = `${finalPoint.x}px`;
-             userIconRef.current.style.top = `${finalPoint.y}px`;
-             userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
+             if (!pathRef.current || !userIconRef.current) {
+                setIsAnimating(false);
+                return;
+             }
+             const finalPoint = mapSvgPointToCss(pathRef.current.getPointAtLength(endLength));
+             if (userIconRef.current) {
+                userIconRef.current.style.left = `${finalPoint.x}px`;
+                userIconRef.current.style.top = `${finalPoint.y}px`;
+                userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
+             }
              setIsAnimating(false);
 
             playSound('progress');
@@ -306,7 +314,20 @@ export default function PathJourney() {
                 console.error("Failed to save requirement progress:", error);
             }
         }
-        playSound('complete');
+        
+        if (reqId === 'complete-comprehension-test') {
+            const nextNode = pathNodesData.find(n => n.id === 'node-graduate');
+            if (nextNode && nextNode.level > currentUserLevel) {
+                const oldLevel = currentUserLevel;
+                setCurrentUserLevel(nextNode.level);
+                animateUserIcon(nextNode, oldLevel);
+            } else {
+                playSound('complete');
+            }
+        } else if (reqId !== 'open-comprehension-test') {
+            playSound('complete');
+        }
+
         if(selectedNodeId) setSelectedNodeId(selectedNodeId);
         return;
     }
@@ -356,7 +377,6 @@ export default function PathJourney() {
   const fetchUserProgress = useCallback(async (user: FirebaseUser | null, justSignedUp = false) => {
     setIsAuthLoading(true);
     setIsLoadingProgress(true);
-    let initialLevel = 1;
     
     if (user) {
       setCurrentUser(user);
@@ -367,7 +387,7 @@ export default function PathJourney() {
           getUserProfile({ idToken }),
         ]);
 
-        if (!profile.firstName) {
+        if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
           if (justSignedUp) {
             setNeedsProfileCompletion(true);
           }
@@ -377,8 +397,7 @@ export default function PathJourney() {
           return; 
         }
         
-        initialLevel = progress.currentUserLevel || 1;
-        setCurrentUserLevel(initialLevel);
+        setCurrentUserLevel(progress.currentUserLevel || 1);
         setRequirementsState(progress.requirementsState || {});
         setUserFirstName(profile.firstName || null);
 
@@ -407,11 +426,47 @@ export default function PathJourney() {
 
 
   useEffect(() => {
+    let animationFrameId: number;
+
+    const runAnimation = () => {
+      const action = searchParams.get('action');
+      if (action === 'registered') {
+        const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+        const startNode = pathNodesData.find(n => n.id === 'node-visitor');
+        if (targetNode && startNode) {
+          // Temporarily set level to 1 for animation, then let real progress load.
+          setCurrentUserLevel(1);
+          setIsLoadingProgress(false); // Faking progress load to enable animation
+          // Need a small delay to ensure the UI has updated to level 1
+          animationFrameId = requestAnimationFrame(() => {
+            animateUserIcon(targetNode, startNode.level).then(() => {
+              // After animation, fetch real progress
+              if(auth.currentUser) fetchUserProgress(auth.currentUser);
+            });
+          });
+          // Clean up URL
+          router.replace('/', undefined);
+        }
+      } else {
+         if(auth.currentUser) fetchUserProgress(auth.currentUser);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      fetchUserProgress(user);
+        runAnimation();
     });
-    return () => unsubscribe();
-  }, [fetchUserProgress]);
+
+    if(!auth.currentUser) {
+        runAnimation();
+    }
+    
+    return () => {
+        unsubscribe();
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+    };
+  }, [searchParams, router, animateUserIcon, fetchUserProgress]);
   
 
   useEffect(() => {
@@ -981,3 +1036,5 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
+
+    
