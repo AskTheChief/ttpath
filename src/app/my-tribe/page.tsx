@@ -669,7 +669,11 @@ function MyTribePageContent() {
                     <Label htmlFor="tribe-location-chief">Location</Label>
                     <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                     <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                    <div className="mt-2"><GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} >{newTribeCoords && <MarkerF position={newTribeCoords} /></GoogleMap></div>
+                    <div className="mt-2">
+                        <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }}>
+                            {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                        </GoogleMap>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Creating...' : 'Create Tribe'}</Button></CardFooter>
