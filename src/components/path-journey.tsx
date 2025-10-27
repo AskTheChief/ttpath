@@ -302,18 +302,10 @@ export default function PathJourney() {
     }
     setJustCompletedActionId(reqId);
     
-    // Defer playing the 'complete' sound until after state updates
-    let soundToPlay: SoundType | null = 'complete';
-
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
-    if (!action) return;
-
-    if (action.id === 'open-comprehension-test') {
-      soundToPlay = null; // Don't play any sound, just open the modal.
-    }
-
-    if (soundToPlay) {
-      playSound(soundToPlay);
+    
+    if (action?.id !== 'open-comprehension-test') {
+      playSound('complete');
     }
     
     const newReqs = { ...requirementsState, [reqId]: true };
@@ -321,9 +313,10 @@ export default function PathJourney() {
 
     let newLevel = currentUserLevel;
     let nextNode: PathNodeData | undefined;
-
-    if (action.next) {
-        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+    
+    const nextNodeId = action?.next;
+    if (nextNodeId) {
+        nextNode = pathNodesData.find(n => n.id === `node-${nextNodeId}`);
         if (nextNode) {
             newLevel = nextNode.level;
         }
@@ -410,27 +403,34 @@ export default function PathJourney() {
 
   useEffect(() => {
     const action = searchParams.get('action');
-    if (action === 'registered') {
-        const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-        if (targetNode) {
-            setCurrentUserLevel(1); 
-            setIsLoadingProgress(false);
-            setRequirementsState({ 'sign-up': true, 'read-book': true });
-            
-            requestAnimationFrame(() => {
-                animateUserIcon(targetNode, 1).then(() => {
-                     if (auth.currentUser) fetchUserProgress(auth.currentUser);
-                });
+    const justSignedUp = action === 'registered';
+
+    if (justSignedUp) {
+      router.replace('/', { scroll: false }); // Clean URL
+      const tempUnsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          tempUnsubscribe(); // Stop listening after we get the user
+          setIsLoadingProgress(false);
+          // Manually set state to trigger animation
+          setCurrentUser(user);
+          setCurrentUserLevel(1);
+          setRequirementsState({ 'sign-up': true });
+          
+          const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+          if (targetNode) {
+            animateUserIcon(targetNode, 1).then(() => {
+              fetchUserProgress(user); // Fetch full progress after animation
             });
-            router.replace('/', { scroll: false });
+          }
         }
+      });
     } else {
-        const unsubscribe = onAuthStateChanged(auth, user => {
-            fetchUserProgress(user);
-        });
-        return () => unsubscribe();
+      const unsubscribe = onAuthStateChanged(auth, user => {
+        fetchUserProgress(user);
+      });
+      return () => unsubscribe();
     }
-  }, []);
+  }, [searchParams, router, animateUserIcon, fetchUserProgress]);
   
 
   useEffect(() => {
@@ -514,6 +514,11 @@ export default function PathJourney() {
 
     if (isLocked) {
       playSound('locked', 'A2', '16n');
+      const buttonEl = document.querySelector(`[data-action-id="${action.id}"]`);
+      if (buttonEl) {
+        buttonEl.classList.add('button-shake');
+        setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
+      }
       if (node.id === 'node-visitor' && action.id === 'sign-up') {
         setLockedAlertContent({
           title: "Hint",
@@ -529,7 +534,9 @@ export default function PathJourney() {
       return;
     }
 
-    if (action.id !== 'open-comprehension-test') {
+    if (action.id === 'open-comprehension-test') {
+      playSound('click', 'D4', '8n');
+    } else {
       playSound('action', 'C4', '8n');
     }
     
@@ -555,7 +562,6 @@ export default function PathJourney() {
     }
     
     if (action.action === 'open-comprehension-test') {
-      playSound('click', 'D4', '8n');
       setModalState(s => ({ ...s, comprehensionTest: true }));
       return;
     }
@@ -642,27 +648,8 @@ export default function PathJourney() {
               variant="secondary"
               size="sm"
               className={cn('w-full justify-start h-auto p-2 text-wrap')}
-              onClick={(e) => {
-                if (isLocked) {
-                  const buttonEl = e.currentTarget;
-                  buttonEl.classList.add('button-shake');
-                  setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
-                  if (node.id === 'node-visitor' && action.id === 'sign-up') {
-                    setLockedAlertContent({
-                      title: "Hint",
-                      description: "Please read the Quick-Start Guide before registering."
-                    });
-                  } else {
-                    setLockedAlertContent({
-                      title: "Prerequisite Not Met",
-                      description: "You must complete the previous steps on the path before you can perform this action."
-                    });
-                  }
-                  setShowLockedAlert(true);
-                } else {
-                  handleActionClick(action, node);
-                }
-              }}
+              data-action-id={action.id}
+              onClick={() => handleActionClick(action, node)}
               disabled={isLocked}
             >
               {isCompleted && !action.next ? Checkmark : null}
@@ -788,7 +775,12 @@ export default function PathJourney() {
               onComplete={(firstName) => {
                 setUserFirstName(firstName);
                 setNeedsProfileCompletion(false);
-                router.push('/?action=registered', { scroll: false });
+                const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+                if (targetNode) {
+                    animateUserIcon(targetNode, 1).then(() => {
+                        if (auth.currentUser) fetchUserProgress(auth.currentUser);
+                    });
+                }
               }}
             />
         )}
@@ -1003,3 +995,5 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
+
+    
