@@ -50,7 +50,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
             const data = doc.data();
             const createdAt = data.createdAt;
 
-            let applicantProfile: { name?: string, email?: string, phone?: string } = {};
+            let applicantProfile: { name?: string, email?: string, phone?: string, issue?: string, serviceProject?: string } = {};
             if (data.applicantId) {
                 const userDoc = await db.collection('users').doc(data.applicantId).get();
                 if (userDoc.exists) {
@@ -59,6 +59,8 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                         name: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim(),
                         email: userData?.email,
                         phone: userData?.phone,
+                        issue: userData?.issue,
+                        serviceProject: userData?.serviceProject,
                     };
                 }
             }
@@ -69,6 +71,8 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 applicantName: applicantProfile.name || 'Unknown Applicant',
                 applicantEmail: applicantProfile.email,
                 applicantPhone: applicantProfile.phone,
+                issue: applicantProfile.issue,
+                serviceProject: applicantProfile.serviceProject,
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : createdAt,
             };
         }));

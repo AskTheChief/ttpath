@@ -73,6 +73,8 @@ const getTribeMembersFlow = ai.defineFlow(
           email: data.email || '',
           phone: data.phone || '',
           answers: answers,
+          issue: data.issue || '',
+          serviceProject: data.serviceProject || '',
         };
       }));
 

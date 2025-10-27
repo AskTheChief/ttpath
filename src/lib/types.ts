@@ -112,6 +112,8 @@ export const ApplicationSchema = z.object({
     applicantEmail: z.string().optional(),
     applicantPhone: z.string().optional(),
     answers: z.record(z.string()).optional(),
+    issue: z.string().optional(),
+    serviceProject: z.string().optional(),
     status: z.string(),
     createdAt: z.union([z.date(), z.string()]),
 });
@@ -141,6 +143,8 @@ export const UserProfileSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
+  issue: z.string().optional(),
+  serviceProject: z.string().optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -185,6 +189,8 @@ export const TribeMemberSchema = z.object({
     email: z.string(),
     phone: z.string(),
     answers: z.record(z.string()).optional(),
+    issue: z.string().optional(),
+    serviceProject: z.string().optional(),
 });
 export type TribeMember = z.infer<typeof TribeMemberSchema>;
 

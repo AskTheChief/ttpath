@@ -426,7 +426,7 @@ function MyTribePageContent() {
     }
 };
 
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setUserProfile(prev => ({ ...prev, [id]: value }));
   };
@@ -528,20 +528,12 @@ function MyTribePageContent() {
   const renderTabs = () => {
     const tabsToShow: { value: string; label: string; icon: React.ElementType; level: number }[] = [];
   
-    if (userLevel >= 2) { // Graduate or higher
-      tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
-    }
-    if (userLevel >= 4) { // Member or higher
-      tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
-    }
-    if (userLevel >= 5) { // Chief or higher
-      tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
-    }
-    if (userLevel >= 6) { // Mentor
-      tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
-    }
+    if (userLevel >= 2) tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
+    if (userLevel >= 4) tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
+    if (userLevel >= 5) tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
+    if (userLevel >= 6) tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
     
-    // De-duplicate and sort by level
+    // Sort by level to maintain order, then filter out duplicates (not strictly necessary with this logic but good practice)
     const uniqueTabs = Array.from(new Map(tabsToShow.map(item => [item.value, item])).values())
         .sort((a, b) => a.level - b.level);
   
@@ -583,13 +575,15 @@ function MyTribePageContent() {
                     <CardDescription>View and update your personal information.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
-                        <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
-                    </div>
-                    <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
-                    <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
-                    <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
+                          <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
+                      </div>
+                      <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
+                      <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
+                      <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                      <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
+                      <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
                   </form>
@@ -832,6 +826,10 @@ function MyTribePageContent() {
                               <AccordionContent>
                                   <div className="space-y-4">
                                   <div><p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p><p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p></div>
+                                  <div>
+                                    <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
+                                    <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
+                                  </div>
                                   {member.answers && (
                                       <div>
                                       <h4 className="font-semibold mb-2">Comprehension Answers</h4>
@@ -859,6 +857,10 @@ function MyTribePageContent() {
                                   <AccordionContent>
                                   <div className="space-y-4">
                                       <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                      <div>
+                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                      </div>
                                       <div>
                                       <h4 className="font-semibold mb-2">Tutorial Answers</h4>
                                       <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
@@ -893,6 +895,10 @@ function MyTribePageContent() {
                                    <AccordionContent>
                                    <div className="space-y-4">
                                        <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
+                                      <div>
+                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                      </div>
                                        <div>
                                        <h4 className="font-semibold mb-2">Tutorial Answers</h4>
                                        <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
