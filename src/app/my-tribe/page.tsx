@@ -22,7 +22,7 @@ import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as User
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
-import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF, InfoWindowF } from '@react-google-maps/api';
+import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput, TribeMember, MeetingReport } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
@@ -38,6 +38,7 @@ import ReportModal from '@/components/modals/report-modal';
 import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
+import { getUserProgress } from '@/ai/flows/get-user-progress';
 
 
 const libraries: Libraries = ['places'];
@@ -62,9 +63,9 @@ const defaultCenter = {
 function MyTribePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const view = searchParams.get('view') || 'guest';
-
+  
   const [user, setUser] = useState<User | null>(null);
+  const [userLevel, setUserLevel] = useState(1);
   const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [newTribeName, setNewTribeName] = useState('');
@@ -96,19 +97,30 @@ function MyTribePageContent() {
     libraries,
   });
 
+  const getInitialView = (level: number) => {
+    if (level >= 6) return 'mentor';
+    if (level === 5) return 'chief';
+    if (level === 4) return 'member';
+    return 'guest';
+  };
+  
+  const view = searchParams.get('view') || getInitialView(userLevel);
+
   const isChief = userTribe && userTribe.chief === user?.uid;
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
       setIsLoading(true);
       const idToken = await currentUser.getIdToken();
-      const [allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
+      const [progress, allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
+        getUserProgress({ idToken }),
         getTribes({}),
         manageApplication({ action: 'get', type: 'join_tribe', idToken }),
         manageApplication({ action: 'get', type: 'new_tribe', idToken }),
         getUserProfile({ idToken }),
       ]);
 
+      setUserLevel(progress.currentUserLevel);
       setUserProfile(profile);
 
       const tribesWithMembers = allTribes.map(t => ({
@@ -180,6 +192,7 @@ function MyTribePageContent() {
         setApplications([]);
         setTribeCreationApps([]);
         setUserProfile({});
+        setUserLevel(1);
         setIsLoading(false);
       }
     });
@@ -510,6 +523,31 @@ function MyTribePageContent() {
 
   const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
 
+  const renderTabs = () => {
+    const tabsToShow = [];
+    tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
+    if (userLevel >= 4) {
+      tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
+    }
+    if (userLevel >= 5) {
+      tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
+    }
+    if (userLevel >= 6) {
+      tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
+    }
+    
+    return (
+      <TabsList className="grid w-full grid-cols-4 gap-4 mb-6">
+        {tabsToShow.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
+                <tab.icon className="mr-2" /> {tab.label}
+            </TabsTrigger>
+        ))}
+      </TabsList>
+    );
+  };
+
+
   return (
     <>
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -523,21 +561,8 @@ function MyTribePageContent() {
       </header>
       
       <Tabs value={view} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 gap-4 mb-6">
-          <TabsTrigger value="guest" className={tabTriggerClasses}>
-            <UserIcon className="mr-2" /> Guest
-          </TabsTrigger>
-          <TabsTrigger value="member" className={tabTriggerClasses}>
-            <UserCheck className="mr-2" /> Member
-          </TabsTrigger>
-          <TabsTrigger value="chief" className={tabTriggerClasses}>
-            <Shield className="mr-2" /> Chief
-          </TabsTrigger>
-          <TabsTrigger value="mentor" className={tabTriggerClasses}>
-            <Users className="mr-2" /> Mentor
-          </TabsTrigger>
-        </TabsList>
-
+         {renderTabs()}
+        
         <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
                 <Card>
@@ -558,46 +583,46 @@ function MyTribePageContent() {
                 </Card>
                 
                 <Card>
-                    <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="comprehension-test" className="border-b-0">
-                            <AccordionTrigger className="w-full p-6 hover:no-underline">
-                                <div className="flex items-center justify-between w-full">
-                                    <div>
-                                        <CardTitle>Comprehension Test</CardTitle>
-                                        <CardDescription className="pt-1">Click to view/edit your answers.</CardDescription>
-                                    </div>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <CardContent className="space-y-6">
-                                {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                                tutorialQuestions.map((q, i) => (
-                                <div key={i} className="grid w-full gap-1.5">
-                                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
-                                </div>
-                                ))
-                                )}
-                                </CardContent>
-                                <CardFooter className="flex flex-wrap gap-2 justify-end">
-                                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
-                                </CardFooter>
-                                {tutorialData.latestFeedback && (
-                                <CardContent>
-                                <Alert>
-                                    <Sparkles className="h-4 w-4" />
-                                    <AlertTitle className="flex justify-between">
-                                    <span>You Receive Guidance</span>
-                                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                                    </AlertTitle>
-                                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
-                                </Alert>
-                                </CardContent>
-                                )}
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="item-1" className="border-b-0">
+                      <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium [&[data-state=open]>svg]:rotate-180 hover:no-underline">
+                        <div className="flex items-center justify-between w-full">
+                            <div>
+                                <CardTitle>Comprehension Test</CardTitle>
+                                <CardDescription className="pt-1 text-left">Click to view/edit your answers.</CardDescription>
+                            </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                          <CardContent className="space-y-6">
+                          {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                          tutorialQuestions.map((q, i) => (
+                          <div key={i} className="grid w-full gap-1.5">
+                              <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                              <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                          </div>
+                          ))
+                          )}
+                          </CardContent>
+                          <CardFooter className="flex flex-wrap gap-2 justify-end">
+                          <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                          <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                          </CardFooter>
+                          {tutorialData.latestFeedback && (
+                          <CardContent>
+                          <Alert>
+                              <Sparkles className="h-4 w-4" />
+                              <AlertTitle className="flex justify-between">
+                              <span>You Receive Guidance</span>
+                              <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                              </AlertTitle>
+                              <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                          </Alert>
+                          </CardContent>
+                          )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </Card>
 
             </div>
@@ -870,3 +895,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
