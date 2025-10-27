@@ -108,6 +108,7 @@ const joinTribeFlow = ai.defineFlow(
         // If tribe has members, create an application.
         const applicationRef = db.collection('tribe_applications').doc();
         await applicationRef.set({
+          type: 'join_tribe',
           tribeId: input.tribeId,
           applicantId: user.uid,
           answers: input.answers,

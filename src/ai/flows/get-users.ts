@@ -19,6 +19,7 @@ const UserSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
+  currentUserLevel: z.number().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -47,6 +48,7 @@ const getUsersFlow = ai.defineFlow(
           email: data.email,
           phone: data.phone,
           address: data.address,
+          currentUserLevel: data.currentUserLevel,
         };
       });
       return users;
@@ -65,6 +67,7 @@ const getUsersFlow = ai.defineFlow(
                 email: data.email,
                 phone: data.phone,
                 address: data.address,
+                currentUserLevel: data.currentUserLevel,
             };
         });
         // Manual sort as a fallback

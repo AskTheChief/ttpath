@@ -74,6 +74,7 @@ function MyTribePageContent() {
   const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
   const [tutorialData, setTutorialData] = useState<GetTutorialAnswersOutput>({ answers: {} });
   const [applications, setApplications] = useState<Application[]>([]);
+  const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
@@ -101,9 +102,10 @@ function MyTribePageContent() {
     try {
       setIsLoading(true);
       const idToken = await currentUser.getIdToken();
-      const [allTribes, appsResult, profile] = await Promise.all([
+      const [allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
         getTribes({}),
-        manageApplication({ action: 'get', idToken }),
+        manageApplication({ action: 'get', type: 'join_tribe', idToken }),
+        manageApplication({ action: 'get', type: 'new_tribe', idToken }),
         getUserProfile({ idToken }),
       ]);
 
@@ -131,15 +133,20 @@ function MyTribePageContent() {
           setMeetingReports([]);
       }
 
-      if (appsResult.success && appsResult.applications) {
-        const sortedApps = appsResult.applications.map(app => ({
+      if (joinAppsResult.success && joinAppsResult.applications) {
+        const sortedApps = joinAppsResult.applications.map(app => ({
           ...app,
           createdAt: new Date(app.createdAt),
         })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setApplications(sortedApps);
-      } else if (!appsResult.success) {
-        throw new Error(appsResult.message || "Failed to fetch applications.");
+      } else if (!joinAppsResult.success) {
+        throw new Error(joinAppsResult.message || "Failed to fetch applications.");
       }
+      
+      if (newTribeAppsResult.success && newTribeAppsResult.applications) {
+          setTribeCreationApps(newTribeAppsResult.applications);
+      }
+
 
     } catch (error) {
         console.error("Error fetching page data: ", error);
@@ -171,6 +178,7 @@ function MyTribePageContent() {
         setTribeMembers([]);
         setTutorialData({ answers: {} });
         setApplications([]);
+        setTribeCreationApps([]);
         setUserProfile({});
         setIsLoading(false);
       }
@@ -209,17 +217,17 @@ function MyTribePageContent() {
         idToken: idToken,
       });
       if (result.success) {
-        toast({ title: 'Tribe Created', description: `Successfully created ${newTribeName}.` });
+        toast({ title: 'Application Submitted', description: result.message });
         setNewTribeName('');
         setNewTribeLocation('');
         setNewTribeCoords(null);
         if (user) fetchTribesAndUserData(user); // Refresh data
       } else {
-        throw new Error(result.message || 'Failed to create tribe.');
+        throw new Error(result.message || 'Failed to create tribe application.');
       }
     } catch (error: any) {
-      console.error("Error creating tribe: ", error);
-      toast({ title: 'Error', description: error.message || 'Failed to create tribe.', variant: 'destructive' });
+      console.error("Error creating tribe application: ", error);
+      toast({ title: 'Error', description: error.message || 'Failed to create tribe application.', variant: 'destructive' });
     } finally {
         setIsLoading(false);
     }
@@ -388,6 +396,7 @@ function MyTribePageContent() {
             applicationId: application.id,
             tribeId: application.tribeId,
             applicantId: application.applicantId,
+            type: application.type,
             idToken
         });
         if (result.success) {
@@ -465,7 +474,8 @@ function MyTribePageContent() {
   if (isLoading || !isLoaded) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-2xl font-semibold">Loading Your Account...</div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="text-2xl font-semibold mt-4">Loading Your Account...</div>
         <p className="text-muted-foreground">Please wait a moment.</p>
       </div>
     );
@@ -547,48 +557,49 @@ function MyTribePageContent() {
                     <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
                 </Card>
                 
-                <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="comprehension-test">
-                        <Card>
-                          <AccordionTrigger className="w-full p-0">
-                            <CardHeader className="flex-row items-center justify-between w-full p-6">
-                             <div>
-                              <CardTitle>Comprehension Test</CardTitle>
-                              <CardDescription>Click to view/edit your answers.</CardDescription>
-                             </div>
-                            </CardHeader>
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <CardContent className="space-y-6">
-                             {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                              tutorialQuestions.map((q, i) => (
-                               <div key={i} className="grid w-full gap-1.5">
-                                <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                                <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
-                               </div>
-                              ))
-                             )}
-                            </CardContent>
-                            <CardFooter className="flex flex-wrap gap-2 justify-end">
-                             <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                             <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
-                            </CardFooter>
-                            {tutorialData.latestFeedback && (
-                             <CardContent>
-                              <Alert>
-                               <Sparkles className="h-4 w-4" />
-                               <AlertTitle className="flex justify-between">
-                                <span>You Receive Guidance</span>
-                                <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                               </AlertTitle>
-                               <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
-                              </Alert>
-                             </CardContent>
-                            )}
-                          </AccordionContent>
-                        </Card>
-                    </AccordionItem>
-                </Accordion>
+                <Card>
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="comprehension-test" className="border-b-0">
+                            <AccordionTrigger className="w-full p-6 hover:no-underline">
+                                <div className="flex items-center justify-between w-full">
+                                    <div>
+                                        <CardTitle>Comprehension Test</CardTitle>
+                                        <CardDescription className="pt-1">Click to view/edit your answers.</CardDescription>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <CardContent className="space-y-6">
+                                {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                                tutorialQuestions.map((q, i) => (
+                                <div key={i} className="grid w-full gap-1.5">
+                                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                                </div>
+                                ))
+                                )}
+                                </CardContent>
+                                <CardFooter className="flex flex-wrap gap-2 justify-end">
+                                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                                </CardFooter>
+                                {tutorialData.latestFeedback && (
+                                <CardContent>
+                                <Alert>
+                                    <Sparkles className="h-4 w-4" />
+                                    <AlertTitle className="flex justify-between">
+                                    <span>You Receive Guidance</span>
+                                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                                    </AlertTitle>
+                                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                                </Alert>
+                                </CardContent>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </Card>
+
             </div>
 
             <div className="lg:col-span-2">
@@ -693,7 +704,7 @@ function MyTribePageContent() {
               <TabsContent value="chief">
               <div className="space-y-8">
                   <Card>
-                  <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Start your own tribe and invite others to join.</CardDescription></CardHeader>
+                  <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
                   <CardContent className="space-y-4">
                       <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
                       <div className="space-y-2">
@@ -705,7 +716,7 @@ function MyTribePageContent() {
                       </div>
                       </div>
                   </CardContent>
-                  <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Creating...' : 'Create Tribe'}</Button></CardFooter>
+                  <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button></CardFooter>
                   </Card>
                   {isChief && (
                   <>
@@ -811,10 +822,32 @@ function MyTribePageContent() {
                   <Card>
                       <CardHeader>
                           <CardTitle>Mentor Dashboard</CardTitle>
-                          <CardDescription>Resources and tools for mentoring new Tribe Chiefs.</CardDescription>
+                          <CardDescription>Review applications from members who want to start their own tribe.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p className="text-muted-foreground">The Mentor dashboard is under construction. Check back soon for tools to help you guide new chiefs on their journey.</p>
+                          {tribeCreationApps.length > 0 ? (
+                               <Accordion type="single" collapsible className="w-full">
+                               {tribeCreationApps.map(app => (
+                               <AccordionItem key={app.id} value={app.id}>
+                                   <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                                   <AccordionContent>
+                                   <div className="space-y-4">
+                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
+                                       <div>
+                                       <h4 className="font-semibold mb-2">Tutorial Answers</h4>
+                                       <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
+                                           {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
+                                       </div>
+                                       </div>
+                                       <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
+                                   </div>
+                                   </AccordionContent>
+                               </AccordionItem>
+                               ))}
+                           </Accordion>
+                          ) : (
+                             <p className="text-muted-foreground">There are currently no pending applications to create a new tribe.</p>
+                          )}
                       </CardContent>
                   </Card>
               </TabsContent>
@@ -837,5 +870,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    

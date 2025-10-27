@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for creating a new Tribe.
+ * @fileOverview A Genkit flow for creating a new Tribe application.
  *
- * - createTribe - A function that allows an authenticated user to create a new Tribe.
+ * - createTribe - A function that allows an authenticated user to apply to create a new Tribe.
  */
 
 import { ai } from '@/ai/genkit';
@@ -48,33 +48,30 @@ const createTribeFlow = ai.defineFlow(
       if (lat === undefined || lng === undefined) {
         throw new Error('Could not determine coordinates for the provided location.');
       }
+      
+      const userTutorialDoc = await db.collection('user_tutorials').doc(user.uid).get();
+      const answers = userTutorialDoc.exists ? userTutorialDoc.data()?.answers || {} : {};
 
-      const tribeRef = db.collection('tribes').doc();
-      const userRef = db.collection('users').doc(user.uid);
-
-      // Use a transaction to ensure atomicity
-      await db.runTransaction(async (transaction) => {
-        // Create the new tribe
-        transaction.set(tribeRef, {
-          name: name,
-          location: location,
-          lat: lat,
-          lng: lng,
-          chief: user.uid, // The user creating the tribe is the chief.
-          members: [user.uid], // The chief is automatically a member.
-          createdAt: Timestamp.now(),
-        });
-        
-        // Update the user's level to 5 (Chief)
-        transaction.update(userRef, { currentUserLevel: 5 });
+      // Create an application instead of a tribe directly
+      const applicationRef = db.collection('tribe_applications').doc();
+      await applicationRef.set({
+        type: 'new_tribe',
+        tribeName: name,
+        location: location,
+        lat: lat,
+        lng: lng,
+        applicantId: user.uid,
+        answers: answers,
+        status: 'pending',
+        createdAt: Timestamp.now(),
       });
 
-      // Return a successful response with the new tribe's ID.
-      return { success: true, tribeId: tribeRef.id };
+      // Return a successful response.
+      return { success: true, message: "Your application to create a tribe has been submitted for review by a mentor." };
     } catch (error) {
-      console.error('Error creating tribe in Firestore:', error);
+      console.error('Error creating tribe application in Firestore:', error);
       // Return a failure response.
-      return { success: false, message: 'An unexpected error occurred while creating the tribe.' };
+      return { success: false, message: 'An unexpected error occurred while submitting your application.' };
     }
   }
 );
