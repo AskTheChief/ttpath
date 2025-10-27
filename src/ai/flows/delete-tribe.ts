@@ -8,7 +8,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { DeleteTribeInputSchema, DeleteTribeOutputSchema, type DeleteTribeInput, type DeleteTribeOutput } from '@/lib/types';
 
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
 }
 const db = getFirestore();
 const adminAuth = getAuth();

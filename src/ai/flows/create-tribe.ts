@@ -16,7 +16,9 @@ import { CreateTribeInputSchema, CreateTribeOutputSchema, type CreateTribeInput,
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
 }
 const db = getFirestore();
 const adminAuth = getAuth();

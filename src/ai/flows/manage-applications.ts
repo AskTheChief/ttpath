@@ -9,7 +9,9 @@ import { ManageApplicationInputSchema, ManageApplicationOutputSchema, type Manag
 import { z } from 'zod';
 
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
 }
 const db = getFirestore();
 const adminAuth = getAuth();

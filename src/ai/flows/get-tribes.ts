@@ -7,7 +7,9 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { GetTribesInputSchema, GetTribesOutputSchema, type GetTribesInput, type GetTribesOutput } from '@/lib/types';
 
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
 }
 const db = getFirestore();
 
