@@ -113,8 +113,14 @@ export default function CompleteProfilePage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Normalize phone number
-      const normalizedPhone = profile.phone.replace(/\D/g, '');
+      // Normalize phone number: remove all non-digit characters except for a leading '+'
+      const normalizedPhone = profile.phone.replace(/[^\d+]/g, (char, index) => {
+        if (char === '+' && index === 0) {
+          return '+';
+        }
+        return /\d/.test(char) ? char : '';
+      }).replace(/(?!^)\+/g, '');
+
 
       const userProfileData: UserProfile = {
         firstName: profile.firstName,
@@ -209,7 +215,8 @@ export default function CompleteProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="profile_field_phone">Phone Number</Label>
-              <Input id="profile_field_phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required value={profile.phone || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </CardContent>
