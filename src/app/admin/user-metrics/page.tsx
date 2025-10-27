@@ -9,6 +9,7 @@ import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function UserMetricsPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -119,6 +120,37 @@ export default function UserMetricsPage() {
               <Bar dataKey="visits" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>All User Stats</CardTitle>
+          <CardDescription>A detailed list of every user and their key engagement metrics.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead className="text-right">Account Visits</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map(user => (
+                <TableRow key={user.uid}>
+                  <TableCell>{user.firstName} {user.lastName}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'N/A'}</TableCell>
+                  <TableCell className="text-right">{user.myAccountVisits ?? 0}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
