@@ -36,6 +36,13 @@ type UserProfile = {
   email: string;
 };
 
+// Map non-standard IDs to profile keys
+const idToKeyMap: Record<string, keyof UserProfile> = {
+  'profile_field_fname': 'firstName',
+  'profile_field_lname': 'lastName',
+  'profile_field_phone': 'phone',
+};
+
 export default function CompleteProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -74,7 +81,10 @@ export default function CompleteProfilePage() {
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setProfile((prev) => ({ ...prev, [id]: value }));
+    const profileKey = idToKeyMap[id];
+    if (profileKey) {
+      setProfile((prev) => ({ ...prev, [profileKey]: value }));
+    }
   };
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
@@ -160,12 +170,12 @@ export default function CompleteProfilePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
+                <Label htmlFor="profile_field_fname">First Name</Label>
+                <Input id="profile_field_fname" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
+                <Label htmlFor="profile_field_lname">Last Name</Label>
+                <Input id="profile_field_lname" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
               </div>
             </div>
             <div className="space-y-2">
@@ -194,8 +204,8 @@ export default function CompleteProfilePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              <Label htmlFor="profile_field_phone">Phone Number</Label>
+              <Input id="profile_field_phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} autoComplete="off" role="presentation" />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </CardContent>
