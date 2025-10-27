@@ -202,65 +202,70 @@ export default function PathJourney() {
     let startTime: number | null = null;
     let lastHop = 0;
 
-    const animationStep = (timestamp: number) => {
-        if (!startTime) startTime = timestamp;
-        if (!userIconRef.current || !pathRef.current) {
-          setIsAnimating(false);
-          return;
-        }
+    return new Promise<void>((resolve) => {
+      const animationStep = (timestamp: number) => {
+          if (!startTime) startTime = timestamp;
+          if (!userIconRef.current || !pathRef.current) {
+            setIsAnimating(false);
+            resolve();
+            return;
+          }
 
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        const currentLength = startLength + (endLength - startLength) * progress;
-        const point = pathRef.current.getPointAtLength(currentLength);
-        const cssPoint = mapSvgPointToCss(point);
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const currentLength = startLength + (endLength - startLength) * progress;
+          const point = pathRef.current.getPointAtLength(currentLength);
+          const cssPoint = mapSvgPointToCss(point);
 
-        if (userIconRef.current) {
-            userIconRef.current.style.left = `${cssPoint.x}px`;
-            userIconRef.current.style.top = `${cssPoint.y}px`;
-            
-            const hopProgress = (progress * hopCount) % 1;
-            const hopY = -Math.sin(hopProgress * Math.PI) * 20;
-            userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
-        }
+          if (userIconRef.current) {
+              userIconRef.current.style.left = `${cssPoint.x}px`;
+              userIconRef.current.style.top = `${cssPoint.y}px`;
+              
+              const hopProgress = (progress * hopCount) % 1;
+              const hopY = -Math.sin(hopProgress * Math.PI) * 20;
+              userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
+          }
 
 
-        const currentHop = Math.floor(progress * hopCount);
-        if (currentHop > lastHop) {
-            playSound('hop');
-            lastHop = currentHop;
-        }
-        
-        if (progress < 1) {
-            requestAnimationFrame(animationStep);
-        } else {
-             if (!pathRef.current || !userIconRef.current) {
-                setIsAnimating(false);
-                return;
-             }
-             const finalPoint = mapSvgPointToCss(pathRef.current.getPointAtLength(endLength));
-             if (userIconRef.current) {
-                userIconRef.current.style.left = `${finalPoint.x}px`;
-                userIconRef.current.style.top = `${finalPoint.y}px`;
-                userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
-             }
-             setIsAnimating(false);
+          const currentHop = Math.floor(progress * hopCount);
+          if (currentHop > lastHop) {
+              playSound('hop');
+              lastHop = currentHop;
+          }
+          
+          if (progress < 1) {
+              requestAnimationFrame(animationStep);
+          } else {
+              if (!pathRef.current || !userIconRef.current) {
+                  setIsAnimating(false);
+                  resolve();
+                  return;
+              }
+              const finalPoint = mapSvgPointToCss(pathRef.current.getPointAtLength(endLength));
+              if (userIconRef.current) {
+                  userIconRef.current.style.left = `${finalPoint.x}px`;
+                  userIconRef.current.style.top = `${finalPoint.y}px`;
+                  userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
+              }
+              setIsAnimating(false);
 
-            playSound('progress');
-            triggerConfetti(finalPoint.x, finalPoint.y);
+              playSound('progress');
+              triggerConfetti(finalPoint.x, finalPoint.y);
 
-            if (targetNode.id === 'node-guest') {
-                toast({
-                    title: "Welcome, Guest!",
-                    description: `You can now proceed on your journey.`,
-                });
-            } else if (targetNode.id === 'node-graduate') {
-                toast({
-                    title: "Congratulations, You Graduate!",
-                });
-            }
-        }
-    };
-    requestAnimationFrame(animationStep);
+              if (targetNode.id === 'node-guest') {
+                  toast({
+                      title: "Welcome, Guest!",
+                      description: `You can now proceed on your journey.`,
+                  });
+              } else if (targetNode.id === 'node-graduate') {
+                  toast({
+                      title: "Congratulations, You Graduate!",
+                  });
+              }
+              resolve();
+          }
+      };
+      requestAnimationFrame(animationStep);
+    });
   }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
 
   const placeElementsOnPath = useCallback(() => {
@@ -304,7 +309,9 @@ export default function PathJourney() {
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
-    if (action?.id !== 'open-comprehension-test') {
+    if (action?.id === 'open-comprehension-test') {
+      // Don't play complete sound yet, only when "I feel ready" is clicked.
+    } else {
       playSound('complete');
     }
     
@@ -314,9 +321,8 @@ export default function PathJourney() {
     let newLevel = currentUserLevel;
     let nextNode: PathNodeData | undefined;
     
-    const nextNodeId = action?.next;
-    if (nextNodeId) {
-        nextNode = pathNodesData.find(n => n.id === `node-${nextNodeId}`);
+    if (action?.next) { 
+        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
         if (nextNode) {
             newLevel = nextNode.level;
         }
@@ -340,8 +346,8 @@ export default function PathJourney() {
     
     if (nextNode && nextNode.level > currentUserLevel) {
         const oldLevel = currentUserLevel;
+        await animateUserIcon(nextNode, oldLevel);
         setCurrentUserLevel(newLevel);
-        animateUserIcon(nextNode, oldLevel);
     } else {
       if (selectedNodeId) {
         const currentSelected = selectedNodeId;
@@ -403,23 +409,27 @@ export default function PathJourney() {
 
   useEffect(() => {
     const action = searchParams.get('action');
-    const justSignedUp = action === 'registered';
+    const justRegistered = action === 'registered';
 
-    if (justSignedUp) {
+    if (justRegistered) {
       router.replace('/', { scroll: false }); // Clean URL
-      const tempUnsubscribe = onAuthStateChanged(auth, (user) => {
+      const tempUnsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
           tempUnsubscribe(); // Stop listening after we get the user
           setIsLoadingProgress(false);
           // Manually set state to trigger animation
           setCurrentUser(user);
-          setCurrentUserLevel(1);
+          setCurrentUserLevel(1); // Start at visitor for animation
           setRequirementsState({ 'sign-up': true });
           
+          const profile = await getUserProfile({idToken: await user.getIdToken()});
+          setUserFirstName(profile.firstName || null);
+
           const targetNode = pathNodesData.find(n => n.id === 'node-guest');
           if (targetNode) {
+            // Animate, then set final level
             animateUserIcon(targetNode, 1).then(() => {
-              fetchUserProgress(user); // Fetch full progress after animation
+              setCurrentUserLevel(2); 
             });
           }
         }
@@ -430,7 +440,7 @@ export default function PathJourney() {
       });
       return () => unsubscribe();
     }
-  }, [searchParams, router, animateUserIcon, fetchUserProgress]);
+  }, []); // Only run this once on mount
   
 
   useEffect(() => {
@@ -777,9 +787,9 @@ export default function PathJourney() {
                 setNeedsProfileCompletion(false);
                 const targetNode = pathNodesData.find(n => n.id === 'node-guest');
                 if (targetNode) {
-                    animateUserIcon(targetNode, 1).then(() => {
-                        if (auth.currentUser) fetchUserProgress(auth.currentUser);
-                    });
+                  animateUserIcon(targetNode, 1).then(() => {
+                    setCurrentUserLevel(2);
+                  });
                 }
               }}
             />
@@ -995,5 +1005,3 @@ export default function PathJourney() {
     </TooltipProvider>
   );
 }
-
-    
