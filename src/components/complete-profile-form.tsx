@@ -165,7 +165,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
                             mapContainerStyle={{ height: '100%', width: '100%' }}
                             center={coords || defaultCenter}
                             zoom={coords ? 15 : 4}
-                            options={{ disableDefaultUI: true, styles: [{ stylers: [{ 'saturation': -100 }] }] }}
+                            options={{ disableDefaultUI: true }}
                         >
                             {coords && <MarkerF position={coords} />}
                         </GoogleMap>
