@@ -23,7 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import CompleteProfileForm from '@/components/complete-profile-form';
@@ -62,6 +62,7 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
@@ -356,11 +357,24 @@ export default function PathJourney() {
     }
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
   
-  const fetchUserProgress = useCallback(async (user: FirebaseUser | null, justSignedUp = false) => {
+  const fetchUserProgress = useCallback(async (user: FirebaseUser | null) => {
     setIsAuthLoading(true);
     setIsLoadingProgress(true);
     
-    if (user) {
+    const action = searchParams.get('action');
+
+    if (action === 'registered' && user) {
+        setNeedsProfileCompletion(false);
+        const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+        if (targetNode) {
+          await animateUserIcon(targetNode, 1);
+        }
+        setCurrentUserLevel(2);
+        const idToken = await user.getIdToken();
+        const profile = await getUserProfile({ idToken });
+        setUserFirstName(profile.firstName || null);
+        router.replace('/', undefined);
+    } else if (user) {
       setCurrentUser(user);
       try {
         const idToken = await user.getIdToken();
@@ -370,9 +384,7 @@ export default function PathJourney() {
         ]);
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
-          if (justSignedUp) {
-            setNeedsProfileCompletion(true);
-          }
+          setNeedsProfileCompletion(true);
           setIsLoadingProgress(false);
           setIsAuthLoading(false);
           return; 
@@ -403,8 +415,12 @@ export default function PathJourney() {
     }
     setIsAuthLoading(false);
     setIsLoadingProgress(false);
-  }, [toast]);
+  }, [toast, searchParams, animateUserIcon, router]);
 
+  const handleSignupSuccess = useCallback((user: FirebaseUser) => {
+    setCurrentUser(user);
+    setNeedsProfileCompletion(true);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -514,7 +530,8 @@ export default function PathJourney() {
       setShowLockedAlert(true);
       return;
     }
-
+    
+    // Play single click sound for opening the test
     if (action.id === 'open-comprehension-test') {
       playSound('click', 'C4', '8n');
     } else {
@@ -607,13 +624,14 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
+          // This is the fix: explicitly hide the button for this action ID.
+          if (action.id === 'complete-comprehension-test') {
+            return null;
+          }
+
           const isCompleted = requirementsState[action.id];
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           
-          if (action.id === 'complete-comprehension-test' && currentUserLevel < 3) {
-            return null; // Hide this button until the test modal is used to trigger it.
-          }
-
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
@@ -730,6 +748,18 @@ export default function PathJourney() {
     );
   }
 
+  const handleProfileComplete = useCallback((firstName: string) => {
+    setNeedsProfileCompletion(false);
+    setUserFirstName(firstName);
+    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+    if (targetNode) {
+        animateUserIcon(targetNode, 1).then(() => {
+            setCurrentUserLevel(2);
+        });
+    }
+  }, [animateUserIcon]);
+
+
   return (
     <TooltipProvider delayDuration={100}>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
@@ -753,16 +783,7 @@ export default function PathJourney() {
         {needsProfileCompletion && (
            <CompleteProfileForm
               user={currentUser}
-              onComplete={(firstName) => {
-                setNeedsProfileCompletion(false);
-                const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-                if (targetNode) {
-                  animateUserIcon(targetNode, 1).then(() => {
-                    setCurrentUserLevel(2);
-                    setUserFirstName(firstName);
-                  });
-                }
-              }}
+              onComplete={handleProfileComplete}
             />
         )}
 
@@ -938,7 +959,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onSignupSuccess={(user) => fetchUserProgress(user, true)}
+        onSignupSuccess={handleSignupSuccess}
         showLogin={showLoginModal}
       />
       <LoginModal 
