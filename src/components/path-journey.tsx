@@ -26,7 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
-import CompleteProfileModal from './modals/complete-profile-modal';
+import CompleteProfileForm from './complete-profile-form';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -76,6 +76,8 @@ export default function PathJourney() {
     title: "Prerequisite Not Met",
     description: "You must complete the previous steps on the path before you can perform this action."
   });
+  
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
 
 
   const [modalState, setModalState] = useState({
@@ -87,7 +89,6 @@ export default function PathJourney() {
     link: false,
     video: false,
     menu: false,
-    completeProfile: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -202,7 +203,7 @@ export default function PathJourney() {
 
     const animationStep = (timestamp: number) => {
         if (!startTime) startTime = timestamp;
-        if (!userIconRef.current) { // Add check here
+        if (!userIconRef.current) {
           setIsAnimating(false);
           return;
         }
@@ -212,12 +213,12 @@ export default function PathJourney() {
         const point = pathRef.current!.getPointAtLength(currentLength);
         const cssPoint = mapSvgPointToCss(point);
 
-        userIconRef.current!.style.left = `${cssPoint.x}px`;
-        userIconRef.current!.style.top = `${cssPoint.y}px`;
+        userIconRef.current.style.left = `${cssPoint.x}px`;
+        userIconRef.current.style.top = `${cssPoint.y}px`;
         
         const hopProgress = (progress * hopCount) % 1;
         const hopY = -Math.sin(hopProgress * Math.PI) * 20;
-        userIconRef.current!.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
+        userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
 
         const currentHop = Math.floor(progress * hopCount);
         if (currentHop > lastHop) {
@@ -229,9 +230,9 @@ export default function PathJourney() {
             requestAnimationFrame(animationStep);
         } else {
              const finalPoint = mapSvgPointToCss(pathRef.current!.getPointAtLength(endLength));
-             userIconRef.current!.style.left = `${finalPoint.x}px`;
-             userIconRef.current!.style.top = `${finalPoint.y}px`;
-             userIconRef.current!.style.transform = 'translate(-50%, -50%)'; 
+             userIconRef.current.style.left = `${finalPoint.x}px`;
+             userIconRef.current.style.top = `${finalPoint.y}px`;
+             userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
              setIsAnimating(false);
 
             playSound('progress');
@@ -356,7 +357,6 @@ export default function PathJourney() {
     setIsAuthLoading(true);
     setIsLoadingProgress(true);
     let initialLevel = 1;
-    let animateToLevel: number | null = null;
     
     if (user) {
       setCurrentUser(user);
@@ -369,7 +369,7 @@ export default function PathJourney() {
 
         if (!profile.firstName) {
           if (justSignedUp) {
-            setModalState(s => ({ ...s, completeProfile: true }));
+            setNeedsProfileCompletion(true);
           }
           // Don't set state yet, wait for profile completion.
           setIsLoadingProgress(false);
@@ -403,7 +403,7 @@ export default function PathJourney() {
     }
     setIsAuthLoading(false);
     setIsLoadingProgress(false);
-  }, [toast, animateUserIcon]);
+  }, [toast]);
 
 
   useEffect(() => {
@@ -664,7 +664,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video' | 'completeProfile'> | 'pamphlet' | 'comprehensionTest' | 'video' | 'completeProfile') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -759,6 +759,18 @@ export default function PathJourney() {
             style={{ backgroundColor: 'transparent' }}
           />
         </div>
+
+        {needsProfileCompletion && (
+           <CompleteProfileForm
+              user={currentUser}
+              onComplete={(firstName) => {
+                setUserFirstName(firstName);
+                setNeedsProfileCompletion(false);
+                completeRequirement('sign-up');
+              }}
+            />
+        )}
+
 
         <div className="menu-icon-container">
           <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
@@ -952,16 +964,6 @@ export default function PathJourney() {
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
-      />
-      <CompleteProfileModal
-        isOpen={modalState.completeProfile}
-        user={currentUser}
-        onClose={() => setModalState(s => ({...s, completeProfile: false}))}
-        onComplete={(firstName) => {
-            setUserFirstName(firstName);
-            completeRequirement('sign-up');
-            setModalState(s => ({...s, completeProfile: false}));
-        }}
       />
       <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
         <AlertDialogContent>

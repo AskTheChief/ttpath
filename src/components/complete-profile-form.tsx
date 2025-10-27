@@ -7,30 +7,29 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
+import { cn } from '@/lib/utils';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
   width: '100%',
   height: '200px',
   borderRadius: '0.5rem',
-  marginTop: '0.5rem',
+  marginBottom: '1rem',
 };
 const defaultCenter = {
   lat: 39.8283,
   lng: -98.5795,
 };
 
-type CompleteProfileModalProps = {
-  isOpen: boolean;
+type CompleteProfileFormProps = {
   user: User | null;
-  onClose: () => void;
   onComplete: (firstName: string) => void;
 };
 
@@ -49,18 +48,18 @@ const idToKeyMap: Record<string, keyof UserProfile> = {
   'profile_field_phone': 'phone',
 };
 
-export default function CompleteProfileModal({ isOpen, user, onClose, onComplete }: CompleteProfileModalProps) {
+export default function CompleteProfileForm({ user, onComplete }: CompleteProfileFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Partial<UserProfile>>({});
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
-
+  
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     const profileKey = idToKeyMap[id];
@@ -68,7 +67,7 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
       setProfile((prev) => ({ ...prev, [profileKey]: value }));
     }
   };
-  
+
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
     if (place.formatted_address) {
       setProfile((prev) => ({ ...prev, address: place.formatted_address }));
@@ -80,7 +79,7 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
       });
     }
   };
-
+  
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -137,25 +136,26 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Complete Your Profile</DialogTitle>
-          <DialogDescription>
-            Let's get your profile details set up to continue your journey.
-          </DialogDescription>
-        </DialogHeader>
+    <div className={cn(
+        "absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    )}>
+      <Card className="w-full max-w-lg shadow-2xl">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
+          <CardDescription>Let's get your profile details set up to continue your journey.</CardDescription>
+        </CardHeader>
         <form onSubmit={handleProfileSubmit} noValidate>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="profile_field_fname">First Name</Label>
-                    <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="profile_field_lname">Last Name</Label>
-                    <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-                </div>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="profile_field_fname">First Name</Label>
+                <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile_field_lname">Last Name</Label>
+                <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              </div>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
@@ -165,7 +165,7 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
                             mapContainerStyle={{ height: '100%', width: '100%' }}
                             center={coords || defaultCenter}
                             zoom={coords ? 15 : 4}
-                            options={{ disableDefaultUI: true }}
+                            options={{ disableDefaultUI: true, styles: [{ stylers: [{ 'saturation': -100 }] }] }}
                         >
                             {coords && <MarkerF position={coords} />}
                         </GoogleMap>
@@ -173,7 +173,7 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
                 )}
                 {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
                 <LocationAutocomplete
-                    id="address"
+                    id="address" // This ID must be unique
                     placeholder="123 Main St, Anytown, USA"
                     onPlaceSelected={handlePlaceSelected}
                     initialValue={profile.address || ''}
@@ -189,14 +189,14 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
               <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
             </div>
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading} className="w-full">
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Registration'}
             </Button>
-          </DialogFooter>
+          </CardFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Card>
+    </div>
   );
 }
