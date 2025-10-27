@@ -34,11 +34,10 @@ type UserProfile = {
   address: string;
   phone: string;
   email: string;
-  createdAt: number;
 };
 
 // Map non-standard IDs to profile keys
-const idToKeyMap: Record<string, keyof Omit<UserProfile, 'createdAt' | 'email'>> = {
+const idToKeyMap: Record<string, keyof Omit<UserProfile, 'email'>> = {
   'profile_field_fname': 'firstName',
   'profile_field_lname': 'lastName',
   'profile_field_phone': 'phone',
@@ -70,7 +69,6 @@ export default function CompleteProfilePage() {
           setUser(currentUser);
           setProfile({ 
             email: currentUser.email || '',
-            createdAt: new Date(currentUser.metadata.creationTime || Date.now()).getTime(),
            });
           setIsLoading(false);
         }

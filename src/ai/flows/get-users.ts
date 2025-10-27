@@ -46,11 +46,11 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
         if (timestamp instanceof Timestamp) {
             return timestamp.toMillis();
         }
-        if (typeof timestamp === 'number') {
-            return timestamp; // Already a number
-        }
         if (timestamp && typeof timestamp.toDate === 'function') {
             return timestamp.toDate().getTime();
+        }
+        if (typeof timestamp === 'number') {
+            return timestamp; // Already a number
         }
         return undefined;
     };
