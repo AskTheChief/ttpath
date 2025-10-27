@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2 } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -62,7 +62,7 @@ const defaultCenter = {
 function MyTribePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const view = searchParams.get('view') || 'member';
+  const view = searchParams.get('view') || 'guest';
 
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
@@ -513,7 +513,10 @@ function MyTribePageContent() {
       </header>
 
       <Tabs value={view} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4 gap-2">
+          <TabsTrigger value="guest" className={tabTriggerClasses}>
+            <UserIcon className="mr-2" /> Guest
+          </TabsTrigger>
           <TabsTrigger value="member" className={tabTriggerClasses}>
             <UserCheck className="mr-2" /> Member
           </TabsTrigger>
@@ -524,6 +527,61 @@ function MyTribePageContent() {
             <Users className="mr-2" /> Mentor
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="guest" className="mt-6">
+           <div className="grid lg:grid-cols-3 gap-8">
+             <div className="lg:col-span-1 space-y-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>My Profile</CardTitle>
+                    <CardDescription>View and update your personal information.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
+                      <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
+                    </div>
+                    <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
+                    <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
+                    <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                  </CardContent>
+                  <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                </Card>
+             </div>
+             <main className="lg:col-span-2 space-y-8">
+                <Card>
+                  <CardHeader><CardTitle>Comprehension Test</CardTitle><CardDescription>You may review and edit your answers and save your work below.</CardDescription></CardHeader>
+                  <CardContent className="space-y-6">
+                    {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                      tutorialQuestions.map((q, i) => (
+                        <div key={i} className="grid w-full gap-1.5">
+                          <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                          <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                    <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
+                  </CardFooter>
+                  {tutorialData.latestFeedback && (
+                    <CardContent>
+                      <Alert>
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle className="flex justify-between">
+                          <span>You Receive Guidance</span>
+                          <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                        </AlertTitle>
+                        <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  )}
+                </Card>
+             </main>
+           </div>
+        </TabsContent>
+
         <TabsContent value="member" className="mt-6">
           <div className="grid lg:grid-cols-3 gap-8">
             <aside className="lg:col-span-1 space-y-8">
@@ -612,51 +670,7 @@ function MyTribePageContent() {
                 )}
             </aside>
             <main className="lg:col-span-2 space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>My Profile</CardTitle>
-                  <CardDescription>View and update your personal information.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
-                    <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
-                  </div>
-                  <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
-                  <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
-                  <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
-                </CardContent>
-                <CardFooter><Button onClick={handleSaveProfile} disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
-              </Card>
-              <Card>
-                <CardHeader><CardTitle>Comprehension Test</CardTitle><CardDescription>You may review and edit your answers and save your work below.</CardDescription></CardHeader>
-                <CardContent className="space-y-6">
-                  {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                    tutorialQuestions.map((q, i) => (
-                      <div key={i} className="grid w-full gap-1.5">
-                        <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                        <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                  <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
-                </CardFooter>
-                 {tutorialData.latestFeedback && (
-                  <CardContent>
-                    <Alert>
-                      <Terminal className="h-4 w-4" />
-                      <AlertTitle className="flex justify-between">
-                        <span>You Receive Guidance</span>
-                        <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                      </AlertTitle>
-                      <AlertDescription>{tutorialData.latestFeedback.feedback}</AlertDescription>
-                    </Alert>
-                  </CardContent>
-                )}
-              </Card>
+              <p className="text-muted-foreground">This is your member dashboard. View your tribe information and meeting schedules here.</p>
             </main>
           </div>
         </TabsContent>
@@ -673,9 +687,7 @@ function MyTribePageContent() {
                     <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                     <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
                     <div className="mt-2">
-                        <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }}>
-                            {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                        </GoogleMap>
+                        <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }}><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
                     </div>
                   </div>
                 </CardContent>
@@ -803,5 +815,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
