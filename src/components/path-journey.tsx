@@ -23,7 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import CompleteProfileForm from '@/components/complete-profile-form';
@@ -62,7 +62,6 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
@@ -371,8 +370,6 @@ export default function PathJourney() {
         ]);
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
-          // If the profile is incomplete, don't set level/reqs yet.
-          // The modal will handle the progression.
           setNeedsProfileCompletion(true);
           setCurrentUserLevel(1);
           setRequirementsState({});
@@ -411,6 +408,26 @@ export default function PathJourney() {
     setCurrentUser(user);
     setNeedsProfileCompletion(true);
   }, []);
+
+  const onProfileComplete = useCallback(async (firstName: string) => {
+    setUserFirstName(firstName);
+    setNeedsProfileCompletion(false);
+
+    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+    if (targetNode) {
+        await animateUserIcon(targetNode, 1);
+        setCurrentUserLevel(targetNode.level);
+        if (auth.currentUser) {
+            const idToken = await auth.currentUser.getIdToken();
+            await updateUserProgress({
+                currentUserLevel: 2,
+                requirementsState: { 'sign-up': true },
+                idToken,
+            });
+        }
+    }
+  }, [animateUserIcon]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -495,8 +512,7 @@ export default function PathJourney() {
     }
   };
 
-  const handleActionClick = (action: PathAction, node: PathNodeData) => {
-    
+  const handleActionClick = async (action: PathAction, node: PathNodeData) => {
     const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
 
     if (isLocked) {
@@ -506,27 +522,16 @@ export default function PathJourney() {
         buttonEl.classList.add('button-shake');
         setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
       }
-      if (node.id === 'node-visitor' && action.id === 'sign-up') {
-        setLockedAlertContent({
-          title: "Hint",
-          description: "Please read the Quick-Start Guide before registering."
-        });
-      } else {
-        setLockedAlertContent({
-          title: "Prerequisite Not Met",
-          description: "You must complete the previous steps on the path before you can perform this action."
-        });
-      }
+      setLockedAlertContent({
+        title: "Prerequisite Not Met",
+        description: "You must complete the previous steps on the path before you can perform this action."
+      });
       setShowLockedAlert(true);
       return;
     }
-    
-    if (action.id === 'open-comprehension-test') {
-      playSound('click', 'C4', '8n');
-    } else {
-      playSound('action', 'C4', '8n');
-    }
-    
+
+    playSound('action', 'C4', '8n');
+
     const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe';
     if (requiresAuth && !isGuest) {
       toast({
@@ -534,12 +539,12 @@ export default function PathJourney() {
         title: "Authentication Required",
         description: "You must be logged in to perform this action.",
       });
-      setModalState(s => ({...s, login: true}));
+      setModalState(s => ({ ...s, login: true }));
       return;
     }
 
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
-      const url = action.action === 'open-pamphlet' 
+      const url = action.action === 'open-pamphlet'
         ? 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/'
         : 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0';
       
@@ -547,28 +552,29 @@ export default function PathJourney() {
       setModalState(s => ({ ...s, link: true }));
       return;
     }
-    
+
     if (action.action === 'open-comprehension-test') {
       setModalState(s => ({ ...s, comprehensionTest: true }));
       return;
     }
-    
+
     if (action.id === 'watch-video') {
-      setModalState(s => ({...s, video: true}));
+      setModalState(s => ({ ...s, video: true }));
       return;
     }
     
     if (action.action === 'navigate-my-tribe') {
-        router.push('/my-tribe');
+        const targetRole = action.next || (currentUserLevel === 5 ? 'chief' : (currentUserLevel === 4 ? 'member' : 'mentor'));
+        router.push(`/my-tribe?view=${targetRole}`);
+    }
+
+    if (action.id === 'sign-up' && !isGuest) {
+        setModalState(s => ({...s, signup: true}));
         return;
     }
-    
-    if (action.next) { 
-        if (action.id === 'sign-up' && !isGuest) {
-            setModalState(s => ({...s, signup: true}));
-            return;
-        }
-        completeRequirement(action.id);
+
+    if (action.next) {
+        await completeRequirement(action.id);
     }
   };
 
@@ -613,10 +619,6 @@ export default function PathJourney() {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
-          if (action.id === 'complete-comprehension-test') {
-            return null;
-          }
-
           const isCompleted = requirementsState[action.id];
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           
@@ -665,7 +667,7 @@ export default function PathJourney() {
         setLinkModalData({
             title: 'Library',
             url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
-            requirementId: null, // No requirement for just opening library
+            requirementId: null,
         });
         setModalState(s => ({ ...s, link: true, menu: false }));
     } else if (modalName) {
@@ -736,18 +738,6 @@ export default function PathJourney() {
     );
   }
 
-  const handleProfileComplete = useCallback((firstName: string) => {
-    setNeedsProfileCompletion(false);
-    setUserFirstName(firstName);
-    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-    if (targetNode) {
-        animateUserIcon(targetNode, 1).then(() => {
-            setCurrentUserLevel(2);
-        });
-    }
-  }, [animateUserIcon]);
-
-
   return (
     <TooltipProvider delayDuration={100}>
       <div id="path-container" className="path-container" ref={pathContainerRef}>
@@ -771,7 +761,7 @@ export default function PathJourney() {
         {needsProfileCompletion && (
            <CompleteProfileForm
               user={currentUser}
-              onComplete={handleProfileComplete}
+              onComplete={onProfileComplete}
             />
         )}
 
