@@ -419,7 +419,7 @@ function MyTribePageContent() {
       } else {
         throw new Error(result.message || 'Failed to update profile.');
       }
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
@@ -550,15 +550,15 @@ function MyTribePageContent() {
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="comprehension-test">
                         <Card>
-                         <AccordionTrigger className="w-full">
+                          <AccordionTrigger className="w-full p-0">
                             <CardHeader className="flex-row items-center justify-between w-full p-6">
                              <div>
                               <CardTitle>Comprehension Test</CardTitle>
                               <CardDescription>Click to view/edit your answers.</CardDescription>
                              </div>
                             </CardHeader>
-                         </AccordionTrigger>
-                         <AccordionContent>
+                          </AccordionTrigger>
+                          <AccordionContent>
                             <CardContent className="space-y-6">
                              {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
                               tutorialQuestions.map((q, i) => (
@@ -585,7 +585,7 @@ function MyTribePageContent() {
                               </Alert>
                              </CardContent>
                             )}
-                         </AccordionContent>
+                          </AccordionContent>
                         </Card>
                     </AccordionItem>
                 </Accordion>
@@ -837,3 +837,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
