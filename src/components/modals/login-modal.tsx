@@ -30,7 +30,7 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
       await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Login Successful!",
-        description: "Welcome back to the Tribe!",
+        description: "Welcome back!",
       });
       onClose();
     } catch (error: any) {
@@ -49,9 +49,9 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Guest Login</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Login</DialogTitle>
           <DialogDescription>
-            Enter your credentials to continue as a guest.
+            Enter your credentials to access your account.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleEmailLogin}>
@@ -68,10 +68,10 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
           </div>
           <div className="p-4 border-t flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login as Guest"}
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
             <Button type="button" variant="link" onClick={showSignup} disabled={isLoading} className="w-full">
-              Don't have a guest account? Become a Guest
+              Don't have an account? Sign Up
             </Button>
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading} className="w-full">
               Cancel

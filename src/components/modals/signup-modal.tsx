@@ -152,11 +152,11 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            {step === 1 ? 'Become a Guest (Step 1/2)' : 'Complete Your Profile (Step 2/2)'}
+            {step === 1 ? 'Create Account (Step 1/2)' : 'Complete Your Profile (Step 2/2)'}
           </DialogTitle>
           <DialogDescription>
             {step === 1 
-              ? "Create your account credentials to join as a Guest."
+              ? "Create your account credentials to join."
               : "Now, let's get your profile details."}
           </DialogDescription>
         </DialogHeader>
