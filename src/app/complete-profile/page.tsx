@@ -201,6 +201,7 @@ export default function CompleteProfilePage() {
                 required
                 disabled={!isLoaded}
                 autoComplete="off"
+                role="presentation"
               />
             </div>
             <div className="space-y-2">
