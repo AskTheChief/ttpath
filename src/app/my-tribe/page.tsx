@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar as CalendarIcon, Trash2, Users } from 'lucide-react';
+import { Terminal, Calendar as CalendarIcon, Trash2, Users, Loader2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTribeMembers } from '@/ai/flows/get-tribe-members';
 import { getMeetingReports } from '@/ai/flows/get-meeting-reports';
 import ReportModal from '@/components/modals/report-modal';
+import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 
 
 const libraries: Libraries = ['places'];
@@ -79,6 +80,7 @@ export default function MyTribePage() {
   const [ampm, setAmPm] = useState('PM');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   const { toast } = useToast();
   
@@ -419,6 +421,38 @@ export default function MyTribePage() {
   const handleMeetingReportAction = (meeting: Meeting) => {
     setSelectedMeeting(meeting);
     setIsReportModalOpen(true);
+  };
+
+  const handleReceiveFeedback = async () => {
+    if (!user) return;
+    setIsEvaluating(true);
+    try {
+        const idToken = await user.getIdToken();
+        const evaluation = await evaluateTutorialAnswers({ answers: tutorialData.answers, idToken });
+        
+        // The flow already saves the feedback, so we just need to update the local state to show it.
+        setTutorialData(prev => ({
+            ...prev,
+            latestFeedback: {
+                feedback: evaluation.feedback,
+                createdAt: new Date().toISOString(),
+            }
+        }));
+
+        toast({
+            title: "You Receive Guidance",
+            description: "The Chief provides new feedback for you to consider.",
+        });
+
+    } catch (error: any) {
+        toast({
+            title: "An Error Occurred",
+            description: error.message || "There was a problem getting feedback. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsEvaluating(false);
+    }
   };
   
   if (isLoading || !isLoaded) {
@@ -905,15 +939,18 @@ export default function MyTribePage() {
                       value={tutorialData.answers[q] || ''}
                       onChange={(e) => handleAnswerChange(q, e.target.value)}
                       placeholder="Your answer..."
-                      disabled={isLoading}
+                      disabled={isLoading || isEvaluating}
                     />
                   </div>
                 ))
               )}
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveAnswers} disabled={isLoading}>
+            <CardFooter className="flex justify-between">
+              <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>
                 {isLoading ? 'Saving...' : 'Save Answers'}
+              </Button>
+              <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>
+                {isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}
               </Button>
             </CardFooter>
           </Card>
