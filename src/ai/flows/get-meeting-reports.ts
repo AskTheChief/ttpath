@@ -30,10 +30,23 @@ const getMeetingReportsFlow = ai.defineFlow(
     const userId = decodedToken.uid;
 
     try {
+      // Fetch the requesting user's profile to check their level
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      const userLevel = userDoc.exists() ? userDoc.data()?.currentUserLevel || 1 : 1;
+
       const tribeRef = db.collection('tribes').doc(tribeId);
       const tribeDoc = await tribeRef.get();
-      if (!tribeDoc.exists || !(tribeDoc.data()?.members || []).includes(userId)) {
-          throw new Error("You are not a member of this tribe and cannot view its reports.");
+
+      // Security Check: User must be a member of the tribe OR a mentor (level 6+)
+      if (userLevel < 6) {
+        if (!tribeDoc.exists || !(tribeDoc.data()?.members || []).includes(userId)) {
+            throw new Error("You are not a member of this tribe and cannot view its reports.");
+        }
+      } else {
+        if (!tribeDoc.exists) {
+            throw new Error("Tribe not found.");
+        }
       }
 
       const reportsSnapshot = await db.collection('meeting_reports')
