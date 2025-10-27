@@ -41,9 +41,19 @@ export async function getUsers(): Promise<GetUsersOutput> {
 const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
     const data = doc.data() || {};
     
-    // Convert Firestore Timestamp to milliseconds since epoch (number)
-    const createdAt = data.createdAt ? (data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : (typeof data.createdAt === 'number' ? data.createdAt : undefined)) : undefined;
-    const lastLoginAt = data.lastLoginAt ? (data.lastLoginAt instanceof Timestamp ? data.lastLoginAt.toMillis() : (typeof data.lastLoginAt === 'number' ? data.lastLoginAt : undefined)) : undefined;
+    // Safely convert Firestore Timestamp to milliseconds since epoch (number)
+    const toMillis = (timestamp: any): number | undefined => {
+        if (timestamp instanceof Timestamp) {
+            return timestamp.toMillis();
+        }
+        if (typeof timestamp === 'number') {
+            return timestamp; // Already a number
+        }
+        if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate().getTime();
+        }
+        return undefined;
+    };
 
     return {
       uid: doc.id,
@@ -53,8 +63,8 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
       phone: data.phone,
       address: data.address,
       currentUserLevel: data.currentUserLevel,
-      createdAt: createdAt,
-      lastLoginAt: lastLoginAt,
+      createdAt: toMillis(data.createdAt),
+      lastLoginAt: toMillis(data.lastLoginAt),
       myAccountVisits: data.myAccountVisits,
       issue: data.issue,
       serviceProject: data.serviceProject,
