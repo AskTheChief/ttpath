@@ -161,9 +161,9 @@ function MyTribePageContent() {
       }
 
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching page data: ", error);
-        toast({ title: 'Error', description: 'Could not load your tribe and tutorial data.', variant: 'destructive' });
+        toast({ title: 'Error', description: error.message || 'Could not load your tribe and tutorial data.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -526,8 +526,11 @@ function MyTribePageContent() {
   const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
 
   const renderTabs = () => {
-    const tabsToShow = [];
-    tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
+    const tabsToShow: { value: string; label: string; icon: React.ElementType; level: number }[] = [];
+
+    if (userLevel >= 2) {
+      tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
+    }
     if (userLevel >= 4) {
       tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
     }
@@ -538,13 +541,11 @@ function MyTribePageContent() {
       tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
     }
     
-    // Filter tabs based on user level
-    const visibleTabs = tabsToShow.filter(tab => userLevel >= tab.level);
-    if(visibleTabs.length <= 1 && userLevel < 4) return null; // Don't show tabs for guests
+    if(tabsToShow.length <= 1) return null;
 
     return (
-      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${visibleTabs.length}`)}>
-        {visibleTabs.map(tab => (
+      <TabsList className={cn("grid w-full gap-4 mb-6", `grid-cols-${tabsToShow.length}`)}>
+        {tabsToShow.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className={tabTriggerClasses}>
                 <tab.icon className="mr-2" /> {tab.label}
             </TabsTrigger>
