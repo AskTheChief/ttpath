@@ -25,4 +25,5 @@ import '@/ai/flows/get-tribe-members.ts';
 import '@/ai/flows/submit-meeting-report.ts';
 import '@/ai/flows/get-meeting-reports.ts';
 import '@/ai/flows/send-test-email.ts';
+import '@/ai/flows/normalize-phone-numbers.ts';
 
