@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -12,6 +12,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
+import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
+import LocationAutocomplete from '@/components/location-autocomplete';
+
+const libraries: Libraries = ['places'];
+const mapContainerStyle = {
+  width: '100%',
+  height: '200px',
+  borderRadius: '0.5rem',
+  marginTop: '0.5rem',
+};
+const defaultCenter = {
+  lat: 39.8283,
+  lng: -98.5795,
+};
 
 type CompleteProfileModalProps = {
   isOpen: boolean;
@@ -32,7 +46,6 @@ type UserProfile = {
 const idToKeyMap: Record<string, keyof UserProfile> = {
   'profile_field_fname': 'firstName',
   'profile_field_lname': 'lastName',
-  'profile_field_address': 'address',
   'profile_field_phone': 'phone',
 };
 
@@ -40,13 +53,31 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Partial<UserProfile>>({});
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     const profileKey = idToKeyMap[id];
     if (profileKey) {
       setProfile((prev) => ({ ...prev, [profileKey]: value }));
+    }
+  };
+  
+  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
+    if (place.formatted_address) {
+      setProfile((prev) => ({ ...prev, address: place.formatted_address }));
+    }
+    if (place.geometry?.location) {
+      setCoords({
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      });
     }
   };
 
@@ -107,7 +138,7 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Complete Your Profile</DialogTitle>
           <DialogDescription>
@@ -115,30 +146,52 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleProfileSubmit} noValidate>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profile_field_fname" className="text-right">First Name</Label>
-              <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="profile_field_fname">First Name</Label>
+                    <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="profile_field_lname">Last Name</Label>
+                    <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profile_field_lname" className="text-right">Last Name</Label>
-              <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
+            <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                {isLoaded && !loadError && (
+                    <div style={mapContainerStyle}>
+                        <GoogleMap
+                            mapContainerStyle={{ height: '100%', width: '100%' }}
+                            center={coords || defaultCenter}
+                            zoom={coords ? 15 : 4}
+                            options={{ disableDefaultUI: true }}
+                        >
+                            {coords && <MarkerF position={coords} />}
+                        </GoogleMap>
+                    </div>
+                )}
+                {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
+                <LocationAutocomplete
+                    id="address"
+                    placeholder="123 Main St, Anytown, USA"
+                    onPlaceSelected={handlePlaceSelected}
+                    initialValue={profile.address || ''}
+                    required
+                    disabled={!isLoaded}
+                    autoComplete="off"
+                    role="presentation"
+                />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profile_field_address" className="text-right">Address</Label>
-              <Input id="profile_field_address" placeholder="123 Main St, Anytown, USA" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
+            <div className="space-y-2">
+              <Label htmlFor="profile_field_phone">Phone Number</Label>
+              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profile_field_phone" className="text-right">Phone</Label>
-              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
-            </div>
-             <p className="text-sm text-muted-foreground col-span-4 pl-[calc(25%+1rem)]">
-                Please include your country code (e.g., +1 for USA).
-            </p>
-            {error && <p className="text-sm text-destructive col-span-4 text-center">{error}</p>}
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Registration'}
             </Button>
           </DialogFooter>
