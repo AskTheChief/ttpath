@@ -6,21 +6,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { getDoc, doc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { useState } from "react";
 
 type SignupModalProps = {
   isOpen: boolean;
   onClose: () => void;
   showLogin: () => void;
+  onSignupSuccess: (user: User) => void;
 };
 
-export default function SignupModal({ isOpen, onClose, showLogin }: SignupModalProps) {
+export default function SignupModal({ isOpen, onClose, showLogin, onSignupSuccess }: SignupModalProps) {
   const { toast } = useToast();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,18 +42,11 @@ export default function SignupModal({ isOpen, onClose, showLogin }: SignupModalP
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
       
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        toast({ title: "Login Successful!", description: "Welcome back to the Tribe!" });
-        handleClose();
-        router.push('/'); // User already exists, just log them in and send to home.
-      } else {
-        toast({ title: "Account Created!", description: "Please complete your profile to continue." });
-        handleClose();
-        router.push('/complete-profile'); // New user, redirect to profile completion page.
-      }
+      toast({ title: "Account Created!", description: "Please complete your profile to continue." });
+      
+      onSignupSuccess(userCredential.user);
+      handleClose();
 
     } catch (error: any) {
       setError(error.message);

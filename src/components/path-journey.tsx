@@ -26,6 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
+import CompleteProfileModal from './modals/complete-profile-modal';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -69,7 +70,6 @@ export default function PathJourney() {
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
   const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
-  const [splashHasFinished, setSplashHasFinished] = useState(false);
   
   const [showLockedAlert, setShowLockedAlert] = useState(false);
   const [lockedAlertContent, setLockedAlertContent] = useState({
@@ -87,6 +87,7 @@ export default function PathJourney() {
     link: false,
     video: false,
     menu: false,
+    completeProfile: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -201,6 +202,11 @@ export default function PathJourney() {
 
     const animationStep = (timestamp: number) => {
         if (!startTime) startTime = timestamp;
+        if (!userIconRef.current) { // Add check here
+          setIsAnimating(false);
+          return;
+        }
+
         const progress = Math.min((timestamp - startTime) / duration, 1);
         const currentLength = startLength + (endLength - startLength) * progress;
         const point = pathRef.current!.getPointAtLength(currentLength);
@@ -288,7 +294,6 @@ export default function PathJourney() {
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     if (!action) return;
 
-    // This handles non-level-advancing requirements
     if (!action.next) {
         const newReqs = { ...requirementsState, [reqId]: true };
         setRequirementsState(newReqs);
@@ -301,7 +306,6 @@ export default function PathJourney() {
             }
         }
         playSound('complete');
-        // Re-render the info panel if open
         if(selectedNodeId) setSelectedNodeId(selectedNodeId);
         return;
     }
@@ -348,75 +352,67 @@ export default function PathJourney() {
     }
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
   
-  useEffect(() => {
-    const action = searchParams.get('action');
+  const fetchUserProgress = useCallback(async (user: FirebaseUser | null, justSignedUp = false) => {
+    setIsAuthLoading(true);
+    setIsLoadingProgress(true);
+    let initialLevel = 1;
+    let animateToLevel: number | null = null;
+    
+    if (user) {
+      setCurrentUser(user);
+      try {
+        const idToken = await user.getIdToken();
+        const [progress, profile] = await Promise.all([
+          getUserProgress({ idToken }),
+          getUserProfile({ idToken }),
+        ]);
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsAuthLoading(true);
-      setIsLoadingProgress(true);
-
-      let initialLevel = 1;
-      let animateToLevel: number | null = null;
-      
-      if (action === 'registered' && !user) {
-        // This can happen in a race condition. Wait for user state.
-      } else if (action === 'registered' && user) {
-        initialLevel = 1;
-        animateToLevel = 2;
-        // Clean up URL
-        router.replace('/', { scroll: false });
-      }
-
-      if (user) {
-        setCurrentUser(user);
-        try {
-          const idToken = await user.getIdToken(true);
-          const [progress, profile] = await Promise.all([
-            getUserProgress({ idToken }),
-            getUserProfile({ idToken }),
-          ]);
-          
-          if (!profile.firstName) {
-            router.push('/complete-profile');
-            return;
+        if (!profile.firstName) {
+          if (justSignedUp) {
+            setModalState(s => ({ ...s, completeProfile: true }));
           }
-
-          if (!animateToLevel) {
-            initialLevel = progress.currentUserLevel || 1;
-          }
-          setCurrentUserLevel(initialLevel);
-          setRequirementsState(progress.requirementsState || {});
-          setUserFirstName(profile.firstName || null);
-
-          if (animateToLevel) {
-            const targetNode = pathNodesData.find(n => n.level === animateToLevel);
-            if (targetNode) {
-                // Use a timeout to ensure initial state is rendered
-                setTimeout(() => {
-                    setCurrentUserLevel(animateToLevel!);
-                    animateUserIcon(targetNode, initialLevel);
-                }, 100);
-            }
-          }
-
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setCurrentUserLevel(1);
-          setRequirementsState({});
-          setUserFirstName(null);
+          // Don't set state yet, wait for profile completion.
+          setIsLoadingProgress(false);
+          setIsAuthLoading(false);
+          return; 
         }
-      } else {
-        setCurrentUser(null);
+        
+        initialLevel = progress.currentUserLevel || 1;
+        setCurrentUserLevel(initialLevel);
+        setRequirementsState(progress.requirementsState || {});
+        setUserFirstName(profile.firstName || null);
+
+      } catch (error: any) {
+        if (error.code === 'auth/quota-exceeded') {
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Too many requests. Please try again later.",
+          });
+        }
+        console.error("Error fetching user data:", error);
         setCurrentUserLevel(1);
         setRequirementsState({});
         setUserFirstName(null);
       }
-      setIsAuthLoading(false);
-      setIsLoadingProgress(false);
-    });
+    } else {
+      setCurrentUser(null);
+      setCurrentUserLevel(1);
+      setRequirementsState({});
+      setUserFirstName(null);
+    }
+    setIsAuthLoading(false);
+    setIsLoadingProgress(false);
+  }, [toast, animateUserIcon]);
 
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      fetchUserProgress(user);
+    });
     return () => unsubscribe();
-  }, [router, searchParams, animateUserIcon]);
+  }, [fetchUserProgress]);
+  
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -428,12 +424,10 @@ export default function PathJourney() {
     
     setIsMounted(true);
 
-
     setTimeout(() => {
         setShowSplash(false);
         setTimeout(() => {
           setShowCurtain(false);
-          setSplashHasFinished(true);
           setTimeout(() => {
             setLogoZIndex(0);
           }, 1000);
@@ -670,7 +664,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video' | 'completeProfile'> | 'pamphlet' | 'comprehensionTest' | 'video' | 'completeProfile') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -718,13 +712,6 @@ export default function PathJourney() {
         title: "Failed to Send Email",
         description: error.message,
       });
-    }
-  };
-
-  const handleStartHereClick = () => {
-    const visitorNode = pathNodesData.find(node => node.id === 'node-visitor');
-    if (visitorNode) {
-        handleNodeClick(visitorNode);
     }
   };
 
@@ -944,6 +931,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
+        onSignupSuccess={(user) => fetchUserProgress(user, true)}
         showLogin={showLoginModal}
       />
       <LoginModal 
@@ -964,6 +952,16 @@ export default function PathJourney() {
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
+      />
+      <CompleteProfileModal
+        isOpen={modalState.completeProfile}
+        user={currentUser}
+        onClose={() => setModalState(s => ({...s, completeProfile: false}))}
+        onComplete={(firstName) => {
+            setUserFirstName(firstName);
+            completeRequirement('sign-up');
+            setModalState(s => ({...s, completeProfile: false}));
+        }}
       />
       <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
         <AlertDialogContent>
