@@ -113,11 +113,14 @@ export default function CompleteProfilePage() {
     setIsLoading(true);
     setError(null);
     try {
+      // Normalize phone number
+      const normalizedPhone = profile.phone.replace(/\D/g, '');
+
       const userProfileData: UserProfile = {
         firstName: profile.firstName,
         lastName: profile.lastName,
         address: profile.address,
-        phone: profile.phone,
+        phone: normalizedPhone,
         email: user.email!,
       };
 
