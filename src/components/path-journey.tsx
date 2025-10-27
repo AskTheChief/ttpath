@@ -182,8 +182,7 @@ export default function PathJourney() {
   }, []);
 
   const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number) => {
-    if (isAnimating || !pathRef.current) return;
-    if (!userIconRef.current) return;
+    if (isAnimating || !pathRef.current || !userIconRef.current) return;
 
     setIsAnimating(true);
     setSelectedNodeId(null);
@@ -303,34 +302,14 @@ export default function PathJourney() {
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     if (!action) return;
 
-    if (!action.next) {
-        const newReqs = { ...requirementsState, [reqId]: true };
-        setRequirementsState(newReqs);
-        if (isGuest && auth.currentUser) {
-            try {
-                const idToken = await auth.currentUser.getIdToken();
-                await updateUserProgress({ currentUserLevel, requirementsState: newReqs, idToken });
-            } catch (error) {
-                console.error("Failed to save requirement progress:", error);
-            }
-        }
-        
-        if (reqId === 'complete-comprehension-test') {
-            const nextNode = pathNodesData.find(n => n.id === 'node-graduate');
-            if (nextNode && nextNode.level > currentUserLevel) {
-                const oldLevel = currentUserLevel;
-                setCurrentUserLevel(nextNode.level);
-                animateUserIcon(nextNode, oldLevel);
-            } else {
-                playSound('complete');
-            }
-        } else if (reqId !== 'open-comprehension-test') {
-            playSound('complete');
-        }
-
-        if(selectedNodeId) setSelectedNodeId(selectedNodeId);
-        return;
+    if (action.id === 'open-comprehension-test') {
+      playSound('click', 'D4', '8n');
+    } else {
+      playSound('complete');
     }
+
+    const newReqs = { ...requirementsState, [reqId]: true };
+    setRequirementsState(newReqs);
 
     let newLevel = currentUserLevel;
     let nextNode: PathNodeData | undefined;
@@ -342,16 +321,10 @@ export default function PathJourney() {
         }
     }
     
-    const newReqs = { ...requirementsState, [reqId]: true };
-    const newProgress = {
-        currentUserLevel: newLevel,
-        requirementsState: newReqs,
-    };
-    
     if (isGuest && auth.currentUser) {
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await updateUserProgress({ ...newProgress, idToken });
+            await updateUserProgress({ currentUserLevel: newLevel, requirementsState: newReqs, idToken });
         } catch (error) {
             console.error("Failed to save progress:", error);
             toast({
@@ -359,18 +332,23 @@ export default function PathJourney() {
                 description: "Could not save your progress. Please try again.",
                 variant: "destructive",
             });
+            // Revert state if save fails
+            setRequirementsState(requirementsState);
             return; 
         }
     }
-    
-    setRequirementsState(newReqs);
     
     if (nextNode && nextNode.level > currentUserLevel) {
         const oldLevel = currentUserLevel;
         setCurrentUserLevel(newLevel);
         animateUserIcon(nextNode, oldLevel);
     } else {
-        playSound('complete');
+      // Refresh selected node to update checkmark
+      if (selectedNodeId) {
+        const currentSelected = selectedNodeId;
+        setSelectedNodeId(null); 
+        setTimeout(() => setSelectedNodeId(currentSelected), 0);
+      }
     }
   }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
   
@@ -430,30 +408,30 @@ export default function PathJourney() {
 
     const runAnimation = () => {
       const action = searchParams.get('action');
-      if (action === 'registered') {
+      if (action === 'registered' && !isGuest) { // only run animation if not already guest
         const targetNode = pathNodesData.find(n => n.id === 'node-guest');
         const startNode = pathNodesData.find(n => n.id === 'node-visitor');
         if (targetNode && startNode) {
-          // Temporarily set level to 1 for animation, then let real progress load.
           setCurrentUserLevel(1);
-          setIsLoadingProgress(false); // Faking progress load to enable animation
-          // Need a small delay to ensure the UI has updated to level 1
+          setIsLoadingProgress(false); 
           animationFrameId = requestAnimationFrame(() => {
             animateUserIcon(targetNode, startNode.level).then(() => {
-              // After animation, fetch real progress
               if(auth.currentUser) fetchUserProgress(auth.currentUser);
             });
           });
-          // Clean up URL
-          router.replace('/', undefined);
+          router.replace('/', { scroll: false });
         }
       } else {
-         if(auth.currentUser) fetchUserProgress(auth.currentUser);
+         fetchUserProgress(auth.currentUser);
       }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-        runAnimation();
+       if (user) {
+         fetchUserProgress(user);
+       } else {
+         runAnimation();
+       }
     });
 
     if(!auth.currentUser) {
@@ -466,7 +444,7 @@ export default function PathJourney() {
             cancelAnimationFrame(animationFrameId);
         }
     };
-  }, [searchParams, router, animateUserIcon, fetchUserProgress]);
+  }, [searchParams, router, animateUserIcon, fetchUserProgress, isGuest]);
   
 
   useEffect(() => {
@@ -656,8 +634,8 @@ export default function PathJourney() {
           const isCompleted = requirementsState[action.id];
           const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
           
-          if (action.id === 'complete-comprehension-test' && node.level > currentUserLevel) {
-            return null;
+          if (action.id === 'complete-comprehension-test') {
+            return null; // Don't render this button, it's triggered from the modal
           }
 
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
