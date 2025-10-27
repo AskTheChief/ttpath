@@ -43,6 +43,7 @@ export const pathNodesData: PathNodeData[] = [
     actions: [
       { id: "read-full-book", label: "Read the Trading Tribe Source Manual", action: "open-full-book" },
       { id: "open-comprehension-test", label: "Take or Edit Comprehension test answers", action: "open-comprehension-test", dependsOn: "read-full-book" },
+      { id: "complete-comprehension-test", label: "Path to Graduate", next: "graduate", dependsOn: "open-comprehension-test" }
     ],
     panelPos: "left"
   },
@@ -52,7 +53,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.40,
     title: "Graduate",
     req: "",
-    description: "As a Graduate, you may apply to join an existing Tribe. You may also take the initiative to start your own.",
+    description: "As a graduate, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
       { id: "go-to-my-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe" },
     ],
@@ -95,5 +96,3 @@ export const pathNodesData: PathNodeData[] = [
     panelPos: "left"
   }
 ];
-
-    
