@@ -46,6 +46,10 @@ const getUsersFlow = ai.defineFlow(
       
       const users = usersSnapshot.docs.map(doc => {
         const data = doc.data();
+        // Firestore Timestamps need to be converted to a serializable format (string)
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const lastLoginAt = data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt;
+
         return {
           uid: doc.id,
           firstName: data.firstName,
@@ -54,8 +58,8 @@ const getUsersFlow = ai.defineFlow(
           phone: data.phone,
           address: data.address,
           currentUserLevel: data.currentUserLevel,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
-          lastLoginAt: data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt,
+          createdAt: createdAt,
+          lastLoginAt: lastLoginAt,
           myAccountVisits: data.myAccountVisits,
         };
       });
@@ -68,6 +72,8 @@ const getUsersFlow = ai.defineFlow(
         const usersSnapshot = await db.collection('users').get();
         const users = usersSnapshot.docs.map(doc => {
             const data = doc.data();
+            const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+            const lastLoginAt = data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt;
             return {
                 uid: doc.id,
                 firstName: data.firstName,
@@ -76,8 +82,8 @@ const getUsersFlow = ai.defineFlow(
                 phone: data.phone,
                 address: data.address,
                 currentUserLevel: data.currentUserLevel,
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
-                lastLoginAt: data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt,
+                createdAt: createdAt,
+                lastLoginAt: lastLoginAt,
                 myAccountVisits: data.myAccountVisits,
             };
         });
