@@ -101,7 +101,7 @@ function MyTribePageContent() {
   const getInitialView = (level: number) => {
     if (level >= 6) return 'mentor';
     if (level === 5) return 'chief';
-    if (level === 4) return 'member';
+    if (level >= 4) return 'member';
     return 'guest';
   };
   
@@ -694,14 +694,14 @@ function MyTribePageContent() {
 
                                 return (
                                   <AccordionItem key={meeting.id} value={meeting.id}>
-                                    <AccordionTrigger>
-                                      <div className="flex justify-between items-center w-full">
-                                        <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
-                                        <Button variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleMeetingReportAction(meeting, userReport); }}>
-                                          {userReport ? 'View My Report' : 'Submit My Report'}
-                                        </Button>
-                                      </div>
-                                    </AccordionTrigger>
+                                    <div className="flex items-center w-full">
+                                      <AccordionTrigger className="flex-grow">
+                                          <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
+                                      </AccordionTrigger>
+                                      <Button variant="secondary" size="sm" className="ml-4 mr-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
+                                        {userReport ? 'View My Report' : 'Submit My Report'}
+                                      </Button>
+                                    </div>
                                     <AccordionContent>
                                       <div className="space-y-2 pl-4">
                                         <h4 className="font-semibold text-sm">Submitted Reports:</h4>
