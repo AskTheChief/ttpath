@@ -89,9 +89,9 @@ const getMeetingReportsFlow = ai.defineFlow(
       });
 
       return reports;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching meeting reports:', error);
-      throw new Error('An unexpected error occurred while fetching meeting reports.');
+      throw new Error(error.message || 'An unexpected error occurred while fetching meeting reports.');
     }
   }
 );
