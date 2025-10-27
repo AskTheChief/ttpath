@@ -28,6 +28,14 @@ type UserProfile = {
   email: string;
 };
 
+// Map non-standard IDs to profile keys
+const idToKeyMap: Record<string, keyof UserProfile> = {
+  'profile_field_fname': 'firstName',
+  'profile_field_lname': 'lastName',
+  'profile_field_address': 'address',
+  'profile_field_phone': 'phone',
+};
+
 export default function CompleteProfileModal({ isOpen, user, onClose, onComplete }: CompleteProfileModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +43,11 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
   const [error, setError] = useState<string | null>(null);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    const { id, value } = e.target;
+    const profileKey = idToKeyMap[id];
+    if (profileKey) {
+      setProfile((prev) => ({ ...prev, [profileKey]: value }));
+    }
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -103,23 +114,23 @@ export default function CompleteProfileModal({ isOpen, user, onClose, onComplete
             Let's get your profile details set up to continue your journey.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleProfileSubmit}>
+        <form onSubmit={handleProfileSubmit} noValidate>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="firstName" className="text-right">First Name</Label>
-              <Input id="firstName" name="firstName" placeholder="John" required onChange={handleProfileChange} className="col-span-3" />
+              <Label htmlFor="profile_field_fname" className="text-right">First Name</Label>
+              <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lastName" className="text-right">Last Name</Label>
-              <Input id="lastName" name="lastName" placeholder="Doe" required onChange={handleProfileChange} className="col-span-3" />
+              <Label htmlFor="profile_field_lname" className="text-right">Last Name</Label>
+              <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="address" className="text-right">Address</Label>
-              <Input id="address" name="address" placeholder="123 Main St, Anytown, USA" required onChange={handleProfileChange} className="col-span-3" />
+              <Label htmlFor="profile_field_address" className="text-right">Address</Label>
+              <Input id="profile_field_address" placeholder="123 Main St, Anytown, USA" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">Phone</Label>
-              <Input id="phone" name="phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} className="col-span-3" />
+              <Label htmlFor="profile_field_phone" className="text-right">Phone</Label>
+              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} className="col-span-3" autoComplete="off" role="presentation" />
             </div>
              <p className="text-sm text-muted-foreground col-span-4 pl-[calc(25%+1rem)]">
                 Please include your country code (e.g., +1 for USA).
