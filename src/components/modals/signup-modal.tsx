@@ -10,7 +10,7 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import LocationAutocomplete from '@/components/location-autocomplete';
 
 type SignupModalProps = {
   isOpen: boolean;
@@ -147,6 +147,12 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     setProfile(prev => ({ ...prev, [id]: value }));
   };
 
+  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
+    if (place.formatted_address) {
+      setProfile(prev => ({ ...prev, address: place.formatted_address }));
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
@@ -205,7 +211,13 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
              </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
-                <Input id="address" placeholder="123 Main St, Anytown, USA" required value={profile.address || ''} onChange={handleProfileChange} />
+                <LocationAutocomplete 
+                    id="address" 
+                    placeholder="123 Main St, Anytown, USA"
+                    onPlaceSelected={handlePlaceSelected}
+                    initialValue={profile.address || ''}
+                    required
+                />
               </div>
              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
