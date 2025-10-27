@@ -9,6 +9,21 @@ import { updateUserLevel } from '@/ai/flows/update-user-level';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteUser } from '@/ai/flows/delete-user';
+
 
 const levelMap: Record<number, string> = {
   1: "Visitor",
@@ -70,6 +85,27 @@ export default function UserTable() {
     }
   };
 
+  const handleDeleteUser = async (targetUserId: string, targetUserName: string) => {
+    if (!adminUser) {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in as an admin.'});
+        return;
+    }
+
+    try {
+        const idToken = await adminUser.getIdToken(true);
+        const result = await deleteUser({ idToken, targetUserId });
+        if (result.success) {
+            toast({ title: 'Success', description: `${targetUserName} has been deleted.` });
+            setUsers(prevUsers => prevUsers.filter(u => u.uid !== targetUserId));
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Deletion Failed', description: error.message });
+    }
+  };
+
+
   return (
     <Table>
       <TableHeader>
@@ -79,12 +115,13 @@ export default function UserTable() {
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
           <TableHead>Level</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={5} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={6} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
@@ -97,6 +134,7 @@ export default function UserTable() {
                 <Select
                   value={user.currentUserLevel?.toString()}
                   onValueChange={(value) => handleLevelChange(user.uid, value)}
+                  disabled={user.uid === adminUser?.uid}
                 >
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Set level" />
@@ -108,11 +146,38 @@ export default function UserTable() {
                   </SelectContent>
                 </Select>
               </TableCell>
+              <TableCell className="text-right">
+                 <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                     <Button variant="destructive" size="icon" disabled={user.uid === adminUser?.uid}>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete User</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the user <span className="font-bold">{user.firstName} {user.lastName}</span> and all associated data. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteUser(user.uid, `${user.firstName} ${user.lastName}`)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={5} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={6} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>

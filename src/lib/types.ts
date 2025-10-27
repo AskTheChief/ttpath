@@ -252,3 +252,17 @@ export const UpdateUserLevelOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type UpdateUserLevelOutput = z.infer<typeof UpdateUserLevelOutputSchema>;
+
+
+// src/ai/flows/delete-user.ts
+export const DeleteUserInputSchema = z.object({
+  idToken: z.string().describe("The admin's Firebase ID token for authentication."),
+  targetUserId: z.string().describe("The UID of the user to delete."),
+});
+export type DeleteUserInput = z.infer<typeof DeleteUserInputSchema>;
+
+export const DeleteUserOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
