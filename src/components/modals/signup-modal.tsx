@@ -7,70 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, User } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { getDoc, doc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import LocationAutocomplete from '@/components/location-autocomplete';
-import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
-
-const libraries: Libraries = ['places'];
-const mapContainerStyle = {
-  width: '100%',
-  height: '200px',
-  borderRadius: '0.5rem',
-  marginBottom: '1rem',
-};
-const defaultCenter = {
-    lat: 39.8283,
-    lng: -98.5795,
-};
 
 type SignupModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (reqId: string, name?: string) => void;
   showLogin: () => void;
 };
 
-type UserProfile = {
-  firstName: string;
-  lastName: string;
-  address: string;
-  phone: string;
-  email: string;
-};
-
-export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: SignupModalProps) {
+export default function SignupModal({ isOpen, onClose, showLogin }: SignupModalProps) {
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  const [profile, setProfile] = useState<Partial<UserProfile>>({
-    firstName: '',
-    lastName: '',
-    address: '',
-    phone: '',
-  });
-  const [coords, setCoords] = useState<{lat: number; lng: number} | null>(null);
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
 
   const resetState = () => {
-    setStep(1);
     setEmail('');
     setPassword('');
     setError(null);
     setIsLoading(false);
-    setUser(null);
-    setProfile({});
-    setCoords(null);
   };
   
   const handleClose = () => {
@@ -78,35 +38,25 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     onClose();
   };
 
-  const processUserRegistration = async (user: User) => {
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      toast({
-        title: "Login Successful!",
-        description: "Welcome back to the Tribe!",
-      });
-      const profileData = userDoc.data();
-      onComplete("sign-up", profileData?.firstName);
-      handleClose();
-    } else {
-      setUser(user);
-      setProfile(prev => ({ 
-        ...prev, 
-        email: user.email || '',
-      }));
-      setStep(2);
-    }
-  }
-
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await processUserRegistration(userCredential.user);
+      const user = userCredential.user;
+      
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        toast({ title: "Login Successful!", description: "Welcome back to the Tribe!" });
+        handleClose();
+        router.push('/'); // User already exists, just log them in and send to home.
+      } else {
+        toast({ title: "Account Created!", description: "Please complete your profile to continue." });
+        handleClose();
+        router.push('/complete-profile'); // New user, redirect to profile completion page.
+      }
+
     } catch (error: any) {
       setError(error.message);
       toast({
@@ -119,160 +69,41 @@ export default function SignupModal({ isOpen, onClose, onComplete, showLogin }: 
     }
   };
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-        setError("No user authenticated. Please restart the registration process.");
-        return;
-    }
-    if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
-        setError("All fields are required.");
-        return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    try {
-      const userProfileData: UserProfile = {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        address: profile.address,
-        phone: profile.phone,
-        email: user.email!,
-      };
-      
-      await setDoc(doc(db, "users", user.uid), userProfileData);
-
-      toast({
-        title: "Registration Successful!",
-        description: "Welcome to the Tribe! You are now a Guest.",
-      });
-      onComplete("sign-up", userProfileData.firstName);
-      handleClose();
-    } catch (error: any)
-      {
-      setError(error.message);
-      toast({
-        variant: "destructive",
-        title: "Profile Creation Failed",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setProfile(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
-    if (place.formatted_address) {
-      setProfile(prev => ({ ...prev, address: place.formatted_address }));
-    }
-    if (place.geometry?.location) {
-        setCoords({
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-        });
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            {step === 1 ? 'Create Account (Step 1/2)' : 'Complete Your Profile (Step 2/2)'}
+            Create Account
           </DialogTitle>
           <DialogDescription>
-            {step === 1 
-              ? "Create your account credentials to join."
-              : "Now, let's get your profile details."}
+            Create your account credentials to join.
           </DialogDescription>
         </DialogHeader>
-
-        {step === 1 && (
-          <div>
-            <form onSubmit={handleEmailSignup}>
-              <div className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-signup">Email Address</Label>
-                  <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-signup">Password</Label>
-                  <Input type="password" id="password-signup" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
-              <div className="p-4 border-t flex flex-col gap-2">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Registering..." : "Continue"}
-                </Button>
-                <Button type="button" variant="link" onClick={showLogin} disabled={isLoading} className="w-full">
-                  Already have an account? Log In
-                </Button>
-                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading} className="w-full">
-                  Cancel
-                </Button>
-              </div>
-            </form>
+        <form onSubmit={handleEmailSignup}>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-signup">Email Address</Label>
+              <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password-signup">Password</Label>
+              <Input type="password" id="password-signup" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-        )}
-
-        {step === 2 && (
-           <form onSubmit={handleProfileSubmit} noValidate>
-           <div className="p-6 space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" required value={profile.firstName || ''} onChange={handleProfileChange} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" required value={profile.lastName || ''} onChange={handleProfileChange} />
-                </div>
-             </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                 {isLoaded && !loadError && (
-                    <div style={mapContainerStyle}>
-                        <GoogleMap
-                            mapContainerStyle={{ height: '100%', width: '100%' }}
-                            center={coords || defaultCenter}
-                            zoom={coords ? 15 : 4}
-                            options={{ disableDefaultUI: true }}
-                        >
-                            {coords && <MarkerF position={coords} />}
-                        </GoogleMap>
-                    </div>
-                 )}
-                 {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
-                <LocationAutocomplete 
-                    id="address" 
-                    placeholder="123 Main St, Anytown, USA"
-                    onPlaceSelected={handlePlaceSelected}
-                    initialValue={profile.address || ''}
-                    required
-                    disabled={!isLoaded}
-                />
-              </div>
-             <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" placeholder="+1 (555) 555-5555" required value={profile.phone || ''} onChange={handleProfileChange} />
-             </div>
-             {error && <p className="text-sm text-destructive">{error}</p>}
-           </div>
-           <div className="p-4 border-t flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
-             <Button type="submit" className="w-full" disabled={isLoading}>
-               {isLoading ? "Saving Profile..." : "Complete Registration"}
-             </Button>
-           </div>
-         </form>
-        )}
+          <div className="p-4 border-t flex flex-col gap-2">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Registering..." : "Create Account & Continue"}
+            </Button>
+            <Button type="button" variant="link" onClick={() => { onClose(); showLogin(); }} disabled={isLoading} className="w-full">
+              Already have an account? Log In
+            </Button>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading} className="w-full">
+              Cancel
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

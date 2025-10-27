@@ -359,6 +359,13 @@ export default function PathJourney() {
             getUserProgress({ idToken }),
             getUserProfile({ idToken }),
           ]);
+          
+          if (!profile.firstName) {
+            // New user who hasn't completed profile
+            router.push('/complete-profile');
+            return;
+          }
+
           setCurrentUserLevel(progress.currentUserLevel || 1);
           setRequirementsState(progress.requirementsState || {});
           setUserFirstName(profile.firstName || null);
@@ -379,7 +386,7 @@ export default function PathJourney() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
@@ -907,7 +914,6 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onComplete={completeRequirement}
         showLogin={showLoginModal}
       />
       <LoginModal 
