@@ -67,7 +67,7 @@ export default function UsersPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>User Profiles</CardTitle>
-            <CardDescription>A list of all registered users and their contact information.</CardDescription>
+            <CardDescription>A list of all registered users, their stats, and contact information.</CardDescription>
           </div>
            <AlertDialog>
             <AlertDialogTrigger asChild>

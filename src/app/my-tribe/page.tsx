@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, updateDoc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/ai/flows/get-tutorial-answers';
 import { tutorialQuestions } from '@/lib/data';
@@ -113,6 +114,17 @@ function MyTribePageContent() {
     try {
       setIsLoading(true);
       const idToken = await currentUser.getIdToken();
+      
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if(userDoc.exists()){
+        await updateDoc(userDocRef, {
+            lastLoginAt: serverTimestamp(),
+            myAccountVisits: increment(1)
+        });
+      }
+
+
       const [progress, allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
         getUserProgress({ idToken }),
         getTribes({}),

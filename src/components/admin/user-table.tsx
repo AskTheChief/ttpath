@@ -115,13 +115,16 @@ export default function UserTable() {
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
           <TableHead>Level</TableHead>
+          <TableHead>Created At</TableHead>
+          <TableHead>Last Login</TableHead>
+          <TableHead>Account Visits</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={9} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
@@ -146,6 +149,9 @@ export default function UserTable() {
                   </SelectContent>
                 </Select>
               </TableCell>
+              <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+              <TableCell>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'N/A'}</TableCell>
+              <TableCell>{user.myAccountVisits ?? 0}</TableCell>
               <TableCell className="text-right">
                  <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -177,7 +183,7 @@ export default function UserTable() {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={9} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>

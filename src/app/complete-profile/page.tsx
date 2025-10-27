@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
@@ -34,10 +34,11 @@ type UserProfile = {
   address: string;
   phone: string;
   email: string;
+  createdAt: string;
 };
 
 // Map non-standard IDs to profile keys
-const idToKeyMap: Record<string, keyof UserProfile> = {
+const idToKeyMap: Record<string, keyof Omit<UserProfile, 'createdAt' | 'email'>> = {
   'profile_field_fname': 'firstName',
   'profile_field_lname': 'lastName',
   'profile_field_phone': 'phone',
@@ -67,7 +68,10 @@ export default function CompleteProfilePage() {
           router.push('/');
         } else {
           setUser(currentUser);
-          setProfile({ email: currentUser.email || '' });
+          setProfile({ 
+            email: currentUser.email || '',
+            createdAt: currentUser.metadata.creationTime ? new Date(currentUser.metadata.creationTime).toISOString() : new Date().toISOString(),
+           });
           setIsLoading(false);
         }
       } else {
@@ -122,12 +126,15 @@ export default function CompleteProfilePage() {
       }).replace(/(?!^)\+/g, '');
 
 
-      const userProfileData: UserProfile = {
+      const userProfileData = {
         firstName: profile.firstName,
         lastName: profile.lastName,
         address: profile.address,
         phone: normalizedPhone,
         email: user.email!,
+        createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
+        lastLoginAt: serverTimestamp(),
+        myAccountVisits: 0,
       };
 
       await setDoc(doc(db, 'users', user.uid), userProfileData);

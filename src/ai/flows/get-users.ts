@@ -22,6 +22,9 @@ const UserSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   currentUserLevel: z.number().optional(),
+  createdAt: z.string().optional(),
+  lastLoginAt: z.string().optional(),
+  myAccountVisits: z.number().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -51,6 +54,9 @@ const getUsersFlow = ai.defineFlow(
           phone: data.phone,
           address: data.address,
           currentUserLevel: data.currentUserLevel,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+          lastLoginAt: data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt,
+          myAccountVisits: data.myAccountVisits,
         };
       });
       return users;
@@ -70,6 +76,9 @@ const getUsersFlow = ai.defineFlow(
                 phone: data.phone,
                 address: data.address,
                 currentUserLevel: data.currentUserLevel,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+                lastLoginAt: data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt,
+                myAccountVisits: data.myAccountVisits,
             };
         });
         // Manual sort as a fallback
