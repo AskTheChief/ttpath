@@ -553,8 +553,8 @@ function MyTribePageContent() {
                       ))
                     )}
                   </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button onClick={handleSaveAnswers} disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                  <CardFooter className="flex flex-wrap gap-2 justify-end">
+                    <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
                     <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}</Button>
                   </CardFooter>
                   {tutorialData.latestFeedback && (
@@ -826,5 +826,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
