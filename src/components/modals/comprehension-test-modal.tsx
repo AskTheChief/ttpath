@@ -13,7 +13,7 @@ import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
 import { getTutorialAnswers } from "@/ai/flows/get-tutorial-answers";
 import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Loader2 } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { User } from "firebase/auth";
 
 type ComprehensionTestModalProps = {
@@ -29,18 +29,25 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<{ message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ message: string; createdAt: string } | null>(null);
 
   // Fetch initial answers when modal opens
   useEffect(() => {
     async function fetchAnswers() {
       if (isOpen && user) {
         setIsFetching(true);
-        setFeedback(null);
         try {
           const idToken = await user.getIdToken();
           const existingData = await getTutorialAnswers({ idToken });
           setAnswers(existingData.answers);
+          if (existingData.latestFeedback) {
+            setFeedback({
+              message: existingData.latestFeedback.feedback,
+              createdAt: existingData.latestFeedback.createdAt,
+            });
+          } else {
+            setFeedback(null);
+          }
         } catch (error) {
           console.error("Failed to fetch previous answers", error);
           toast({
@@ -53,6 +60,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         }
       } else if (isOpen && !user) {
         setAnswers({});
+        setFeedback(null);
       }
     }
     fetchAnswers();
@@ -95,8 +103,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     }
     
     setIsLoading(true);
-    setFeedback(null);
-
+    
     try {
       const idToken = await user.getIdToken();
       // Answers are already saved via auto-save, just evaluate them.
@@ -107,11 +114,16 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
 
       const evaluation = await evaluateTutorialAnswers({ answers, idToken });
       
-      setFeedback({ message: evaluation.feedback });
+      const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
+      setFeedback(newFeedback);
+      
+      // Update the local state for getTutorialAnswers to reflect this new feedback immediately
+      // This is a bit of a workaround because we're not re-fetching
+      onComplete('open-comprehension-test');
       
       toast({
         title: "You Receive Guidance",
-        description: "The Chief provides some feedback for you to consider.",
+        description: "The Chief provides new feedback for you to consider.",
       });
 
     } catch (error: any) {
@@ -127,23 +139,25 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleClose = () => {
-    setFeedback(null);
-    setIsLoading(false);
     onClose();
   };
 
   const handleProceed = () => {
-    onComplete("complete-comprehension-test");
-    handleClose();
+    onComplete("complete-comprehension-test"); // This marks the test as "done" conceptually
+    onClose();
+    toast({
+      title: "Self-Reflection Complete",
+      description: "You have affirmed your readiness. The 'Path to Graduate' is now available.",
+    });
   };
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="text-2xl font-bold text-slate-800">Comprehension Test Study Guide</DialogTitle>
+        <DialogHeader className="p-6 border-b">
+          <DialogTitle className="text-2xl font-bold">Comprehension Test Study Guide</DialogTitle>
           <DialogDescription>
-            You answer the questions below to complete the comprehension test. Your answers auto-save as you go. You submit to The Chief for guidance when you feel ready.
+            You answer the questions below to complete the comprehension test. Your answers auto-save as you go. You may submit to The Chief for guidance. You determine for yourself when you feel ready to proceed.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
@@ -158,7 +172,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
                     <>
                       {tutorialQuestions.map((q, i) => (
                           <div key={i} className="space-y-2">
-                              <Label htmlFor={`q${i}`} className="text-md font-medium text-slate-700">{`${i + 1}. ${q}`}</Label>
+                              <Label htmlFor={`q${i}`} className="text-md font-medium">{`${i + 1}. ${q}`}</Label>
                               <Textarea 
                                 id={`q${i}`} 
                                 rows={3}
@@ -175,17 +189,20 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
           </ScrollArea>
         </div>
         {feedback && (
-          <div className="p-4">
+          <div className="p-6 border-t">
             <Alert>
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Guidance from The Chief</AlertTitle>
-              <AlertDescription>
+              <Sparkles className="h-4 w-4" />
+              <AlertTitle className="flex justify-between">
+                <span>Guidance from The Chief</span>
+                <span className="text-sm font-normal text-muted-foreground">{new Date(feedback.createdAt).toLocaleString()}</span>
+              </AlertTitle>
+              <AlertDescription className="whitespace-pre-wrap">
                 {feedback.message}
               </AlertDescription>
             </Alert>
           </div>
         )}
-        <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg justify-between items-center">
+        <DialogFooter className="p-4 border-t bg-muted/50 justify-between items-center">
           <div>
             {isSaving && <span className="text-sm text-muted-foreground flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</span>}
           </div>
