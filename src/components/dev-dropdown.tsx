@@ -16,6 +16,7 @@ import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
 import PinModal from './modals/pin-modal';
 import { Button } from './ui/button';
+import { auth } from '@/lib/firebase';
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
@@ -32,13 +33,27 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleReset = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Not Authenticated",
+        description: "You must be logged in to reset progress.",
+      });
+      return;
+    }
+
     try {
-      await resetUserProgress({});
+      const idToken = await user.getIdToken();
+      await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
-        description: "Your progress has been reset.",
+        description: "Your progress has been reset. Refreshing...",
       });
-      window.location.reload();
+      // Use a timeout to allow the toast to be seen before reload
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
       toast({
         variant: "destructive",
