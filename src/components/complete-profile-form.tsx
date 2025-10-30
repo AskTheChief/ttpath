@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -143,7 +142,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 min-h-screen">
         <Card className="w-full max-w-lg">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
