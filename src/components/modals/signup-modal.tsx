@@ -10,6 +10,7 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { setDoc, doc } from 'firebase/firestore';
 import { useState } from "react";
+import { updateUserProgress } from "@/ai/flows/update-user-progress";
 
 type SignupModalProps = {
   isOpen: boolean;
@@ -47,14 +48,24 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
       // Create a minimal user document in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: userCredential.user.email,
-        currentUserLevel: 1,
+        currentUserLevel: 1, // Start at level 1
         requirementsState: { 'sign-up': false },
       });
 
-      toast({ title: "Account Created!", description: "Welcome to the path." });
+      const idToken = await userCredential.user.getIdToken();
       
-      onSignupSuccess(userCredential.user);
+      // Immediately update progress to become a Guest
+      await updateUserProgress({
+        currentUserLevel: 2,
+        requirementsState: { 'sign-up': true },
+        idToken,
+      });
+
+      toast({ title: "Account Created!", description: "Welcome to the path. The page will now reload." });
+      
+      // Close modal and reload the page to reflect the new state
       handleClose();
+      window.location.reload();
 
     } catch (error: any) {
       setError(error.message);
