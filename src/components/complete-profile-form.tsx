@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -97,7 +98,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
         return;
     }
     if (!profile.address) {
-        setError('Please enter your address starting with your house number, then select your address from the drop down to confirm it on the map.');
+        setError('Please enter your address starting with your house number, then select your address from the drop down to confirm it on the map. Please select your address from the dropdown');
         return;
     }
     if (!profile.phone) {

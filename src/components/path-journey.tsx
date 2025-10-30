@@ -66,6 +66,7 @@ export default function PathJourney() {
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<{ firstName?: string, lastName?: string } | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const isGuest = currentUser !== null;
@@ -383,6 +384,7 @@ export default function PathJourney() {
           setCurrentUserLevel(progress.currentUserLevel || 1);
           setRequirementsState(progress.requirementsState || {});
           setUserFirstName(profile.firstName || null);
+          setUserProfile(profile);
         }
       } catch (error: any) {
         if (error.code === 'auth/quota-exceeded') {
@@ -749,7 +751,7 @@ export default function PathJourney() {
     try {
       const result = await sendDiplomaEmail({ 
         recipientEmail: currentUser.email,
-        recipientName: userFirstName || "Valued Developer",
+        recipientName: userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : "Valued Developer",
        });
       if (result.success) {
         toast({
