@@ -86,10 +86,25 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
       setError('No user authenticated. Please restart the registration process.');
       return;
     }
-    if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
-      setError('All fields are required.');
-      return;
+    
+    // Detailed validation checks
+    if (!profile.firstName) {
+        setError('Please enter your First Name.');
+        return;
     }
+    if (!profile.lastName) {
+        setError('Please enter your Last Name.');
+        return;
+    }
+    if (!profile.address) {
+        setError('Please select your Address from the dropdown.');
+        return;
+    }
+    if (!profile.phone) {
+        setError('Please enter your Phone Number.');
+        return;
+    }
+
 
     setIsLoading(true);
     setError(null);
@@ -142,7 +157,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 min-h-screen">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 min-h-screen">
         <Card className="w-full max-w-lg">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
