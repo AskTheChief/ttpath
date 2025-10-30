@@ -15,6 +15,8 @@ import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -107,18 +109,24 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
         email: user.email!,
       };
 
-      await setDoc(doc(db, 'users', user.uid), userProfileData);
+      await setDoc(doc(db, 'users', user.uid), userProfileData, { merge: true });
       
       const idToken = await user.getIdToken();
       await updateUserProgress({
-        currentUserLevel: 2,
-        requirementsState: { 'sign-up': true },
+        currentUserLevel: 3,
+        requirementsState: { 'sign-up': true, 'complete-comprehension-test': true },
         idToken,
       });
 
+      // Send the diploma email
+      await sendDiplomaEmail({
+        recipientEmail: user.email!,
+        recipientName: profile.firstName,
+      });
+
       toast({
-        title: 'Profile Complete!',
-        description: 'You are now a Guest. Your journey continues!',
+        title: 'Profile Complete & Diploma Sent!',
+        description: 'Congratulations, you are now a Graduate! Your diploma is in your inbox.',
       });
       
       onComplete(profile.firstName!);
@@ -140,63 +148,65 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
         "absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
     )}>
-      <Card className="w-full max-w-lg shadow-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
-          <CardDescription>Let's get your profile details set up to continue your journey.</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleProfileSubmit} noValidate>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profile_field_fname">First Name</Label>
-                <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profile_field_lname">Last Name</Label>
-                <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-              </div>
+        <Dialog open={true}>
+        <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+            <DialogHeader>
+                <DialogTitle className="text-2xl font-bold">Complete Your Graduation</DialogTitle>
+                <DialogDescription>
+                    To become a Graduate, please provide your information. This helps you connect with tribes in your area.
+                </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleProfileSubmit} noValidate>
+            <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="profile_field_fname">First Name</Label>
+                    <Input id="profile_field_fname" placeholder="John" required onChange={handleProfileChange} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="profile_field_lname">Last Name</Label>
+                    <Input id="profile_field_lname" placeholder="Doe" required onChange={handleProfileChange} />
+                </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    {isLoaded && !loadError && (
+                        <div style={mapContainerStyle}>
+                            <GoogleMap
+                                mapContainerStyle={{ height: '100%', width: '100%' }}
+                                center={coords || defaultCenter}
+                                zoom={coords ? 15 : 4}
+                                options={{ disableDefaultUI: true }}
+                            >
+                                {coords && <MarkerF position={coords} />}
+                            </GoogleMap>
+                        </div>
+                    )}
+                    {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
+                    <LocationAutocomplete
+                        id="location_autocomplete"
+                        placeholder="123 Main St, Anytown, USA"
+                        onPlaceSelected={handlePlaceSelected}
+                        initialValue={profile.address || ''}
+                        required
+                        disabled={!isLoaded}
+                    />
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="profile_field_phone">Phone Number</Label>
+                <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} />
+                <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
+                </div>
+                {error && <p className="text-sm text-destructive text-center">{error}</p>}
             </div>
-            <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                {isLoaded && !loadError && (
-                    <div style={mapContainerStyle}>
-                        <GoogleMap
-                            mapContainerStyle={{ height: '100%', width: '100%' }}
-                            center={coords || defaultCenter}
-                            zoom={coords ? 15 : 4}
-                            options={{ disableDefaultUI: true }}
-                        >
-                            {coords && <MarkerF position={coords} />}
-                        </GoogleMap>
-                    </div>
-                )}
-                {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
-                <LocationAutocomplete
-                    id="address" // This ID must be unique
-                    placeholder="123 Main St, Anytown, USA"
-                    onPlaceSelected={handlePlaceSelected}
-                    initialValue={profile.address || ''}
-                    required
-                    disabled={!isLoaded}
-                    autoComplete="off"
-                    role="presentation"
-                />
+            <div className="flex justify-end pt-4">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Graduation & Receive Diploma'}
+                </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="profile_field_phone">Phone Number</Label>
-              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-              <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
-            </div>
-            {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Registration'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            </form>
+        </DialogContent>
+        </Dialog>
     </div>
   );
 }
