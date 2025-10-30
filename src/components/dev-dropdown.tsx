@@ -20,11 +20,12 @@ import { Button } from './ui/button';
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
   onSendTestEmail: () => void;
+  onSendTestDiploma: () => void;
 };
 
 const DEV_PIN = '3141';
 
-export default function DevDropdown({ onTestCreateTribe, onSendTestEmail }: DevDropdownProps) {
+export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma }: DevDropdownProps) {
   const { toast } = useToast();
   const [showPinModal, setShowPinModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -95,6 +96,7 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail }: DevD
             </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSendTestEmail}>Send Test Email</DropdownMenuItem>
+            <DropdownMenuItem onClick={onSendTestDiploma}>Send Test Diploma</DropdownMenuItem>
             <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
             <DropdownMenuItem onClick={handleReset}>Reset Progress</DropdownMenuItem>
           </DropdownMenuContent>

@@ -26,6 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
+import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 import CompleteProfileForm from './complete-profile-form';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
@@ -731,6 +732,42 @@ export default function PathJourney() {
     }
   };
 
+  const handleSendTestDiploma = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test diploma.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Test Diploma...",
+      description: `Sending a test diploma to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendDiplomaEmail({ 
+        recipientEmail: currentUser.email,
+        recipientName: userFirstName || "Valued Developer",
+       });
+      if (result.success) {
+        toast({
+          title: "Diploma Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Diploma",
+        description: error.message,
+      });
+    }
+  };
+
   const renderChatbotIcon = () => {
     const content = (
       <button
@@ -932,6 +969,7 @@ export default function PathJourney() {
         isGuest={isGuest}
         onTestCreateTribe={handleTestCreateTribe}
         onSendTestEmail={handleSendTestEmail}
+        onSendTestDiploma={handleSendTestDiploma}
       />
       <LinkModal
         isOpen={modalState.link}
