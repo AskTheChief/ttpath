@@ -174,7 +174,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
                                 value={answers[q] || ''}
                                 onChange={(e) => handleAnswerChange(q, e.target.value)}
                                 disabled={isLoading}
-                                placeholder="Your thoughtful answer..."
+                                placeholder="Answer..."
                               />
                           </div>
                       ))}
