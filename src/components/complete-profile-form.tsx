@@ -134,7 +134,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
       // Send the diploma email
       await sendDiplomaEmail({
         recipientEmail: user.email!,
-        recipientName: profile.firstName,
+        recipientName: `${profile.firstName} ${profile.lastName}`,
       });
 
       toast({

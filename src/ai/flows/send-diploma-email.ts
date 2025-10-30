@@ -59,7 +59,7 @@ const sendDiplomaEmailFlow = ai.defineFlow(
             </div>
             <h1 style="font-size: 50px; font-weight: bold; color: #2a433a; margin: 0;">Certificate of Graduation</h1>
             <p style="font-size: 25px; color: #555; margin-top: 40px;">This certifies that</p>
-            <p style="font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive; font-size: 48px; color: #c9b037; margin: 20px 0; border-bottom: 2px solid #c9b037; display: inline-block; padding-bottom: 5px; line-height: 1.2;">
+            <p style="font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive; font-size: 48px; color: #2a433a; margin: 20px 0; border-bottom: 2px solid #c9b037; display: inline-block; padding-bottom: 5px; line-height: 1.2;">
               ${recipientName || 'Valued Member'}
             </p>
             <p style="font-size: 25px; color: #555;">has successfully completed all requirements to become a</p>
