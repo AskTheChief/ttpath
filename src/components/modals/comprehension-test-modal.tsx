@@ -150,9 +150,15 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 border-b">
-          <DialogTitle className="text-2xl font-bold">Comprehension Test Study Guide</DialogTitle>
-          <DialogDescription>
-            You answer the questions below to complete the comprehension test. Your answers auto-save as you go. You may submit to The Chief for guidance. You determine for yourself when you feel ready to proceed.
+          <DialogTitle className="text-2xl font-bold">Trading Tribe Source Guide Tutorial</DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-1 text-muted-foreground">
+                <p>1. Fill in the answers below to the best of your ability.</p>
+                <p>2. Click on [Receive Feedback from the Chief].</p>
+                <p>3. Revise your answers.</p>
+                <p>4. Repeat until you feel ready to proceed; click the [I Feel Ready to Proceed] button.</p>
+                <p>5. To take a break, press the [Return Later] button</p>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
