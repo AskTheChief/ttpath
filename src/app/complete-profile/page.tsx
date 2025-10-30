@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
@@ -62,8 +62,8 @@ export default function CompleteProfilePage() {
       if (currentUser) {
         const userDocRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          // User profile already exists, they shouldn't be here.
+        // Only allow access if the profile is incomplete (e.g., no first name)
+        if (userDoc.exists() && userDoc.data()?.firstName) {
           router.push('/');
         } else {
           setUser(currentUser);
@@ -131,7 +131,7 @@ export default function CompleteProfilePage() {
         phone: normalizedPhone,
         email: user.email!,
         createdAt: new Date(user.metadata.creationTime || Date.now()).getTime(),
-        lastLoginAt: serverTimestamp(),
+        lastLoginAt: new Date().getTime(),
         myAccountVisits: 0,
       };
 
@@ -139,18 +139,24 @@ export default function CompleteProfilePage() {
       
       const idToken = await user.getIdToken();
       await updateUserProgress({
-        currentUserLevel: 2, // Move to Guest
-        requirementsState: { 'sign-up': true },
+        currentUserLevel: 3, // Move to Graduate
+        requirementsState: { 
+            'sign-up': true, 
+            'read-book': true,
+            'read-full-book': true,
+            'open-comprehension-test': true,
+            'complete-comprehension-test': true
+        },
         idToken,
       });
 
       toast({
-        title: 'Registration Successful!',
-        description: 'Welcome to the Tribe! You are now a Guest.',
+        title: 'Graduation Complete!',
+        description: 'Welcome, Graduate. You may now join or start a tribe.',
       });
       
       // Redirect to the main path page with a parameter to trigger animation
-      router.push('/?action=registered');
+      router.push('/?action=graduated');
 
     } catch (error: any) {
       setError(error.message);
@@ -168,7 +174,7 @@ export default function CompleteProfilePage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
         <Loader2 className="h-12 w-12 animate-spin" />
-        <p className="mt-4 text-muted-foreground">Loading your profile...</p>
+        <p className="mt-4 text-muted-foreground">Finalizing your graduation...</p>
       </div>
     );
   }
@@ -177,8 +183,8 @@ export default function CompleteProfilePage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-secondary">
       <Card className="w-full max-w-lg shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
-          <CardDescription>Let's get your profile details set up.</CardDescription>
+          <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
+          <CardDescription>To receive your "diploma," please provide the following details. This information helps connect you with a tribe.</CardDescription>
         </CardHeader>
         <form onSubmit={handleProfileSubmit} noValidate autoComplete="off">
           <CardContent className="space-y-4">
@@ -227,7 +233,7 @@ export default function CompleteProfilePage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Profile...</> : 'Complete Registration'}
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Graduating...</> : 'Complete Graduation'}
             </Button>
           </CardFooter>
         </form>
