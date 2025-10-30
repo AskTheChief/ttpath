@@ -53,7 +53,7 @@ const sendDiplomaEmailFlow = ai.defineFlow(
         to: recipientEmail,
         subject: 'Your Trading Tribe Path Diploma!',
         html: `
-          <div style="font-family: 'Times New Roman', Times, serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 10px solid #c9b037; padding: 50px; background-color: #f3f2f1; text-align: center;">
+          <div style="font-family: 'Times New Roman', Times, serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 10px solid #c9b037; padding: 50px; background-color: #ffffff; text-align: center;">
             <div style="padding-bottom: 20px;">
               <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 150px; height: 150px; margin: 0 auto;"/>
             </div>
