@@ -409,11 +409,20 @@ export default function PathJourney() {
   }, [toast]);
 
   const onSignupSuccess = useCallback(async (user: FirebaseUser) => {
-    // This function is now called from the SignupModal.
-    // The onAuthStateChanged listener will handle the UI update.
-    // We just need to ensure the progress is fetched.
-    fetchUserProgress(user);
-  }, [fetchUserProgress]);
+    const visitorNode = pathNodesData.find(n => n.level === 1)!;
+    const guestNode = pathNodesData.find(n => n.level === 2)!;
+    
+    // Animate from visitor to guest
+    await animateUserIcon(guestNode, visitorNode.level);
+
+    // Update the state to reflect the new level
+    setCurrentUser(user);
+    setCurrentUserLevel(guestNode.level);
+    setRequirementsState(prev => ({ ...prev, 'sign-up': true }));
+    // The onAuthStateChanged listener will also fire and fetch full profile info,
+    // but this ensures the UI is responsive immediately.
+  }, [animateUserIcon]);
+
 
   const onProfileComplete = useCallback(async (firstName: string) => {
     setUserFirstName(firstName);
