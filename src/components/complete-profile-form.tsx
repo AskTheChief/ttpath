@@ -15,7 +15,6 @@ import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 
 const libraries: Libraries = ['places'];
@@ -126,7 +125,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
 
       toast({
         title: 'Profile Complete & Diploma Sent!',
-        description: 'Congratulations, you are now a Graduate! Your diploma is in your inbox.',
+        description: "Congratulations, you are now a Graduate! Your diploma is in your inbox.",
       });
       
       onComplete(profile.firstName!);
@@ -144,20 +143,16 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
   };
 
   return (
-    <div className={cn(
-        "absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-    )}>
-        <Dialog open={true}>
-        <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
-            <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">Complete Your Graduation</DialogTitle>
-                <DialogDescription>
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <Card className="w-full max-w-lg">
+            <CardHeader>
+                <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
+                <CardDescription>
                     To become a Graduate, please provide your information. This helps you connect with tribes in your area.
-                </DialogDescription>
-            </DialogHeader>
+                </CardDescription>
+            </CardHeader>
             <form onSubmit={handleProfileSubmit} noValidate>
-            <div className="space-y-4 py-4">
+            <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="profile_field_fname">First Name</Label>
@@ -198,15 +193,14 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
                 <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
                 </div>
                 {error && <p className="text-sm text-destructive text-center">{error}</p>}
-            </div>
-            <div className="flex justify-end pt-4">
+            </CardContent>
+            <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Graduation & Receive Diploma'}
                 </Button>
-            </div>
+            </CardFooter>
             </form>
-        </DialogContent>
-        </Dialog>
+        </Card>
     </div>
   );
 }
