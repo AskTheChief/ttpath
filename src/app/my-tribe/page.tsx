@@ -641,22 +641,54 @@ function MyTribePageContent() {
 
             </div>
 
-            <div className="lg:col-span-2">
-              <TabsContent value="guest">
+            <div className="lg:col-span-2 space-y-8">
+              <TabsContent value="guest" className="m-0">
                   <Card>
                       <CardHeader>
-                          <CardTitle>Welcome, Guest!</CardTitle>
-                          <CardDescription>This is your starting point. Use the tools on the left to manage your profile and test your knowledge. When you're ready, return to the Path to find a tribe.</CardDescription>
+                          <CardTitle>Welcome, Graduate!</CardTitle>
+                          <CardDescription>Congratulations on completing the first part of your journey. Your next step is to find your tribe. You can either apply to join an existing tribe or apply to start your own.</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                          <Link href="/" passHref>
-                              <Button>Return to Path</Button>
-                          </Link>
+                      <CardContent className="space-y-6">
+                        <div>
+                          <h3 className="text-xl font-semibold mb-4">Join an Existing Tribe</h3>
+                          <div className="space-y-4 max-h-60 overflow-y-auto p-1">
+                            {tribes.filter(t => t.id !== userTribe?.id).length > 0 ? (
+                            tribes.filter(t => t.id !== userTribe?.id).map((tribe) => (
+                                <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div>
+                                    <h4 className="font-semibold">{tribe.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{tribe.location}</p>
+                                    <p className="text-xs text-muted-foreground">{tribe.members?.length || 0} members</p>
+                                </div>
+                                <Button size="sm" onClick={() => handleJoinTribe(tribe.id)} disabled={!!userTribe || isLoading}>
+                                    Apply
+                                </Button>
+                                </div>
+                            ))
+                            ) : (
+                            <p className="text-sm text-muted-foreground text-center p-4">No tribes are available to join right now. Consider starting your own!</p>
+                            )}
+                          </div>
+                        </div>
+                         <div>
+                            <h3 className="text-xl font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
+                            <div className="space-y-4">
+                                <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
+                                <div className="space-y-2">
+                                <Label htmlFor="tribe-location-chief">Location</Label>
+                                <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
+                                <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
+                                <div className="mt-2">
+                                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                                </div>
+                                </div>
+                                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
+                            </div>
+                        </div>
                       </CardContent>
                   </Card>
               </TabsContent>
-              <TabsContent value="member">
-              <div className="space-y-8">
+              <TabsContent value="member" className="m-0 space-y-8">
                   {userTribe ? (
                   <>
                       <Card>
@@ -758,11 +790,9 @@ function MyTribePageContent() {
                       </CardContent>
                   </Card>
                   )}
-              </div>
               </TabsContent>
-              <TabsContent value="chief">
-              <div className="space-y-8">
-                  {userLevel >= 3 && (
+              <TabsContent value="chief" className="m-0 space-y-8">
+                  {userLevel >= 3 && !isChief && (
                     <Card>
                     <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
@@ -885,9 +915,8 @@ function MyTribePageContent() {
                       )}
                   </>
                   )}
-              </div>
               </TabsContent>
-              <TabsContent value="mentor">
+              <TabsContent value="mentor" className="m-0">
                   <Card>
                       <CardHeader>
                           <CardTitle>Mentor Dashboard</CardTitle>
@@ -954,3 +983,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
