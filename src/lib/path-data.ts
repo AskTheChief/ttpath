@@ -42,7 +42,7 @@ export const pathNodesData: PathNodeData[] = [
     description: "",
     actions: [
       { id: "read-full-book", label: "Read the Trading Tribe Source Manual", action: "open-full-book" },
-      { id: "open-comprehension-test", label: "Take or Edit Comprehension test answers", action: "open-comprehension-test", dependsOn: "read-full-book" },
+      { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book" },
       { id: "complete-comprehension-test", label: "Path to Graduate", action: "complete-test", next: "graduate", dependsOn: "open-comprehension-test" }
     ],
     panelPos: "left"
