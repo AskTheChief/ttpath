@@ -409,23 +409,11 @@ export default function PathJourney() {
   }, [toast]);
 
   const onSignupSuccess = useCallback(async (user: FirebaseUser) => {
-    setCurrentUser(user);
-    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
-    if (targetNode) {
-      await animateUserIcon(targetNode, 1);
-      setCurrentUserLevel(targetNode.level);
-      try {
-        const idToken = await user.getIdToken();
-        await updateUserProgress({
-          currentUserLevel: 2,
-          requirementsState: { 'sign-up': true },
-          idToken,
-        });
-      } catch (error) {
-        console.error("Failed to save initial progress:", error);
-      }
-    }
-  }, [animateUserIcon]);
+    // This function is now called from the SignupModal.
+    // The onAuthStateChanged listener will handle the UI update.
+    // We just need to ensure the progress is fetched.
+    fetchUserProgress(user);
+  }, [fetchUserProgress]);
 
   const onProfileComplete = useCallback(async (firstName: string) => {
     setUserFirstName(firstName);

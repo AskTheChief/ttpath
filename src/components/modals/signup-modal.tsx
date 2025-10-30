@@ -63,7 +63,8 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
 
       toast({ title: "Account Created!", description: "Welcome to the path." });
       
-      // Close modal and rely on onAuthStateChanged to update the UI
+      // Call the success callback and close the modal
+      onSignupSuccess(userCredential.user);
       handleClose();
 
     } catch (error: any) {
