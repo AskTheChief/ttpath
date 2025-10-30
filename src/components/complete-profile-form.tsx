@@ -97,7 +97,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
         return;
     }
     if (!profile.address) {
-        setError('Please select your Address from the dropdown.');
+        setError('Please enter your address starting with your house number, then select your address from the drop down to confirm it on the map.');
         return;
     }
     if (!profile.phone) {
