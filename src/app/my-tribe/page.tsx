@@ -52,7 +52,7 @@ const mapContainerStyle = {
 
 const overviewMapContainerStyle = {
     width: '100%',
-    height: '300px',
+    height: '400px',
     borderRadius: '0.5rem',
 }
 
@@ -645,31 +645,51 @@ function MyTribePageContent() {
               <TabsContent value="guest" className="m-0">
                   <Card>
                       <CardHeader>
-                          <CardTitle>Welcome, Graduate!</CardTitle>
-                          <CardDescription>Congratulations on completing the first part of your journey. Your next step is to find your tribe. You can either apply to join an existing tribe or apply to start your own.</CardDescription>
+                          <CardTitle>Find Your Tribe</CardTitle>
+                          <CardDescription>Explore existing tribes on the map, or apply to start your own.</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <div>
-                          <h3 className="text-xl font-semibold mb-4">Join an Existing Tribe</h3>
-                          <div className="space-y-4 max-h-60 overflow-y-auto p-1">
-                            {tribes.filter(t => t.id !== userTribe?.id).length > 0 ? (
-                            tribes.filter(t => t.id !== userTribe?.id).map((tribe) => (
-                                <div key={tribe.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                    <h4 className="font-semibold">{tribe.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{tribe.location}</p>
-                                    <p className="text-xs text-muted-foreground">{tribe.members?.length || 0} members</p>
+                         <div className="relative">
+                            <div style={overviewMapContainerStyle}>
+                                <GoogleMap
+                                  mapContainerStyle={{ height: '100%', width: '100%' }}
+                                  center={defaultCenter}
+                                  zoom={4}
+                                  options={{ disableDefaultUI: true }}
+                                  onClick={() => setSelectedTribe(null)}
+                                >
+                                    <MarkerClustererF>
+                                        {(clusterer) =>
+                                            tribes.filter(t => t.lat && t.lng).map(tribe => (
+                                                <MarkerF
+                                                    key={tribe.id}
+                                                    position={{ lat: tribe.lat!, lng: tribe.lng! }}
+                                                    clusterer={clusterer}
+                                                    onClick={() => setSelectedTribe(tribe)}
+                                                />
+                                            ))
+                                        }
+                                    </MarkerClustererF>
+                                </GoogleMap>
+                            </div>
+                            {selectedTribe && (
+                                <div className="absolute top-4 right-4 w-full max-w-sm z-10">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>{selectedTribe.name}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-muted-foreground">{selectedTribe.location}</p>
+                                            <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                                            <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
+                                                Apply to Join
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
                                 </div>
-                                <Button size="sm" onClick={() => handleJoinTribe(tribe.id)} disabled={!!userTribe || isLoading}>
-                                    Apply
-                                </Button>
-                                </div>
-                            ))
-                            ) : (
-                            <p className="text-sm text-muted-foreground text-center p-4">No tribes are available to join right now. Consider starting your own!</p>
                             )}
-                          </div>
-                        </div>
+                         </div>
+
                          <div>
                             <h3 className="text-xl font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
                             <div className="space-y-4">
@@ -983,5 +1003,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
 
     
