@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import { Dialog, DialogContent } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -136,13 +136,13 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
+        <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Complete Your Graduation</DialogTitle>
+            <DialogDescription>To receive your "diploma" and connect with tribes, please provide these details.</DialogDescription>
+        </DialogHeader>
         <Card className="w-full shadow-none border-none">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
-            <CardDescription>To receive your "diploma" and connect with tribes, please provide these details.</CardDescription>
-          </CardHeader>
           <form onSubmit={handleProfileSubmit} noValidate>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="profile_field_fname">First Name</Label>
@@ -178,21 +178,21 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
                       autoComplete="off"
                       role="presentation"
                   />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profile_field_phone">Phone Number</Label>
-                <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
-                <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
-              </div>
-              {error && <p className="text-sm text-destructive text-center">{error}</p>}
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Graduating...</> : 'Complete Graduation'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile_field_phone">Phone Number</Label>
+              <Input id="profile_field_phone" type="tel" placeholder="+15555555555" required onChange={handleProfileChange} autoComplete="off" role="presentation" />
+              <p className="text-sm text-muted-foreground">Please include your country code (e.g., +1 for USA).</p>
+            </div>
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Graduation'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
       </DialogContent>
     </Dialog>
   );
