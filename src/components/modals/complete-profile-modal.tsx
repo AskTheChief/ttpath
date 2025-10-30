@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -11,10 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '../ui/dialog';
 
 const libraries: Libraries = ['places'];
@@ -42,10 +40,11 @@ type UserProfile = {
   address: string;
   phone: string;
   email: string;
+  myAccountVisits: number;
 };
 
-// Map non-standard IDs to profile keys
-const idToKeyMap: Record<string, keyof UserProfile> = {
+// Map non-standard IDs to profile keys for autocomplete to work
+const idToKeyMap: Record<string, keyof Omit<UserProfile, 'email' | 'myAccountVisits'>> = {
   'profile_field_fname': 'firstName',
   'profile_field_lname': 'lastName',
   'profile_field_phone': 'phone',
@@ -62,6 +61,12 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
+
+  useEffect(() => {
+    if (user && isOpen) {
+      setProfile(prev => ({ ...prev, email: user.email || '' }));
+    }
+  }, [user, isOpen]);
   
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -108,21 +113,10 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
         address: profile.address,
         phone: normalizedPhone,
         email: user.email!,
+        myAccountVisits: 0,
       };
 
-      await setDoc(doc(db, 'users', user.uid), userProfileData);
-      
-      const idToken = await user.getIdToken();
-      await updateUserProgress({
-        currentUserLevel: 2,
-        requirementsState: { 'sign-up': true },
-        idToken,
-      });
-
-      toast({
-        title: 'Profile Complete!',
-        description: 'You are now a Guest. Your journey continues!',
-      });
+      await setDoc(doc(db, 'users', user.uid), userProfileData, { merge: true });
       
       onComplete(profile.firstName);
       onClose();
@@ -144,8 +138,8 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
       <DialogContent className="max-w-lg">
         <Card className="w-full shadow-none border-none">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
-            <CardDescription>Let's get your profile details set up to continue your journey.</CardDescription>
+            <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
+            <CardDescription>To receive your "diploma" and connect with tribes, please provide these details.</CardDescription>
           </CardHeader>
           <form onSubmit={handleProfileSubmit} noValidate>
             <CardContent className="space-y-4">
@@ -175,7 +169,7 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
                   )}
                   {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
                   <LocationAutocomplete
-                      id="address" // This ID must be unique
+                      id="address"
                       placeholder="123 Main St, Anytown, USA"
                       onPlaceSelected={handlePlaceSelected}
                       initialValue={profile.address || ''}
@@ -194,7 +188,7 @@ export default function CompleteProfileModal({ user, isOpen, onClose, onComplete
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Registration'}
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Graduating...</> : 'Complete Graduation'}
               </Button>
             </CardFooter>
           </form>

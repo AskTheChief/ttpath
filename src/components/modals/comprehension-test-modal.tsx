@@ -15,6 +15,7 @@ import { tutorialQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Loader2 } from "lucide-react";
 import { User } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 type ComprehensionTestModalProps = {
   isOpen: boolean;
@@ -25,6 +26,7 @@ type ComprehensionTestModalProps = {
 
 export default function ComprehensionTestModal({ isOpen, user, onClose, onComplete }: ComprehensionTestModalProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -106,7 +108,6 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     
     try {
       const idToken = await user.getIdToken();
-      // Answers are already saved via auto-save, just evaluate them.
       toast({
         title: "The Chief Reviews Your Answers",
         description: "Please wait for feedback.",
@@ -117,8 +118,6 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
       const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
       setFeedback(newFeedback);
       
-      // Update the local state for getTutorialAnswers to reflect this new feedback immediately
-      // This is a bit of a workaround because we're not re-fetching
       onComplete('open-comprehension-test');
       
       toast({
@@ -143,12 +142,8 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleProceed = () => {
-    onComplete("complete-comprehension-test"); // This marks the test as "done" conceptually
+    onComplete("complete-comprehension-test");
     onClose();
-    toast({
-      title: "Self-Reflection Complete",
-      description: "You have affirmed your readiness. The 'Path to Graduate' is now available.",
-    });
   };
   
   return (

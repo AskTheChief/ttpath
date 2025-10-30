@@ -26,7 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
-import CompleteProfileForm from '@/components/complete-profile-form';
+import CompleteProfileModal from './modals/complete-profile-modal';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -88,6 +88,7 @@ export default function PathJourney() {
     link: false,
     video: false,
     menu: false,
+    completeProfile: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -255,10 +256,6 @@ export default function PathJourney() {
                       title: "Welcome, Guest!",
                       description: `You can now proceed on your journey.`,
                   });
-              } else if (targetNode.id === 'node-graduate') {
-                  toast({
-                      title: "Congratulations, You Graduate!",
-                  });
               }
               resolve();
           }
@@ -301,16 +298,14 @@ export default function PathJourney() {
   }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress, isMounted]);
 
   const completeRequirement = useCallback(async (reqId: string, name?: string) => {
-    if (name) {
+    if (reqId === 'sign-up' && name) {
       setUserFirstName(name);
     }
     setJustCompletedActionId(reqId);
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
-    if (action?.id === 'open-comprehension-test') {
-        // Defer sound until "Proceed" is clicked.
-    } else {
+    if (action?.id !== 'complete-comprehension-test') {
         playSound('complete');
     }
     
@@ -347,6 +342,11 @@ export default function PathJourney() {
         const oldLevel = currentUserLevel;
         await animateUserIcon(nextNode, oldLevel);
         setCurrentUserLevel(newLevel);
+        
+        if (nextNode.id === 'node-graduate') {
+            setModalState(s => ({...s, completeProfile: true}));
+        }
+
     } else {
       if (selectedNodeId) {
         const currentSelected = selectedNodeId;
@@ -370,10 +370,14 @@ export default function PathJourney() {
         ]);
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
-          setNeedsProfileCompletion(true);
-          setCurrentUserLevel(1);
-          setRequirementsState({});
-          setUserFirstName(null);
+          if (progress.currentUserLevel >= 3) {
+            // This user is a graduate but has an incomplete profile. Force completion.
+            setModalState(s => ({ ...s, completeProfile: true }));
+          }
+          setCurrentUserLevel(progress.currentUserLevel || 1);
+          setRequirementsState(progress.requirementsState || {});
+          setUserFirstName(profile.firstName || null);
+
         } else {
           setNeedsProfileCompletion(false);
           setCurrentUserLevel(progress.currentUserLevel || 1);
@@ -404,29 +408,47 @@ export default function PathJourney() {
     setIsLoadingProgress(false);
   }, [toast]);
 
-  const handleSignupSuccess = useCallback((user: FirebaseUser) => {
+  const onSignupSuccess = useCallback(async (user: FirebaseUser) => {
     setCurrentUser(user);
-    setNeedsProfileCompletion(true);
-  }, []);
+    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+    if (targetNode) {
+      await animateUserIcon(targetNode, 1);
+      setCurrentUserLevel(targetNode.level);
+      try {
+        const idToken = await user.getIdToken();
+        await updateUserProgress({
+          currentUserLevel: 2,
+          requirementsState: { 'sign-up': true },
+          idToken,
+        });
+      } catch (error) {
+        console.error("Failed to save initial progress:", error);
+      }
+    }
+  }, [animateUserIcon]);
 
   const onProfileComplete = useCallback(async (firstName: string) => {
     setUserFirstName(firstName);
     setNeedsProfileCompletion(false);
 
-    const targetNode = pathNodesData.find(n => n.id === 'node-guest');
+    const targetNode = pathNodesData.find(n => n.id === 'node-graduate');
     if (targetNode) {
-        await animateUserIcon(targetNode, 1);
         setCurrentUserLevel(targetNode.level);
         if (auth.currentUser) {
             const idToken = await auth.currentUser.getIdToken();
             await updateUserProgress({
-                currentUserLevel: 2,
-                requirementsState: { 'sign-up': true },
+                currentUserLevel: 3,
+                requirementsState: { ...requirementsState, 'complete-comprehension-test': true },
                 idToken,
             });
         }
     }
-  }, [animateUserIcon]);
+    toast({
+        title: "Congratulations, You Graduate!",
+        description: "Your diploma is in the mail. You may now join or start a tribe.",
+    });
+
+  }, [animateUserIcon, requirementsState, toast]);
 
 
   useEffect(() => {
@@ -662,7 +684,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video' | 'completeProfile'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -757,14 +779,6 @@ export default function PathJourney() {
             style={{ backgroundColor: 'transparent' }}
           />
         </div>
-
-        {needsProfileCompletion && (
-           <CompleteProfileForm
-              user={currentUser}
-              onComplete={onProfileComplete}
-            />
-        )}
-
 
         <div className="menu-icon-container">
           <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
@@ -937,7 +951,7 @@ export default function PathJourney() {
       <SignupModal 
         isOpen={modalState.signup}
         onClose={() => setModalState(s => ({ ...s, signup: false }))}
-        onSignupSuccess={handleSignupSuccess}
+        onSignupSuccess={onSignupSuccess}
         showLogin={showLoginModal}
       />
       <LoginModal 
@@ -958,6 +972,12 @@ export default function PathJourney() {
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
+      />
+      <CompleteProfileModal
+        isOpen={modalState.completeProfile}
+        user={currentUser}
+        onClose={() => setModalState(s => ({...s, completeProfile: false}))}
+        onComplete={onProfileComplete}
       />
       <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
         <AlertDialogContent>

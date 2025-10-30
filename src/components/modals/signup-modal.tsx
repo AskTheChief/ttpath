@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, User } from "firebase/auth";
+import { setDoc, doc } from 'firebase/firestore';
 import { useState } from "react";
 
 type SignupModalProps = {
@@ -43,7 +44,14 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      toast({ title: "Account Created!", description: "Please complete your profile to continue." });
+      // Create a minimal user document in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        email: userCredential.user.email,
+        currentUserLevel: 1,
+        requirementsState: { 'sign-up': false },
+      });
+
+      toast({ title: "Account Created!", description: "Welcome to the path." });
       
       onSignupSuccess(userCredential.user);
       handleClose();

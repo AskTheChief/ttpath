@@ -3,16 +3,16 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, setDoc, doc } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { db } from '@/lib/firebase';
 
 if (!getApps().length) {
   initializeApp({
     projectId: 'studio-7790315517-f3fe6',
   });
 }
-const db = getFirestore();
 const adminAuth = getAuth();
 
 const UpdateUserProgressInputSchema = z.object({
@@ -49,8 +49,6 @@ const updateUserProgressFlow = ai.defineFlow(
         return { success: false };
       }
     } else {
-        // This case handles unauthenticated users or server-side calls without a token.
-        // It's not ideal for user-specific progress, so we'll log a warning.
         console.warn('updateUserProgress called without idToken. Progress cannot be saved.');
         return { success: false };
     }
@@ -60,10 +58,10 @@ const updateUserProgressFlow = ai.defineFlow(
     }
 
     try {
-      const userDocRef = db.collection('users').doc(user.uid);
+      const userDocRef = doc(db, 'users', user.uid);
       const { idToken, ...progressData } = input;
       
-      await userDocRef.set(progressData, { merge: true });
+      await setDoc(userDocRef, progressData, { merge: true });
 
       return { success: true };
     } catch (error) {
