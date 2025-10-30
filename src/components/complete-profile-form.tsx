@@ -121,7 +121,7 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
         description: 'You are now a Guest. Your journey continues!',
       });
       
-      onComplete(profile.firstName);
+      onComplete(profile.firstName!);
 
     } catch (error: any) {
       setError(error.message);

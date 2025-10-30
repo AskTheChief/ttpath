@@ -26,7 +26,7 @@ import MenuSheet from './menu-sheet';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
-import CompleteProfileModal from './modals/complete-profile-modal';
+import CompleteProfileForm from './complete-profile-form';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -88,7 +88,6 @@ export default function PathJourney() {
     link: false,
     video: false,
     menu: false,
-    completeProfile: false,
   });
 
   const [linkModalData, setLinkModalData] = useState<LinkModalData>({
@@ -344,7 +343,7 @@ export default function PathJourney() {
         setCurrentUserLevel(newLevel);
         
         if (nextNode.id === 'node-graduate') {
-            setModalState(s => ({...s, completeProfile: true}));
+            setNeedsProfileCompletion(true);
         }
 
     } else {
@@ -372,7 +371,7 @@ export default function PathJourney() {
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
           if (progress.currentUserLevel >= 3) {
             // This user is a graduate but has an incomplete profile. Force completion.
-            setModalState(s => ({ ...s, completeProfile: true }));
+            setNeedsProfileCompletion(true);
           }
           setCurrentUserLevel(progress.currentUserLevel || 1);
           setRequirementsState(progress.requirementsState || {});
@@ -681,7 +680,7 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video' | 'completeProfile'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
+  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
     if (modalName === 'pamphlet') {
         setLinkModalData({
             title: 'Library',
@@ -923,6 +922,9 @@ export default function PathJourney() {
         )}
 
       </div>
+      {needsProfileCompletion && (
+          <CompleteProfileForm user={currentUser} onComplete={onProfileComplete} />
+      )}
       <MenuSheet 
         isOpen={modalState.menu}
         onClose={() => setModalState(s => ({...s, menu: false}))}
@@ -969,12 +971,6 @@ export default function PathJourney() {
       <FeedbackModal
         isOpen={modalState.feedback}
         onClose={() => setModalState(s => ({ ...s, feedback: false }))}
-      />
-      <CompleteProfileModal
-        isOpen={modalState.completeProfile}
-        user={currentUser}
-        onClose={() => setModalState(s => ({...s, completeProfile: false}))}
-        onComplete={onProfileComplete}
       />
       <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
         <AlertDialogContent>
