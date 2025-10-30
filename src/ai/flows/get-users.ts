@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, DocumentData, DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
@@ -22,8 +22,6 @@ const UserSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   currentUserLevel: z.number().optional(),
-  createdAt: z.number().optional(),
-  lastLoginAt: z.number().optional(),
   myAccountVisits: z.number().optional(),
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
@@ -37,24 +35,10 @@ export async function getUsers(): Promise<GetUsersOutput> {
   return getUsersFlow();
 }
 
-// Helper function to map Firestore doc to User object with correct date formats
+// Helper function to map Firestore doc to User object
 const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
     const data = doc.data() || {};
     
-    // Safely convert Firestore Timestamp to milliseconds since epoch (number)
-    const toMillis = (timestamp: any): number | undefined => {
-        // Check if it's a Firestore Timestamp object which has a toDate method
-        if (timestamp && typeof timestamp.toDate === 'function') {
-            return timestamp.toDate().getTime();
-        }
-        // If it's already a number, return it
-        if (typeof timestamp === 'number') {
-            return timestamp;
-        }
-        // Return undefined if it's not a recognizable timestamp format
-        return undefined;
-    };
-
     return {
       uid: doc.id,
       firstName: data.firstName,
@@ -63,8 +47,6 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
       phone: data.phone,
       address: data.address,
       currentUserLevel: data.currentUserLevel,
-      createdAt: toMillis(data.createdAt),
-      lastLoginAt: toMillis(data.lastLoginAt),
       myAccountVisits: data.myAccountVisits,
       issue: data.issue,
       serviceProject: data.serviceProject,

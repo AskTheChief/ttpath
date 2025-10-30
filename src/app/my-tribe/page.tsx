@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, updateDoc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
 import { getTutorialAnswers } from '@/ai/flows/get-tutorial-answers';
 import { tutorialQuestions } from '@/lib/data';
@@ -117,7 +117,6 @@ function MyTribePageContent() {
       
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, {
-        lastLoginAt: new Date().getTime(),
         myAccountVisits: increment(1)
       }).catch(err => console.log("Could not update last login, probably a new user."));
 
@@ -955,9 +954,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
-
-    
-
-    

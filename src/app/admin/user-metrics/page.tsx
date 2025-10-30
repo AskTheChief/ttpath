@@ -29,28 +29,6 @@ export default function UserMetricsPage() {
     fetchUsers();
   }, []);
 
-  const signupData = useMemo(() => {
-    const counts: { [key: string]: number } = {};
-    users.forEach(user => {
-      if (user.createdAt) {
-        // Date constructor handles both ISO string and number (milliseconds)
-        const date = format(new Date(user.createdAt), 'yyyy-MM-dd');
-        counts[date] = (counts[date] || 0) + 1;
-      }
-    });
-    
-    const sortedDates = Object.keys(counts).sort();
-    let cumulative = 0;
-    return sortedDates.map(date => {
-      cumulative += counts[date];
-      return {
-        date,
-        'New Signups': counts[date],
-        'Total Users': cumulative,
-      };
-    });
-  }, [users]);
-
   const activityData = useMemo(() => {
     return users
       .filter(u => u.myAccountVisits && u.myAccountVisits > 0)
@@ -86,27 +64,6 @@ export default function UserMetricsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>User Signups Over Time</CardTitle>
-          <CardDescription>Tracks the daily number of new users and the cumulative total.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={signupData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="New Signups" stroke="#8884d8" activeDot={{ r: 8 }} />
-              <Line yAxisId="right" type="monotone" dataKey="Total Users" stroke="#82ca9d" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Account Page Visits</CardTitle>
           <CardDescription>Top 20 users by number of visits to their "My Account" page.</CardDescription>
         </CardHeader>
@@ -135,8 +92,6 @@ export default function UserMetricsPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Last Login</TableHead>
                 <TableHead className="text-right">Account Visits</TableHead>
               </TableRow>
             </TableHeader>
@@ -145,8 +100,6 @@ export default function UserMetricsPage() {
                 <TableRow key={user.uid}>
                   <TableCell>{user.firstName} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
-                  <TableCell>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'N/A'}</TableCell>
                   <TableCell className="text-right">{user.myAccountVisits ?? 0}</TableCell>
                 </TableRow>
               ))}

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
@@ -130,8 +130,6 @@ export default function CompleteProfilePage() {
         address: profile.address,
         phone: normalizedPhone,
         email: user.email!,
-        createdAt: new Date(user.metadata.creationTime || Date.now()).getTime(),
-        lastLoginAt: new Date().getTime(),
         myAccountVisits: 0,
       };
 
