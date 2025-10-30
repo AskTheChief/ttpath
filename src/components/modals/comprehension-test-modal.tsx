@@ -155,7 +155,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
             <div className="space-y-1 text-muted-foreground">
                 <p>1. Fill in the answers below to the best of your ability.</p>
                 <p>2. Click on [Receive Feedback from the Chief].</p>
-                <p>3. Revise your answers.</p>
+                <p>3. Revise your answers. We save and update your answers as you type.</p>
                 <p>4. Repeat until you feel ready to proceed; click the [I Feel Ready to Proceed] button.</p>
                 <p>5. To take a break, press the [Return Later] button</p>
             </div>
