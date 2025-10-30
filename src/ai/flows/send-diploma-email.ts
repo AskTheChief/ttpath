@@ -9,8 +9,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import Mailgun from 'mailgun.js';
 import formData from 'form-data';
-import * as fs from 'fs';
-import * as path from 'path';
 
 const SendDiplomaEmailInputSchema = z.object({
   recipientEmail: z.string().email().describe("The email address to send the diploma to."),
@@ -24,12 +22,7 @@ const SendDiplomaEmailOutputSchema = z.object({
 });
 export type SendDiplomaEmailOutput = z.infer<typeof SendDiplomaEmailOutputSchema>;
 
-// Read and Base64 encode the SVG logo
-const logoPath = path.join(process.cwd(), 'public', 'logo', 'logo.svg');
-const logoSvg = fs.readFileSync(logoPath, 'utf8');
-const logoBase64 = Buffer.from(logoSvg).toString('base64');
-const logoDataUri = `data:image/svg+xml;base64,${logoBase64}`;
-
+const logoUrl = 'https://i.postimg.cc/nLK9vRbm/logo-1.png';
 
 export async function sendDiplomaEmail(input: SendDiplomaEmailInput): Promise<SendDiplomaEmailOutput> {
   return sendDiplomaEmailFlow(input);
@@ -62,7 +55,7 @@ const sendDiplomaEmailFlow = ai.defineFlow(
         html: `
           <div style="font-family: 'Times New Roman', Times, serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 10px solid #c9b037; padding: 50px; background-color: #f3f2f1; text-align: center;">
             <div style="padding-bottom: 20px;">
-              <img src="${logoDataUri}" alt="Trading Tribe Logo" style="width: 150px; height: 150px; margin: 0 auto;"/>
+              <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 150px; height: 150px; margin: 0 auto;"/>
             </div>
             <h1 style="font-size: 50px; font-weight: bold; color: #2a433a; margin: 0;">Certificate of Graduation</h1>
             <p style="font-size: 25px; color: #555; margin-top: 40px;">This certifies that</p>
