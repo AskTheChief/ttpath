@@ -61,11 +61,10 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
         idToken,
       });
 
-      toast({ title: "Account Created!", description: "Welcome to the path. The page will now reload." });
+      toast({ title: "Account Created!", description: "Welcome to the path." });
       
-      // Close modal and reload the page to reflect the new state
+      // Close modal and rely on onAuthStateChanged to update the UI
       handleClose();
-      window.location.reload();
 
     } catch (error: any) {
       setError(error.message);
