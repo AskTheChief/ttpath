@@ -40,7 +40,6 @@ import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const libraries: Libraries = ['places'];
@@ -62,8 +61,88 @@ const defaultCenter = {
     lng: -98.5795,
 };
 
+function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Find or Start a Tribe</CardTitle>
+        <CardDescription>As a Graduate, you can now take the next step on your path.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Instructions</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><b>To join a tribe:</b> Use the map below to find a tribe in your area. Click on a marker to see details and apply to join. This will send an application to the Tribe Chief for their review.</li>
+              <li><b>To start a tribe:</b> If there are no tribes nearby or you wish to lead your own, fill out the "Start Your Own Tribe" form. A Mentor will review your application.</li>
+              <li>Completing either of these steps will unlock the next stage of your journey.</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+        <div className="relative">
+          <div style={overviewMapContainerStyle}>
+            <GoogleMap
+              mapContainerStyle={{ height: '100%', width: '100%' }}
+              center={defaultCenter}
+              zoom={4}
+              options={{ disableDefaultUI: true, zoomControl: true }}
+              onClick={() => setSelectedTribe(null)}
+            >
+              <MarkerClustererF>
+                {(clusterer) =>
+                  tribes.filter(t => t.lat && t.lng).map(tribe => (
+                    <MarkerF
+                      key={tribe.id}
+                      position={{ lat: tribe.lat!, lng: tribe.lng! }}
+                      clusterer={clusterer}
+                      onClick={() => setSelectedTribe(tribe)}
+                    />
+                  ))
+                }
+              </MarkerClustererF>
+            </GoogleMap>
+          </div>
+          {selectedTribe && (
+            <div className="absolute top-4 right-4 w-full max-w-sm z-10">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{selectedTribe.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{selectedTribe.location}</p>
+                  <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                  <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
+                    Apply to Join
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
+            <div className="space-y-2">
+              <Label htmlFor="tribe-location-chief">Location</Label>
+              <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
+              <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
+              <div className="mt-2">
+                <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+              </div>
+            </div>
+            <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function MyTribePageContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   
   const [user, setUser] = useState<User | null>(null);
@@ -100,16 +179,8 @@ function MyTribePageContent() {
     libraries,
   });
 
-  const getInitialView = (level: number) => {
-    if (level >= 6) return 'mentor';
-    if (level === 5) return 'chief';
-    if (level === 4) return 'member';
-    return 'graduate';
-  };
-  
-  const view = searchParams.get('view') || getInitialView(userLevel);
-
   const isChief = userTribe && userTribe.chief === user?.uid;
+  const isMentor = userLevel >= 6;
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
@@ -122,11 +193,9 @@ function MyTribePageContent() {
       }).catch(err => console.log("Could not update last login, probably a new user."));
 
 
-      const [progress, allTribes, joinAppsResult, newTribeAppsResult, profile] = await Promise.all([
+      const [progress, allTribes, profile] = await Promise.all([
         getUserProgress({ idToken }),
         getTribes({}),
-        manageApplication({ action: 'get', type: 'join_tribe', idToken }),
-        manageApplication({ action: 'get', type: 'new_tribe', idToken }),
         getUserProfile({ idToken }),
       ]);
 
@@ -143,7 +212,24 @@ function MyTribePageContent() {
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
       
-      if (currentUserTribe) {
+      // Fetch role-specific data
+      if (progress.currentUserLevel >= 6) { // Mentor
+          const newTribeAppsResult = await manageApplication({ action: 'get', type: 'new_tribe', idToken });
+          if (newTribeAppsResult.success && newTribeAppsResult.applications) {
+              setTribeCreationApps(newTribeAppsResult.applications);
+          }
+      }
+      if (progress.currentUserLevel >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
+          const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
+          if (joinAppsResult.success && joinAppsResult.applications) {
+              const sortedApps = joinAppsResult.applications.map(app => ({
+                  ...app,
+                  createdAt: new Date(app.createdAt),
+              })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+              setApplications(sortedApps);
+          }
+      }
+      if (currentUserTribe) { // Member or Chief of a tribe
           const [members, reports] = await Promise.all([
              getTribeMembers({ tribeId: currentUserTribe.id, idToken }),
              getMeetingReports({ tribeId: currentUserTribe.id, idToken }),
@@ -154,21 +240,6 @@ function MyTribePageContent() {
           setTribeMembers([]);
           setMeetingReports([]);
       }
-
-      if (joinAppsResult.success && joinAppsResult.applications) {
-        const sortedApps = joinAppsResult.applications.map(app => ({
-          ...app,
-          createdAt: new Date(app.createdAt),
-        })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        setApplications(sortedApps);
-      } else if (!joinAppsResult.success) {
-        throw new Error(joinAppsResult.message || "Failed to fetch applications.");
-      }
-      
-      if (newTribeAppsResult.success && newTribeAppsResult.applications) {
-          setTribeCreationApps(newTribeAppsResult.applications);
-      }
-
 
     } catch (error: any) {
         console.error("Error fetching page data: ", error);
@@ -214,10 +285,6 @@ function MyTribePageContent() {
       clearInterval(timer);
     };
   }, [fetchTribesAndUserData, toast]);
-
-  const handleTabChange = (value: string) => {
-    router.push(`/my-tribe?view=${value}`);
-  };
 
   const handleCreateTribe = async () => {
     if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
@@ -532,393 +599,279 @@ function MyTribePageContent() {
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
 
-  const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
+  const renderMemberChiefView = () => (
+    <Tabs defaultValue="my-tribe" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1 gap-2">
+            <TabsTrigger value="my-tribe">My Tribe</TabsTrigger>
+            <TabsTrigger value="my-profile">My Profile</TabsTrigger>
+            {isChief && <TabsTrigger value="chief-dashboard">Chief Dashboard</TabsTrigger>}
+            {isMentor && <TabsTrigger value="mentor-dashboard">Mentor Dashboard</TabsTrigger>}
+        </TabsList>
 
-  const allTabs = [
-    { value: 'graduate', label: 'Graduate', icon: GraduationCap, level: 3, unlockText: 'Complete the tutorial to unlock.' },
-    { value: 'member', label: 'Member', icon: UserCheck, level: 4, unlockText: 'Join a tribe to unlock.' },
-    { value: 'chief', label: 'Chief', icon: Shield, level: 5, unlockText: 'Start a tribe to unlock.' },
-    { value: 'mentor', label: 'Mentor', icon: Users, level: 6, unlockText: 'Become a mentor to unlock.' }
-  ];
-
-  const renderTabs = () => {
-    return (
-      <TabsList className="grid w-full grid-cols-4 mb-6 h-auto p-1 gap-2">
-        {allTabs.map(tab => {
-          const isUnlocked = userLevel >= tab.level;
-          const Trigger = (
-            <TabsTrigger 
-              key={tab.value} 
-              value={tab.value} 
-              className={cn(tabTriggerClasses, "flex-grow", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}
-              disabled={!isUnlocked}
-            >
-              {isUnlocked ? <tab.icon className="mr-2" /> : <Lock className="mr-2" />}
-              {tab.label}
-            </TabsTrigger>
-          );
-
-          if (isUnlocked) {
-            return Trigger;
-          }
-
-          return (
-            <TooltipProvider key={tab.value}>
-              <Tooltip>
-                <TooltipTrigger asChild>{Trigger}</TooltipTrigger>
-                <TooltipContent>
-                  <p>{tab.unlockText}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        })}
-      </TabsList>
-    );
-  };
-
-
-  return (
-    <>
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Account</h1>
-        <Link href="/" passHref>
-          <Button variant="outline">
-            <Home className="mr-2" /> Back to Path
-          </Button>
-        </Link>
-      </header>
-      
-      <Tabs value={view} onValueChange={handleTabChange} className="w-full">
-         {renderTabs()}
-        
-        <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-8">
-                <Card>
-                    <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="profile">
-                            <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                                <div className="flex items-center justify-between w-full">
-                                    <div>
-                                        <CardTitle>My Profile</CardTitle>
-                                        <CardDescription className="pt-1 text-left">View and update your personal information.</CardDescription>
-                                    </div>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <form onSubmit={handleSaveProfile}>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid sm:grid-cols-2 gap-4">
-                                            <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
-                                            <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
-                                        </div>
-                                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
-                                        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
-                                        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
-                                        <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
-                                        <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
-                                    </CardContent>
-                                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
-                                </form>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </Card>
-                
-                <Card>
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="item-1">
-                      <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                        <div className="flex items-center justify-between w-full">
-                            <div>
-                                <CardTitle>Comprehension Test</CardTitle>
-                                <CardDescription className="pt-1 text-left">Click to view/edit your answers.</CardDescription>
-                            </div>
+        <TabsContent value="my-profile" className="m-0 space-y-8">
+            <Card>
+                <CardHeader>
+                  <CardTitle>My Profile</CardTitle>
+                  <CardDescription>View and update your personal information.</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleSaveProfile}>
+                    <CardContent className="space-y-4">
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
+                            <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
                         </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                          <CardContent className="space-y-6">
-                          {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                          tutorialQuestions.map((q, i) => (
-                          <div key={i} className="grid w-full gap-1.5">
-                              <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                              <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
-                          </div>
-                          ))
-                          )}
-                          </CardContent>
-                          <CardFooter className="flex flex-wrap gap-2 justify-end">
-                          <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                          <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
-                          </CardFooter>
-                          {tutorialData.latestFeedback && (
-                          <CardContent>
-                          <Alert>
-                              <Sparkles className="h-4 w-4" />
-                              <AlertTitle className="flex justify-between">
-                              <span>You Receive Guidance</span>
-                              <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
-                              </AlertTitle>
-                              <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
-                          </Alert>
-                          </CardContent>
-                          )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
+                        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
+                        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                        <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
+                        <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
+                    </CardContent>
+                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                </form>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Comprehension Test</CardTitle>
+                    <CardDescription>Review or update your answers.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                tutorialQuestions.map((q, i) => (
+                <div key={i} className="grid w-full gap-1.5">
+                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                </div>
+                ))
+                )}
+                </CardContent>
+                <CardFooter className="flex flex-wrap gap-2 justify-end">
+                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                </CardFooter>
+                {tutorialData.latestFeedback && (
+                <CardContent>
+                <Alert>
+                    <Sparkles className="h-4 w-4" />
+                    <AlertTitle className="flex justify-between">
+                    <span>You Receive Guidance</span>
+                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                    </AlertTitle>
+                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                </Alert>
+                </CardContent>
+                )}
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="my-tribe" className="m-0 space-y-8">
+            {userTribe ? (
+            <>
+                <Card>
+                <CardHeader>
+                    <CardTitle>Your Tribe: <span className="text-primary">{userTribe.name}</span></CardTitle>
+                    <CardDescription>You are a {isChief ? 'Chief' : 'Member'} of this tribe.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
+                    <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="outline" className="w-full">Leave Tribe</Button>
+                </CardFooter>
                 </Card>
+                <Card>
+                <CardHeader><CardTitle>Upcoming Meetings</CardTitle></CardHeader>
+                <CardContent>
+                    {upcomingMeetings.length > 0 ? (
+                    <ul className="space-y-3">
+                        {upcomingMeetings.map(meeting => (
+                        <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
+                            <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
+                        </li>
+                        ))}
+                    </ul>
+                    ) : (
+                    <p className="text-sm text-muted-foreground">No upcoming meetings scheduled.</p>
+                    )}
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader><CardTitle>Past Meetings</CardTitle></CardHeader>
+                <CardContent>
+                    {pastMeetings.length > 0 ? (
+                      <Accordion type="single" collapsible className="w-full">
+                        {pastMeetings.map(meeting => {
+                          const reportsForMeeting = meetingReports.filter(r => r.meetingId === meeting.id);
+                          const userReport = reportsForMeeting.find(r => r.userId === user?.uid);
 
-            </div>
-
-            <div className="lg:col-span-2 space-y-8">
-              <TabsContent value="graduate" className="m-0">
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>Find or Start a Tribe</CardTitle>
-                          <CardDescription>As a Graduate, you can now take the next step.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                         <Alert>
-                            <Terminal className="h-4 w-4" />
-                            <AlertTitle>Instructions</AlertTitle>
-                            <AlertDescription>
-                                <ul className="list-disc pl-5 space-y-1">
-                                    <li><b>To join a tribe:</b> Use the map below to find a tribe in your area. Click on a marker to see details and apply to join. This will send an application to the Tribe Chief for their review.</li>
-                                    <li><b>To start a tribe:</b> If there are no tribes nearby or you wish to lead your own, fill out the "Start Your Own Tribe" form. A Mentor will review your application.</li>
-                                    <li>Completing either of these steps will unlock the next stage of your journey.</li>
-                                </ul>
-                            </AlertDescription>
-                        </Alert>
-                         <div className="relative">
-                            <div style={overviewMapContainerStyle}>
-                                <GoogleMap
-                                  mapContainerStyle={{ height: '100%', width: '100%' }}
-                                  center={defaultCenter}
-                                  zoom={4}
-                                  options={{ disableDefaultUI: true, zoomControl: true }}
-                                  onClick={() => setSelectedTribe(null)}
-                                >
-                                    <MarkerClustererF>
-                                        {(clusterer) =>
-                                            tribes.filter(t => t.lat && t.lng).map(tribe => (
-                                                <MarkerF
-                                                    key={tribe.id}
-                                                    position={{ lat: tribe.lat!, lng: tribe.lng! }}
-                                                    clusterer={clusterer}
-                                                    onClick={() => setSelectedTribe(tribe)}
-                                                />
-                                            ))
-                                        }
-                                    </MarkerClustererF>
-                                </GoogleMap>
+                          return (
+                            <AccordionItem key={meeting.id} value={meeting.id}>
+                              <div className="flex items-center w-full p-4">
+                                <AccordionTrigger className="flex-grow p-0">
+                                    <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
+                                </AccordionTrigger>
+                                <Button variant="secondary" size="sm" className="ml-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
+                                  {userReport ? 'View My Report' : 'Submit My Report'}
+                                </Button>
+                              </div>
+                              <AccordionContent>
+                                <div className="space-y-2 pl-4">
+                                  <h4 className="font-semibold text-sm">Submitted Reports:</h4>
+                                  {reportsForMeeting.length > 0 ? (
+                                    reportsForMeeting.map(report => (
+                                      <Button key={report.id} variant="link" className="p-0 h-auto justify-start" onClick={() => handleMeetingReportAction(meeting, report)}>
+                                        <FileText className="h-4 w-4 mr-2" /> Report from {report.userName}
+                                      </Button>
+                                    ))
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground">No reports submitted for this meeting.</p>
+                                  )}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No past meetings.</p>
+                    )}
+                </CardContent>
+                </Card>
+            </>
+            ) : (
+            <Card>
+              <CardHeader>
+                  <CardTitle>You Are Not in a Tribe</CardTitle>
+                  <CardDescription>Go to the graduate page to find and apply for a tribe or start your own.</CardDescription>
+              </CardHeader>
+            </Card>
+            )}
+        </TabsContent>
+        
+        {isChief && userTribe && (
+            <TabsContent value="chief-dashboard" className="m-0 space-y-8">
+                 <Card>
+                    <CardHeader>
+                    <CardTitle>Manage Meetings</CardTitle><CardDescription>Schedule and view meetings for your tribe.</CardDescription>
+                    <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
+                        <div className="flex items-center gap-2 mt-4">
+                          <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
+                          <div className="flex w-full items-center gap-1">
+                              <Select value={hour} onValueChange={setHour}>
+                                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                                  <SelectContent>{Array.from({length: 12}, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{String(h)}</SelectItem>)}</SelectContent>
+                              </Select>
+                              <span>:</span>
+                              <Select value={minute} onValueChange={setMinute}>
+                                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                      <SelectItem value="00">00</SelectItem>
+                                      <SelectItem value="30">30</SelectItem>
+                                  </SelectContent>
+                              </Select>
+                              <Select value={ampm} onValueChange={setAmPm}>
+                                  <SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent><SelectItem value="AM">AM</SelectItem><SelectItem value="PM">PM</SelectItem></SelectContent>
+                              </Select>
+                          </div>
+                        </div>
+                        <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
+                        {upcomingMeetings.length > 0 ? (
+                        <ul className="space-y-2 max-h-80 overflow-y-auto">{upcomingMeetings.map(meeting => (<li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md"><div className="flex-1"><p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p></div><Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}><Trash2 className="h-4 w-4" /></Button></li>))}</ul>
+                        ) : (<p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>)}
+                    </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Users />Tribe Members</CardTitle>
+                    <CardDescription>As Chief, you can view member details and their test answers.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                    {tribeMembers.map(member => (
+                        <AccordionItem key={member.uid} value={member.uid}>
+                        <AccordionTrigger>{member.firstName} {member.lastName}</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="space-y-4">
+                            <div><p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p><p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p></div>
+                            <div>
+                              <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
+                              <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
                             </div>
-                            {selectedTribe && (
-                                <div className="absolute top-4 right-4 w-full max-w-sm z-10">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>{selectedTribe.name}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-muted-foreground">{selectedTribe.location}</p>
-                                            <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
-                                            <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
-                                                Apply to Join
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
+                            {member.answers && (
+                                <div>
+                                <h4 className="font-semibold mb-2">Comprehension Answers</h4>
+                                <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
+                                    {tutorialQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
+                                    {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
+                                </div>
                                 </div>
                             )}
-                         </div>
-
-                         <div>
-                            <h3 className="text-xl font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
+                            </div>
+                        </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                    </Accordion>
+                </CardContent>
+                </Card>
+                {applications && applications.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle>Pending Applications</CardTitle><CardDescription>Review and respond to applicants for your tribe.</CardDescription></CardHeader>
+                    <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                        {applications.map(app => (
+                        <AccordionItem key={app.id} value={app.id}>
+                            <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                            <AccordionContent>
                             <div className="space-y-4">
-                                <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
-                                <div className="space-y-2">
-                                <Label htmlFor="tribe-location-chief">Location</Label>
-                                <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
-                                <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                                <div className="mt-2">
-                                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                <div>
+                                <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                </div>
+                                <div>
+                                <h4 className="font-semibold mb-2">Tutorial Answers</h4>
+                                <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
+                                    {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                 </div>
                                 </div>
-                                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
+                                <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
                             </div>
-                        </div>
-                      </CardContent>
-                  </Card>
-              </TabsContent>
-              <TabsContent value="member" className="m-0 space-y-8">
-                  {userTribe ? (
-                  <>
-                      <Card>
-                      <CardHeader>
-                          <CardTitle>Your Tribe: <span className="text-primary">{userTribe.name}</span></CardTitle>
-                          <CardDescription>You are a {isChief ? 'Chief' : 'Member'} of this tribe.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
-                          <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
-                      </CardContent>
-                      <CardFooter>
-                          <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="outline" className="w-full">Leave Tribe</Button>
-                      </CardFooter>
-                      </Card>
-                      <Card>
-                      <CardHeader><CardTitle>Upcoming Meetings</CardTitle></CardHeader>
-                      <CardContent>
-                          {upcomingMeetings.length > 0 ? (
-                          <ul className="space-y-3">
-                              {upcomingMeetings.map(meeting => (
-                              <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
-                                  <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
-                              </li>
-                              ))}
-                          </ul>
-                          ) : (
-                          <p className="text-sm text-muted-foreground">No upcoming meetings scheduled.</p>
-                          )}
-                      </CardContent>
-                      </Card>
-                      <Card>
-                      <CardHeader><CardTitle>Past Meetings</CardTitle></CardHeader>
-                      <CardContent>
-                          {pastMeetings.length > 0 ? (
-                            <Accordion type="single" collapsible className="w-full">
-                              {pastMeetings.map(meeting => {
-                                const reportsForMeeting = meetingReports.filter(r => r.meetingId === meeting.id);
-                                const userReport = reportsForMeeting.find(r => r.userId === user.uid);
+                            </AccordionContent>
+                        </AccordionItem>
+                        ))}
+                    </Accordion>
+                    </CardContent>
+                </Card>
+                )}
+            </TabsContent>
+        )}
 
-                                return (
-                                  <AccordionItem key={meeting.id} value={meeting.id}>
-                                    <div className="flex items-center w-full p-4">
-                                      <AccordionTrigger className="flex-grow p-0">
-                                          <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
-                                      </AccordionTrigger>
-                                      <Button variant="secondary" size="sm" className="ml-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
-                                        {userReport ? 'View My Report' : 'Submit My Report'}
-                                      </Button>
-                                    </div>
-                                    <AccordionContent>
-                                      <div className="space-y-2 pl-4">
-                                        <h4 className="font-semibold text-sm">Submitted Reports:</h4>
-                                        {reportsForMeeting.length > 0 ? (
-                                          reportsForMeeting.map(report => (
-                                            <Button key={report.id} variant="link" className="p-0 h-auto justify-start" onClick={() => handleMeetingReportAction(meeting, report)}>
-                                              <FileText className="h-4 w-4 mr-2" /> Report from {report.userName}
-                                            </Button>
-                                          ))
-                                        ) : (
-                                          <p className="text-xs text-muted-foreground">No reports submitted for this meeting.</p>
-                                        )}
-                                      </div>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                );
-                              })}
-                            </Accordion>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No past meetings.</p>
-                          )}
-                      </CardContent>
-                      </Card>
-                  </>
-                  ) : (
-                  <Card>
+        {isMentor && (
+            <TabsContent value="mentor-dashboard" className="m-0">
+                <Card>
                     <CardHeader>
-                        <CardTitle>You Are Not in a Tribe</CardTitle>
-                        <CardDescription>Use the 'Graduate' tab to find and apply for a tribe or start your own.</CardDescription>
+                        <CardTitle>Mentor Dashboard</CardTitle>
+                        <CardDescription>Review applications from members who want to start their own tribe.</CardDescription>
                     </CardHeader>
-                  </Card>
-                  )}
-              </TabsContent>
-              <TabsContent value="chief" className="m-0 space-y-8">
-                  {isChief && userTribe && (
-                  <>
-                  <Card>
-                      <CardHeader>
-                      <CardTitle>Manage Meetings</CardTitle><CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                      <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
-                      </CardHeader>
-                      <CardContent className="grid md:grid-cols-2 gap-6">
-                      <div>
-                          <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
-                          <div className="flex items-center gap-2 mt-4">
-                            <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
-                            <div className="flex w-full items-center gap-1">
-                                <Select value={hour} onValueChange={setHour}>
-                                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                                    <SelectContent>{Array.from({length: 12}, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{String(h)}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <span>:</span>
-                                <Select value={minute} onValueChange={setMinute}>
-                                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="00">00</SelectItem>
-                                        <SelectItem value="30">30</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Select value={ampm} onValueChange={setAmPm}>
-                                    <SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger>
-                                    <SelectContent><SelectItem value="AM">AM</SelectItem><SelectItem value="PM">PM</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                          </div>
-                          <Button onClick={handleAddMeeting} className="w-full mt-4" disabled={!selectedDate}>Schedule Meeting</Button>
-                      </div>
-                      <div>
-                          <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
-                          {upcomingMeetings.length > 0 ? (
-                          <ul className="space-y-2 max-h-80 overflow-y-auto">{upcomingMeetings.map(meeting => (<li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md"><div className="flex-1"><p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p></div><Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}><Trash2 className="h-4 w-4" /></Button></li>))}</ul>
-                          ) : (<p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>)}
-                      </div>
-                      </CardContent>
-                  </Card>
-                      <Card>
-                      <CardHeader>
-                          <CardTitle className="flex items-center gap-2"><Users />Tribe Members</CardTitle>
-                          <CardDescription>As Chief, you can view member details and their test answers.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <Accordion type="single" collapsible className="w-full">
-                          {tribeMembers.map(member => (
-                              <AccordionItem key={member.uid} value={member.uid}>
-                              <AccordionTrigger>{member.firstName} {member.lastName}</AccordionTrigger>
-                              <AccordionContent>
-                                  <div className="space-y-4">
-                                  <div><p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p><p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p></div>
-                                  <div>
-                                    <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
-                                    <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
-                                  </div>
-                                  {member.answers && (
-                                      <div>
-                                      <h4 className="font-semibold mb-2">Comprehension Answers</h4>
-                                      <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
-                                          {tutorialQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
-                                          {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
-                                      </div>
-                                      </div>
-                                  )}
-                                  </div>
-                              </AccordionContent>
-                              </AccordionItem>
-                          ))}
-                          </Accordion>
-                      </CardContent>
-                      </Card>
-                      {applications && applications.length > 0 && (
-                      <Card>
-                          <CardHeader><CardTitle>Pending Applications</CardTitle><CardDescription>Review and respond to applicants for your tribe.</CardDescription></CardHeader>
-                          <CardContent>
-                          <Accordion type="single" collapsible className="w-full">
-                              {applications.map(app => (
+                    <CardContent>
+                        {tribeCreationApps.length > 0 ? (
+                              <Accordion type="single" collapsible className="w-full">
+                              {tribeCreationApps.map(app => (
                               <AccordionItem key={app.id} value={app.id}>
-                                  <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                                  <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
                                   <AccordionContent>
                                   <div className="space-y-4">
-                                      <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                      <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
                                       <div>
                                       <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
@@ -935,67 +888,63 @@ function MyTribePageContent() {
                               </AccordionItem>
                               ))}
                           </Accordion>
-                          </CardContent>
-                      </Card>
-                      )}
-                  </>
-                  )}
-              </TabsContent>
-              <TabsContent value="mentor" className="m-0">
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>Mentor Dashboard</CardTitle>
-                          <CardDescription>Review applications from members who want to start their own tribe.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          {tribeCreationApps.length > 0 ? (
-                               <Accordion type="single" collapsible className="w-full">
-                               {tribeCreationApps.map(app => (
-                               <AccordionItem key={app.id} value={app.id}>
-                                   <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
-                                   <AccordionContent>
-                                   <div className="space-y-4">
-                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
-                                      <div>
-                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
-                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
-                                      </div>
-                                       <div>
-                                       <h4 className="font-semibold mb-2">Tutorial Answers</h4>
-                                       <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
-                                           {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
-                                       </div>
-                                       </div>
-                                       <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
-                                   </div>
-                                   </AccordionContent>
-                               </AccordionItem>
-                               ))}
-                           </Accordion>
-                          ) : (
-                             <p className="text-muted-foreground">There are currently no pending applications to create a new tribe.</p>
-                          )}
-                      </CardContent>
-                  </Card>
-              </TabsContent>
-            </div>
-        </div>
-      </Tabs>
-    </div>
-    {userTribe && selectedMeeting && user && (
-        <ReportModal
-          isOpen={isReportModalOpen}
-          onClose={() => setIsReportModalOpen(false)}
-          meeting={selectedMeeting}
-          tribeId={userTribe.id}
-          userId={user.uid}
-          existingReport={selectedReport || meetingReports.find(r => r.meetingId === selectedMeeting.id && r.userId === user.uid)}
-          onReportSubmitted={() => {
-            setIsReportModalOpen(false);
-            if (user) fetchTribesAndUserData(user);
-          }}
-        />
-    )}
+                        ) : (
+                            <p className="text-muted-foreground">There are currently no pending applications to create a new tribe.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
+    </Tabs>
+  );
+
+
+  return (
+    <>
+      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">My Account</h1>
+          <Link href="/" passHref>
+            <Button variant="outline">
+              <Home className="mr-2" /> Back to Path
+            </Button>
+          </Link>
+        </header>
+
+        {userLevel >= 4 ? renderMemberChiefView() : (
+          <GraduateView 
+              user={user}
+              isLoaded={isLoaded}
+              isLoading={isLoading}
+              tribes={tribes}
+              userTribe={userTribe}
+              newTribeName={newTribeName}
+              newTribeLocation={newTribeLocation}
+              newTribeCoords={newTribeCoords}
+              selectedTribe={selectedTribe}
+              handlePlaceSelected={handlePlaceSelected}
+              handleCreateTribe={handleCreateTribe}
+              handleJoinTribe={handleJoinTribe}
+              setNewTribeName={setNewTribeName}
+              setSelectedTribe={setSelectedTribe}
+          />
+        )}
+      </div>
+      
+      {userTribe && selectedMeeting && user && (
+          <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            meeting={selectedMeeting}
+            tribeId={userTribe.id}
+            userId={user.uid}
+            existingReport={selectedReport || meetingReports.find(r => r.meetingId === selectedMeeting.id && r.userId === user.uid)}
+            onReportSubmitted={() => {
+              setIsReportModalOpen(false);
+              if (user) fetchTribesAndUserData(user);
+            }}
+          />
+      )}
     </>
   );
 }
