@@ -189,7 +189,7 @@ export default function BodyFeelingsMapPage() {
                     ) : (
                       <div 
                           ref={imageContainerRef}
-                          className="relative w-full max-w-md mx-auto aspect-[2/3] cursor-pointer"
+                          className="relative w-full max-w-lg mx-auto aspect-[2/3] cursor-pointer"
                           onClick={handleMapClick}
                       >
                           <Image
@@ -296,5 +296,4 @@ export default function BodyFeelingsMapPage() {
         </Dialog>
     </div>
   );
-
-    
+}
