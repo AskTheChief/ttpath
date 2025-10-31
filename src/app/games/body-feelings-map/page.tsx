@@ -101,7 +101,7 @@ export default function BodyFeelingsMapPage() {
                             <path d="M100 20C70 20 60 50 60 70C60 90 70 100 70 120L75 180L70 280L90 280L95 180L105 180L110 280L130 280L125 180L130 120C130 100 140 90 140 70C140 50 130 20 100 20Z" fill="none" stroke="currentColor" strokeWidth="2" />
                             <circle cx="100" cy="45" r="20" fill="none" stroke="currentColor" strokeWidth="2" />
                             <path d="M70 120L40 180L30 270L50 270L55 200L75 180" fill="none" stroke="currentColor" strokeWidth="2" />
-                            <path d:path="M130 120L160 180L170 270L150 270L145 200L125 180" fill="none" stroke="currentColor" strokeWidth="2" />
+                            <path d="M130 120L160 180L170 270L150 270L145 200L125 180" fill="none" stroke="currentColor" strokeWidth="2" />
                         </svg>
 
                         {feelings.map(feeling => (
