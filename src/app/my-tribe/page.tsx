@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -40,6 +41,7 @@ import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const libraries: Libraries = ['places'];
@@ -130,7 +132,9 @@ function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
               <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
               <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
               <div className="mt-2">
-                <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} >
+                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                </GoogleMap>
               </div>
             </div>
             <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
@@ -140,7 +144,6 @@ function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
     </Card>
   );
 }
-
 
 function MyTribePageContent() {
   const router = useRouter();
@@ -577,10 +580,10 @@ function MyTribePageContent() {
     return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
   }
 
-  if (!user || userLevel < 3) {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">You must be a Graduate to access this page.</p>
+        <p className="text-xl mb-4">You must be logged in to view your account.</p>
         <Link href="/" passHref>
           <Button>Back to Path</Button>
         </Link>
@@ -598,14 +601,39 @@ function MyTribePageContent() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
+  
+  const renderLockedTabTrigger = (value: string, title: string, requiredLevel: number) => {
+    const isUnlocked = userLevel >= requiredLevel;
+    const tooltipContent = `Requires Level ${requiredLevel} (${{4: 'Member', 5: 'Chief', 6: 'Mentor'}[requiredLevel]}).`;
+    
+    if (isUnlocked) {
+        return <TabsTrigger value={value}>{title}</TabsTrigger>;
+    }
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="relative inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
+                        <Lock className="h-3 w-3 mr-2" />
+                        {title}
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{tooltipContent}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+};
 
   const renderMemberChiefView = () => (
     <Tabs defaultValue="my-tribe" className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1 gap-2">
-            <TabsTrigger value="my-tribe">My Tribe</TabsTrigger>
             <TabsTrigger value="my-profile">My Profile</TabsTrigger>
-            {isChief && <TabsTrigger value="chief-dashboard">Chief Dashboard</TabsTrigger>}
-            {isMentor && <TabsTrigger value="mentor-dashboard">Mentor Dashboard</TabsTrigger>}
+            {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
+            {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
+            {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
         </TabsList>
 
         <TabsContent value="my-profile" className="m-0 space-y-8">
@@ -911,7 +939,7 @@ function MyTribePageContent() {
           </Link>
         </header>
 
-        {userLevel >= 4 ? renderMemberChiefView() : (
+        {userLevel < 4 ? (
           <GraduateView 
               user={user}
               isLoaded={isLoaded}
@@ -928,6 +956,8 @@ function MyTribePageContent() {
               setNewTribeName={setNewTribeName}
               setSelectedTribe={setSelectedTribe}
           />
+        ) : (
+          renderMemberChiefView()
         )}
       </div>
       
@@ -957,3 +987,4 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
