@@ -193,14 +193,12 @@ export default function BodyFeelingsMapPage() {
                               className="w-full h-full"
                               onClick={handleMapClick}
                           >
-                            <path
-                                d="M100,50 C113.8,50 125,61.2 125,75 C125,88.8 113.8,100 100,100 C86.2,100 75,88.8 75,75 C75,61.2 86.2,50 100,50 Z M 100,100 Q 100,105 90,120 L 90,180 Q 90,190 80,200 L 70,280 Q 70,290 80,290 L 120,290 Q 130,290 130,280 L 120,200 Q 110,190 110,180 L 110,120 Q 100,105 100,100 M 100,120 L 180,170 M 100,120 L 20,170"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
+                            <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="100" cy="40" r="25" />
+                              <path d="M100 65 L90 85 L110 85 Z" />
+                              <path d="M90 85 L20 115 M110 85 L180 115" />
+                              <path d="M90 85 C85 150, 85 150, 80 280 L120 280 C115 150, 115 150, 110 85 Z" />
+                            </g>
                           </svg>
                           {feelings.map(feeling => (
                             <div
