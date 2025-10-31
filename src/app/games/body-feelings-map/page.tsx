@@ -194,11 +194,11 @@ export default function BodyFeelingsMapPage() {
                               onClick={handleMapClick}
                           >
                             <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="100" cy="40" r="25" />
-                              <path d="M100 65 V 150" />
-                              <path d="M50 90 L 150 90" />
-                              <path d="M100 150 L 80 280" />
-                              <path d="M100 150 L 120 280" />
+                              <path d="M100 40 a20 20 0 1 0 0.0001 0" />
+                              <path d="M100 60 v 90" />
+                              <path d="M50 80 l 100 0" />
+                              <path d="M100 150 l -20 130" />
+                              <path d="M100 150 l 20 130" />
                             </g>
                           </svg>
                           {feelings.map(feeling => (
