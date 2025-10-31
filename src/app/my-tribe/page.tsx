@@ -100,15 +100,14 @@ function MyTribePageContent() {
     libraries,
   });
 
-  const getInitialView = (level: number, hasTribe: boolean) => {
+  const getInitialView = (level: number) => {
     if (level >= 6) return 'mentor';
     if (level === 5) return 'chief';
     if (level === 4) return 'member';
-    if (level === 3) return 'graduate';
-    return 'graduate'; // Default to graduate for level < 3, access will be blocked anyway
+    return 'graduate';
   };
   
-  const view = searchParams.get('view') || getInitialView(userLevel, !!userTribe);
+  const view = searchParams.get('view') || getInitialView(userLevel);
 
   const isChief = userTribe && userTribe.chief === user?.uid;
 
@@ -544,7 +543,7 @@ function MyTribePageContent() {
 
   const renderTabs = () => {
     return (
-      <TabsList className="flex w-full mb-6 h-auto p-1 gap-2">
+      <TabsList className="grid w-full grid-cols-4 mb-6 h-auto p-1 gap-2">
         {allTabs.map(tab => {
           const isUnlocked = userLevel >= tab.level;
           const Trigger = (
