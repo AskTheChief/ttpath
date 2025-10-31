@@ -44,6 +44,7 @@ export default function BodyFeelingsMapPage() {
   const [feelings, setFeelings] = useState<Feeling[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentFeeling, setCurrentFeeling] = useState<Partial<Feeling>>({});
+  const [editingFeeling, setEditingFeeling] = useState<Feeling | null>(null);
   const [clickCoords, setClickCoords] = useState<{ x: number, y: number } | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,11 +124,12 @@ export default function BodyFeelingsMapPage() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setClickCoords({ x, y });
     setCurrentFeeling({ color: feelingColors[0] });
+    setEditingFeeling(null); // Ensure we are in "create" mode
     setIsModalOpen(true);
   };
   
   const handleSaveFeeling = () => {
-    if (!currentFeeling.name || !currentFeeling.sensation || !currentFeeling.metaFeeling || !currentFeeling.color || !clickCoords) {
+    if (!currentFeeling.name || !currentFeeling.sensation || !currentFeeling.metaFeeling || !currentFeeling.color) {
         toast({
             title: "Incomplete Form",
             description: "Please fill out all fields and select a color.",
@@ -135,23 +137,40 @@ export default function BodyFeelingsMapPage() {
         });
         return;
     }
-    const newFeeling: Feeling = {
-        id: Date.now(),
-        name: currentFeeling.name,
-        sensation: currentFeeling.sensation,
-        metaFeeling: currentFeeling.metaFeeling,
-        x: clickCoords.x,
-        y: clickCoords.y,
-        color: currentFeeling.color,
-    };
-    setFeelings([...feelings, newFeeling]);
+
+    if (editingFeeling) {
+        // Update existing feeling
+        setFeelings(feelings.map(f => f.id === editingFeeling.id ? { ...editingFeeling, ...currentFeeling } as Feeling : f));
+        toast({ title: "Feeling Updated" });
+    } else if (clickCoords) {
+        // Create new feeling
+        const newFeeling: Feeling = {
+            id: Date.now(),
+            name: currentFeeling.name,
+            sensation: currentFeeling.sensation,
+            metaFeeling: currentFeeling.metaFeeling,
+            x: clickCoords.x,
+            y: clickCoords.y,
+            color: currentFeeling.color,
+        };
+        setFeelings([...feelings, newFeeling]);
+    }
+
     setIsModalOpen(false);
     setCurrentFeeling({});
     setClickCoords(null);
+    setEditingFeeling(null);
   };
   
   const handleDeleteFeeling = (id: number) => {
     setFeelings(feelings.filter(f => f.id !== id));
+  };
+  
+  const openEditModal = (feeling: Feeling, e: MouseEvent) => {
+    e.stopPropagation(); // Prevent handleMapClick from firing
+    setEditingFeeling(feeling);
+    setCurrentFeeling(feeling);
+    setIsModalOpen(true);
   };
 
 
@@ -176,7 +195,7 @@ export default function BodyFeelingsMapPage() {
                     <CardTitle>Your Feelings Map</CardTitle>
                     <CardDescription>
                       {user 
-                        ? "Click on the body outline where you feel a sensation to log it. Your progress saves automatically." 
+                        ? "Click on the body outline where you feel a sensation to log it. Click a dot to edit. Your progress saves automatically." 
                         : "Log in to save your progress. Click on the body outline to begin."
                       }
                     </CardDescription>
@@ -202,8 +221,9 @@ export default function BodyFeelingsMapPage() {
                           {feelings.map(feeling => (
                             <div
                               key={feeling.id}
-                              className="absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2"
+                              className="absolute w-4 h-4 rounded-full -translate-x-1/2 -translate-y-1/2 transform hover:scale-150 transition-transform duration-150 cursor-pointer"
                               style={{ left: `${feeling.x}%`, top: `${feeling.y}%`, backgroundColor: feeling.color }}
+                              onClick={(e) => openEditModal(feeling, e)}
                             />
                           ))}
                       </div>
@@ -232,7 +252,7 @@ export default function BodyFeelingsMapPage() {
                                 <li key={feeling.id} className="p-3 border rounded-lg bg-background">
                                     <div className="flex justify-between items-start">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: feeling.color }}></div>
+                                            <div className="w-3 h-3 rounded-full mt-1" style={{ backgroundColor: feeling.color }}></div>
                                             <div>
                                                 <h4 className="font-semibold">{feeling.name}</h4>
                                                 <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
@@ -255,7 +275,7 @@ export default function BodyFeelingsMapPage() {
        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Log a New Feeling</DialogTitle>
+                    <DialogTitle>{editingFeeling ? 'Edit Feeling' : 'Log a New Feeling'}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -290,10 +310,12 @@ export default function BodyFeelingsMapPage() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveFeeling}>Save Feeling</Button>
+                    <Button onClick={handleSaveFeeling}>{editingFeeling ? 'Update Feeling' : 'Save Feeling'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>
   );
 }
+
+    
