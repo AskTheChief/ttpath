@@ -20,7 +20,20 @@ type Feeling = {
   metaFeeling: string;
   x: number;
   y: number;
+  color: string;
 };
+
+const feelingColors = [
+    '#EF4444', // Red
+    '#F97316', // Orange
+    '#FBBF24', // Amber
+    '#84CC16', // Lime
+    '#22C55E', // Green
+    '#14B8A6', // Teal
+    '#3B82F6', // Blue
+    '#8B5CF6', // Violet
+    '#EC4899', // Pink
+];
 
 export default function BodyFeelingsMapPage() {
   const [feelings, setFeelings] = useState<Feeling[]>([]);
@@ -37,15 +50,15 @@ export default function BodyFeelingsMapPage() {
     const x = ((e.clientX - svgRect.left) / svgRect.width) * 100;
     const y = ((e.clientY - svgRect.top) / svgRect.height) * 100;
     setClickCoords({ x, y });
-    setCurrentFeeling({});
+    setCurrentFeeling({ color: feelingColors[0] }); // Default to first color
     setIsModalOpen(true);
   };
   
   const handleSaveFeeling = () => {
-    if (!currentFeeling.name || !currentFeeling.sensation || !currentFeeling.metaFeeling || !clickCoords) {
+    if (!currentFeeling.name || !currentFeeling.sensation || !currentFeeling.metaFeeling || !currentFeeling.color || !clickCoords) {
         toast({
             title: "Incomplete Form",
-            description: "Please fill out all fields for the feeling.",
+            description: "Please fill out all fields and select a color for the feeling.",
             variant: "destructive"
         });
         return;
@@ -57,6 +70,7 @@ export default function BodyFeelingsMapPage() {
         metaFeeling: currentFeeling.metaFeeling,
         x: clickCoords.x,
         y: clickCoords.y,
+        color: currentFeeling.color,
     };
     setFeelings([...feelings, newFeeling]);
     setIsModalOpen(false);
@@ -107,8 +121,8 @@ export default function BodyFeelingsMapPage() {
                         {feelings.map(feeling => (
                            <div
                              key={feeling.id}
-                             className="absolute w-3 h-3 bg-blue-500 rounded-full -translate-x-1/2 -translate-y-1/2"
-                             style={{ left: `${feeling.x}%`, top: `${feeling.y}%` }}
+                             className="absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2"
+                             style={{ left: `${feeling.x}%`, top: `${feeling.y}%`, backgroundColor: feeling.color }}
                            />
                         ))}
                     </div>
@@ -128,12 +142,15 @@ export default function BodyFeelingsMapPage() {
                             {feelings.map(feeling => (
                                 <li key={feeling.id} className="p-3 border rounded-lg bg-background">
                                     <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-semibold">{feeling.name}</h4>
-                                            <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
-                                            <p className="text-sm mt-1"><i>Feeling about this: "{feeling.metaFeeling}"</i></p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: feeling.color }}></div>
+                                            <div>
+                                                <h4 className="font-semibold">{feeling.name}</h4>
+                                                <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
+                                                <p className="text-sm mt-1"><i>Feeling about this: "{feeling.metaFeeling}"</i></p>
+                                            </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteFeeling(feeling.id)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteFeeling(feeling.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -163,6 +180,23 @@ export default function BodyFeelingsMapPage() {
                     <div className="space-y-2">
                         <Label htmlFor="meta-feeling">How do you feel about this feeling?</Label>
                         <Input id="meta-feeling" value={currentFeeling.metaFeeling || ''} onChange={e => setCurrentFeeling(p => ({...p, metaFeeling: e.target.value}))} placeholder="e.g., Ashamed, accepting, frustrated" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Choose a color</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {feelingColors.map(color => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    className={cn(
+                                        "w-8 h-8 rounded-full border-2 transition-transform transform",
+                                        currentFeeling.color === color ? 'border-foreground scale-110' : 'border-transparent'
+                                    )}
+                                    style={{ backgroundColor: color }}
+                                    onClick={() => setCurrentFeeling(p => ({...p, color: color }))}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
