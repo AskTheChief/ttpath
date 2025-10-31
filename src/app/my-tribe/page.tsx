@@ -404,7 +404,7 @@ function MyTribePageContent() {
       } else {
         throw new Error(result.message);
       }
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
     }
   };
@@ -987,5 +987,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
