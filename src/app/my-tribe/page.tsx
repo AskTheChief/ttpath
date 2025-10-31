@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -92,7 +91,8 @@ function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     onClick={() => setSelectedTribe(null)}
                     >
                     <MarkerClustererF>
-                        {tribes.filter(t => t.lat && t.lng).map(tribe => (
+                        {(clusterer) =>
+                        tribes.filter(t => t.lat && t.lng).map(tribe => (
                         <MarkerF
                             key={tribe.id}
                             position={{ lat: tribe.lat!, lng: tribe.lng! }}
@@ -607,18 +607,23 @@ function MyTribePageContent() {
     const isUnlocked = userLevel >= requiredLevel;
     const tooltipContent = `Requires Level ${requiredLevel} (${{4: 'Member', 5: 'Chief', 6: 'Mentor'}[requiredLevel]}).`;
     
+    const Trigger = (
+        <TabsTrigger value={value} disabled={!isUnlocked} className={cn(!isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
+            {title}
+            {!isUnlocked && <Lock className="h-3 w-3 ml-2" />}
+        </TabsTrigger>
+    );
+
     if (isUnlocked) {
-        return <TabsTrigger value={value}>{title}</TabsTrigger>;
+        return Trigger;
     }
 
     return (
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className="relative inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
-                        <Lock className="h-3 w-3 mr-2" />
-                        {title}
-                    </div>
+                    {/* The div wrapper is necessary for Tooltip with disabled elements */}
+                    <div>{Trigger}</div>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>{tooltipContent}</p>
@@ -630,7 +635,7 @@ function MyTribePageContent() {
 
   const renderMemberChiefView = () => (
     <Tabs defaultValue="my-tribe" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1 gap-2">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
@@ -929,7 +934,7 @@ function MyTribePageContent() {
 
   const renderGraduateView = () => (
     <Tabs defaultValue="next-step" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1 gap-2">
+        <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
             <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="profile-tutorial">My Profile &amp; Tutorial</TabsTrigger>
         </TabsList>
@@ -1052,3 +1057,4 @@ export default function MyTribePage() {
   );
 }
 
+    
