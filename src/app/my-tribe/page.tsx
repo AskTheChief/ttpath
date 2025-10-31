@@ -596,24 +596,34 @@ function MyTribePageContent() {
         <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
                 <Card>
-                  <form onSubmit={handleSaveProfile}>
-                    <CardHeader>
-                    <CardTitle>My Profile</CardTitle>
-                    <CardDescription>View and update your personal information.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
-                          <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
-                      </div>
-                      <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
-                      <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
-                      <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
-                      <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
-                      <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
-                    </CardContent>
-                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
-                  </form>
+                    <Accordion type="single" collapsible className="w-full" defaultValue="profile">
+                        <AccordionItem value="profile">
+                            <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                                <div className="flex items-center justify-between w-full">
+                                    <div>
+                                        <CardTitle>My Profile</CardTitle>
+                                        <CardDescription className="pt-1 text-left">View and update your personal information.</CardDescription>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <form onSubmit={handleSaveProfile}>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                            <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
+                                            <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
+                                        </div>
+                                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
+                                        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
+                                        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                                        <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
+                                        <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
+                                    </CardContent>
+                                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                                </form>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </Card>
                 
                 <Card>
@@ -987,3 +997,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
