@@ -16,6 +16,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { saveFeelings, getFeelings } from '@/ai/flows/body-feelings-map';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 type Feeling = {
   id: number;
@@ -48,7 +49,7 @@ export default function BodyFeelingsMapPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
-  const svgRef = useRef<SVGSVGElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -115,11 +116,11 @@ export default function BodyFeelingsMapPage() {
   }, [feelings, user, toast, isLoading]);
 
 
-  const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    const svgRect = svgRef.current.getBoundingClientRect();
-    const x = ((e.clientX - svgRect.left) / svgRect.width) * 100;
-    const y = ((e.clientY - svgRect.top) / svgRect.height) * 100;
+  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
     setClickCoords({ x, y });
     setCurrentFeeling({ color: feelingColors[0] });
     setIsModalOpen(true);
@@ -186,25 +187,18 @@ export default function BodyFeelingsMapPage() {
                           <Loader2 className="h-12 w-12 animate-spin" />
                       </div>
                     ) : (
-                      <div className="relative w-full max-w-md mx-auto aspect-[2/3] cursor-pointer">
-                          <svg
-                              ref={svgRef}
-                              viewBox="0 0 200 300"
-                              className="w-full h-full"
-                              onClick={handleMapClick}
-                          >
-                            <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                              {/* Head */}
-                              <path d="M100 25 a20 20 0 1 0 0.0001 0" />
-                              {/* Torso */}
-                              <path d="M100 45 v 90" />
-                              {/* Arms */}
-                              <path d="M50 65 l 100 0" />
-                              {/* Legs */}
-                              <path d="M100 135 l -20 130" />
-                              <path d="M100 135 l 20 130" />
-                            </g>
-                          </svg>
+                      <div 
+                          ref={imageContainerRef}
+                          className="relative w-full max-w-md mx-auto aspect-[2/3] cursor-pointer"
+                          onClick={handleMapClick}
+                      >
+                          <Image
+                              src="/games/bodies.svg"
+                              alt="Body outline"
+                              layout="fill"
+                              objectFit="contain"
+                              className="filter dark:invert"
+                          />
                           {feelings.map(feeling => (
                             <div
                               key={feeling.id}
@@ -302,6 +296,5 @@ export default function BodyFeelingsMapPage() {
         </Dialog>
     </div>
   );
-}
 
     
