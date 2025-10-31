@@ -208,14 +208,14 @@ export default function BodyFeelingsMapPage() {
                     ) : (
                       <div 
                           ref={imageContainerRef}
-                          className="relative w-full mx-auto aspect-[2/3] cursor-pointer"
+                          className="relative w-full mx-auto cursor-pointer"
                           onClick={handleMapClick}
                       >
                           <Image
                               src="/games/bodies.svg"
                               alt="Body outline"
-                              layout="fill"
-                              objectFit="contain"
+                              width={800}
+                              height={400}
                               className="filter dark:invert"
                           />
                           {feelings.map(feeling => (
@@ -317,7 +317,3 @@ export default function BodyFeelingsMapPage() {
     </div>
   );
 }
-
-    
-
-    
