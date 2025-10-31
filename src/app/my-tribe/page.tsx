@@ -597,7 +597,7 @@ function MyTribePageContent() {
         <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
                 <Card>
-                    <Accordion type="single" collapsible className="w-full" defaultValue="profile">
+                    <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="profile">
                             <AccordionTrigger className="flex flex-1 items-center justify-between p-6 font-medium hover:no-underline [&[data-state=open]>svg]:rotate-180">
                                 <div className="flex items-center justify-between w-full">
