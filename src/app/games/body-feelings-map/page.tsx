@@ -200,7 +200,7 @@ export default function BodyFeelingsMapPage() {
                       }
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                     {isLoading ? (
                       <div className="flex items-center justify-center h-full aspect-[2/3]">
                           <Loader2 className="h-12 w-12 animate-spin" />
@@ -317,5 +317,7 @@ export default function BodyFeelingsMapPage() {
     </div>
   );
 }
+
+    
 
     
