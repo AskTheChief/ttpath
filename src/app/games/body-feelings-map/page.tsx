@@ -195,9 +195,10 @@ export default function BodyFeelingsMapPage() {
                           >
                             <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="100" cy="40" r="25" />
-                              <path d="M100 65 L90 85 L110 85 Z" />
-                              <path d="M90 85 L20 115 M110 85 L180 115" />
-                              <path d="M90 85 C85 150, 85 150, 80 280 L120 280 C115 150, 115 150, 110 85 Z" />
+                              <path d="M100 65 V 150" />
+                              <path d="M50 90 L 150 90" />
+                              <path d="M100 150 L 80 280" />
+                              <path d="M100 150 L 120 280" />
                             </g>
                           </svg>
                           {feelings.map(feeling => (
