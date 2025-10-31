@@ -33,7 +33,8 @@ export default function GamesPage() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const progress = await getUserProgress({});
+        const idToken = await currentUser.getIdToken();
+        const progress = await getUserProgress({ idToken });
         setUserLevel(progress.currentUserLevel);
       }
     });

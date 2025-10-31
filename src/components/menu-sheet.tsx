@@ -20,7 +20,7 @@ type MenuSheetProps = {
 const menuItems = [
     { id: 'pamphlet', icon: Database, label: 'Library' },
     { id: 'my-tribe', icon: Swords, label: 'My Account', href: '/my-tribe' },
-    { id: 'games', icon: Gamepad2, label: 'Games', href: '/games' },
+    { id: 'games', icon: Gamepad2, label: 'Game Center', href: '/games' },
     { id: 'store', icon: Store, label: 'Store', href: '/store' },
     { id: 'trading', icon: CandlestickChart, label: 'Trading', href: '/trading' },
 ];
