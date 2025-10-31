@@ -655,7 +655,7 @@ function MyTribePageContent() {
                                   mapContainerStyle={{ height: '100%', width: '100%' }}
                                   center={defaultCenter}
                                   zoom={4}
-                                  options={{ disableDefaultUI: true }}
+                                  options={{ disableDefaultUI: true, zoomControl: true }}
                                   onClick={() => setSelectedTribe(null)}
                                 >
                                     <MarkerClustererF>
@@ -699,7 +699,7 @@ function MyTribePageContent() {
                                 <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                                 <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
                                 <div className="mt-2">
-                                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
                                 </div>
                                 </div>
                                 <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
@@ -822,7 +822,7 @@ function MyTribePageContent() {
                         <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                         <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
                         <div className="mt-2">
-                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
+                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
                         </div>
                         </div>
                     </CardContent>
