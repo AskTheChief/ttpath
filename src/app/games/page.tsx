@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gamepad2, Puzzle } from 'lucide-react';
+import { Gamepad2, Puzzle, Target } from 'lucide-react';
 import Link from 'next/link';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -23,6 +23,12 @@ const games = [
     description: 'Acknowledge feelings by slicing them, but avoid core principles!',
     icon: Gamepad2,
   },
+  {
+    href: '/games/body-feelings-map',
+    title: 'Body Feelings Map',
+    description: 'Take inventory of your feelings by mapping them to your body.',
+    icon: Target,
+  }
 ]
 
 export default function GamesPage() {
@@ -58,7 +64,7 @@ export default function GamesPage() {
         <p className="text-muted-foreground">Choose a game to play and practice Tribe principles.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl">
         {games.map((game) => (
           <Link href={game.href} key={game.title} passHref>
             <Card className="hover:shadow-lg hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col">

@@ -260,7 +260,7 @@ export default function FeelingsSlicerPage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-foreground p-4">
       <div className="w-full max-w-4xl mx-auto flex flex-col">
         <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold">Feelings Slicer</h1>
@@ -278,7 +278,7 @@ export default function FeelingsSlicerPage() {
         <div 
           {...bind()}
           ref={gameAreaRef}
-          className="relative w-full aspect-[4/3] bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair touch-none"
+          className="relative w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800 border-4 border-primary rounded-lg overflow-hidden cursor-crosshair touch-none"
         >
           {gameState === 'ready' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-20">
@@ -300,7 +300,7 @@ export default function FeelingsSlicerPage() {
                 key={item.id}
                 className={cn(
                     "absolute flex items-center justify-center font-bold text-2xl rounded-full select-none transition-opacity duration-300 pointer-events-none",
-                    item.type === 'feeling' ? 'bg-blue-500' : 'bg-yellow-500 text-gray-900',
+                    item.type === 'feeling' ? 'bg-blue-500 text-white' : 'bg-yellow-500 text-gray-900',
                     item.sliced && "opacity-0"
                 )}
                 style={{
@@ -331,7 +331,7 @@ export default function FeelingsSlicerPage() {
 
         </div>
       </div>
-      <Button asChild variant="link" className="mt-6 text-white">
+      <Button asChild variant="link" className="mt-6">
         <Link href="/games">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Game Center

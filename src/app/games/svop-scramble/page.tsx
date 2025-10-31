@@ -101,7 +101,7 @@ export default function SvopScramblePage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-secondary">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-lg shadow-2xl relative">
         <CardHeader>
           <CardTitle className="text-2xl">SVOP Scramble</CardTitle>
@@ -140,9 +140,9 @@ export default function SvopScramblePage() {
 
           {feedback && (
             <div className={cn("p-3 rounded-md text-sm font-medium flex items-center gap-2", {
-                'bg-green-100 text-green-800': feedback.type === 'correct',
-                'bg-red-100 text-red-800': feedback.type === 'incorrect',
-                'bg-yellow-100 text-yellow-800': feedback.type === 'forbidden',
+                'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300': feedback.type === 'correct',
+                'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300': feedback.type === 'incorrect',
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300': feedback.type === 'forbidden',
             })}>
                {feedback.type === 'correct' && <CheckCircle className="h-5 w-5"/>}
                {feedback.type === 'incorrect' && <XCircle className="h-5 w-5"/>}
