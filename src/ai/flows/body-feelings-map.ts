@@ -1,0 +1,118 @@
+
+'use server';
+
+/**
+ * @fileOverview Genkit flows for saving and retrieving user feelings for the Body Feelings Map.
+ *
+ * - getFeelings - Fetches the feelings for the authenticated user.
+ * - saveFeelings - Saves the feelings for the authenticated user.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
+// Initialize Firebase Admin SDK if it hasn't been already.
+if (!getApps().length) {
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
+}
+const db = getFirestore();
+const adminAuth = getAuth();
+
+// Define the schema for a single feeling
+const FeelingSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  sensation: z.string(),
+  metaFeeling: z.string(),
+  x: z.number(),
+  y: z.number(),
+  color: z.string(),
+});
+export type Feeling = z.infer<typeof FeelingSchema>;
+
+// Input schema for saving feelings
+const SaveFeelingsInputSchema = z.object({
+  idToken: z.string(),
+  feelings: z.array(FeelingSchema),
+});
+export type SaveFeelingsInput = z.infer<typeof SaveFeelingsInputSchema>;
+
+const SaveFeelingsOutputSchema = z.object({
+  success: z.boolean(),
+});
+export type SaveFeelingsOutput = z.infer<typeof SaveFeelingsOutputSchema>;
+
+
+// Input schema for getting feelings
+const GetFeelingsInputSchema = z.object({
+  idToken: z.string(),
+});
+export type GetFeelingsInput = z.infer<typeof GetFeelingsInputSchema>;
+
+const GetFeelingsOutputSchema = z.array(FeelingSchema);
+export type GetFeelingsOutput = z.infer<typeof GetFeelingsOutputSchema>;
+
+
+// Flow for saving feelings
+const saveFeelingsFlow = ai.defineFlow(
+  {
+    name: 'saveFeelingsFlow',
+    inputSchema: SaveFeelingsInputSchema,
+    outputSchema: SaveFeelingsOutputSchema,
+  },
+  async ({ idToken, feelings }) => {
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const userId = decodedToken.uid;
+      
+      const docRef = db.collection('body_feelings_maps').doc(userId);
+      await docRef.set({ feelings });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error saving feelings:', error);
+      return { success: false };
+    }
+  }
+);
+
+// Flow for getting feelings
+const getFeelingsFlow = ai.defineFlow(
+  {
+    name: 'getFeelingsFlow',
+    inputSchema: GetFeelingsInputSchema,
+    outputSchema: GetFeelingsOutputSchema,
+  },
+  async ({ idToken }) => {
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const userId = decodedToken.uid;
+      
+      const docRef = db.collection('body_feelings_maps').doc(userId);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        return docSnap.data()?.feelings || [];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error getting feelings:', error);
+      return [];
+    }
+  }
+);
+
+
+export async function saveFeelings(input: SaveFeelingsInput): Promise<SaveFeelingsOutput> {
+  return saveFeelingsFlow(input);
+}
+
+export async function getFeelings(input: GetFeelingsInput): Promise<GetFeelingsOutput> {
+    return getFeelingsFlow(input);
+}

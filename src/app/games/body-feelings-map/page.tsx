@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, MouseEvent } from 'react';
+import { useState, useRef, MouseEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Trash2, X } from 'lucide-react';
@@ -12,6 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { saveFeelings, getFeelings } from '@/ai/flows/body-feelings-map';
+import { Loader2 } from 'lucide-react';
 
 type Feeling = {
   id: number;
@@ -40,17 +44,84 @@ export default function BodyFeelingsMapPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentFeeling, setCurrentFeeling] = useState<Partial<Feeling>>({});
   const [clickCoords, setClickCoords] = useState<{ x: number, y: number } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const svgRef = useRef<SVGSVGElement>(null);
   const { toast } = useToast();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auth and initial data fetching
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setIsLoading(true);
+        try {
+          const idToken = await currentUser.getIdToken();
+          const savedFeelings = await getFeelings({ idToken });
+          setFeelings(savedFeelings);
+        } catch (error) {
+          console.error("Failed to load feelings:", error);
+          toast({
+            title: "Error",
+            description: "Could not load your saved feelings map.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setFeelings([]); // Clear feelings for logged-out users
+        setIsLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [toast]);
+  
+  // Debounced save function
+  useEffect(() => {
+    if (isLoading || !user) {
+      return;
+    }
+  
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+  
+    debounceTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        const idToken = await user.getIdToken();
+        await saveFeelings({ idToken, feelings });
+      } catch (error) {
+        console.error("Failed to save feelings:", error);
+        toast({
+          title: "Save Error",
+          description: "Could not save your changes.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1500); // 1.5-second debounce delay
+  
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [feelings, user, toast, isLoading]);
+
 
   const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
     const svgRect = svgRef.current.getBoundingClientRect();
-    // Normalize coordinates to be percentage-based (0-100)
     const x = ((e.clientX - svgRect.left) / svgRect.width) * 100;
     const y = ((e.clientY - svgRect.top) / svgRect.height) * 100;
     setClickCoords({ x, y });
-    setCurrentFeeling({ color: feelingColors[0] }); // Default to first color
+    setCurrentFeeling({ color: feelingColors[0] });
     setIsModalOpen(true);
   };
   
@@ -58,7 +129,7 @@ export default function BodyFeelingsMapPage() {
     if (!currentFeeling.name || !currentFeeling.sensation || !currentFeeling.metaFeeling || !currentFeeling.color || !clickCoords) {
         toast({
             title: "Incomplete Form",
-            description: "Please fill out all fields and select a color for the feeling.",
+            description: "Please fill out all fields and select a color.",
             variant: "destructive"
         });
         return;
@@ -102,42 +173,61 @@ export default function BodyFeelingsMapPage() {
             <Card className="md:col-span-2">
                 <CardHeader>
                     <CardTitle>Your Feelings Map</CardTitle>
-                    <CardDescription>Click on the body outline where you feel a sensation to log it.</CardDescription>
+                    <CardDescription>
+                      {user 
+                        ? "Click on the body outline where you feel a sensation to log it. Your progress saves automatically." 
+                        : "Log in to save your progress. Click on the body outline to begin."
+                      }
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative w-full max-w-md mx-auto aspect-[2/3] cursor-pointer">
-                        <svg
-                            ref={svgRef}
-                            viewBox="0 0 200 300"
-                            className="w-full h-full"
-                            onClick={handleMapClick}
-                        >
-                           <path 
-                              d="M100,50 C113.8,50 125,61.2 125,75 C125,88.8 113.8,100 100,100 C86.2,100 75,88.8 75,75 C75,61.2 86.2,50 100,50 Z M 100,100 L 100,180 M 100,180 L 115,280 M 100,180 L 85,280 M 100,120 L 180,170 M 100,120 L 20,170"
-                              fill="none" 
-                              stroke="currentColor" 
-                              strokeWidth="2"
-                           />
-                        </svg>
-
-                        {feelings.map(feeling => (
-                           <div
-                             key={feeling.id}
-                             className="absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2"
-                             style={{ left: `${feeling.x}%`, top: `${feeling.y}%`, backgroundColor: feeling.color }}
-                           />
-                        ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="flex items-center justify-center h-full aspect-[2/3]">
+                          <Loader2 className="h-12 w-12 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="relative w-full max-w-md mx-auto aspect-[2/3] cursor-pointer">
+                          <svg
+                              ref={svgRef}
+                              viewBox="0 0 200 300"
+                              className="w-full h-full"
+                              onClick={handleMapClick}
+                          >
+                            <path
+                                d="M100,50 C113.8,50 125,61.2 125,75 C125,88.8 113.8,100 100,100 C86.2,100 75,88.8 75,75 C75,61.2 86.2,50 100,50 Z M 100,100 Q 100,105 90,120 L 90,180 Q 90,190 80,200 L 70,280 Q 70,290 80,290 L 120,290 Q 130,290 130,280 L 120,200 Q 110,190 110,180 L 110,120 Q 100,105 100,100 M 100,120 L 180,170 M 100,120 L 20,170"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                          </svg>
+                          {feelings.map(feeling => (
+                            <div
+                              key={feeling.id}
+                              className="absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2"
+                              style={{ left: `${feeling.x}%`, top: `${feeling.y}%`, backgroundColor: feeling.color }}
+                            />
+                          ))}
+                      </div>
+                    )}
                 </CardContent>
             </Card>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Feelings Inventory</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                        Feelings Inventory
+                        {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                    </CardTitle>
                     <CardDescription>A list of the feelings you've logged.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {feelings.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : feelings.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-8">Click on the body map to add your first feeling.</p>
                     ) : (
                         <ul className="space-y-4">
