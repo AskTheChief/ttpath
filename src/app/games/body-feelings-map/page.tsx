@@ -194,9 +194,13 @@ export default function BodyFeelingsMapPage() {
                               onClick={handleMapClick}
                           >
                             <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                              {/* Head */}
                               <path d="M100 25 a20 20 0 1 0 0.0001 0" />
+                              {/* Torso */}
                               <path d="M100 45 v 90" />
+                              {/* Arms */}
                               <path d="M50 65 l 100 0" />
+                              {/* Legs */}
                               <path d="M100 135 l -20 130" />
                               <path d="M100 135 l 20 130" />
                             </g>
@@ -299,3 +303,5 @@ export default function BodyFeelingsMapPage() {
     </div>
   );
 }
+
+    
