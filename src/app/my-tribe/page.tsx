@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -40,6 +40,7 @@ import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const libraries: Libraries = ['places'];
@@ -99,14 +100,14 @@ function MyTribePageContent() {
     libraries,
   });
 
-  const getInitialView = (level: number) => {
+  const getInitialView = (level: number, hasTribe: boolean) => {
     if (level >= 6) return 'mentor';
-    if (level === 5) return 'chief';
-    if (level >= 4) return 'member';
+    if (level === 5 && hasTribe) return 'chief';
+    if (level >= 4 && hasTribe) return 'member';
     return 'guest';
   };
   
-  const view = searchParams.get('view') || getInitialView(userLevel);
+  const view = searchParams.get('view') || getInitialView(userLevel, !!userTribe);
 
   const isChief = userTribe && userTribe.chief === user?.uid;
 
@@ -403,7 +404,7 @@ function MyTribePageContent() {
       } else {
         throw new Error(result.message);
       }
-    } catch (error: any) {
+    } catch (error: any) => {
       toast({ title: 'Error Canceling Meeting', description: error.message, variant: 'destructive' });
     }
   };
@@ -533,26 +534,45 @@ function MyTribePageContent() {
 
   const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
 
+  const allTabs = [
+    { value: 'guest', label: 'Guest', icon: UserIcon, level: 2, unlockText: 'Unlocked by registering.' },
+    { value: 'member', label: 'Member', icon: UserCheck, level: 4, unlockText: 'Join a tribe to unlock.' },
+    { value: 'chief', label: 'Chief', icon: Shield, level: 5, unlockText: 'Start a tribe to unlock.' },
+    { value: 'mentor', label: 'Mentor', icon: Users, level: 6, unlockText: 'Become a mentor to unlock.' }
+  ];
+
   const renderTabs = () => {
-    const tabsToShow: { value: string; label: string; icon: React.ElementType; level: number }[] = [];
-  
-    if (userLevel >= 2) tabsToShow.push({ value: 'guest', label: 'Guest', icon: UserIcon, level: 2 });
-    if (userLevel >= 4) tabsToShow.push({ value: 'member', label: 'Member', icon: UserCheck, level: 4 });
-    if (userLevel >= 5) tabsToShow.push({ value: 'chief', label: 'Chief', icon: Shield, level: 5 });
-    if (userLevel >= 6) tabsToShow.push({ value: 'mentor', label: 'Mentor', icon: Users, level: 6 });
-    
-    const uniqueTabs = Array.from(new Map(tabsToShow.map(item => [item.value, item])).values())
-        .sort((a, b) => a.level - b.level);
-  
-    if(uniqueTabs.length <= 1 && userLevel < 4) return null;
-  
     return (
       <TabsList className="flex w-full mb-6 h-auto p-1 gap-2">
-        {uniqueTabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className={cn(tabTriggerClasses, "flex-grow")}>
-                <tab.icon className="mr-2" /> {tab.label}
+        {allTabs.map(tab => {
+          const isUnlocked = userLevel >= tab.level;
+          const Trigger = (
+            <TabsTrigger 
+              key={tab.value} 
+              value={tab.value} 
+              className={cn(tabTriggerClasses, "flex-grow", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}
+              disabled={!isUnlocked}
+            >
+              {isUnlocked ? <tab.icon className="mr-2" /> : <Lock className="mr-2" />}
+              {tab.label}
             </TabsTrigger>
-        ))}
+          );
+
+          if (isUnlocked) {
+            return Trigger;
+          }
+
+          return (
+            <TooltipProvider key={tab.value}>
+              <Tooltip>
+                <TooltipTrigger asChild>{Trigger}</TooltipTrigger>
+                <TooltipContent>
+                  <p>{tab.unlockText}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })}
       </TabsList>
     );
   };
@@ -786,89 +806,13 @@ function MyTribePageContent() {
                   ) : (
                   <Card>
                     <CardHeader>
-                        <CardTitle>Find or Start a Tribe</CardTitle>
-                        <CardDescription>Explore existing tribes or apply to create your own.</CardDescription>
+                        <CardTitle>You Are Not in a Tribe</CardTitle>
+                        <CardDescription>Use the 'Guest' tab to find and apply for a tribe or start your own.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="relative">
-                            <h3 className="text-lg font-semibold mb-2">Explore Tribes</h3>
-                            <div style={overviewMapContainerStyle}>
-                                <GoogleMap
-                                  mapContainerStyle={{ height: '100%', width: '100%' }}
-                                  center={defaultCenter}
-                                  zoom={4}
-                                  options={{ disableDefaultUI: true, zoomControl: true }}
-                                  onClick={() => setSelectedTribe(null)}
-                                >
-                                    <MarkerClustererF>
-                                        {(clusterer) =>
-                                            tribes.filter(t => t.lat && t.lng).map(tribe => (
-                                                <MarkerF
-                                                    key={tribe.id}
-                                                    position={{ lat: tribe.lat!, lng: tribe.lng! }}
-                                                    clusterer={clusterer}
-                                                    onClick={() => setSelectedTribe(tribe)}
-                                                />
-                                            ))
-                                        }
-                                    </MarkerClustererF>
-                                </GoogleMap>
-                            </div>
-                            {selectedTribe && (
-                                <div className="absolute top-4 right-4 w-full max-w-sm z-10">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>{selectedTribe.name}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-muted-foreground">{selectedTribe.location}</p>
-                                            <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
-                                            <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={isLoading}>
-                                                Apply to Join
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            )}
-                        </div>
-
-                         <div>
-                            <h3 className="text-lg font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
-                            <div className="space-y-4">
-                                <div className="space-y-2"><Label htmlFor="tribe-name-member">Tribe Name</Label><Input id="tribe-name-member" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
-                                <div className="space-y-2">
-                                <Label htmlFor="tribe-location-member">Location</Label>
-                                <LocationAutocomplete id="tribe-location-member" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
-                                <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                                <div className="mt-2">
-                                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
-                                </div>
-                                </div>
-                                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
-                            </div>
-                        </div>
-                    </CardContent>
                   </Card>
                   )}
               </TabsContent>
               <TabsContent value="chief" className="m-0 space-y-8">
-                  {userLevel >= 3 && !isChief && (
-                    <Card>
-                    <CardHeader><CardTitle>Start a Tribe</CardTitle><CardDescription>Apply to start your own tribe and invite others to join.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
-                        <div className="space-y-2">
-                        <Label htmlFor="tribe-location-chief">Location</Label>
-                        <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
-                        <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-                        <div className="mt-2">
-                            <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} ><MarkerF position={newTribeCoords || defaultCenter} /></GoogleMap>
-                        </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter><Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button></CardFooter>
-                    </Card>
-                  )}
                   {isChief && userTribe && (
                   <>
                   <Card>
@@ -931,7 +875,7 @@ function MyTribePageContent() {
                                       <div>
                                       <h4 className="font-semibold mb-2">Comprehension Answers</h4>
                                       <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
-                                          {tutorialQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap pl-2">{member.answers?.[q] || "No answer provided."}</p></div>))}
+                                          {tutorialQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
                                           {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
                                       </div>
                                       </div>
@@ -1043,3 +987,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
