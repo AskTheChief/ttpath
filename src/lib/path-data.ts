@@ -55,9 +55,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a graduate, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
-      { id: "join-tribe", label: "Join a Tribe", action: "navigate-my-tribe", next: "member" },
-      { id: "start-tribe", label: "Start a Tribe", action: "navigate-my-tribe", next: "chief" },
-      { id: "mentor-others", label: "Mentor Others", action: "navigate-my-tribe", next: "mentor" },
+      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe", next: "member" },
     ],
     panelPos: "right"
   },

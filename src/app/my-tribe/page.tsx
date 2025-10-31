@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, GraduationCap } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -102,9 +102,10 @@ function MyTribePageContent() {
 
   const getInitialView = (level: number, hasTribe: boolean) => {
     if (level >= 6) return 'mentor';
-    if (level === 5 && hasTribe) return 'chief';
-    if (level >= 4 && hasTribe) return 'member';
-    return 'guest';
+    if (level === 5) return 'chief';
+    if (level === 4) return 'member';
+    if (level === 3) return 'graduate';
+    return 'graduate'; // Default to graduate for level < 3, access will be blocked anyway
   };
   
   const view = searchParams.get('view') || getInitialView(userLevel, !!userTribe);
@@ -510,10 +511,10 @@ function MyTribePageContent() {
     return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
   }
 
-  if (!user) {
+  if (!user || userLevel < 3) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">You must be logged in to view your account.</p>
+        <p className="text-xl mb-4">You must be a Graduate to access this page.</p>
         <Link href="/" passHref>
           <Button>Back to Path</Button>
         </Link>
@@ -535,7 +536,7 @@ function MyTribePageContent() {
   const tabTriggerClasses = "transition-all duration-200 data-[state=active]:text-primary data-[state=active]:ring-2 data-[state=active]:ring-primary data-[state=active]:shadow-lg hover:bg-muted/50 data-[state=inactive]:bg-muted";
 
   const allTabs = [
-    { value: 'guest', label: 'Guest', icon: UserIcon, level: 2, unlockText: 'Unlocked by registering.' },
+    { value: 'graduate', label: 'Graduate', icon: GraduationCap, level: 3, unlockText: 'Complete the tutorial to unlock.' },
     { value: 'member', label: 'Member', icon: UserCheck, level: 4, unlockText: 'Join a tribe to unlock.' },
     { value: 'chief', label: 'Chief', icon: Shield, level: 5, unlockText: 'Start a tribe to unlock.' },
     { value: 'mentor', label: 'Mentor', icon: Users, level: 6, unlockText: 'Become a mentor to unlock.' }
@@ -672,13 +673,24 @@ function MyTribePageContent() {
             </div>
 
             <div className="lg:col-span-2 space-y-8">
-              <TabsContent value="guest" className="m-0">
+              <TabsContent value="graduate" className="m-0">
                   <Card>
                       <CardHeader>
-                          <CardTitle>Find Your Tribe</CardTitle>
-                          <CardDescription>Explore existing tribes on the map, or apply to start your own.</CardDescription>
+                          <CardTitle>Find or Start a Tribe</CardTitle>
+                          <CardDescription>As a Graduate, you can now take the next step.</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
+                         <Alert>
+                            <Terminal className="h-4 w-4" />
+                            <AlertTitle>Instructions</AlertTitle>
+                            <AlertDescription>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li><b>To join a tribe:</b> Use the map below to find a tribe in your area. Click on a marker to see details and apply to join. This will send an application to the Tribe Chief for their review.</li>
+                                    <li><b>To start a tribe:</b> If there are no tribes nearby or you wish to lead your own, fill out the "Start Your Own Tribe" form. A Mentor will review your application.</li>
+                                    <li>Completing either of these steps will unlock the next stage of your journey.</li>
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
                          <div className="relative">
                             <div style={overviewMapContainerStyle}>
                                 <GoogleMap
@@ -817,7 +829,7 @@ function MyTribePageContent() {
                   <Card>
                     <CardHeader>
                         <CardTitle>You Are Not in a Tribe</CardTitle>
-                        <CardDescription>Use the 'Guest' tab to find and apply for a tribe or start your own.</CardDescription>
+                        <CardDescription>Use the 'Graduate' tab to find and apply for a tribe or start your own.</CardDescription>
                     </CardHeader>
                   </Card>
                   )}
@@ -997,5 +1009,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
