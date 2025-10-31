@@ -65,12 +65,7 @@ const defaultCenter = {
 
 function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Find or Start a Tribe</CardTitle>
-        <CardDescription>As a Graduate, you can now take the next step on your path.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <>
         <Alert>
           <Terminal className="h-4 w-4" />
           <AlertTitle>Instructions</AlertTitle>
@@ -82,66 +77,72 @@ function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
             </ul>
           </AlertDescription>
         </Alert>
-        <div className="relative">
-          <div style={overviewMapContainerStyle}>
-            <GoogleMap
-              mapContainerStyle={{ height: '100%', width: '100%' }}
-              center={defaultCenter}
-              zoom={4}
-              options={{ disableDefaultUI: true, zoomControl: true }}
-              onClick={() => setSelectedTribe(null)}
-            >
-              <MarkerClustererF>
-                {(clusterer) =>
-                  tribes.filter(t => t.lat && t.lng).map(tribe => (
-                    <MarkerF
-                      key={tribe.id}
-                      position={{ lat: tribe.lat!, lng: tribe.lng! }}
-                      clusterer={clusterer}
-                      onClick={() => setSelectedTribe(tribe)}
-                    />
-                  ))
-                }
-              </MarkerClustererF>
-            </GoogleMap>
-          </div>
-          {selectedTribe && (
-            <div className="absolute top-4 right-4 w-full max-w-sm z-10">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{selectedTribe.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{selectedTribe.location}</p>
-                  <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
-                  <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
-                    Apply to Join
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h3 className="text-xl font-semibold mb-4 border-t pt-6">Start Your Own Tribe</h3>
-          <div className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
-            <div className="space-y-2">
-              <Label htmlFor="tribe-location-chief">Location</Label>
-              <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
-              <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
-              <div className="mt-2">
-                <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} >
-                    {newTribeCoords && <MarkerF position={newTribeCoords} />}
-                </GoogleMap>
-              </div>
-            </div>
-            <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Find an Existing Tribe</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="relative">
+                <div style={overviewMapContainerStyle}>
+                    <GoogleMap
+                    mapContainerStyle={{ height: '100%', width: '100%' }}
+                    center={defaultCenter}
+                    zoom={4}
+                    options={{ disableDefaultUI: true, zoomControl: true }}
+                    onClick={() => setSelectedTribe(null)}
+                    >
+                    <MarkerClustererF>
+                        {tribes.filter(t => t.lat && t.lng).map(tribe => (
+                        <MarkerF
+                            key={tribe.id}
+                            position={{ lat: tribe.lat!, lng: tribe.lng! }}
+                            clusterer={clusterer}
+                            onClick={() => setSelectedTribe(tribe)}
+                        />
+                        ))
+                        }
+                    </MarkerClustererF>
+                    </GoogleMap>
+                </div>
+                {selectedTribe && (
+                    <div className="absolute top-4 right-4 w-full max-w-sm z-10">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>{selectedTribe.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                        <p className="text-muted-foreground">{selectedTribe.location}</p>
+                        <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                        <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
+                            Apply to Join
+                        </Button>
+                        </CardContent>
+                    </Card>
+                    </div>
+                )}
+                </div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Start Your Own Tribe</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2"><Label htmlFor="tribe-name-chief">Tribe Name</Label><Input id="tribe-name-chief" value={newTribeName} onChange={(e) => setNewTribeName(e.target.value)} placeholder="Enter tribe name" /></div>
+                <div className="space-y-2">
+                <Label htmlFor="tribe-location-chief">Location</Label>
+                <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
+                <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
+                <div className="mt-2">
+                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} >
+                        {newTribeCoords && <MarkerF position={newTribeCoords} />}
+                    </GoogleMap>
+                </div>
+                </div>
+                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
+            </CardContent>
+        </Card>
+    </>
   );
 }
 
@@ -926,21 +927,14 @@ function MyTribePageContent() {
     </Tabs>
   );
 
-
-  return (
-    <>
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">My Account</h1>
-          <Link href="/" passHref>
-            <Button variant="outline">
-              <Home className="mr-2" /> Back to Path
-            </Button>
-          </Link>
-        </header>
-
-        {userLevel < 4 ? (
-          <GraduateView 
+  const renderGraduateView = () => (
+    <Tabs defaultValue="next-step" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1 gap-2">
+            <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
+            <TabsTrigger value="profile-tutorial">My Profile &amp; Tutorial</TabsTrigger>
+        </TabsList>
+        <TabsContent value="next-step" className="m-0 space-y-8">
+             <GraduateView 
               user={user}
               isLoaded={isLoaded}
               isLoading={isLoading}
@@ -955,10 +949,80 @@ function MyTribePageContent() {
               handleJoinTribe={handleJoinTribe}
               setNewTribeName={setNewTribeName}
               setSelectedTribe={setSelectedTribe}
-          />
-        ) : (
-          renderMemberChiefView()
-        )}
+            />
+        </TabsContent>
+        <TabsContent value="profile-tutorial" className="m-0 space-y-8">
+            <Card>
+                <CardHeader>
+                  <CardTitle>My Profile</CardTitle>
+                  <CardDescription>View and update your personal information.</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleSaveProfile}>
+                    <CardContent className="space-y-4">
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
+                            <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
+                        </div>
+                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={userProfile.address || ''} onChange={handleProfileChange} /></div>
+                        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={userProfile.phone || ''} onChange={handleProfileChange} /></div>
+                        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={userProfile.email || ''} disabled /></div>
+                        <div className="space-y-2"><Label htmlFor="issue">Your Issue</Label><Textarea id="issue" value={userProfile.issue || ''} onChange={handleProfileChange} placeholder="The main thing you want to transform..." /></div>
+                        <div className="space-y-2"><Label htmlFor="serviceProject">Your Service Project</Label><Textarea id="serviceProject" value={userProfile.serviceProject || ''} onChange={handleProfileChange} placeholder="How you identify your role in the community..." /></div>
+                    </CardContent>
+                    <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
+                </form>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Comprehension Test</CardTitle>
+                    <CardDescription>Review or update your answers.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
+                tutorialQuestions.map((q, i) => (
+                <div key={i} className="grid w-full gap-1.5">
+                    <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
+                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                </div>
+                ))
+                )}
+                </CardContent>
+                <CardFooter className="flex flex-wrap gap-2 justify-end">
+                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                </CardFooter>
+                {tutorialData.latestFeedback && (
+                <CardContent>
+                <Alert>
+                    <Sparkles className="h-4 w-4" />
+                    <AlertTitle className="flex justify-between">
+                    <span>You Receive Guidance</span>
+                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                    </AlertTitle>
+                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                </Alert>
+                </CardContent>
+                )}
+            </Card>
+        </TabsContent>
+    </Tabs>
+  );
+
+
+  return (
+    <>
+      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">My Account</h1>
+          <Link href="/" passHref>
+            <Button variant="outline">
+              <Home className="mr-2" /> Back to Path
+            </Button>
+          </Link>
+        </header>
+
+        {userLevel < 4 ? renderGraduateView() : renderMemberChiefView()}
+
       </div>
       
       {userTribe && selectedMeeting && user && (
