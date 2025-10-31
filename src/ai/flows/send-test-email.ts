@@ -46,9 +46,9 @@ const sendTestEmailFlow = ai.defineFlow(
       const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
       const messageData = {
-        from: `ttpath <test@${mailgunDomain}>`,
+        from: `TTpath <test@${mailgunDomain}>`,
         to: recipientEmail,
-        subject: 'Mailgun Test from ttpath',
+        subject: 'Mailgun Test from TTpath',
         text: 'This is a test email to confirm that your Mailgun configuration is working correctly.',
       };
 
