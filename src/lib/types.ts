@@ -101,7 +101,7 @@ export type UpdateTribeMeetingsOutput = z.infer<typeof UpdateTribeMeetingsOutput
 // src/ai/flows/manage-applications.ts
 export const ApplicationSchema = z.object({
     id: z.string(),
-    type: z.enum(['join_tribe', 'new_tribe']),
+    type: z.enum(['join_tribe', 'new_tribe', 'new_mentor']),
     tribeId: z.string().optional(), // Optional for new_tribe applications
     tribeName: z.string().optional(), // For new_tribe applications
     location: z.string().optional(), // For new_tribe applications
@@ -121,7 +121,7 @@ export type Application = z.infer<typeof ApplicationSchema>;
 
 export const ManageApplicationInputSchema = z.object({
   action: z.enum(['get', 'approve', 'deny']),
-  type: z.enum(['join_tribe', 'new_tribe']),
+  type: z.enum(['join_tribe', 'new_tribe', 'new_mentor']),
   idToken: z.string(),
   applicationId: z.string().optional(),
   tribeId: z.string().optional(),

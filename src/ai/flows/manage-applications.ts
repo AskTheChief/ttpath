@@ -20,7 +20,7 @@ export async function manageApplication(input: ManageApplicationInput): Promise<
   return manageApplicationFlow(input);
 }
 
-async function getApplications(userId: string, appType: 'join_tribe' | 'new_tribe') {
+async function getApplications(userId: string, appType: 'join_tribe' | 'new_tribe' | 'new_mentor') {
     try {
         let applicationsSnapshot;
 
@@ -35,12 +35,11 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 .where('status', '==', 'pending')
                 .where('type', '==', 'join_tribe')
                 .get();
-        } else { // new_tribe
-            // For now, any mentor can see all new tribe applications.
-            // A check could be added here to ensure the user is a mentor.
+        } else { // new_tribe or new_mentor
+            // For now, any mentor can see all new tribe and mentor applications.
             applicationsSnapshot = await db.collection('tribe_applications')
                 .where('status', '==', 'pending')
-                .where('type', '==', 'new_tribe')
+                .where('type', '==', appType)
                 .get();
         }
 
@@ -106,7 +105,7 @@ const manageApplicationFlow = ai.defineFlow(
     const user = { uid: decodedToken.uid };
 
     const { action, applicationId, applicantId, type } = input;
-    const tribeId = input.tribeId; // Might be null for new_tribe apps
+    const tribeId = input.tribeId;
 
     if (action === 'get') {
         try {
@@ -142,7 +141,6 @@ const manageApplicationFlow = ai.defineFlow(
         }
 
     } else if (type === 'new_tribe') {
-        // Assume mentor check happens at UI level for now.
         const appDoc = await applicationRef.get();
         if (!appDoc.exists) return { success: false, message: 'Application not found.' };
         const appData = appDoc.data()!;
@@ -150,7 +148,6 @@ const manageApplicationFlow = ai.defineFlow(
         if (action === 'approve') {
             const newTribeRef = db.collection('tribes').doc();
             await db.runTransaction(async (transaction) => {
-                // Create the new tribe
                 transaction.set(newTribeRef, {
                     name: appData.tribeName,
                     location: appData.location,
@@ -160,9 +157,15 @@ const manageApplicationFlow = ai.defineFlow(
                     members: [applicantId],
                     createdAt: Timestamp.now(),
                 });
-                // Update the applicant's level to 5 (Chief)
                 transaction.update(applicantUserRef, { currentUserLevel: 5 });
-                // Delete the application
+                transaction.delete(applicationRef);
+            });
+            return { success: true };
+        }
+    } else if (type === 'new_mentor') {
+         if (action === 'approve') {
+            await db.runTransaction(async (transaction) => {
+                transaction.update(applicantUserRef, { currentUserLevel: 6 }); // Promote to Mentor
                 transaction.delete(applicationRef);
             });
             return { success: true };
