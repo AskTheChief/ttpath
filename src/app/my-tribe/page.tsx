@@ -1003,7 +1003,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
-
-    
