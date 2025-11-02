@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -72,8 +73,7 @@ export default function TradingSimPage() {
               label: 'Stock Price',
               data: [stockPrice],
               borderColor: 'hsl(var(--primary))',
-              backgroundColor: 'hsla(var(--primary), 0.1)',
-              fill: true,
+              fill: false,
               tension: 0.1
             }]
           },
