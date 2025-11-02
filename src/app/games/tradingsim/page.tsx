@@ -65,11 +65,11 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    // Equity = Cash + Value of Owned Stock - Margin Debt + (Value of shorted stock at time of short - current value of shorted stock)
-    const unrealizedShortProfit = shortCollateral - (sharesShorted * stockPrice);
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance + unrealizedShortProfit;
+    // Equity = (Cash + Value of Owned Stock) - Margin Debt - (Value of Shorted Stock)
+    const shortLiability = sharesShorted * stockPrice;
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted, shortCollateral]);
+  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -166,7 +166,7 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    setShortCollateral(prev => prev + stockPrice);
+    setBalance(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
     setGameMessage('You sold 1 share short. Funds held as collateral.');
   };
@@ -174,15 +174,13 @@ export default function TradingSimPage() {
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      const collateralPerShare = shortCollateral / sharesShorted;
-
-      const profitOrLoss = collateralPerShare - costToCover;
-      
-      setBalance(prev => prev + collateralPerShare + profitOrLoss);
-      setShortCollateral(prev => prev - collateralPerShare);
+      if (balance < costToCover) {
+        setGameMessage('Insufficient funds to cover short.');
+        return;
+      }
+      setBalance(prev => prev - costToCover);
       setSharesShorted(prev => prev - 1);
-
-      setGameMessage(`Covered short. P/L: $${profitOrLoss.toFixed(2)}`);
+      setGameMessage(`Covered short at $${costToCover.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
     }
@@ -221,11 +219,12 @@ export default function TradingSimPage() {
     } else { // put
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
-    const netProfit = grossProfit - option.premium;
-
-    setBalance(prev => prev + grossProfit); // Add gross profit, as premium was already paid
+    
+    // The net profit is the gross profit, as the premium was already paid.
+    // We add this net profit to the balance.
+    setBalance(prev => prev + grossProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)}`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Gross Profit: $${grossProfit.toFixed(2)}`);
   };
 
   return (
@@ -351,5 +350,3 @@ export default function TradingSimPage() {
     </div>
   );
 }
-
-    
