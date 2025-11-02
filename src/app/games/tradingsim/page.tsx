@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, LineChart as LineChartIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Chart, type ChartAPI } from 'chart.js/auto';
+import { Chart, type ChartAPI } from 'chart.js';
 
 const Ticker = () => {
   return (
@@ -46,14 +46,16 @@ export default function TradingSimPage() {
   const [sharesShorted, setSharesShorted] = useState(0);
   const [equity, setEquity] = useState(1000);
   const [gameMessage, setGameMessage] = useState('');
+  const [marginBalance, setMarginBalance] = useState(0);
   
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    const currentEquity = balance + (sharesOwned * stockPrice) - (sharesShorted * stockPrice);
+    const currentEquity = (balance + (sharesOwned * stockPrice)) - marginBalance - (sharesShorted * stockPrice);
     setEquity(currentEquity);
-  }, [balance, sharesOwned, sharesShorted, stockPrice]);
+  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance]);
+
 
   const updateGameDisplay = useCallback(() => {
     if (chartInstanceRef.current) {
@@ -121,17 +123,31 @@ export default function TradingSimPage() {
     if (balance >= stockPrice) {
       setBalance(prev => prev - stockPrice);
       setSharesOwned(prev => prev + 1);
-      setGameMessage('You bought 1 share.');
+      setGameMessage('You bought 1 share with cash.');
     } else {
-      setGameMessage('Insufficient funds to buy stock.');
+      setGameMessage('Insufficient funds. Try buying on margin.');
     }
+  };
+
+  const buyOnMargin = () => {
+    setMarginBalance(prev => prev + stockPrice);
+    setSharesOwned(prev => prev + 1);
+    setGameMessage('You bought 1 share on margin.');
   };
 
   const sellStock = () => {
     if (sharesOwned > 0) {
-      setBalance(prev => prev + stockPrice);
+      let saleProceeds = stockPrice;
+      if (marginBalance > 0) {
+        const repayment = Math.min(saleProceeds, marginBalance);
+        setMarginBalance(prev => prev - repayment);
+        saleProceeds -= repayment;
+        setGameMessage(`You sold 1 share, repaying $${repayment.toFixed(2)} of your margin.`);
+      } else {
+        setGameMessage('You sold 1 share.');
+      }
+      setBalance(prev => prev + saleProceeds);
       setSharesOwned(prev => prev - 1);
-      setGameMessage('You sold 1 share.');
     } else {
       setGameMessage('You do not own any shares to sell.');
     }
@@ -177,8 +193,12 @@ export default function TradingSimPage() {
                 <p className="text-lg">Shares Owned: {sharesOwned}</p>
                 <p className="text-lg">Shares Shorted: {sharesShorted}</p>
               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <p className="text-lg">Margin Balance: ${marginBalance.toFixed(2)}</p>
+               </div>
               <div className="flex justify-center gap-4 flex-wrap">
                 <Button onClick={buyStock}>Buy</Button>
+                <Button onClick={buyOnMargin} variant="outline">Buy on Margin</Button>
                 <Button onClick={sellStock} variant="secondary">Sell</Button>
                 <Button onClick={sellShort} variant="destructive">Sell Short</Button>
                 <Button onClick={coverShort} variant="outline">Cover Short</Button>
@@ -193,6 +213,19 @@ export default function TradingSimPage() {
       </Card>
       
       <div className="mt-8 space-y-4 text-center w-full max-w-4xl">
+         <Card>
+          <CardHeader>
+            <CardTitle>Margin Trading</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <code className="text-sm bg-muted p-2 rounded">
+              Equity = (Balance + (Shares * Price)) - Margin Balance
+            </code>
+            <CardDescription className="mt-2">
+              Buying on margin allows you to borrow money to purchase shares. Your equity is your net worth. If it drops too low, you may face a margin call. When you sell shares, the proceeds first pay back your margin loan.
+            </CardDescription>
+          </CardContent>
+        </Card>
          <Card>
           <CardHeader>
             <CardTitle>Price Change Formula</CardTitle>
