@@ -215,15 +215,15 @@ export default function TradingSimPage() {
     const option = optionsOwned.find(o => o.id === optionId);
     if (!option) return;
 
-    let profit = 0;
+    let grossProfit = 0;
     if (option.type === 'call') {
-      profit = Math.max(0, stockPrice - option.strikePrice);
+      grossProfit = Math.max(0, stockPrice - option.strikePrice);
     } else { // put
-      profit = Math.max(0, option.strikePrice - stockPrice);
+      grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
-    const netProfit = profit - option.premium;
+    const netProfit = grossProfit - option.premium;
 
-    setBalance(prev => prev + profit); // profit includes getting premium "back" if in the money
+    setBalance(prev => prev + grossProfit); // Add gross profit, as premium was already paid
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
     setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)}`);
   };
@@ -351,3 +351,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
