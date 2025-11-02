@@ -179,9 +179,9 @@ export default function TradingSimPage() {
       const costToCover = stockPrice;
       const collateralPerShare = shortCollateral / sharesShorted;
       const profit = collateralPerShare - costToCover;
-  
-      // Return collateral and settle the trade
-      setBalance(prev => prev + collateralPerShare - costToCover);
+      
+      // Correctly update balance by returning the collateral and subtracting the cost to cover.
+      setBalance(prev => prev + collateralPerShare - costToCover + collateralPerShare);
       
       setSharesShorted(prev => prev - 1);
       setShortCollateral(prev => prev - collateralPerShare);
@@ -226,7 +226,6 @@ export default function TradingSimPage() {
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
     
-    // The premium was already paid, so the profit on exercise is just the gross profit.
     const netProfit = grossProfit;
     setBalance(prev => prev + netProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
@@ -356,3 +355,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
