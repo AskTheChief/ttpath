@@ -49,14 +49,16 @@ export default function TradingSimPage() {
   const [equity, setEquity] = useState(1000);
   const [gameMessage, setGameMessage] = useState('');
   const [marginBalance, setMarginBalance] = useState(0);
+  const [shortCollateral, setShortCollateral] = useState(0);
   
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    const currentEquity = (balance + (sharesOwned * stockPrice)) - marginBalance - (sharesShorted * stockPrice);
+    // Equity = Cash + Value of Owned Stock - Margin Debt - Value of Shorted Stock Liability
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - (sharesShorted * stockPrice) + shortCollateral;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance]);
+  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance, shortCollateral]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -156,20 +158,25 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    setBalance(prev => prev + stockPrice);
+    if (balance < stockPrice) {
+        setGameMessage('Insufficient funds to cover short collateral.');
+        return;
+    }
+    setBalance(prev => prev - stockPrice);
+    setShortCollateral(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
-    setGameMessage('You sold 1 share short.');
+    setGameMessage('You sold 1 share short. Funds held as collateral.');
   };
 
   const coverShort = () => {
-    if (sharesShorted > 0 && balance >= stockPrice) {
-      setBalance(prev => prev - stockPrice);
+    if (sharesShorted > 0) {
+      const profitOrLoss = shortCollateral / sharesShorted - stockPrice;
+      setBalance(prev => prev + shortCollateral / sharesShorted + profitOrLoss);
+      setShortCollateral(prev => prev - shortCollateral / sharesShorted);
       setSharesShorted(prev => prev - 1);
-      setGameMessage('You covered 1 short share.');
-    } else if (sharesShorted === 0) {
-      setGameMessage('You have no short positions to cover.');
+      setGameMessage(`You covered 1 short share. P/L: $${profitOrLoss.toFixed(2)}`);
     } else {
-      setGameMessage('Insufficient funds to cover your short position.');
+      setGameMessage('You have no short positions to cover.');
     }
   };
 
