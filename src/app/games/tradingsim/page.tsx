@@ -43,6 +43,7 @@ export default function TradingSimPage() {
   const [balance, setBalance] = useState(1000);
   const [stockPrice, setStockPrice] = useState(100);
   const [sharesOwned, setSharesOwned] = useState(0);
+  const [sharesShorted, setSharesShorted] = useState(0);
   const [equity, setEquity] = useState(1000);
   const [gameMessage, setGameMessage] = useState('');
   
@@ -50,9 +51,9 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    const currentEquity = balance + (sharesOwned * stockPrice);
+    const currentEquity = balance + (sharesOwned * stockPrice) - (sharesShorted * stockPrice);
     setEquity(currentEquity);
-  }, [balance, sharesOwned, stockPrice]);
+  }, [balance, sharesOwned, sharesShorted, stockPrice]);
 
   const updateGameDisplay = useCallback(() => {
     if (chartInstanceRef.current) {
@@ -136,6 +137,24 @@ export default function TradingSimPage() {
     }
   };
 
+  const sellShort = () => {
+    setBalance(prev => prev + stockPrice);
+    setSharesShorted(prev => prev + 1);
+    setGameMessage('You sold 1 share short.');
+  };
+
+  const coverShort = () => {
+    if (sharesShorted > 0 && balance >= stockPrice) {
+      setBalance(prev => prev - stockPrice);
+      setSharesShorted(prev => prev - 1);
+      setGameMessage('You covered 1 short share.');
+    } else if (sharesShorted === 0) {
+      setGameMessage('You have no short positions to cover.');
+    } else {
+      setGameMessage('Insufficient funds to cover your short position.');
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 relative pb-16">
       <Card className="w-full max-w-4xl">
@@ -154,10 +173,15 @@ export default function TradingSimPage() {
                     <p className="text-xl font-bold">Equity: ${equity.toFixed(2)}</p>
                 </div>
               <p className="text-xl">Current Stock Price: <span className="font-semibold text-primary">${stockPrice.toFixed(2)}</span></p>
-              <p className="text-lg">Shares Owned: {sharesOwned}</p>
-              <div className="flex justify-center gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <p className="text-lg">Shares Owned: {sharesOwned}</p>
+                <p className="text-lg">Shares Shorted: {sharesShorted}</p>
+              </div>
+              <div className="flex justify-center gap-4 flex-wrap">
                 <Button onClick={buyStock}>Buy</Button>
                 <Button onClick={sellStock} variant="secondary">Sell</Button>
+                <Button onClick={sellShort} variant="destructive">Sell Short</Button>
+                <Button onClick={coverShort} variant="outline">Cover Short</Button>
               </div>
               {gameMessage && <p className="text-sm text-muted-foreground h-5">{gameMessage}</p>}
             </div>
