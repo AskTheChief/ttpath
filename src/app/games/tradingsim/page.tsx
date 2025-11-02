@@ -56,7 +56,8 @@ export default function TradingSimPage() {
 
   useEffect(() => {
     // Equity = Cash + Value of Owned Stock - Margin Debt - Value of Shorted Stock Liability
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - (sharesShorted * stockPrice) + shortCollateral;
+    const shortLiability = sharesShorted * stockPrice;
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
     setEquity(currentEquity);
   }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance, shortCollateral]);
 
@@ -162,6 +163,7 @@ export default function TradingSimPage() {
         setGameMessage('Insufficient funds to cover short collateral.');
         return;
     }
+    // Simulate collateral being held. Your cash goes down.
     setBalance(prev => prev - stockPrice);
     setShortCollateral(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
@@ -170,9 +172,19 @@ export default function TradingSimPage() {
 
   const coverShort = () => {
     if (sharesShorted > 0) {
-      const profitOrLoss = shortCollateral / sharesShorted - stockPrice;
-      setBalance(prev => prev + shortCollateral / sharesShorted + profitOrLoss);
-      setShortCollateral(prev => prev - shortCollateral / sharesShorted);
+      const costToCover = stockPrice;
+      const priceAtShort = shortCollateral / sharesShorted;
+
+      if (balance < costToCover) {
+        setGameMessage(`Insufficient funds to buy back the share at $${costToCover.toFixed(2)}`);
+        return;
+      }
+
+      const profitOrLoss = priceAtShort - costToCover;
+      
+      // Return the collateral, then subtract the cost of buying the share back.
+      setBalance(prev => prev + priceAtShort - costToCover);
+      setShortCollateral(prev => prev - priceAtShort);
       setSharesShorted(prev => prev - 1);
       setGameMessage(`You covered 1 short share. P/L: $${profitOrLoss.toFixed(2)}`);
     } else {
