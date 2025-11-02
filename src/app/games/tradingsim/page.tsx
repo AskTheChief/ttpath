@@ -65,10 +65,11 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    // Equity = Cash + Value of Owned Stock - Margin Debt
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance;
+    // Equity = Cash + Value of Owned Stock - Margin Debt + (Value of shorted stock at time of short - current value of shorted stock)
+    const unrealizedShortProfit = shortCollateral - (sharesShorted * stockPrice);
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance + unrealizedShortProfit;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, stockPrice, marginBalance]);
+  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted, shortCollateral]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -165,7 +166,6 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    setBalance(prev => prev - stockPrice);
     setShortCollateral(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
     setGameMessage('You sold 1 share short. Funds held as collateral.');
@@ -174,13 +174,14 @@ export default function TradingSimPage() {
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      const collateralToReturn = shortCollateral / sharesShorted;
+      const collateralPerShare = shortCollateral / sharesShorted;
 
-      setBalance(prev => prev + collateralToReturn - costToCover);
-      setShortCollateral(prev => prev - collateralToReturn);
+      const profitOrLoss = collateralPerShare - costToCover;
+      
+      setBalance(prev => prev + profitOrLoss);
+      setShortCollateral(prev => prev - collateralPerShare);
       setSharesShorted(prev => prev - 1);
 
-      const profitOrLoss = collateralToReturn - costToCover;
       setGameMessage(`Covered short. P/L: $${profitOrLoss.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
@@ -216,14 +217,15 @@ export default function TradingSimPage() {
 
     let profit = 0;
     if (option.type === 'call') {
-      profit = Math.max(0, stockPrice - option.strikePrice) - option.premium;
+      profit = Math.max(0, stockPrice - option.strikePrice);
     } else { // put
-      profit = Math.max(0, option.strikePrice - stockPrice) - option.premium;
+      profit = Math.max(0, option.strikePrice - stockPrice);
     }
+    const netProfit = profit - option.premium;
 
-    setBalance(prev => prev + option.premium + profit); // Return premium and add profit
+    setBalance(prev => prev + profit); // profit includes getting premium "back" if in the money
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Profit: $${profit.toFixed(2)}`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)}`);
   };
 
   return (
