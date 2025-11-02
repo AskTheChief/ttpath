@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html w-tid="1">
+<head w-tid="3">
+  
+<title>The Trading Tribe</title>
+<meta property="og:title" content="The Trading Tribe"/>
+<meta property="og:url" content="https://the-trading-tribe--agedbud93359481.on.websim.com?v=10"/>
+<meta property="og:type" content="website"/>
+<meta property="twitter:card" content="summary_large_image"/>
+<meta property="og:image" content="https://images.websim.com/v1/project/8qz85i11pul9na72f7ey/revision/10/1200.jpeg"/>
+<meta property="twitter:image" content="https://images.websim.com/v1/project/8qz85i11pul9na72f7ey/revision/10/1200.jpeg"/>
+<link  rel="canonical" href="https://websim.com/@agedbud93359481/the-trading-tribe">
+<link rel="stylesheet" href="https://api.websim.com/fonts.css?v=0f5598ffac1aaff347dce010e2a4c1ebab797ba2">
+<style class="websim-injected websim-ios-mobile-fix">
+/* iOS zoom prevention and overscroll behavior - injected by WebSim */
+html, body {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}
+input, textarea, select {
+  font-size: max(1rem, 16px) !important;
+}
+</style>
+<script class="websim-injected">__WEBSIM_DATA__={"home":false,"hostOrigin":"https://websim.com","apiOrigin":"https://api.websim.com","isTopLevelFrame":true,"project_id":"8qz85i11pul9na72f7ey","project_version":10,"route":{"type":"slug","username":"agedbud93359481","slug":"the-trading-tribe","version":10},"baseUrl":"https://the-trading-tribe--agedbud93359481.on.websim.com"}</script>
+<script class="websim-injected" src="https://api.websim.com/dist/index.js?v=0f5598ffac1aaff347dce010e2a4c1ebab797ba2"></script>
+<!--title>The Trading Tribe</title-->
+  <style w-tid="7">
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #e0f7e9;
+      margin: 0;
+    }
+    .logo {
+      margin-top: 50px;
+    }
+    .logo svg {
+      width: 100px;
+      height: 100px;
+    }
+    nav {
+      margin-top: 30px;
+    }
+    nav a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #333;
+      font-size: 18px;
+    }
+    nav a:hover {
+      color: #007BFF;
+    }
+    .purchase-section {
+      margin-top: 30px;
+    }
+    .purchase-section button {
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+    .purchase-section #confirmation-message {
+      font-size: 18px;
+      margin-top: 15px;
+    }
+    .ticker {
+      background-color: #333;
+      color: #fff;
+      padding: 10px 0;
+      overflow: hidden;
+      position: relative;
+      margin-top: 40px;
+    }
+    .ticker div {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: ticker 20s linear infinite;
+    }
+    .ticker:hover div {
+      animation-play-state: paused;
+    }
+    @keyframes ticker {
+      from { transform: translateX(0%); }
+      to { transform: translateX(-100%); }
+    }
+    .game-section {
+      margin-top: 50px;
+    }
+    .game-section button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    .balance {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+    .price {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .chart-container {
+      width: 80%;
+      margin: 0 auto;
+      margin-top: 30px;
+    }
+  </style>
+  <!-- Include Chart.js library from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" crossOrigin="anonymous" w-tid="9"></script>
+</head>
+<body w-tid="11">
+  <div class="logo" w-tid="13">
+    <svg viewbox="0 0 100 100" w-tid="15">
+      <circle cx="50" cy="50" r="50" fill="green" w-tid="17"/>
+      <text x="50" y="55" text-anchor="middle" dominant-baseline="middle" font-size="60" fill="white" font-family="Arial, sans-serif" w-tid="19">π</text>
+    </svg>
+  </div>
+  <nav w-tid="21">
+    <a href="https://tradingtribe.com/rd" w-tid="23">R&D</a>
+    <a href="https://tradingtribe.com/tools" w-tid="25">Tools</a>
+    <a href="https://tradingtribe.com/book" w-tid="27">The Book</a>
+    <a href="https://tradingtribe.com/test" w-tid="29">The Test</a>
+  </nav>
+  <div class="purchase-section" w-tid="31">
+    <button onclick="buyBook()" w-tid="33">Buy The Book</button>
+    <p id="confirmation-message" w-tid="35"></p>
+  </div>
+  <div class="game-section" w-tid="37">
+    <h2 w-tid="39">Market Trading Game</h2>
+    <p class="balance" w-tid="41">Balance: $<span id="balance" w-tid="43">1000</span></p>
+    <p class="price" w-tid="45">Current Stock Price: $<span id="stock-price" w-tid="47">100</span></p>
+    <button onclick="buyStock()" w-tid="49">Buy</button>
+    <button onclick="sellStock()" w-tid="51">Sell</button>
+    <p id="game-message" w-tid="53"></p>
+    <div class="chart-container" w-tid="55">
+      <canvas id="priceChart" w-tid="57"></canvas>
+    </div>
+  </div>
+  <div class="ticker" w-tid="59">
+    <div w-tid="61">
+      AAPL 150.12 ▲    GOOGL 2750.65 ▼    AMZN 3400.23 ▲    TSLA 800.34 ▼    MSFT 299.35 ▲   
+    </div>
+  </div>
+  <script w-tid="63">
+    // Pause ticker on hover
+    var ticker = document.querySelector('.ticker div');
+    ticker.addEventListener('mouseover', function() {
+      ticker.style.animationPlayState = 'paused';
+    });
+    ticker.addEventListener('mouseout', function() {
+      ticker.style.animationPlayState = 'running';
+    });
+
+    // Buy The Book
+    function buyBook() {
+      var confirmationCode = '';
+      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      for (var i = 0; i < 16; i++) {
+        confirmationCode += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      document.getElementById('confirmation-message').textContent = 'Your confirmation code is: ' + confirmationCode;
+    }
+
+    // Market Trading Game
+    var balance = 1000;
+    var stockPrice = 100;
+    var sharesOwned = 0;
+
+    function updateGameDisplay() {
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      document.getElementById('stock-price').textContent = stockPrice.toFixed(2);
+    }
+
+    function buyStock() {
+      if (balance >= stockPrice) {
+        balance -= stockPrice;
+        sharesOwned += 1;
+        document.getElementById('game-message').textContent = 'You bought 1 share.';
+      } else {
+        document.getElementById('game-message').textContent = 'Insufficient funds to buy stock.';
+      }
+      updateGameDisplay();
+    }
+
+    function sellStock() {
+      if (sharesOwned > 0) {
+        balance += stockPrice;
+        sharesOwned -= 1;
+        document.getElementById('game-message').textContent = 'You sold 1 share.';
+      } else {
+        document.getElementById('game-message').textContent = 'You do not own any shares to sell.';
+      }
+      updateGameDisplay();
+    }
+
+    // Chart.js setup
+    var ctx = document.getElementById('priceChart').getContext('2d');
+    var priceData = [stockPrice];
+    var labels = [new Date().toLocaleTimeString()];
+    var priceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Stock Price',
+          data: priceData,
+          borderColor: 'green',
+          backgroundColor: 'rgba(0, 255, 0, 0.1)',
+          fill: true,
+          tension: 0.1
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            display: false
+          },
+          y: {
+            beginAtZero: false
+          }
+        }
+      }
+    });
+
+    // Simulate stock price changes
+    setInterval(function() {
+      var change = (Math.random() - 0.5) * 2; // Random change between -1 and 1
+      stockPrice += change;
+      if (stockPrice < 1) stockPrice = 1; // Minimum stock price
+
+      // Update chart data
+      if (priceData.length > 20) { // Keep last 20 data points
+        priceData.shift();
+        labels.shift();
+      }
+      priceData.push(stockPrice);
+      labels.push(new Date().toLocaleTimeString());
+      priceChart.update();
+
+      updateGameDisplay();
+    }, 2000);
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"99863fc12ab9fef5","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.9.1","token":"4c6229722a6346bc8eb5cb0e5eae5d41"}' crossorigin="anonymous"></script>
+</body>
+</html>
