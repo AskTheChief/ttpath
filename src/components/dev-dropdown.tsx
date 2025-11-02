@@ -110,6 +110,11 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
               <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => window.open('https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs', '_blank')}>Library</DropdownMenuItem>
+            <Link href="/games" passHref><DropdownMenuItem>Game Center</DropdownMenuItem></Link>
+            <Link href="/store" passHref><DropdownMenuItem>Store</DropdownMenuItem></Link>
+            <Link href="/trading" passHref><DropdownMenuItem>Trading</DropdownMenuItem></Link>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSendTestEmail}>Send Test Email</DropdownMenuItem>
             <DropdownMenuItem onClick={onSendTestDiploma}>Send Test Diploma</DropdownMenuItem>
             <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
