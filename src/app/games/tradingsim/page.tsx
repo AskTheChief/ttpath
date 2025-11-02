@@ -10,6 +10,14 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Category
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
+type OptionContract = {
+  id: number;
+  type: 'call' | 'put';
+  strikePrice: number;
+  premium: number;
+};
+
+
 const Ticker = () => {
   return (
     <div className="bg-gray-800 text-white p-3 overflow-hidden whitespace-nowrap w-full absolute bottom-0 left-0">
@@ -50,14 +58,16 @@ export default function TradingSimPage() {
   const [gameMessage, setGameMessage] = useState('');
   const [marginBalance, setMarginBalance] = useState(0);
   const [shortCollateral, setShortCollateral] = useState(0);
+  const [optionsOwned, setOptionsOwned] = useState<OptionContract[]>([]);
+
   
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    // Equity = Cash + Value of Owned Stock - Margin Debt - Value of Shorted Stock Liability
+    // Equity = Cash + Value of Owned Stock - Margin Debt - Short Liability
     const shortLiability = sharesShorted * stockPrice;
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance;
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
     setEquity(currentEquity);
   }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance]);
 
@@ -159,7 +169,6 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    // Hold collateral equal to the price of the stock when shorted
     setBalance(prev => prev - stockPrice);
     setShortCollateral(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
@@ -169,18 +178,56 @@ export default function TradingSimPage() {
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      // Assume FIFO for collateral return, simplified for 1 share at a time
-      const collateralReturned = shortCollateral / sharesShorted;
-  
-      // Realize P/L by returning collateral and subtracting the cost to cover.
-      setBalance(prev => prev + collateralReturned - costToCover);
-      setShortCollateral(prev => prev - collateralReturned);
+      const collateralToReturn = shortCollateral / sharesShorted;
+
+      setBalance(prev => prev + collateralToReturn - costToCover);
+      setShortCollateral(prev => prev - collateralToReturn);
       setSharesShorted(prev => prev - 1);
-      const profitOrLoss = collateralReturned - costToCover;
-      setGameMessage(`You covered 1 short share. P/L: $${profitOrLoss.toFixed(2)}`);
+
+      const profitOrLoss = collateralToReturn - costToCover;
+      setGameMessage(`Covered short. P/L: $${profitOrLoss.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
     }
+  };
+
+  const buyOption = (type: 'call' | 'put') => {
+    const premium = 5; // Simplified premium
+    if (balance < premium) {
+      setGameMessage('Insufficient funds to buy option.');
+      return;
+    }
+    setBalance(prev => prev - premium);
+
+    const strikePrice = type === 'call' 
+      ? Math.ceil(stockPrice + 5) 
+      : Math.floor(stockPrice - 5);
+    
+    const newOption: OptionContract = {
+      id: Date.now(),
+      type,
+      strikePrice,
+      premium,
+    };
+    
+    setOptionsOwned(prev => [...prev, newOption]);
+    setGameMessage(`Bought ${type.toUpperCase()} option with strike $${strikePrice.toFixed(2)}.`);
+  };
+
+  const exerciseOption = (optionId: number) => {
+    const option = optionsOwned.find(o => o.id === optionId);
+    if (!option) return;
+
+    let profit = 0;
+    if (option.type === 'call') {
+      profit = Math.max(0, stockPrice - option.strikePrice) - option.premium;
+    } else { // put
+      profit = Math.max(0, option.strikePrice - stockPrice) - option.premium;
+    }
+
+    setBalance(prev => prev + option.premium + profit); // Return premium and add profit
+    setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
+    setGameMessage(`${option.type.toUpperCase()} exercised. Profit: $${profit.toFixed(2)}`);
   };
 
   return (
@@ -222,17 +269,37 @@ export default function TradingSimPage() {
 
               <div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Button onClick={buyStock} className="w-full">Buy</Button>
-                  <Button onClick={sellStock} variant="secondary" className="w-full">Sell</Button>
+                  <Button onClick={buyStock} className="w-full">Buy Stock</Button>
+                  <Button onClick={sellStock} variant="secondary" className="w-full">Sell Stock</Button>
                   <Button onClick={buyOnMargin} variant="outline" className="w-full">Buy on Margin</Button>
                   <Button onClick={sellShort} variant="destructive" className="w-full">Sell Short</Button>
                   <Button onClick={coverShort} variant="outline" className="w-full col-span-2">Cover Short</Button>
+                  <Button onClick={() => buyOption('call')} className="w-full">Buy Call Option</Button>
+                  <Button onClick={() => buyOption('put')} variant="secondary" className="w-full">Buy Put Option</Button>
                 </div>
               </div>
 
               {gameMessage && <p className="text-sm text-center text-muted-foreground h-5">{gameMessage}</p>}
             </div>
           </div>
+           {optionsOwned.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-2">Your Options</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {optionsOwned.map(option => (
+                  <Card key={option.id}>
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold">{option.type.toUpperCase()} Option</p>
+                        <p className="text-sm text-muted-foreground">Strike: ${option.strikePrice.toFixed(2)}</p>
+                      </div>
+                      <Button size="sm" onClick={() => exerciseOption(option.id)}>Exercise</Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -242,8 +309,8 @@ export default function TradingSimPage() {
                 <CardTitle>Trading Concepts</CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
-                <p><strong>Buy:</strong> Purchase a stock, hoping the price increases.</p>
-                <p><strong>Sell:</strong> Sell a stock you own to lock in a gain or loss.</p>
+                <p><strong>Buy Stock:</strong> Purchase a stock, hoping the price increases.</p>
+                <p><strong>Sell Stock:</strong> Sell a stock you own to lock in a gain or loss.</p>
                 <p><strong>Buy on Margin:</strong> Borrow money to buy more stock than you can afford. This amplifies both gains and losses.</p>
                 <p><strong>Sell Short:</strong> Borrow a stock and sell it, hoping the price drops so you can buy it back cheaper for a profit.</p>
                 <p><strong>Cover Short:</strong> Buy back the stock you previously sold short to close your position.</p>
@@ -251,15 +318,13 @@ export default function TradingSimPage() {
         </Card>
          <Card>
           <CardHeader>
-            <CardTitle>Margin Trading</CardTitle>
+            <CardTitle>Options Trading</CardTitle>
           </CardHeader>
-          <CardContent>
-            <code className="text-sm bg-muted p-2 rounded block">
-              Equity = (Balance + (Shares * Price)) - Margin Balance
-            </code>
-            <CardDescription className="mt-2 text-sm">
-              Buying on margin allows you to borrow money to purchase shares. Your equity is your net worth. If it drops too low, you may face a margin call. When you sell shares, the proceeds first pay back your margin loan.
-            </CardDescription>
+          <CardContent className="text-sm space-y-2">
+            <p><strong>Call Option:</strong> Gives you the right to BUY the stock at the strike price. You want the stock price to go UP.</p>
+            <p><strong>Put Option:</strong> Gives you the right to SELL the stock at the strike price. You want the stock price to go DOWN.</p>
+             <p><strong>Premium:</strong> The cost to buy an option contract.</p>
+            <p><strong>Exercise:</strong> Use your option to buy or sell at the strike price, realizing a profit or loss.</p>
           </CardContent>
         </Card>
          <Card>
@@ -286,5 +351,3 @@ export default function TradingSimPage() {
     </div>
   );
 }
-
-    
