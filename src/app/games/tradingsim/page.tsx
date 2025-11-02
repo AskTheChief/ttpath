@@ -61,7 +61,7 @@ export default function TradingSimPage() {
   const [optionsOwned, setOptionsOwned] = useState<OptionContract[]>([]);
 
   const [priceHistory, setPriceHistory] = useState<number[]>([100]);
-  const [timeHistory, setTimeHistory] = useState<string[]>([new Date().toLocaleTimeString()]);
+  const [timeHistory, setTimeHistory] = useState<number[]>([0]);
   const [chartTimeframe, setChartTimeframe] = useState(20);
 
   
@@ -77,7 +77,7 @@ export default function TradingSimPage() {
 
   const updateGameDisplay = useCallback(() => {
     if (chartInstanceRef.current) {
-        const labelsToShow = timeHistory.slice(-chartTimeframe);
+        const labelsToShow = timeHistory.slice(-chartTimeframe).map(t => `${t}s`);
         const dataToShow = priceHistory.slice(-chartTimeframe);
 
         chartInstanceRef.current.data.labels = labelsToShow;
@@ -103,7 +103,7 @@ export default function TradingSimPage() {
             }]
           },
           options: {
-            animation: false, // Disable all animations
+            animation: false,
             scales: {
               y: { beginAtZero: false }
             },
@@ -126,7 +126,7 @@ export default function TradingSimPage() {
         const finalPrice = newPrice < 1 ? 1 : newPrice;
 
         setPriceHistory(prev => [...prev, finalPrice]);
-        setTimeHistory(prev => [...prev, new Date().toLocaleTimeString()]);
+        setTimeHistory(prev => [...prev, (prev[prev.length - 1] || 0) + 2]);
         
         return finalPrice;
       });
@@ -185,7 +185,8 @@ export default function TradingSimPage() {
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      const collateralPerShare = shortCollateral / sharesShorted;
+      // This is the collateral per share. Since we handle 1 share at a time, it's simpler.
+      const collateralPerShare = shortCollateral / sharesShorted; 
       
       setBalance(prev => prev + collateralPerShare - costToCover);
       
@@ -198,6 +199,7 @@ export default function TradingSimPage() {
       setGameMessage('You have no short positions to cover.');
     }
   };
+  
 
   const buyOption = (type: 'call' | 'put') => {
     const premium = 5; // Simplified premium
@@ -233,10 +235,11 @@ export default function TradingSimPage() {
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
     
-    const netProfit = grossProfit - option.premium;
-    setBalance(prev => prev + grossProfit);
+    // The net profit is the gross profit from the exercise, considering you already paid the premium.
+    const netProfit = grossProfit;
+    setBalance(prev => prev + option.premium + netProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Net gain: $${netProfit.toFixed(2)} (gross profit $${grossProfit.toFixed(2)} on a $${option.premium.toFixed(2)} premium).`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Net gain: $${(netProfit).toFixed(2)} (gross profit $${grossProfit.toFixed(2)} on a $${option.premium.toFixed(2)} premium).`);
   };
 
   return (
@@ -383,5 +386,3 @@ export default function TradingSimPage() {
     </div>
   );
 }
-
-    
