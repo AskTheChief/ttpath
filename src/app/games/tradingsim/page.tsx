@@ -65,11 +65,10 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    // Equity = (Cash + Value of Owned Stock) - Margin Debt - (Value of Shorted Stock)
-    const shortLiability = sharesShorted * stockPrice;
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
+    const unrealizedShortProfit = shortCollateral - (sharesShorted * stockPrice);
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance + unrealizedShortProfit;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted]);
+  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted, shortCollateral]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -166,21 +165,31 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    setBalance(prev => prev + stockPrice);
+    if (balance < stockPrice) {
+        setGameMessage('Insufficient funds to post collateral for short.');
+        return;
+    }
+    setBalance(prev => prev - stockPrice);
     setSharesShorted(prev => prev + 1);
-    setGameMessage('You sold 1 share short. Funds held as collateral.');
+    setShortCollateral(prev => prev + stockPrice);
+    setGameMessage(`Sold short. $${stockPrice.toFixed(2)} held as collateral.`);
   };
   
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      if (balance < costToCover) {
-        setGameMessage('Insufficient funds to cover short.');
-        return;
-      }
+      const collateralPerShare = shortCollateral / sharesShorted;
+      
+      // Return the original collateral for one share
+      setBalance(prev => prev + collateralPerShare);
+      // Subtract the cost to buy back the share
       setBalance(prev => prev - costToCover);
+
       setSharesShorted(prev => prev - 1);
-      setGameMessage(`Covered short at $${costToCover.toFixed(2)}`);
+      setShortCollateral(prev => prev - collateralPerShare);
+      
+      const profit = collateralPerShare - costToCover;
+      setGameMessage(`Covered short. Profit: $${profit.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
     }
@@ -220,11 +229,10 @@ export default function TradingSimPage() {
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
     
-    // The net profit is the gross profit, as the premium was already paid.
-    // We add this net profit to the balance.
-    setBalance(prev => prev + grossProfit);
+    const netProfit = grossProfit;
+    setBalance(prev => prev + netProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Gross Profit: $${grossProfit.toFixed(2)}`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)}`);
   };
 
   return (
@@ -243,14 +251,14 @@ export default function TradingSimPage() {
               <canvas ref={chartRef}></canvas>
             </div>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-center">
-                <Card>
+              <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 text-center">
+                 <Card>
                   <CardHeader><CardTitle>${balance.toFixed(2)}</CardTitle><CardDescription>Cash Balance</CardDescription></CardHeader>
                 </Card>
                 <Card>
                   <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
                 </Card>
-                 <Card>
+                <Card className="lg:col-span-2">
                   <CardHeader><CardTitle>${marginBalance.toFixed(2)}</CardTitle><CardDescription>Margin Debt</CardDescription></CardHeader>
                 </Card>
               </div>
