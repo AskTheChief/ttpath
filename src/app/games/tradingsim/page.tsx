@@ -65,11 +65,10 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
-    // Equity = Cash + Value of Owned Stock - Margin Debt - Short Liability
-    const shortLiability = sharesShorted * stockPrice;
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
+    // Equity = Cash + Value of Owned Stock - Margin Debt
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance]);
+  }, [balance, sharesOwned, stockPrice, marginBalance]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -152,17 +151,14 @@ export default function TradingSimPage() {
 
   const sellStock = () => {
     if (sharesOwned > 0) {
-      let saleProceeds = stockPrice;
-      if (marginBalance > 0) {
-        const repayment = Math.min(saleProceeds, marginBalance);
-        setMarginBalance(prev => prev - repayment);
-        saleProceeds -= repayment;
-        setGameMessage(`You sold 1 share, repaying $${repayment.toFixed(2)} of your margin.`);
-      } else {
-        setGameMessage('You sold 1 share.');
-      }
-      setBalance(prev => prev + saleProceeds);
+      const saleProceeds = stockPrice;
+      const repayment = Math.min(saleProceeds, marginBalance);
+      
+      setMarginBalance(prev => prev - repayment);
+      setBalance(prev => prev + (saleProceeds - repayment));
       setSharesOwned(prev => prev - 1);
+      
+      setGameMessage(`You sold 1 share. Repaid $${repayment.toFixed(2)} of margin.`);
     } else {
       setGameMessage('You do not own any shares to sell.');
     }
@@ -351,3 +347,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
