@@ -159,33 +159,24 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    if (balance < stockPrice) {
-        setGameMessage('Insufficient funds to cover short collateral.');
-        return;
-    }
-    // Simulate collateral being held. Your cash goes down.
+    // Hold collateral equal to the price of the stock when shorted
     setBalance(prev => prev - stockPrice);
     setShortCollateral(prev => prev + stockPrice);
     setSharesShorted(prev => prev + 1);
     setGameMessage('You sold 1 share short. Funds held as collateral.');
   };
-
+  
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      const priceAtShort = shortCollateral / sharesShorted;
-
-      if (balance < costToCover) {
-        setGameMessage(`Insufficient funds to buy back the share at $${costToCover.toFixed(2)}`);
-        return;
-      }
-
-      const profitOrLoss = priceAtShort - costToCover;
-      
-      // Return the collateral, then subtract the cost of buying the share back.
-      setBalance(prev => prev + priceAtShort - costToCover);
-      setShortCollateral(prev => prev - priceAtShort);
+      // Assume FIFO for collateral return, simplified for 1 share at a time
+      const collateralReturned = shortCollateral / sharesShorted;
+  
+      // Realize P/L by returning collateral and subtracting the cost to cover.
+      setBalance(prev => prev + collateralReturned - costToCover);
+      setShortCollateral(prev => prev - collateralReturned);
       setSharesShorted(prev => prev - 1);
+      const profitOrLoss = collateralReturned - costToCover;
       setGameMessage(`You covered 1 short share. P/L: $${profitOrLoss.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
@@ -233,16 +224,28 @@ export default function TradingSimPage() {
         </CardContent>
       </Card>
       
-      <div className="mt-8 space-y-4 text-center w-full max-w-4xl">
+      <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left w-full max-w-4xl">
+         <Card>
+            <CardHeader>
+                <CardTitle>Trading Concepts</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+                <p><strong>Buy:</strong> Purchase a stock, hoping the price increases.</p>
+                <p><strong>Sell:</strong> Sell a stock you own to lock in a gain or loss.</p>
+                <p><strong>Buy on Margin:</strong> Borrow money to buy more stock than you can afford. This amplifies both gains and losses.</p>
+                <p><strong>Sell Short:</strong> Borrow a stock and sell it, hoping the price drops so you can buy it back cheaper for a profit.</p>
+                <p><strong>Cover Short:</strong> Buy back the stock you previously sold short to close your position.</p>
+            </CardContent>
+        </Card>
          <Card>
           <CardHeader>
             <CardTitle>Margin Trading</CardTitle>
           </CardHeader>
           <CardContent>
-            <code className="text-sm bg-muted p-2 rounded">
+            <code className="text-sm bg-muted p-2 rounded block">
               Equity = (Balance + (Shares * Price)) - Margin Balance
             </code>
-            <CardDescription className="mt-2">
+            <CardDescription className="mt-2 text-sm">
               Buying on margin allows you to borrow money to purchase shares. Your equity is your net worth. If it drops too low, you may face a margin call. When you sell shares, the proceeds first pay back your margin loan.
             </CardDescription>
           </CardContent>
@@ -252,15 +255,15 @@ export default function TradingSimPage() {
             <CardTitle>Price Change Formula</CardTitle>
           </CardHeader>
           <CardContent>
-            <code className="text-sm bg-muted p-2 rounded">
+            <code className="text-sm bg-muted p-2 rounded block">
               newPrice = oldPrice + (Math.random() - 0.5) * 2;
             </code>
-            <CardDescription className="mt-2">
+            <CardDescription className="mt-2 text-sm">
               The stock price follows a simple random walk. Every two seconds, the price changes by a random value between -1 and +1.
             </CardDescription>
           </CardContent>
         </Card>
-        <div className="flex justify-center">
+        <div className="flex justify-center md:col-span-2 lg:col-span-3">
             <Button asChild variant="link">
                 <Link href="/games"><ArrowLeft /> Back to Game Center</Link>
             </Button>
