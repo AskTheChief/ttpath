@@ -117,27 +117,27 @@ export default function TradingSimPage() {
       chartInstanceRef.current?.destroy();
     };
   }, []);
-
+  
   useEffect(() => {
     const interval = setInterval(() => {
-      setStockPrice(prevPrice => {
+      setPriceHistory(prev => {
+        const lastPrice = prev[prev.length - 1];
         const change = (Math.random() - 0.5) * 2;
-        const newPrice = prevPrice + change;
+        const newPrice = lastPrice + change;
         const finalPrice = newPrice < 1 ? 1 : newPrice;
-
-        setPriceHistory(prev => [...prev, finalPrice]);
-        setTimeHistory(prev => [...prev, (prev[prev.length - 1] || 0) + 2]);
-        
-        return finalPrice;
+        return [...prev, finalPrice];
       });
+
+      setTimeHistory(prev => [...prev, (prev[prev.length - 1] || 0) + 2]);
     }, 2000);
 
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    setStockPrice(priceHistory[priceHistory.length - 1]);
     updateGameDisplay();
-  }, [stockPrice, chartTimeframe, updateGameDisplay]);
+  }, [priceHistory, chartTimeframe, updateGameDisplay]);
 
 
   const buyStock = () => {
@@ -188,6 +188,7 @@ export default function TradingSimPage() {
       // This is the collateral per share. Since we handle 1 share at a time, it's simpler.
       const collateralPerShare = shortCollateral / sharesShorted; 
       
+      // Return collateral and settle the difference
       setBalance(prev => prev + collateralPerShare - costToCover);
       
       setSharesShorted(prev => prev - 1);
@@ -236,10 +237,9 @@ export default function TradingSimPage() {
     }
     
     // The net profit is the gross profit from the exercise, considering you already paid the premium.
-    const netProfit = grossProfit;
-    setBalance(prev => prev + option.premium + netProfit);
+    setBalance(prev => prev + grossProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Net gain: $${(netProfit).toFixed(2)} (gross profit $${grossProfit.toFixed(2)} on a $${option.premium.toFixed(2)} premium).`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Gross gain: $${(grossProfit).toFixed(2)} (premium of $${option.premium.toFixed(2)} was already paid).`);
   };
 
   return (
@@ -386,3 +386,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
