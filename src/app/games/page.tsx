@@ -30,7 +30,7 @@ const games = [
     icon: Target,
   },
   {
-    href: '/games/tradingsim/index.html',
+    href: '/games/tradingsim',
     title: 'Trading Sim',
     description: 'A simulation to practice your trading skills.',
     icon: CandlestickChart,
