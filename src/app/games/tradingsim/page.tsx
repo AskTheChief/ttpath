@@ -57,9 +57,9 @@ export default function TradingSimPage() {
   useEffect(() => {
     // Equity = Cash + Value of Owned Stock - Margin Debt - Value of Shorted Stock Liability
     const shortLiability = sharesShorted * stockPrice;
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance - shortLiability;
+    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance;
     setEquity(currentEquity);
-  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance, shortCollateral]);
+  }, [balance, sharesOwned, sharesShorted, stockPrice, marginBalance]);
 
 
   const updateGameDisplay = useCallback(() => {
@@ -194,31 +194,43 @@ export default function TradingSimPage() {
           <CardDescription>Practice your trading skills in this simple simulation.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6 text-center">
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <p className="text-xl font-bold">Balance: ${balance.toFixed(2)}</p>
-                    <p className="text-xl font-bold">Equity: ${equity.toFixed(2)}</p>
-                </div>
-              <p className="text-xl">Current Stock Price: <span className="font-semibold text-primary">${stockPrice.toFixed(2)}</span></p>
-              <div className="grid grid-cols-2 gap-4">
-                <p className="text-lg">Shares Owned: {sharesOwned}</p>
-                <p className="text-lg">Shares Shorted: {sharesShorted}</p>
-              </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <p className="text-lg">Margin Balance: ${marginBalance.toFixed(2)}</p>
-               </div>
-              <div className="flex justify-center gap-4 flex-wrap">
-                <Button onClick={buyStock}>Buy</Button>
-                <Button onClick={buyOnMargin} variant="outline">Buy on Margin</Button>
-                <Button onClick={sellStock} variant="secondary">Sell</Button>
-                <Button onClick={sellShort} variant="destructive">Sell Short</Button>
-                <Button onClick={coverShort} variant="outline">Cover Short</Button>
-              </div>
-              {gameMessage && <p className="text-sm text-muted-foreground h-5">{gameMessage}</p>}
-            </div>
-            <div className="relative h-64">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="relative h-80 md:h-full">
               <canvas ref={chartRef}></canvas>
+            </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <Card>
+                  <CardHeader><CardTitle>${balance.toFixed(2)}</CardTitle><CardDescription>Cash Balance</CardDescription></CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Price & Position</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between items-center"><span className="text-muted-foreground">Current Price:</span> <span className="font-bold text-primary">${stockPrice.toFixed(2)}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Owned:</span> <span className="font-bold">{sharesOwned}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Shorted:</span> <span className="font-bold">{sharesShorted}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-muted-foreground">Margin Debt:</span> <span className="font-bold">${marginBalance.toFixed(2)}</span></div>
+                </CardContent>
+              </Card>
+
+              <div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button onClick={buyStock} className="w-full">Buy</Button>
+                  <Button onClick={sellStock} variant="secondary" className="w-full">Sell</Button>
+                  <Button onClick={buyOnMargin} variant="outline" className="w-full">Buy on Margin</Button>
+                  <Button onClick={sellShort} variant="destructive" className="w-full">Sell Short</Button>
+                  <Button onClick={coverShort} variant="outline" className="w-full col-span-2">Cover Short</Button>
+                </div>
+              </div>
+
+              {gameMessage && <p className="text-sm text-center text-muted-foreground h-5">{gameMessage}</p>}
             </div>
           </div>
         </CardContent>
@@ -274,3 +286,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
