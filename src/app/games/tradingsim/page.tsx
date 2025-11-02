@@ -178,7 +178,7 @@ export default function TradingSimPage() {
 
       const profitOrLoss = collateralPerShare - costToCover;
       
-      setBalance(prev => prev + profitOrLoss);
+      setBalance(prev => prev + collateralPerShare + profitOrLoss);
       setShortCollateral(prev => prev - collateralPerShare);
       setSharesShorted(prev => prev - 1);
 
@@ -244,12 +244,15 @@ export default function TradingSimPage() {
               <canvas ref={chartRef}></canvas>
             </div>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-center">
                 <Card>
                   <CardHeader><CardTitle>${balance.toFixed(2)}</CardTitle><CardDescription>Cash Balance</CardDescription></CardHeader>
                 </Card>
                 <Card>
                   <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
+                </Card>
+                 <Card>
+                  <CardHeader><CardTitle>${marginBalance.toFixed(2)}</CardTitle><CardDescription>Margin Debt</CardDescription></CardHeader>
                 </Card>
               </div>
 
@@ -261,7 +264,6 @@ export default function TradingSimPage() {
                   <div className="flex justify-between items-center"><span className="text-muted-foreground">Current Price:</span> <span className="font-bold text-primary">${stockPrice.toFixed(2)}</span></div>
                   <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Owned:</span> <span className="font-bold">{sharesOwned}</span></div>
                   <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Shorted:</span> <span className="font-bold">{sharesShorted}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-muted-foreground">Margin Debt:</span> <span className="font-bold">${marginBalance.toFixed(2)}</span></div>
                 </CardContent>
               </Card>
 
@@ -349,5 +351,3 @@ export default function TradingSimPage() {
     </div>
   );
 }
-
-    
