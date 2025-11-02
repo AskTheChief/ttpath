@@ -43,10 +43,16 @@ export default function TradingSimPage() {
   const [balance, setBalance] = useState(1000);
   const [stockPrice, setStockPrice] = useState(100);
   const [sharesOwned, setSharesOwned] = useState(0);
+  const [equity, setEquity] = useState(1000);
   const [gameMessage, setGameMessage] = useState('');
   
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartAPI | null>(null);
+
+  useEffect(() => {
+    const currentEquity = balance + (sharesOwned * stockPrice);
+    setEquity(currentEquity);
+  }, [balance, sharesOwned, stockPrice]);
 
   const updateGameDisplay = useCallback(() => {
     if (chartInstanceRef.current) {
@@ -143,7 +149,10 @@ export default function TradingSimPage() {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6 text-center">
             <div className="space-y-4">
-              <p className="text-2xl font-bold">Balance: ${balance.toFixed(2)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <p className="text-xl font-bold">Balance: ${balance.toFixed(2)}</p>
+                    <p className="text-xl font-bold">Equity: ${equity.toFixed(2)}</p>
+                </div>
               <p className="text-xl">Current Stock Price: <span className="font-semibold text-primary">${stockPrice.toFixed(2)}</span></p>
               <p className="text-lg">Shares Owned: {sharesOwned}</p>
               <div className="flex justify-center gap-4">
@@ -159,7 +168,20 @@ export default function TradingSimPage() {
         </CardContent>
       </Card>
       
-      <div className="mt-8 space-y-4 text-center">
+      <div className="mt-8 space-y-4 text-center w-full max-w-4xl">
+         <Card>
+          <CardHeader>
+            <CardTitle>Price Change Formula</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <code className="text-sm bg-muted p-2 rounded">
+              newPrice = oldPrice + (Math.random() - 0.5) * 2;
+            </code>
+            <CardDescription className="mt-2">
+              The stock price follows a simple random walk. Every two seconds, the price changes by a random value between -1 and +1.
+            </CardDescription>
+          </CardContent>
+        </Card>
         <div className="flex justify-center">
             <Button asChild variant="link">
                 <Link href="/games"><ArrowLeft /> Back to Game Center</Link>
