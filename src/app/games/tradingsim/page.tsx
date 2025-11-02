@@ -102,7 +102,6 @@ export default function TradingSimPage() {
           },
           options: {
             scales: {
-              x: { display: false },
               y: { beginAtZero: false }
             },
             responsive: true,
@@ -179,16 +178,14 @@ export default function TradingSimPage() {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
       const collateralPerShare = shortCollateral / sharesShorted;
+      const profit = collateralPerShare - costToCover;
+  
+      // Return collateral and settle the trade
+      setBalance(prev => prev + collateralPerShare - costToCover);
       
-      // Return the original collateral for one share
-      setBalance(prev => prev + collateralPerShare);
-      // Subtract the cost to buy back the share
-      setBalance(prev => prev - costToCover);
-
       setSharesShorted(prev => prev - 1);
       setShortCollateral(prev => prev - collateralPerShare);
       
-      const profit = collateralPerShare - costToCover;
       setGameMessage(`Covered short. Profit: $${profit.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
@@ -229,10 +226,11 @@ export default function TradingSimPage() {
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
     
+    // The premium was already paid, so the profit on exercise is just the gross profit.
     const netProfit = grossProfit;
     setBalance(prev => prev + netProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)}`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)} (premium was $${option.premium.toFixed(2)})`);
   };
 
   return (
@@ -251,15 +249,15 @@ export default function TradingSimPage() {
               <canvas ref={chartRef}></canvas>
             </div>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-center">
                  <Card>
                   <CardHeader><CardTitle>${balance.toFixed(2)}</CardTitle><CardDescription>Cash Balance</CardDescription></CardHeader>
                 </Card>
-                <Card>
-                  <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
-                </Card>
-                <Card className="lg:col-span-2">
+                 <Card>
                   <CardHeader><CardTitle>${marginBalance.toFixed(2)}</CardTitle><CardDescription>Margin Debt</CardDescription></CardHeader>
+                </Card>
+                <Card className="lg:col-span-3">
+                  <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
                 </Card>
               </div>
 
