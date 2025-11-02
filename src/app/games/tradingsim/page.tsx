@@ -60,6 +60,10 @@ export default function TradingSimPage() {
   const [shortCollateral, setShortCollateral] = useState(0);
   const [optionsOwned, setOptionsOwned] = useState<OptionContract[]>([]);
 
+  const [priceHistory, setPriceHistory] = useState<number[]>([100]);
+  const [timeHistory, setTimeHistory] = useState<string[]>([new Date().toLocaleTimeString()]);
+  const [chartTimeframe, setChartTimeframe] = useState(20);
+
   
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartAPI | null>(null);
@@ -73,16 +77,14 @@ export default function TradingSimPage() {
 
   const updateGameDisplay = useCallback(() => {
     if (chartInstanceRef.current) {
-        chartInstanceRef.current.data.datasets[0].data.push(stockPrice);
-        chartInstanceRef.current.data.labels?.push(new Date().toLocaleTimeString());
+        const labelsToShow = timeHistory.slice(-chartTimeframe);
+        const dataToShow = priceHistory.slice(-chartTimeframe);
 
-        if (chartInstanceRef.current.data.datasets[0].data.length > 20) {
-            chartInstanceRef.current.data.datasets[0].data.shift();
-            chartInstanceRef.current.data.labels?.shift();
-        }
+        chartInstanceRef.current.data.labels = labelsToShow;
+        chartInstanceRef.current.data.datasets[0].data = dataToShow;
         chartInstanceRef.current.update();
     }
-  }, [stockPrice]);
+  }, [priceHistory, timeHistory, chartTimeframe]);
 
   useEffect(() => {
     if (chartRef.current) {
@@ -91,10 +93,10 @@ export default function TradingSimPage() {
         chartInstanceRef.current = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: [new Date().toLocaleTimeString()],
+            labels: [],
             datasets: [{
               label: 'Stock Price',
-              data: [stockPrice],
+              data: [],
               borderColor: 'hsl(var(--primary))',
               fill: false,
               tension: 0.1
@@ -120,7 +122,12 @@ export default function TradingSimPage() {
       setStockPrice(prevPrice => {
         const change = (Math.random() - 0.5) * 2;
         const newPrice = prevPrice + change;
-        return newPrice < 1 ? 1 : newPrice;
+        const finalPrice = newPrice < 1 ? 1 : newPrice;
+
+        setPriceHistory(prev => [...prev, finalPrice]);
+        setTimeHistory(prev => [...prev, new Date().toLocaleTimeString()]);
+        
+        return finalPrice;
       });
     }, 2000);
 
@@ -129,7 +136,7 @@ export default function TradingSimPage() {
 
   useEffect(() => {
     updateGameDisplay();
-  }, [stockPrice, updateGameDisplay]);
+  }, [stockPrice, chartTimeframe, updateGameDisplay]);
 
 
   const buyStock = () => {
@@ -179,7 +186,7 @@ export default function TradingSimPage() {
       const costToCover = stockPrice;
       const collateralPerShare = shortCollateral / sharesShorted;
       
-      setBalance(prev => prev + collateralPerShare - costToCover + collateralPerShare);
+      setBalance(prev => prev + collateralPerShare - costToCover);
       
       setSharesShorted(prev => prev - 1);
       setShortCollateral(prev => prev - collateralPerShare);
@@ -226,9 +233,9 @@ export default function TradingSimPage() {
     }
     
     const netProfit = grossProfit;
-    setBalance(prev => prev + netProfit);
+    setBalance(prev => prev + grossProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Net Profit: $${netProfit.toFixed(2)} (premium was $${option.premium.toFixed(2)})`);
+    setGameMessage(`${option.type.toUpperCase()} exercised. Net gain: $${netProfit.toFixed(2)} (gross profit $${grossProfit.toFixed(2)} on a $${option.premium.toFixed(2)} premium).`);
   };
 
   return (
@@ -248,9 +255,24 @@ export default function TradingSimPage() {
 
         <div className="w-full max-w-7xl mx-auto space-y-6">
             <Card>
-                <CardHeader>
-                    <CardTitle>Market Price: <span className="text-primary font-mono">${stockPrice.toFixed(2)}</span></CardTitle>
-                    <CardDescription>Price updates every 2 seconds.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Market Price: <span className="text-primary font-mono">${stockPrice.toFixed(2)}</span></CardTitle>
+                        <CardDescription>Price updates every 2 seconds.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">View:</span>
+                        {[10, 20, 50, 100].map(points => (
+                            <Button
+                                key={points}
+                                variant={chartTimeframe === points ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setChartTimeframe(points)}
+                            >
+                                {points}
+                            </Button>
+                        ))}
+                    </div>
                 </CardHeader>
                 <CardContent className="h-80">
                     <canvas ref={chartRef}></canvas>
@@ -360,3 +382,5 @@ export default function TradingSimPage() {
     </div>
   );
 }
+
+    
