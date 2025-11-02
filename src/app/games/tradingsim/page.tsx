@@ -82,7 +82,7 @@ export default function TradingSimPage() {
 
         chartInstanceRef.current.data.labels = labelsToShow;
         chartInstanceRef.current.data.datasets[0].data = dataToShow;
-        chartInstanceRef.current.update();
+        chartInstanceRef.current.update('none'); // Update without animation
     }
   }, [priceHistory, timeHistory, chartTimeframe]);
 
@@ -103,6 +103,7 @@ export default function TradingSimPage() {
             }]
           },
           options: {
+            animation: false, // Disable all animations
             scales: {
               y: { beginAtZero: false }
             },
@@ -232,7 +233,7 @@ export default function TradingSimPage() {
       grossProfit = Math.max(0, option.strikePrice - stockPrice);
     }
     
-    const netProfit = grossProfit;
+    const netProfit = grossProfit - option.premium;
     setBalance(prev => prev + grossProfit);
     setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
     setGameMessage(`${option.type.toUpperCase()} exercised. Net gain: $${netProfit.toFixed(2)} (gross profit $${grossProfit.toFixed(2)} on a $${option.premium.toFixed(2)} premium).`);
