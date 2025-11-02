@@ -160,9 +160,6 @@ export default function TradingSimPage() {
       </Card>
       
       <div className="mt-8 space-y-4 text-center">
-        <Button asChild>
-            <Link href="/store" target="_blank" rel="noopener noreferrer">Buy The Book</Link>
-        </Button>
         <div className="flex justify-center">
             <Button asChild variant="link">
                 <Link href="/games"><ArrowLeft /> Back to Game Center</Link>
