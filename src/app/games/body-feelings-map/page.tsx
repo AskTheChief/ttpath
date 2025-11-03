@@ -373,7 +373,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     viewBox: { x: number; y: number; width: number; height: number; };
     setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
-    const originalViewBox = useRef({ x: 0, y: 0, width: 500, height: 1000 });
+    const originalViewBox = useRef(viewBox);
 
     useGesture(
         {
@@ -383,7 +383,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                     return;
                 }
                 event.preventDefault();
-                const panSensitivity = 0.8;
+                const panSensitivity = 1.0;
                 setViewBox(prev => ({
                     ...prev,
                     x: originalViewBox.current.x - dx * panSensitivity,
@@ -422,6 +422,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         },
         {
             target: svgRef,
+            eventOptions: { passive: false },
         }
     );
     
@@ -527,3 +528,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
