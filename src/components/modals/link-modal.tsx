@@ -44,7 +44,7 @@ export default function LinkModal({
         return "I understand the Quick-Start Guide";
     }
     if (title.includes('Trading Tribe Source Manual')) {
-        return `I understand ${title}`;
+        return `I Understand this Guide`;
     }
     return "I Understand";
   }
