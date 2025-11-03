@@ -385,6 +385,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
 
     const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return; // Only allow left-click drags
         setIsDragging(true);
         startPoint.current = { x: e.clientX, y: e.clientY };
     };
@@ -394,20 +395,21 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         e.preventDefault();
 
         const { x, y, width, height } = originalViewBox.current;
-        const dx = (startPoint.current.x - e.clientX) * (width / svgRef.current.clientWidth);
-        const dy = (startPoint.current.y - e.clientY) * (height / svgRef.current.clientHeight);
+        const sensitivity = 0.8;
+        const dx = (startPoint.current.x - e.clientX) * (width / svgRef.current.clientWidth) * sensitivity;
+        const dy = (startPoint.current.y - e.clientY) * (height / svgRef.current.clientHeight) * sensitivity;
         
         setViewBox(`${x + dx} ${y + dy} ${width} ${height}`);
     };
 
     const handleMouseUp = (e: React.MouseEvent) => {
-        if (isDragging) {
-            const dx = Math.abs(e.clientX - startPoint.current.x);
-            const dy = Math.abs(e.clientY - startPoint.current.y);
-            // If it was more of a drag than a click, don't trigger the click handler
-            if (dx > 5 || dy > 5) {
-                e.stopPropagation();
-            }
+        const dx = Math.abs(e.clientX - startPoint.current.x);
+        const dy = Math.abs(e.clientY - startPoint.current.y);
+
+        if (isDragging && (dx > 5 || dy > 5)) {
+             // It was a drag, so we prevent the click
+        } else {
+            handleMapClick(e as any);
         }
         setIsDragging(false);
     };
@@ -417,11 +419,13 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         e.preventDefault();
 
         const { x, y, width, height } = originalViewBox.current;
-        const zoomFactor = 1.1;
+        const zoomFactor = 1.05;
         const scale = e.deltaY < 0 ? 1 / zoomFactor : zoomFactor;
 
         const newWidth = width * scale;
         const newHeight = height * scale;
+        
+        if (newWidth < 100 || newWidth > 2000) return; // Zoom limits
 
         const CTM = svgRef.current.getScreenCTM()!;
         const mousePoint = svgRef.current.createSVGPoint();
@@ -440,7 +444,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     };
 
     const vb = viewBox.split(' ').map(Number);
-    const circleRadius = Math.max(2, 5 * (vb[2]/500)); // Make radius scale with zoom
+    const circleRadius = Math.max(2, 5 * (500 / vb[2]));
 
 
     return (
@@ -464,7 +468,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                     {isLoading ? (
                       <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
-                      <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800">
+                      <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                           <svg
                               ref={svgRef}
                               viewBox={viewBox}
@@ -473,7 +477,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                               onMouseMove={handleMouseMove}
                               onMouseUp={handleMouseUp}
                               onMouseLeave={() => setIsDragging(false)}
-                              onClick={handleMapClick}
                               onWheel={handleWheel}
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
@@ -542,4 +545,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
