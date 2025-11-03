@@ -196,7 +196,7 @@ export default function BodyFeelingsMapPage() {
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Body Feelings Map</h1>
+            <h1 className="text-3xl font-bold">Feelings Panel</h1>
             <p className="text-muted-foreground">Log feelings, link them to sensations, and see your inventory.</p>
           </div>
           <Button asChild variant="outline">
@@ -319,7 +319,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
               if (pinching) return;
               if (tap) {
-                // This will be handled by the SVG's onClick if it's a direct tap on the SVG
+                // This is handled by the SVG's main onClick handler
                 return;
               }
 
@@ -376,7 +376,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 12 * (initialViewBox.width / viewBox.width);
+    const circleRadius = 12 * (viewBox.width / initialViewBox.width);
 
 
     return (
@@ -419,7 +419,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * (initialViewBox.width / viewBox.width)}
+                                strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />

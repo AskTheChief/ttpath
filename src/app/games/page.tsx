@@ -25,7 +25,7 @@ const games = [
   },
   {
     href: '/games/body-feelings-map',
-    title: 'Body Feelings Map',
+    title: 'Feelings Panel',
     description: 'Take inventory of your feelings by mapping them to your body.',
     icon: Target,
   },
@@ -97,3 +97,5 @@ export default function GamesPage() {
     </div>
   );
 }
+
+    
