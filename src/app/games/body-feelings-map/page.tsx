@@ -61,6 +61,14 @@ export default function BodyFeelingsMapPage() {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [{ x, y, scale }, api] = useSpring(() => ({
+    scale: 1,
+    x: 0,
+    y: 0,
+    config: { mass: 0.5, tension: 350, friction: 40 },
+  }));
+
+
   // Auth and initial data fetching
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -112,9 +120,32 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (x: number, y: number) => {
-    // Sensation-first workflow
-    setClickCoords({ x, y });
+  const handleMapClick = (clickX_viewport: number, clickY_viewport: number) => {
+    if (!imageContainerRef.current) return;
+
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    
+    // 1. Convert viewport coordinates to coordinates relative to the container
+    const clickX_relative = clickX_viewport - rect.left;
+    const clickY_relative = clickY_viewport - rect.top;
+
+    const currentX = x.get();
+    const currentY = y.get();
+    const currentScale = scale.get();
+    
+    // 2. Undo the panning transformation
+    const untranslatedX = clickX_relative - currentX;
+    const untranslatedY = clickY_relative - currentY;
+    
+    // 3. Undo the scaling transformation
+    const unscaledX = untranslatedX / currentScale;
+    const unscaledY = untranslatedY / currentScale;
+
+    // 4. Convert to percentage of the container's dimensions
+    const finalX_percent = (unscaledX / rect.width) * 100;
+    const finalY_percent = (unscaledY / rect.height) * 100;
+
+    setClickCoords({ x: finalX_percent, y: finalY_percent });
     setCurrentFeeling({ rating: 0 }); // Default rating
     setEditingFeelingId(null);
     setIsModalOpen(true);
@@ -226,6 +257,7 @@ export default function BodyFeelingsMapPage() {
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
+                    api={api}
                 />
             </TabsContent>
             <TabsContent value="feeling" className="mt-4">
@@ -240,6 +272,7 @@ export default function BodyFeelingsMapPage() {
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
+                    api={api}
                     controls={
                         <Select onValueChange={setSelectedFeelingName} value={selectedFeelingName || ''}>
                             <SelectTrigger className="w-[280px]">
@@ -271,6 +304,7 @@ export default function BodyFeelingsMapPage() {
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
+                    api={api}
                     sidebarContent={
                         <Card>
                              <CardHeader>
@@ -338,7 +372,7 @@ export default function BodyFeelingsMapPage() {
   );
 }
 
-function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling }: {
+function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling, api }: {
     title: string;
     description: string;
     feelings: Feeling[];
@@ -351,9 +385,10 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     controls?: React.ReactNode;
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
+    api: any;
 }) {
 
-    const [{ x, y, scale }, api] = useSpring(() => ({
+    const [{ x, y, scale }] = useSpring(() => ({
         scale: 1,
         x: 0,
         y: 0,
@@ -361,33 +396,12 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     }));
 
     useGesture({
-        onDrag: ({ pinching, cancel, offset: [dx, dy], tap, event }) => {
+        onDrag: ({ pinching, cancel, offset: [dx, dy], tap, xy }) => {
             if (pinching) return cancel();
             if (tap) {
-                if (!imageContainerRef.current) return;
-                const rect = imageContainerRef.current.getBoundingClientRect();
-                
-                const clickX_viewport = (event as MouseEvent).clientX;
-                const clickY_viewport = (event as MouseEvent).clientY;
-                
-                const clickX_relative = clickX_viewport - rect.left;
-                const clickY_relative = clickY_viewport - rect.top;
-
-                const currentX = x.get();
-                const currentY = y.get();
-                const currentScale = scale.get();
-                
-                const untranslatedX = clickX_relative - currentX;
-                const untranslatedY = clickY_relative - currentY;
-                
-                const unscaledX = untranslatedX / currentScale;
-                const unscaledY = untranslatedY / currentScale;
-
-                const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
-                const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
-                
-                handleMapClick(finalX, finalY);
-                return;
+              const [clickX, clickY] = xy;
+              handleMapClick(clickX, clickY);
+              return;
             }
             api.start({ x: dx, y: dy });
         },
