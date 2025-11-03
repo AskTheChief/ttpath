@@ -388,12 +388,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     api: any;
 }) {
 
-    const [{ x, y, scale }] = useSpring(() => ({
-        scale: 1,
-        x: 0,
-        y: 0,
-        config: { mass: 0.5, tension: 350, friction: 40 },
-    }));
+    const { x, y, scale } = api.current.springs;
 
     useGesture({
         onDrag: ({ pinching, cancel, offset: [dx, dy], tap, xy }) => {
