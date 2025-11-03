@@ -381,9 +381,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const zoomRatio = viewBox.width / initialViewBox.width;
-    const circleRadius = 12 * zoomRatio;
-    const strokeWidth = 1.5 * zoomRatio;
+    const zoomRatio = initialViewBox.width / viewBox.width;
+    const circleRadius = 9 / zoomRatio;
+    const strokeWidth = 1.125 / zoomRatio;
 
 
     return (
@@ -483,3 +483,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
