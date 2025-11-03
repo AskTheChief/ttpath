@@ -63,7 +63,7 @@ export default function BodyFeelingsMapPage() {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [viewBox, setViewBox] = useState(initialViewBox);
+  const [viewBox, setViewBox] = useState({ x: 80, y: 150, width: 340, height: 700 });
 
   // Auth and initial data fetching
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (e: { clientX: number; clientY: number }) => {
+  const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
     
     const svgPoint = svgRef.current.createSVGPoint();
@@ -279,7 +279,7 @@ export default function BodyFeelingsMapPage() {
                     description="Click a dot on the map to see all feelings at that location."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
-                    handleMapClick={(e: any) => {
+                    handleMapClick={(e) => {
                         const target = e.target as SVGCircleElement;
                         if (target.tagName === 'circle') {
                             const id = Number(target.dataset.id);
@@ -288,8 +288,7 @@ export default function BodyFeelingsMapPage() {
                                 handleDotClickForLocationView(feeling, e as any);
                             }
                         } else {
-                            // If not clicking a dot, it's a map click
-                            handleMapClick(e);
+                            handleMapClick(e as any);
                         }
                     }}
                     svgRef={svgRef}
@@ -371,7 +370,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: { clientX: number, clientY: number }) => void;
+    handleMapClick: (e: MouseEvent<SVGSVGElement>) => void;
     svgRef: React.RefObject<SVGSVGElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -394,8 +393,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 }
                 event.preventDefault();
                 setViewBox({
-                    x: originalViewBox.current.x - dx * panSensitivity * (originalViewBox.current.width / 500),
-                    y: originalViewBox.current.y - dy * panSensitivity * (originalViewBox.current.height / 1000),
+                    x: originalViewBox.current.x - dx * panSensitivity,
+                    y: originalViewBox.current.y - dy * panSensitivity,
                     width: originalViewBox.current.width,
                     height: originalViewBox.current.height,
                 });
@@ -411,7 +410,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 const newWidth = viewBox.width * scale;
                 const newHeight = viewBox.height * scale;
 
-                if (newWidth < 100 || newWidth > 2000) return;
+                if (newWidth < 20 || newWidth > 2000) return;
 
                 const svg = svgRef.current;
                 if (!svg) return;
@@ -440,7 +439,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         originalViewBox.current = initialViewBox;
     };
     
-    const circleRadius = Math.max(2, 5 * (viewBox.width / initialViewBox.width));
+    const circleRadius = 5 / (initialViewBox.width / viewBox.width);
 
 
     return (
@@ -478,6 +477,12 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                               ref={svgRef}
                               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                               className="w-full h-full"
+                              onClick={(e) => {
+                                // This check ensures that clicks on dots don't trigger a map click
+                                if ((e.target as SVGElement).tagName === 'svg') {
+                                    handleMapClick(e);
+                                }
+                              }}
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
@@ -491,7 +496,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth="0.5"
+                                strokeWidth={0.5 / (initialViewBox.width / viewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
