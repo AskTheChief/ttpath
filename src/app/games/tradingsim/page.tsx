@@ -15,6 +15,7 @@ type OptionContract = {
   type: 'call' | 'put';
   strikePrice: number;
   premium: number;
+  entryPrice: number; // The stock price when the option was bought
 };
 
 
@@ -57,7 +58,7 @@ export default function TradingSimPage() {
   const [equity, setEquity] = useState(1000);
   const [gameMessage, setGameMessage] = useState('');
   const [marginBalance, setMarginBalance] = useState(0);
-  const [shortCollateral, setShortCollateral] = useState(0);
+  const [shortCollateral, setShortCollateral] = useState(0); // This will hold the value of the stock when it was shorted
   const [optionsOwned, setOptionsOwned] = useState<OptionContract[]>([]);
 
   const [priceHistory, setPriceHistory] = useState<number[]>([100]);
@@ -69,6 +70,8 @@ export default function TradingSimPage() {
   const chartInstanceRef = useRef<ChartAPI | null>(null);
 
   useEffect(() => {
+    // Equity is your cash, plus the value of stocks you own, minus loans, plus/minus unrealized short profit/loss.
+    // Unrealized P/L for shorts = (price at which you shorted) - (current price)
     const unrealizedShortProfit = shortCollateral - (sharesShorted * stockPrice);
     const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance + unrealizedShortProfit;
     setEquity(currentEquity);
@@ -172,30 +175,39 @@ export default function TradingSimPage() {
   };
 
   const sellShort = () => {
-    if (balance < stockPrice) {
-        setGameMessage('Insufficient funds to post collateral for short.');
+    const collateralRequirement = stockPrice * 0.5; // Require 50% collateral
+    if (balance < collateralRequirement) {
+        setGameMessage(`Insufficient funds. You need $${collateralRequirement.toFixed(2)} to short.`);
         return;
     }
-    setBalance(prev => prev - stockPrice);
+    // You receive cash for the sale, increasing your balance
+    setBalance(prev => prev + stockPrice); 
     setSharesShorted(prev => prev + 1);
+    // Store the price at which you shorted to calculate profit/loss later
     setShortCollateral(prev => prev + stockPrice);
-    setGameMessage(`Sold short. $${stockPrice.toFixed(2)} held as collateral.`);
+    setGameMessage(`Sold 1 share short at $${stockPrice.toFixed(2)}.`);
   };
   
   const coverShort = () => {
     if (sharesShorted > 0) {
       const costToCover = stockPrice;
-      // This is the collateral per share. Since we handle 1 share at a time, it's simpler.
-      const collateralPerShare = shortCollateral / sharesShorted; 
+      if (balance < costToCover) {
+        setGameMessage(`Insufficient funds to buy back the share at $${costToCover.toFixed(2)}.`);
+        return;
+      }
       
-      // Return collateral and settle the difference
-      setBalance(prev => prev + collateralPerShare - costToCover);
+      // Calculate the price per share when shorted
+      const averageShortPrice = shortCollateral / sharesShorted; 
+      
+      // Use cash to buy back the share
+      setBalance(prev => prev - costToCover);
       
       setSharesShorted(prev => prev - 1);
-      setShortCollateral(prev => prev - collateralPerShare);
+      // Reduce the total collateral by the value of the one share you're covering
+      setShortCollateral(prev => prev - averageShortPrice);
       
-      const profit = collateralPerShare - costToCover;
-      setGameMessage(`Covered short. Profit: $${profit.toFixed(2)}`);
+      const profit = averageShortPrice - costToCover;
+      setGameMessage(`Covered short. Realized P/L: $${profit.toFixed(2)}`);
     } else {
       setGameMessage('You have no short positions to cover.');
     }
@@ -219,6 +231,7 @@ export default function TradingSimPage() {
       type,
       strikePrice,
       premium,
+      entryPrice: stockPrice,
     };
     
     setOptionsOwned(prev => [...prev, newOption]);
@@ -386,5 +399,3 @@ export default function TradingSimPage() {
     </div>
   );
 }
-
-    
