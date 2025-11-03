@@ -661,14 +661,14 @@ export default function PathJourney() {
               key={action.id}
               variant="secondary"
               size="sm"
-              className={cn('w-full justify-start h-auto p-2 text-wrap')}
+              className={cn('w-full justify-start h-auto p-2 text-wrap text-left')}
               data-action-id={action.id}
               onClick={() => handleActionClick(action, node)}
               disabled={isLocked}
             >
               {isCompleted && !action.next ? Checkmark : null}
               {Icon && <Icon className="h-4 w-4 mr-2 shrink-0" />}
-              <span className="flex-grow text-left">{action.label}</span>
+              <span className="flex-grow">{action.label}</span>
             </Button>
           );
         })}
