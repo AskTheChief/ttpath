@@ -387,11 +387,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     useGesture(
         {
             onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
-              if (pinching) return;
-              if (tap) {
-                return;
-              }
-      
+              if (pinching || tap) return;
+
               const svg = svgRef.current;
               if (!svg) return;
       
@@ -408,8 +405,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
               startViewBox.current = viewBox;
             },
             onTap: ({ event }) => {
-                const target = event.target as SVGElement;
-                if (target.tagName.toLowerCase() === 'svg' || target.tagName.toLowerCase() === 'image') {
+                if (event.target === svgRef.current || (event.target as SVGElement).tagName === 'image') {
                     handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                 }
             },
@@ -485,6 +481,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
                       <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                        <TooltipProvider>
                           <svg
                               ref={svgRef}
                               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
@@ -494,21 +491,28 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
                             {feelings.map(feeling => (
-                                <circle
-                                key={feeling.id}
-                                data-id={feeling.id}
-                                cx={feeling.x}
-                                cy={feeling.y}
-                                r={circleRadius}
-                                fill={getColorFromRating(feeling.rating)}
-                                fillOpacity={getOpacityFromRating(feeling.rating)}
-                                stroke="white"
-                                strokeWidth={1 * (viewBox.width / initialViewBox.width)}
-                                className="cursor-pointer transition-all duration-150 hover:r-[10]"
-                                onClick={(e) => openEditModal(feeling, e as any)}
-                                />
+                                <Tooltip key={feeling.id}>
+                                    <TooltipTrigger asChild>
+                                        <circle
+                                        data-id={feeling.id}
+                                        cx={feeling.x}
+                                        cy={feeling.y}
+                                        r={circleRadius}
+                                        fill={getColorFromRating(feeling.rating)}
+                                        fillOpacity={getOpacityFromRating(feeling.rating)}
+                                        stroke="white"
+                                        strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
+                                        className="cursor-pointer transition-all duration-150 hover:r-[10]"
+                                        onClick={(e) => openEditModal(feeling, e as any)}
+                                        />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{feeling.feelingName}</p>
+                                    </TooltipContent>
+                                </Tooltip>
                             ))}
                           </svg>
+                        </TooltipProvider>
                       </div>
                     )}
                 </CardContent>
@@ -561,4 +565,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     
 
     
+
 
