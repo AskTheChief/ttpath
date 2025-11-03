@@ -18,6 +18,8 @@ import Image from 'next/image';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSpring, animated } from '@react-spring/web';
+import { useGesture } from '@use-gesture/react';
 
 // Helper to get color based on rating
 const getColorFromRating = (rating: number): string => {
@@ -110,18 +112,7 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!imageContainerRef.current) return;
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    
-    // Calculate click position relative to the container
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    // Convert to percentage
-    const x = (clickX / imageContainerRef.current.clientWidth) * 100;
-    const y = (clickY / imageContainerRef.current.clientHeight) * 100;
-
+  const handleMapClick = (x: number, y: number) => {
     // Sensation-first workflow
     setClickCoords({ x, y });
     setCurrentFeeling({ rating: 0 }); // Default rating
@@ -226,7 +217,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Click the body to add a feeling."
+                    description="Click the body to add a feeling. Pinch to zoom, drag to pan."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -269,7 +260,12 @@ export default function BodyFeelingsMapPage() {
                     description="Click a dot on the map to see all feelings at that location."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
-                    handleMapClick={handleDotClickForLocationView}
+                    handleMapClick={(x,y) => {
+                      const feelingAtCoords = allFeelings.find(f => Math.abs(f.x - x) < 1 && Math.abs(f.y - y) < 1);
+                      if (feelingAtCoords) {
+                        handleDotClickForLocationView(feelingAtCoords, {} as MouseEvent);
+                      }
+                    }}
                     imageContainerRef={imageContainerRef}
                     isSaving={isSaving}
                     isLoading={isLoading}
@@ -347,7 +343,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => void;
+    handleMapClick: (x: number, y: number) => void;
     imageContainerRef: React.RefObject<HTMLDivElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -356,6 +352,79 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
 }) {
+
+    const [{ x, y, scale }, api] = useSpring(() => ({
+        scale: 1,
+        x: 0,
+        y: 0,
+        config: { mass: 0.1, tension: 200, friction: 20 },
+    }));
+
+    useGesture({
+        onDrag: ({ offset: [dx, dy] }) => {
+            api.set({ x: dx, y: dy });
+        },
+        onPinch: ({ offset: [s] }) => {
+            api.set({ scale: s });
+        },
+        onWheel: ({ delta: [, dy], event }) => {
+            event.preventDefault();
+            api.start(props => {
+                const newScale = props.scale - dy / 200;
+                return { scale: Math.max(1, Math.min(newScale, 5)) };
+            });
+        },
+    }, {
+        target: imageContainerRef,
+        eventOptions: { passive: false },
+        drag: { from: () => [x.get(), y.get()] },
+        pinch: { from: () => [scale.get(), 0] },
+    });
+
+    const handleContainerClick = (e: MouseEvent<HTMLDivElement>) => {
+        if (!imageContainerRef.current) return;
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        
+        // Raw click coordinates relative to the viewport
+        const clickX_viewport = e.clientX;
+        const clickY_viewport = e.clientY;
+
+        // Coordinates of container's top-left corner
+        const rectX = rect.left;
+        const rectY = rect.top;
+
+        // Current transformation values
+        const currentX = x.get();
+        const currentY = y.get();
+        const currentScale = scale.get();
+
+        // Calculate click position on the untransformed image
+        // 1. Get click position relative to the container
+        const clickX_relative = clickX_viewport - rectX;
+        const clickY_relative = clickY_viewport - rectY;
+
+        // 2. Inverse the translation (pan)
+        const untranslatedX = clickX_relative - currentX;
+        const untranslatedY = clickY_relative - currentY;
+        
+        // 3. Inverse the scaling (zoom)
+        const unscaledX = untranslatedX / currentScale;
+        const unscaledY = untranslatedY / currentScale;
+
+        // 4. Convert to percentage
+        const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
+        const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
+
+        // Check if the click was on a dot
+        const onDot = (e.target as HTMLElement).classList.contains('feeling-dot');
+        if (!onDot) {
+            handleMapClick(finalX, finalY);
+        }
+    };
+    
+    const resetView = () => {
+        api.start({ x: 0, y: 0, scale: 1 });
+    };
 
     return (
         <div className="grid md:grid-cols-3 gap-8">
@@ -368,6 +437,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                         </div>
                          <div className="flex items-center gap-2">
                             {controls}
+                             <Button variant="outline" size="icon" onClick={resetView}>
+                                <RefreshCw className="w-4 h-4" />
+                            </Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -377,17 +449,16 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                     ) : (
                       <div
                         ref={imageContainerRef}
-                        className="w-full mx-auto cursor-pointer relative h-[600px]"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'IMG') {
-                                handleMapClick(e);
-                            }
-                        }}
+                        className="w-full mx-auto cursor-pointer relative h-[600px] touch-none"
+                        onClick={handleContainerClick}
                         >
-                            <div className="relative w-full h-full touch-none">
+                            <animated.div 
+                                className="relative w-full h-full"
+                                style={{ x, y, scale, touchAction: 'none' }}
+                             >
                                 <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert"/>
                                 {feelings.map(feeling => (
-                                    <div
+                                    <animated.div
                                     key={feeling.id}
                                     className="absolute w-4 h-4 rounded-full -translate-x-1/2 -translate-y-1/2 transform hover:scale-150 transition-transform duration-150 cursor-pointer border-2 border-white/50 feeling-dot"
                                     style={{ 
@@ -395,11 +466,12 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                         top: `${feeling.y}%`, 
                                         backgroundColor: getColorFromRating(feeling.rating),
                                         opacity: getOpacityFromRating(feeling.rating),
+                                        scale: scale.to(s => 1 / s), // Keep dots constant size
                                     }}
                                     onClick={(e) => openEditModal(feeling, e)}
                                     />
                                 ))}
-                            </div>
+                            </animated.div>
                       </div>
                     )}
                 </CardContent>
