@@ -390,7 +390,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             },
             onDrag: ({ pinching, movement: [dx, dy] }) => {
                 if (pinching) return;
-
+                
                 const svg = svgRef.current;
                 if (!svg) return;
                 
@@ -404,10 +404,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 });
             },
             onTap: ({ event }) => {
-                // Ensure event is a valid MouseEvent on an SVGElement before calling
-                if (event instanceof MouseEvent && event.target instanceof SVGSVGElement) {
-                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
-                }
+                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -549,5 +546,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
