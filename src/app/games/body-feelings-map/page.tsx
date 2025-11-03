@@ -408,7 +408,10 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
               startViewBox.current = viewBox;
             },
             onTap: ({ event }) => {
-              handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
+                const target = event.target as SVGElement;
+                if (target.tagName.toLowerCase() === 'svg' || target.tagName.toLowerCase() === 'image') {
+                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
+                }
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -448,7 +451,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 8 * (viewBox.width / initialViewBox.width);
+    const circleRadius = 12 * (viewBox.width / initialViewBox.width);
 
 
     return (
@@ -558,3 +561,4 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     
 
     
+
