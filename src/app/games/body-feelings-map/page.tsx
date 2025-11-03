@@ -387,7 +387,10 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     useGesture(
         {
             onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
-              if (pinching || tap) return;
+              if (pinching) return;
+              if (tap) {
+                return;
+              }
 
               const svg = svgRef.current;
               if (!svg) return;
@@ -565,5 +568,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     
 
     
+
 
 
