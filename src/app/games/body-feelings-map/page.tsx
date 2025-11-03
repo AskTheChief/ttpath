@@ -142,13 +142,15 @@ export default function BodyFeelingsMapPage() {
         return;
     }
 
+    const standardizedFeelingName = currentFeeling.feelingName.charAt(0).toUpperCase() + currentFeeling.feelingName.slice(1).toLowerCase();
+
     if (editingFeelingId !== null) {
-        setAllFeelings(allFeelings.map(f => f.id === editingFeelingId ? { ...f, ...currentFeeling } as Feeling : f));
+        setAllFeelings(allFeelings.map(f => f.id === editingFeelingId ? { ...f, ...currentFeeling, feelingName: standardizedFeelingName } as Feeling : f));
         toast({ title: "Feeling Updated" });
     } else if (clickCoords) {
         const newFeeling: Feeling = {
             id: Date.now(),
-            feelingName: currentFeeling.feelingName,
+            feelingName: standardizedFeelingName,
             sensation: currentFeeling.sensation,
             rating: currentFeeling.rating ?? 0,
             x: clickCoords.x,
@@ -254,7 +256,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Click the body to add a feeling. Click a dot to edit it. Use mouse wheel to zoom, drag to pan."
+                    description="Click the body to add a feeling. Click a dot to edit it. Pinch or use mouse wheel to zoom, drag to pan."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -393,17 +395,17 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     useGesture(
         {
             onDrag: ({ offset: [x, y] }) => api.start({ x, y }),
+            onPinch: ({ offset: [s] }) => api.start({ scale: s }),
             onWheel: ({ event, offset: [, d] }) => {
                 event.preventDefault();
-                api.start({ scale: 1 + d / 500 })
+                api.start({ scale: 1 + d / 500 });
             },
-            onPinch: ({ offset: [s] }) => api.start({ scale: s }),
         },
         {
             target: imageContainerRef,
             drag: { from: () => [style.x.get(), style.y.get()] },
-            pinch: { from: () => [style.scale.get(), 0] },
-            wheel: { from: () => [0, style.scale.get()*500-500] }
+            pinch: { from: () => [style.scale.get(), 0], scaleBounds: { min: 0.5, max: 4 }, rubberband: true },
+            wheel: { from: () => [0, style.scale.get()*500-500], preventDefault: true },
         }
     );
 
@@ -449,7 +451,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                         backgroundColor: getColorFromRating(feeling.rating),
                                         opacity: getOpacityFromRating(feeling.rating),
                                     }}
-                                    onClick={(e) => handleMapClick(e as any, style) || openEditModal(feeling, e)}
+                                    onClick={(e) => openEditModal(feeling, e)}
                                     />
                                 ))}
                             </animated.div>
