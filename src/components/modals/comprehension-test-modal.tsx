@@ -118,8 +118,6 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
       const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
       setFeedback(newFeedback);
       
-      onComplete('open-comprehension-test');
-      
       toast({
         title: "You Receive Guidance",
         description: "The Chief provides new feedback for you to consider.",
@@ -142,7 +140,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleProceed = () => {
-    onComplete("complete-comprehension-test");
+    onComplete("open-comprehension-test");
     onClose();
   };
   
