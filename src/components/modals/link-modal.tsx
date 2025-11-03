@@ -33,7 +33,8 @@ export default function LinkModal({
     if (title === 'Read the Quick-Start Guide') {
       return 'Open the Quick-Start Guide';
     }
-    return `Open ${title}`;
+    // Return the title directly for other links
+    return title;
   }
 
   const getButtonText = () => {
