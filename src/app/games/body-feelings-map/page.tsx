@@ -57,17 +57,11 @@ export default function BodyFeelingsMapPage() {
   const [selectedFeelingName, setSelectedFeelingName] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Feeling | null>(null);
   
-  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [{ x, y, scale }, api] = useSpring(() => ({
-    scale: 1,
-    x: 0,
-    y: 0,
-    config: { mass: 0.5, tension: 350, friction: 40 },
-  }));
-
+  const [viewBox, setViewBox] = useState('0 0 500 1000');
 
   // Auth and initial data fetching
   useEffect(() => {
@@ -120,32 +114,16 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (clickX_viewport: number, clickY_viewport: number) => {
-    if (!imageContainerRef.current) return;
+  const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return;
 
-    const rect = imageContainerRef.current.getBoundingClientRect();
+    const svgPoint = svgRef.current.createSVGPoint();
+    svgPoint.x = e.clientX;
+    svgPoint.y = e.clientY;
     
-    // 1. Convert viewport coordinates to coordinates relative to the container
-    const clickX_relative = clickX_viewport - rect.left;
-    const clickY_relative = clickY_viewport - rect.top;
+    const transformedPoint = svgPoint.matrixTransform(svgRef.current.getScreenCTM()!.inverse());
 
-    const currentX = x.get();
-    const currentY = y.get();
-    const currentScale = scale.get();
-    
-    // 2. Undo the panning transformation to get coordinates on the scaled div
-    const unpannedX = clickX_relative - currentX;
-    const unpannedY = clickY_relative - currentY;
-    
-    // 3. Undo the scaling transformation to get coordinates on the un-scaled div
-    const unscaledX = unpannedX / currentScale;
-    const unscaledY = unpannedY / currentScale;
-
-    // 4. Convert to percentage of the container's dimensions
-    const finalX_percent = (unscaledX / rect.width) * 100;
-    const finalY_percent = (unscaledY / rect.height) * 100;
-
-    setClickCoords({ x: finalX_percent, y: finalY_percent });
+    setClickCoords({ x: transformedPoint.x, y: transformedPoint.y });
     setCurrentFeeling({ rating: 0 }); // Default rating
     setEditingFeelingId(null);
     setIsModalOpen(true);
@@ -219,7 +197,7 @@ export default function BodyFeelingsMapPage() {
         return allFeelings.filter(f => {
             const dx = f.x - selectedLocation.x;
             const dy = f.y - selectedLocation.y;
-            return Math.sqrt(dx * dx + dy * dy) < 1; // 1% radius
+            return Math.sqrt(dx * dx + dy * dy) < 5; // Radius in SVG units
         });
     }
     return [];
@@ -252,15 +230,13 @@ export default function BodyFeelingsMapPage() {
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
-                    imageContainerRef={imageContainerRef}
+                    svgRef={svgRef}
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
-                    api={api}
-                    x={x}
-                    y={y}
-                    scale={scale}
+                    viewBox={viewBox}
+                    setViewBox={setViewBox}
                 />
             </TabsContent>
             <TabsContent value="feeling" className="mt-4">
@@ -270,15 +246,13 @@ export default function BodyFeelingsMapPage() {
                     feelings={displayedFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
-                    imageContainerRef={imageContainerRef}
+                    svgRef={svgRef}
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
-                    api={api}
-                    x={x}
-                    y={y}
-                    scale={scale}
+                    viewBox={viewBox}
+                    setViewBox={setViewBox}
                     controls={
                         <Select onValueChange={setSelectedFeelingName} value={selectedFeelingName || ''}>
                             <SelectTrigger className="w-[280px]">
@@ -299,21 +273,23 @@ export default function BodyFeelingsMapPage() {
                     description="Click a dot on the map to see all feelings at that location."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
-                    handleMapClick={(x,y) => {
-                      const feelingAtCoords = allFeelings.find(f => Math.abs(f.x - x) < 1 && Math.abs(f.y - y) < 1);
-                      if (feelingAtCoords) {
-                        handleDotClickForLocationView(feelingAtCoords, {} as MouseEvent);
-                      }
+                    handleMapClick={(e) => {
+                        const target = e.target as SVGCircleElement;
+                        if (target.tagName === 'circle') {
+                            const id = Number(target.dataset.id);
+                            const feeling = allFeelings.find(f => f.id === id);
+                            if (feeling) {
+                                handleDotClickForLocationView(feeling, e as any);
+                            }
+                        }
                     }}
-                    imageContainerRef={imageContainerRef}
+                    svgRef={svgRef}
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
-                    api={api}
-                    x={x}
-                    y={y}
-                    scale={scale}
+                    viewBox={viewBox}
+                    setViewBox={setViewBox}
                     sidebarContent={
                         <Card>
                              <CardHeader>
@@ -381,55 +357,91 @@ export default function BodyFeelingsMapPage() {
   );
 }
 
-function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling, api, x, y, scale }: {
+function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, svgRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling, viewBox, setViewBox }: {
     title: string;
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (x: number, y: number) => void;
-    imageContainerRef: React.RefObject<HTMLDivElement>;
+    handleMapClick: (e: MouseEvent<SVGSVGElement>) => void;
+    svgRef: React.RefObject<SVGSVGElement>;
     isSaving: boolean;
     isLoading: boolean;
     user: User | null;
     controls?: React.ReactNode;
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
-    api: any;
-    x: any;
-    y: any;
-    scale: any;
+    viewBox: string;
+    setViewBox: (viewBox: string) => void;
 }) {
 
-    useGesture({
-        onDrag: ({ pinching, cancel, offset: [dx, dy], tap, xy }) => {
-            if (pinching) return cancel();
-            if (tap) {
-              const [clickX, clickY] = xy;
-              handleMapClick(clickX, clickY);
-              return;
+    const [isDragging, setIsDragging] = useState(false);
+    const startPoint = useRef({ x: 0, y: 0 });
+    const originalViewBox = useRef({ x: 0, y: 0, width: 500, height: 1000 });
+    
+    useEffect(() => {
+        const [x, y, width, height] = viewBox.split(' ').map(Number);
+        originalViewBox.current = { x, y, width, height };
+    }, [viewBox]);
+
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        setIsDragging(true);
+        startPoint.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !svgRef.current) return;
+        e.preventDefault();
+
+        const { x, y, width, height } = originalViewBox.current;
+        const dx = (startPoint.current.x - e.clientX) * (width / svgRef.current.clientWidth);
+        const dy = (startPoint.current.y - e.clientY) * (height / svgRef.current.clientHeight);
+        
+        setViewBox(`${x + dx} ${y + dy} ${width} ${height}`);
+    };
+
+    const handleMouseUp = (e: React.MouseEvent) => {
+        if (isDragging) {
+            const dx = Math.abs(e.clientX - startPoint.current.x);
+            const dy = Math.abs(e.clientY - startPoint.current.y);
+            // If it was more of a drag than a click, don't trigger the click handler
+            if (dx > 5 || dy > 5) {
+                e.stopPropagation();
             }
-            api.start({ x: dx, y: dy });
-        },
-        onPinch: ({ offset: [s] }) => {
-            api.start({ scale: s });
-        },
-        onWheel: ({ event, delta: [, dy] }) => {
-            event.preventDefault();
-            api.start((props: any) => {
-                const newScale = props.scale - dy / 200;
-                return { scale: Math.max(0.5, Math.min(newScale, 5)) };
-            });
-        },
-    }, {
-        target: imageContainerRef,
-        eventOptions: { passive: false },
-        drag: { from: () => [x.get(), y.get()] },
-        pinch: { from: () => [scale.get(), 0] },
-    });
+        }
+        setIsDragging(false);
+    };
+    
+    const handleWheel = (e: React.WheelEvent) => {
+        if (!svgRef.current) return;
+        e.preventDefault();
+
+        const { x, y, width, height } = originalViewBox.current;
+        const zoomFactor = 1.1;
+        const scale = e.deltaY < 0 ? 1 / zoomFactor : zoomFactor;
+
+        const newWidth = width * scale;
+        const newHeight = height * scale;
+
+        const CTM = svgRef.current.getScreenCTM()!;
+        const mousePoint = svgRef.current.createSVGPoint();
+        mousePoint.x = e.clientX;
+        mousePoint.y = e.clientY;
+        const svgMousePoint = mousePoint.matrixTransform(CTM.inverse());
+
+        const newX = svgMousePoint.x - (svgMousePoint.x - x) * scale;
+        const newY = svgMousePoint.y - (svgMousePoint.y - y) * scale;
+        
+        setViewBox(`${newX} ${newY} ${newWidth} ${newHeight}`);
+    };
     
     const resetView = () => {
-        api.start({ x: 0, y: 0, scale: 1 });
+        setViewBox('0 0 500 1000');
     };
+
+    const vb = viewBox.split(' ').map(Number);
+    const circleRadius = Math.max(2, 5 * (vb[2]/500)); // Make radius scale with zoom
+
 
     return (
         <div className="grid md:grid-cols-3 gap-8">
@@ -448,34 +460,40 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="pt-0 relative overflow-hidden">
+                <CardContent className="pt-0 relative">
                     {isLoading ? (
                       <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
-                      <div
-                        ref={imageContainerRef}
-                        className="w-full mx-auto cursor-pointer relative h-[600px] touch-none"
-                        >
-                            <animated.div 
-                                className="relative w-full h-full"
-                                style={{ x, y, scale, touchAction: 'none' }}
-                             >
-                                <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert pointer-events-none"/>
-                                {feelings.map(feeling => (
-                                    <animated.div
-                                    key={feeling.id}
-                                    className="absolute w-4 h-4 rounded-full -translate-x-1/2 -translate-y-1/2 transform hover:scale-150 transition-transform duration-150 cursor-pointer border-2 border-white/50 feeling-dot"
-                                    style={{ 
-                                        left: `${feeling.x}%`, 
-                                        top: `${feeling.y}%`, 
-                                        backgroundColor: getColorFromRating(feeling.rating),
-                                        opacity: getOpacityFromRating(feeling.rating),
-                                        scale: scale.to((s: number) => 1 / s), // Keep dots constant size
-                                    }}
-                                    onClick={(e) => openEditModal(feeling, e)}
-                                    />
-                                ))}
-                            </animated.div>
+                      <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800">
+                          <svg
+                              ref={svgRef}
+                              viewBox={viewBox}
+                              className="w-full h-full cursor-pointer"
+                              onMouseDown={handleMouseDown}
+                              onMouseMove={handleMouseMove}
+                              onMouseUp={handleMouseUp}
+                              onMouseLeave={() => setIsDragging(false)}
+                              onClick={handleMapClick}
+                              onWheel={handleWheel}
+                          >
+                            <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
+
+                            {feelings.map(feeling => (
+                                <circle
+                                key={feeling.id}
+                                data-id={feeling.id}
+                                cx={feeling.x}
+                                cy={feeling.y}
+                                r={circleRadius}
+                                fill={getColorFromRating(feeling.rating)}
+                                fillOpacity={getOpacityFromRating(feeling.rating)}
+                                stroke="white"
+                                strokeWidth="0.5"
+                                className="cursor-pointer transition-all duration-150 hover:r-[10]"
+                                onClick={(e) => openEditModal(feeling, e as any)}
+                                />
+                            ))}
+                          </svg>
                       </div>
                     )}
                 </CardContent>
@@ -524,3 +542,4 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
