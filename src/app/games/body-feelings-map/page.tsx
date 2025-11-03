@@ -389,6 +389,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
               if (pinching) return;
               if (tap) {
+                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                 return;
               }
 
@@ -406,11 +407,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             },
             onDragStart: () => {
               startViewBox.current = viewBox;
-            },
-            onTap: ({ event }) => {
-                if (event.target === svgRef.current || (event.target as SVGElement).tagName === 'image') {
-                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
-                }
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -454,17 +450,17 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
 
     return (
-        <div className="grid md:grid-cols-3 gap-8">
-            <Card className="md:col-span-2">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>{title}</CardTitle>
-                            <CardDescription>{description}</CardDescription>
-                        </div>
-                         <div className="flex items-center gap-2">
-                            {controls}
-                            <TooltipProvider>
+        <TooltipProvider>
+            <div className="grid md:grid-cols-3 gap-8">
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle>{title}</CardTitle>
+                                <CardDescription>{description}</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {controls}
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button variant="outline" size="icon" onClick={resetView}>
@@ -475,99 +471,98 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                         <p>Reset View</p>
                                     </TooltipContent>
                                 </Tooltip>
-                            </TooltipProvider>
+                            </div>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-0 relative">
-                    {isLoading ? (
-                      <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
-                    ) : (
-                      <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                        <TooltipProvider>
-                          <svg
-                              ref={svgRef}
-                              viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-                              className="w-full h-full"
-                              onClick={handleMapClick}
-                          >
-                            <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
-
-                            {feelings.map(feeling => (
-                                <Tooltip key={feeling.id}>
-                                    <TooltipTrigger asChild>
-                                        <circle
-                                        data-id={feeling.id}
-                                        cx={feeling.x}
-                                        cy={feeling.y}
-                                        r={circleRadius}
-                                        fill={getColorFromRating(feeling.rating)}
-                                        fillOpacity={getOpacityFromRating(feeling.rating)}
-                                        stroke="white"
-                                        strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
-                                        className="cursor-pointer transition-all duration-150 hover:r-[10]"
-                                        onClick={(e) => openEditModal(feeling, e as any)}
-                                        />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>{feeling.feelingName}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            ))}
-                          </svg>
-                        </TooltipProvider>
-                      </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <div className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            Feelings Inventory
-                            {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                        </CardTitle>
-                        <CardDescription>A list of all feelings you've logged.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-0 relative">
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                        ) : feelings.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">
-                                {user ? 'Click on the body map to add your first feeling.' : 'Log in to save your progress.'}
-                            </p>
+                        <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                         ) : (
-                            <ul className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                            <svg
+                                ref={svgRef}
+                                viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+                                className="w-full h-full"
+                                onClick={handleMapClick}
+                            >
+                                <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
+
                                 {feelings.map(feeling => (
-                                    <li key={feeling.id} className="p-3 border rounded-lg bg-background">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-3 h-3 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: getColorFromRating(feeling.rating) }}></div>
-                                                <div>
-                                                    <h4 className="font-semibold">{feeling.feelingName} <span className="font-normal">({feeling.rating})</span></h4>
-                                                    <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
-                                                </div>
-                                            </div>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteFeeling(feeling.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </li>
+                                    <Tooltip key={feeling.id}>
+                                        <TooltipTrigger asChild>
+                                            <circle
+                                            data-id={feeling.id}
+                                            cx={feeling.x}
+                                            cy={feeling.y}
+                                            r={circleRadius}
+                                            fill={getColorFromRating(feeling.rating)}
+                                            fillOpacity={getOpacityFromRating(feeling.rating)}
+                                            stroke="white"
+                                            strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
+                                            className="cursor-pointer transition-all duration-150 hover:r-[10]"
+                                            onClick={(e) => openEditModal(feeling, e as any)}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{feeling.feelingName}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
                                 ))}
-                            </ul>
+                            </svg>
+                        </div>
                         )}
                     </CardContent>
                 </Card>
-                {sidebarContent}
+
+                <div className="space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                Feelings Inventory
+                                {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                            </CardTitle>
+                            <CardDescription>A list of all feelings you've logged.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                            ) : feelings.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-8">
+                                    {user ? 'Click on the body map to add your first feeling.' : 'Log in to save your progress.'}
+                                </p>
+                            ) : (
+                                <ul className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                    {feelings.map(feeling => (
+                                        <li key={feeling.id} className="p-3 border rounded-lg bg-background">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-3 h-3 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: getColorFromRating(feeling.rating) }}></div>
+                                                    <div>
+                                                        <h4 className="font-semibold">{feeling.feelingName} <span className="font-normal">({feeling.rating})</span></h4>
+                                                        <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
+                                                    </div>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteFeeling(feeling.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </CardContent>
+                    </Card>
+                    {sidebarContent}
+                </div>
             </div>
-        </div>
+        </TooltipProvider>
     );
 }
 
     
 
     
+
 
 
 
