@@ -19,6 +19,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGesture } from '@use-gesture/react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 // Helper to get color based on rating
@@ -43,13 +44,14 @@ const getOpacityFromRating = (rating: number): number => {
     return 0.5 + Math.abs(rating) / 10 * 0.5;
 }
 
+const initialViewBox = { x: 80, y: 150, width: 340, height: 700 };
+
 
 export default function BodyFeelingsMapPage() {
   const [allFeelings, setAllFeelings] = useState<Feeling[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentFeeling, setCurrentFeeling] = useState<Partial<Feeling>>({});
   const [editingFeelingId, setEditingFeelingId] = useState<number | null>(null);
-  const [clickCoords, setClickCoords] = useState<{ x: number, y: number } | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +63,7 @@ export default function BodyFeelingsMapPage() {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 500, height: 1000 });
+  const [viewBox, setViewBox] = useState(initialViewBox);
 
   // Auth and initial data fetching
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (e: MouseEvent<SVGSVGElement> | { clientX: number; clientY: number }) => {
+  const handleMapClick = (e: { clientX: number; clientY: number }) => {
     if (!svgRef.current) return;
     
     const svgPoint = svgRef.current.createSVGPoint();
@@ -123,8 +125,13 @@ export default function BodyFeelingsMapPage() {
 
     const transformedPoint = svgPoint.matrixTransform(svgRef.current.getScreenCTM()!.inverse());
 
-    setClickCoords({ x: transformedPoint.x, y: transformedPoint.y });
-    setCurrentFeeling({ rating: 0 }); // Default rating
+    const newFeelingPartial: Partial<Feeling> = {
+      x: transformedPoint.x,
+      y: transformedPoint.y,
+      rating: 0,
+    };
+
+    setCurrentFeeling(newFeelingPartial);
     setEditingFeelingId(null);
     setIsModalOpen(true);
   };
@@ -140,14 +147,14 @@ export default function BodyFeelingsMapPage() {
     if (editingFeelingId !== null) {
         setAllFeelings(allFeelings.map(f => f.id === editingFeelingId ? { ...f, ...currentFeeling, feelingName: standardizedFeelingName } as Feeling : f));
         toast({ title: "Feeling Updated" });
-    } else if (clickCoords) {
+    } else if (currentFeeling.x !== undefined && currentFeeling.y !== undefined) {
         const newFeeling: Feeling = {
             id: Date.now(),
             feelingName: standardizedFeelingName,
             sensation: currentFeeling.sensation,
             rating: currentFeeling.rating ?? 0,
-            x: clickCoords.x,
-            y: clickCoords.y,
+            x: currentFeeling.x,
+            y: currentFeeling.y,
         };
         setAllFeelings([...allFeelings, newFeeling]);
     }
@@ -158,7 +165,6 @@ export default function BodyFeelingsMapPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentFeeling({});
-    setClickCoords(null);
     setEditingFeelingId(null);
   };
   
@@ -365,7 +371,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<SVGSVGElement> | { clientX: number, clientY: number }) => void;
+    handleMapClick: (e: { clientX: number, clientY: number }) => void;
     svgRef: React.RefObject<SVGSVGElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -377,19 +383,19 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
     const originalViewBox = useRef(viewBox);
-    const panSensitivity = 1;
+    const panSensitivity = 1.0;
 
     useGesture(
         {
-            onDrag: ({ down, movement: [dx, dy], tap, event }) => {
+            onDrag: ({ movement: [dx, dy], tap, event }) => {
                  if (tap) {
                     handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                     return;
                 }
                 event.preventDefault();
                 setViewBox({
-                    x: originalViewBox.current.x - dx * panSensitivity,
-                    y: originalViewBox.current.y - dy * panSensitivity,
+                    x: originalViewBox.current.x - dx * panSensitivity * (originalViewBox.current.width / 500),
+                    y: originalViewBox.current.y - dy * panSensitivity * (originalViewBox.current.height / 1000),
                     width: originalViewBox.current.width,
                     height: originalViewBox.current.height,
                 });
@@ -397,9 +403,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
              onDragEnd: () => {
                 originalViewBox.current = viewBox;
             },
-            onWheel: ({ event, delta: [dx, dy] }) => {
+            onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
-                const zoomFactor = 0.005;
+                const zoomFactor = 0.001;
                 const scale = 1 + dy * zoomFactor;
 
                 const newWidth = viewBox.width * scale;
@@ -430,9 +436,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     );
     
     const resetView = () => {
-        const defaultViewBox = { x: 0, y: 0, width: 500, height: 1000 };
-        setViewBox(defaultViewBox);
-        originalViewBox.current = defaultViewBox;
+        setViewBox(initialViewBox);
+        originalViewBox.current = initialViewBox;
     };
     
     const circleRadius = Math.max(2, 5 * (500 / viewBox.width));
@@ -449,9 +454,18 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                         </div>
                          <div className="flex items-center gap-2">
                             {controls}
-                             <Button variant="outline" size="icon" onClick={resetView}>
-                                <RefreshCw className="w-4 h-4" />
-                            </Button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" onClick={resetView}>
+                                            <RefreshCw className="w-4 h-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Reset View</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
                 </CardHeader>
