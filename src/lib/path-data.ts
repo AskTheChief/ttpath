@@ -41,7 +41,8 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "",
     actions: [
-      { id: "read-full-book", label: "Read Trading Tribe Methods", action: "open-full-book", next: "explorer" },
+      { id: "read-full-book", label: "Read Trading Tribe Methods", action: "open-full-book" },
+      { id: "become-explorer", label: "Become an Explorer", action: "open-profile-form", next: "explorer", dependsOn: "read-full-book" }
     ],
     panelPos: "left"
   },

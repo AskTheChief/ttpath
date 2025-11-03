@@ -343,11 +343,6 @@ export default function PathJourney() {
         const oldLevel = currentUserLevel;
         await animateUserIcon(nextNode, oldLevel);
         setCurrentUserLevel(newLevel);
-        
-        if (nextNode.id === 'node-explorer') {
-            setNeedsProfileCompletion(true);
-        }
-
     } else {
       if (selectedNodeId) {
         const currentSelected = selectedNodeId;
@@ -432,22 +427,14 @@ export default function PathJourney() {
 
     const targetNode = pathNodesData.find(n => n.id === 'node-explorer');
     if (targetNode) {
-        setCurrentUserLevel(targetNode.level);
-        if (auth.currentUser) {
-            const idToken = await auth.currentUser.getIdToken();
-            await updateUserProgress({
-                currentUserLevel: 3,
-                requirementsState: { ...requirementsState, 'complete-comprehension-test': true },
-                idToken,
-            });
-        }
+        await completeRequirement('become-explorer');
     }
     toast({
         title: "Congratulations, You are an Explorer!",
         description: "Your diploma is in the mail. You may now join or start a tribe.",
     });
 
-  }, [animateUserIcon, requirementsState, toast]);
+  }, [completeRequirement, toast]);
 
 
   useEffect(() => {
@@ -553,7 +540,7 @@ export default function PathJourney() {
 
     playSound('action', 'C4', '8n');
 
-    const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe';
+    const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -561,6 +548,11 @@ export default function PathJourney() {
         description: "You must be logged in to perform this action.",
       });
       setModalState(s => ({ ...s, login: true }));
+      return;
+    }
+
+    if (action.action === 'open-profile-form') {
+      setNeedsProfileCompletion(true);
       return;
     }
 
