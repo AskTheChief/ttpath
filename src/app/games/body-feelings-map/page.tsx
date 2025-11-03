@@ -389,10 +389,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
               startViewBox.current = viewBox;
             },
             onDrag: ({ pinching, movement: [dx, dy], tap }) => {
-                if (pinching) return;
-                if (tap) {
-                    return;
-                }
+                if (pinching || tap) return;
                 
                 const svg = svgRef.current;
                 if (!svg) return;
@@ -447,7 +444,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 5 * (viewBox.width / initialViewBox.width);
+    const circleRadius = 8 * (viewBox.width / initialViewBox.width);
 
 
     return (
@@ -498,7 +495,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={0.5 * (viewBox.width / initialViewBox.width)}
+                                strokeWidth={1 * (viewBox.width / initialViewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
@@ -552,5 +549,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
 
     
