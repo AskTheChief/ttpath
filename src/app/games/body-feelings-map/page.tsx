@@ -381,7 +381,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const zoomRatio = viewBox.width / initialViewBox.width;
+    const zoomRatio = initialViewBox.width / viewBox.width;
+    const circleRadius = 12 / zoomRatio;
+    const strokeWidth = 1.5 / zoomRatio;
 
 
     return (
@@ -395,9 +397,12 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                         </div>
                         <div className="flex items-center gap-2">
                             {controls}
-                            <Button variant="outline" size="icon" onClick={resetView}>
-                                <RefreshCw className="w-4 h-4" />
-                            </Button>
+                            <div className="flex flex-col items-center">
+                                <Label htmlFor="zoom-reset" className="text-xs text-muted-foreground mb-1">Zoom Reset</Label>
+                                <Button id="zoom-reset" variant="outline" size="icon" onClick={resetView}>
+                                    <RefreshCw className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -420,11 +425,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 data-id={feeling.id}
                                 cx={feeling.x}
                                 cy={feeling.y}
-                                r={12 * zoomRatio}
+                                r={circleRadius}
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * zoomRatio}
+                                strokeWidth={strokeWidth}
                                 className="cursor-pointer transition-all duration-150"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
@@ -478,10 +483,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
-
-    
-
-
-    
