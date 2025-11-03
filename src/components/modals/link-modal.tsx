@@ -33,9 +33,6 @@ export default function LinkModal({
     if (title === 'Read the Quick-Start Guide') {
       return 'Open the Quick-Start Guide';
     }
-    if (title.includes('Trading Tribe Source Manual')) {
-      return `Open ${title}`;
-    }
     return `Open ${title}`;
   }
 
@@ -43,7 +40,7 @@ export default function LinkModal({
      if (title === 'Read the Quick-Start Guide') {
         return "I understand the Quick-Start Guide";
     }
-    if (title.includes('Trading Tribe Source Manual')) {
+    if (title.includes('Tribe')) {
         return `I Understand this Guide`;
     }
     return "I Understand";
