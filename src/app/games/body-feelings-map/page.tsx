@@ -258,6 +258,9 @@ export default function BodyFeelingsMapPage() {
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
                     api={api}
+                    x={x}
+                    y={y}
+                    scale={scale}
                 />
             </TabsContent>
             <TabsContent value="feeling" className="mt-4">
@@ -273,6 +276,9 @@ export default function BodyFeelingsMapPage() {
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
                     api={api}
+                    x={x}
+                    y={y}
+                    scale={scale}
                     controls={
                         <Select onValueChange={setSelectedFeelingName} value={selectedFeelingName || ''}>
                             <SelectTrigger className="w-[280px]">
@@ -305,6 +311,9 @@ export default function BodyFeelingsMapPage() {
                     user={user}
                     handleDeleteFeeling={handleDeleteFeeling}
                     api={api}
+                    x={x}
+                    y={y}
+                    scale={scale}
                     sidebarContent={
                         <Card>
                              <CardHeader>
@@ -372,7 +381,7 @@ export default function BodyFeelingsMapPage() {
   );
 }
 
-function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling, api }: {
+function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling, api, x, y, scale }: {
     title: string;
     description: string;
     feelings: Feeling[];
@@ -386,9 +395,10 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
     api: any;
+    x: any;
+    y: any;
+    scale: any;
 }) {
-
-    const { x, y, scale } = api.current.springs;
 
     useGesture({
         onDrag: ({ pinching, cancel, offset: [dx, dy], tap, xy }) => {
@@ -405,7 +415,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         },
         onWheel: ({ event, delta: [, dy] }) => {
             event.preventDefault();
-            api.start(props => {
+            api.start((props: any) => {
                 const newScale = props.scale - dy / 200;
                 return { scale: Math.max(0.5, Math.min(newScale, 5)) };
             });
@@ -460,7 +470,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                         top: `${feeling.y}%`, 
                                         backgroundColor: getColorFromRating(feeling.rating),
                                         opacity: getOpacityFromRating(feeling.rating),
-                                        scale: scale.to(s => 1 / s), // Keep dots constant size
+                                        scale: scale.to((s: number) => 1 / s), // Keep dots constant size
                                     }}
                                     onClick={(e) => openEditModal(feeling, e)}
                                     />
