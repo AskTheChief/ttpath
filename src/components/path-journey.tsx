@@ -2,7 +2,7 @@
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass, BookOpen, Database } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -427,7 +427,7 @@ export default function PathJourney() {
 
     const targetNode = pathNodesData.find(n => n.id === 'node-explorer');
     if (targetNode) {
-        await completeRequirement('become-explorer');
+        await completeRequirement('register-as-explorer');
     }
     toast({
         title: "Congratulations, You are an Explorer!",
@@ -679,16 +679,27 @@ export default function PathJourney() {
   const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
   const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
 
-  const openModal = (modalName: keyof Omit<typeof modalState, 'link' | 'menu' | 'comprehensionTest' | 'video'> | 'pamphlet' | 'comprehensionTest' | 'video') => {
-    if (modalName === 'pamphlet') {
+  const openModal = (modalName: string) => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (modalName === 'open-full-book' || modalName === 'open-full-book-part-2') {
+        const urls: { [key: string]: string } = {
+            'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
+            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+        };
+        const labels: { [key: string]: string } = {
+            'open-full-book': 'Trading Tribe Methods',
+            'open-full-book-part-2': 'Trading Tribe Theory'
+        };
         setLinkModalData({
-            title: 'Library',
-            url: 'https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs',
-            requirementId: null,
+            title: labels[modalName],
+            url: urls[modalName],
+            requirementId: null, // Reading from library doesn't complete a path step
         });
-        setModalState(s => ({ ...s, link: true, menu: false }));
-    } else if (modalName) {
-        setModalState(s => ({ ...s, [modalName]: true, menu: false }));
+        setModalState(s => ({ ...s, link: true }));
+    } else if (modalName === 'open-comprehension-test') {
+        setModalState(s => ({ ...s, comprehensionTest: true }));
+    } else if (modalName as keyof typeof modalState) {
+        setModalState(s => ({ ...s, [modalName]: true }));
     }
   };
 

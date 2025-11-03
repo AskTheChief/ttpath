@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, Gamepad2, Store, CandlestickChart, Shield } from "lucide-react";
+import { Database, Swords, BookOpen, GraduationCap } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 type MenuSheetProps = {
   isOpen: boolean;
@@ -70,6 +71,35 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         </SheetHeader>
         <div className="p-4">
           {menuItems.map(renderMenuItem)}
+
+          {isGuest && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-xl p-4 h-auto"
+                >
+                    <Database className="mr-4 w-10 h-10" />
+                    Library
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => openModal('open-full-book')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Trading Tribe Methods</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openModal('open-full-book-part-2')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Trading Tribe Theory</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openModal('open-comprehension-test')}>
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  <span>Tutorial</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {isGuest && (
             <DevDropdown 
               onTestCreateTribe={onTestCreateTribe} 
