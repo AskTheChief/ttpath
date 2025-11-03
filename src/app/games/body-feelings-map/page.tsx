@@ -114,13 +114,13 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
+  const handleMapClick = (e: MouseEvent<SVGSVGElement> | { clientX: number; clientY: number }) => {
     if (!svgRef.current) return;
-
+    
     const svgPoint = svgRef.current.createSVGPoint();
     svgPoint.x = e.clientX;
     svgPoint.y = e.clientY;
-    
+
     const transformedPoint = svgPoint.matrixTransform(svgRef.current.getScreenCTM()!.inverse());
 
     setClickCoords({ x: transformedPoint.x, y: transformedPoint.y });
@@ -273,7 +273,7 @@ export default function BodyFeelingsMapPage() {
                     description="Click a dot on the map to see all feelings at that location."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
-                    handleMapClick={(e) => {
+                    handleMapClick={(e: any) => {
                         const target = e.target as SVGCircleElement;
                         if (target.tagName === 'circle') {
                             const id = Number(target.dataset.id);
@@ -281,6 +281,9 @@ export default function BodyFeelingsMapPage() {
                             if (feeling) {
                                 handleDotClickForLocationView(feeling, e as any);
                             }
+                        } else {
+                            // If not clicking a dot, it's a map click
+                            handleMapClick(e);
                         }
                     }}
                     svgRef={svgRef}
@@ -294,7 +297,7 @@ export default function BodyFeelingsMapPage() {
                         <Card>
                              <CardHeader>
                                 <CardTitle>Feelings at Location</CardTitle>
-                                {selectedLocation && <CardDescription>Sensation: {selectedLocation.sensation}</CardDescription>}
+                                {selectedLocation && <CardDescription>Feelings around this point.</CardDescription>}
                             </CardHeader>
                             <CardContent>
                                 {feelingsAtSelectedLocation.length > 0 ? (
@@ -362,7 +365,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<SVGSVGElement>) => void;
+    handleMapClick: (e: MouseEvent<SVGSVGElement> | { clientX: number, clientY: number }) => void;
     svgRef: React.RefObject<SVGSVGElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -374,29 +377,30 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
     const originalViewBox = useRef(viewBox);
+    const panSensitivity = 1;
 
     useGesture(
         {
-            onDrag: ({ movement: [dx, dy], tap, event }) => {
-                if (tap) {
+            onDrag: ({ down, movement: [dx, dy], tap, event }) => {
+                 if (tap) {
                     handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                     return;
                 }
                 event.preventDefault();
-                const panSensitivity = 1.0;
-                setViewBox(prev => ({
-                    ...prev,
+                setViewBox({
                     x: originalViewBox.current.x - dx * panSensitivity,
                     y: originalViewBox.current.y - dy * panSensitivity,
-                }));
+                    width: originalViewBox.current.width,
+                    height: originalViewBox.current.height,
+                });
             },
-            onDragEnd: () => {
+             onDragEnd: () => {
                 originalViewBox.current = viewBox;
             },
             onWheel: ({ event, delta: [dx, dy] }) => {
                 event.preventDefault();
-                const zoomSensitivity = 0.002;
-                const scale = 1 + dy * zoomSensitivity;
+                const zoomFactor = 0.005;
+                const scale = 1 + dy * zoomFactor;
 
                 const newWidth = viewBox.width * scale;
                 const newHeight = viewBox.height * scale;
@@ -406,12 +410,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 const svg = svgRef.current;
                 if (!svg) return;
 
-                const CTM = svg.getScreenCTM()!;
                 const mousePoint = svg.createSVGPoint();
                 mousePoint.x = (event as WheelEvent).clientX;
                 mousePoint.y = (event as WheelEvent).clientY;
-                const svgMousePoint = mousePoint.matrixTransform(CTM.inverse());
-
+                const svgMousePoint = mousePoint.matrixTransform(svg.getScreenCTM()!.inverse());
+                
                 const newX = svgMousePoint.x - (svgMousePoint.x - viewBox.x) * scale;
                 const newY = svgMousePoint.y - (svgMousePoint.y - viewBox.y) * scale;
 
@@ -460,7 +463,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                           <svg
                               ref={svgRef}
                               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-                              className="w-full h-full cursor-pointer"
+                              className="w-full h-full"
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
@@ -528,5 +531,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
