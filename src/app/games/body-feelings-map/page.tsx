@@ -20,7 +20,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpring, animated } from '@react-spring/web';
-import { useGesture } from '@use-gesture/react';
+import { useGesture, useDrag } from '@use-gesture/react';
 
 // Helper to get color based on rating
 const getColorFromRating = (rating: number): string => {
@@ -212,7 +212,7 @@ export default function BodyFeelingsMapPage() {
 
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+    <div className="bg-background dark:bg-background p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-6">
           <div>
@@ -233,7 +233,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Drag to pan. Ctrl+Scroll to zoom. Click the body to add a feeling."
+                    description="Drag to pan. Pinch or Ctrl+Scroll to zoom. Click the body to add a feeling."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -363,32 +363,37 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
 }) {
-    const [style, api] = useSpring(() => ({
+    const [{ x, y, scale }, api] = useSpring(() => ({
         x: 0,
         y: 0,
         scale: 1,
     }));
 
-    useGesture(
+    useDrag(
+        ({ offset: [dx, dy] }) => {
+          api.start({ x: dx, y: dy });
+        },
+        { 
+            target: imageContainerRef,
+            from: () => [x.get(), y.get()],
+        }
+    );
+
+     useGesture(
         {
-            onDrag: ({ pinching, cancel, offset: [x, y] }) => {
-              if (pinching) return cancel();
-              api.start({ x, y });
-            },
-            onPinch: ({ offset: [d] }) => {
-              api.start({ scale: d });
+            onPinch: ({ offset: [s] }) => {
+              api.start({ scale: s });
             },
             onWheel: ({ event, delta: [, dy], ctrlKey }) => {
                 if (ctrlKey) {
                     event.preventDefault();
-                    api.start({ scale: style.scale.get() - dy / 200 });
+                    api.start({ scale: scale.get() - dy / 200 });
                 }
             },
         },
         {
             target: imageContainerRef,
-            drag: { from: () => [style.x.get(), style.y.get()] },
-            pinch: { from: () => [style.scale.get(), 0] },
+            pinch: { from: () => [scale.get(), 0] },
             wheel: { eventOptions: { passive: false } },
         }
     );
@@ -421,9 +426,16 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div
                         ref={imageContainerRef}
                         className="w-full mx-auto cursor-pointer aspect-[1/2]"
-                        onClick={(e) => handleMapClick(e, style)}
+                        onClick={(e) => {
+                            // Check if the click was part of a drag by looking at the target.
+                            // The animated.div will be the target during a drag.
+                            // A simple click's target is more likely the container or an element inside.
+                            if (e.target === e.currentTarget || e.target === imageContainerRef.current?.firstChild) {
+                                handleMapClick(e, {x, y, scale})
+                            }
+                        }}
                         >
-                            <animated.div style={style} className="relative w-full h-full touch-none">
+                            <animated.div style={{x, y, scale}} className="relative w-full h-full touch-none">
                                 <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert"/>
                                 {feelings.map(feeling => (
                                     <div
@@ -487,7 +499,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
-
-    
