@@ -142,7 +142,7 @@ export default function BodyFeelingsMapPage() {
         return;
     }
 
-    if (editingFeelingId) {
+    if (editingFeelingId !== null) {
         setAllFeelings(allFeelings.map(f => f.id === editingFeelingId ? { ...f, ...currentFeeling } as Feeling : f));
         toast({ title: "Feeling Updated" });
     } else if (clickCoords) {
@@ -178,7 +178,30 @@ export default function BodyFeelingsMapPage() {
     setIsModalOpen(true);
   };
 
-  const handleLocationClick = (feeling: Feeling, e: MouseEvent) => {
+  const handleLocationClick = (e: MouseEvent<HTMLDivElement>, style: any) => {
+    // This allows clicking on a dot to select it
+    if ((e.target as HTMLElement).classList.contains('feeling-dot')) {
+        return;
+    }
+
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const transformedX = (clickX - style.x.get()) / style.scale.get();
+    const transformedY = (clickY - style.y.get()) / style.scale.get();
+
+    const x = (transformedX / imageContainerRef.current.clientWidth) * 100;
+    const y = (transformedY / imageContainerRef.current.clientHeight) * 100;
+
+    setClickCoords({ x, y });
+    setCurrentFeeling({ rating: 0 });
+    setEditingFeelingId(null);
+    setIsModalOpen(true);
+  };
+  
+  const handleDotClickForLocationView = (feeling: Feeling, e: MouseEvent) => {
     e.stopPropagation();
     setActiveTab('location');
     setSelectedLocation(feeling);
@@ -274,7 +297,7 @@ export default function BodyFeelingsMapPage() {
                     description="Click a dot on the map to see all feelings at that location."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
-                    handleMapClick={handleLocationClick}
+                    handleMapClick={handleDotClickForLocationView}
                     imageContainerRef={imageContainerRef}
                     isSaving={isSaving}
                     isLoading={isLoading}
@@ -352,7 +375,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<HTMLDivElement>, style: any) => void;
+    handleMapClick: (e: MouseEvent<HTMLDivElement> | MouseEvent<HTMLDivElement, globalThis.MouseEvent>, style: any) => void;
     imageContainerRef: React.RefObject<HTMLDivElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -419,14 +442,14 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 {feelings.map(feeling => (
                                     <div
                                     key={feeling.id}
-                                    className="absolute w-4 h-4 rounded-full -translate-x-1/2 -translate-y-1/2 transform hover:scale-150 transition-transform duration-150 cursor-pointer border-2 border-white/50"
+                                    className="absolute w-4 h-4 rounded-full -translate-x-1/2 -translate-y-1/2 transform hover:scale-150 transition-transform duration-150 cursor-pointer border-2 border-white/50 feeling-dot"
                                     style={{ 
                                         left: `${feeling.x}%`, 
                                         top: `${feeling.y}%`, 
                                         backgroundColor: getColorFromRating(feeling.rating),
                                         opacity: getOpacityFromRating(feeling.rating),
                                     }}
-                                    onClick={(e) => openEditModal(feeling, e)}
+                                    onClick={(e) => handleMapClick(e as any, style) || openEditModal(feeling, e)}
                                     />
                                 ))}
                             </animated.div>
