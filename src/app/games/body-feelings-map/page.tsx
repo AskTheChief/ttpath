@@ -117,6 +117,7 @@ export default function BodyFeelingsMapPage() {
 
 
   const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
+    if (e.target !== svgRef.current) return;
     if (!svgRef.current) return;
     
     const svgPoint = svgRef.current.createSVGPoint();
@@ -385,26 +386,29 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
     useGesture(
         {
+            onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
+              if (pinching) return;
+              if (tap) {
+                return;
+              }
+      
+              const svg = svgRef.current;
+              if (!svg) return;
+      
+              const scaleRatio = viewBox.width / svg.clientWidth;
+      
+              setViewBox({
+                x: startViewBox.current.x - dx * scaleRatio,
+                y: startViewBox.current.y - dy * scaleRatio,
+                width: viewBox.width,
+                height: viewBox.height,
+              });
+            },
             onDragStart: () => {
               startViewBox.current = viewBox;
             },
-            onDrag: ({ pinching, movement: [dx, dy], tap }) => {
-                if (pinching || tap) return;
-                
-                const svg = svgRef.current;
-                if (!svg) return;
-                
-                const scaleRatio = viewBox.width / svg.clientWidth;
-
-                setViewBox({
-                    x: startViewBox.current.x - dx * scaleRatio,
-                    y: startViewBox.current.y - dy * scaleRatio,
-                    width: viewBox.width,
-                    height: viewBox.height,
-                });
-            },
             onTap: ({ event }) => {
-                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
+              handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -482,6 +486,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                               ref={svgRef}
                               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                               className="w-full h-full"
+                              onClick={handleMapClick}
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
