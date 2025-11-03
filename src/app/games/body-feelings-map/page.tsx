@@ -477,12 +477,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                               ref={svgRef}
                               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                               className="w-full h-full"
-                              onClick={(e) => {
-                                // This check ensures that clicks on dots don't trigger a map click
-                                if ((e.target as SVGElement).tagName === 'svg') {
-                                    handleMapClick(e);
-                                }
-                              }}
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
