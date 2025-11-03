@@ -371,7 +371,13 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
     useGesture(
         {
-            onDrag: ({ offset: [x, y] }) => api.start({ x, y }),
+            onDrag: ({ pinching, cancel, offset: [x, y] }) => {
+              if (pinching) return cancel();
+              api.start({ x, y });
+            },
+            onPinch: ({ offset: [d] }) => {
+              api.start({ scale: d });
+            },
             onWheel: ({ event, delta: [, dy], ctrlKey }) => {
                 if (ctrlKey) {
                     event.preventDefault();
@@ -381,6 +387,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         },
         {
             target: imageContainerRef,
+            drag: { from: () => [style.x.get(), style.y.get()] },
+            pinch: { from: () => [style.scale.get(), 0] },
             wheel: { eventOptions: { passive: false } },
         }
     );
@@ -479,5 +487,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
 
     
