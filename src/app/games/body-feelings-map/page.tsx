@@ -159,8 +159,8 @@ export default function BodyFeelingsMapPage() {
     setAllFeelings(allFeelings.filter(f => f.id !== id));
   };
   
-  const openEditModal = (feeling: Feeling, e: MouseEvent) => {
-    e.stopPropagation();
+  const openEditModal = (feeling: Feeling, e?: MouseEvent) => {
+    e?.stopPropagation();
     setEditingFeelingId(feeling.id);
     setCurrentFeeling(feeling);
     setIsModalOpen(true);
@@ -332,7 +332,19 @@ export default function BodyFeelingsMapPage() {
   );
 }
 
-function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent }) {
+function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent }: {
+    title: string;
+    description: string;
+    feelings: Feeling[];
+    openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
+    handleMapClick: (e: MouseEvent<HTMLDivElement>) => void;
+    imageContainerRef: React.RefObject<HTMLDivElement>;
+    isSaving: boolean;
+    isLoading: boolean;
+    user: User | null;
+    controls?: React.ReactNode;
+    sidebarContent?: React.ReactNode;
+}) {
     return (
         <div className="grid md:grid-cols-3 gap-8">
             <Card className="md:col-span-2">
@@ -397,7 +409,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                                     <p className="text-sm text-muted-foreground">{feeling.sensation}</p>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => (openEditModal as Function)(feeling, new MouseEvent('click'))}>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteFeeling(feeling.id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -413,3 +425,4 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     );
 }
 
+    
