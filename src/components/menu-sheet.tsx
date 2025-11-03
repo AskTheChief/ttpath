@@ -84,6 +84,10 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                 <DropdownMenuItem onClick={() => openModal('open-pamphlet')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Quick-Start Guide</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => openModal('open-full-book')}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Methods</span>

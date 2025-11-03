@@ -681,19 +681,21 @@ export default function PathJourney() {
 
   const openModal = (modalName: string) => {
     setModalState(s => ({ ...s, menu: false }));
-    if (modalName === 'open-full-book' || modalName === 'open-full-book-part-2') {
+    if (modalName === 'open-pamphlet' || modalName === 'open-full-book' || modalName === 'open-full-book-part-2') {
         const urls: { [key: string]: string } = {
+            'open-pamphlet': 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
             'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
             'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
         };
         const labels: { [key: string]: string } = {
+            'open-pamphlet': 'Quick-Start Guide',
             'open-full-book': 'Trading Tribe Methods',
             'open-full-book-part-2': 'Trading Tribe Theory'
         };
         setLinkModalData({
             title: labels[modalName],
             url: urls[modalName],
-            requirementId: null, // Reading from library doesn't complete a path step
+            requirementId: null,
         });
         setModalState(s => ({ ...s, link: true }));
     } else if (modalName === 'open-comprehension-test') {
