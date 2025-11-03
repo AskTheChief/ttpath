@@ -14,7 +14,7 @@ import LinkModal from './modals/link-modal';
 import VideoModal from './modals/video-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -564,15 +564,19 @@ export default function PathJourney() {
       return;
     }
 
-    if (action.action === 'open-pamphlet' || action.action === 'open-full-book') {
-      const url = action.action === 'open-pamphlet'
-        ? 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/'
-        : 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0';
+    if (action.action === 'open-pamphlet' || action.action === 'open-full-book' || action.action === 'open-full-book-part-2') {
+        const urls: { [key: string]: string } = {
+            'open-pamphlet': 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
+            'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
+            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+        };
+        const url = urls[action.action];
       
-      setLinkModalData({ title: action.label, url: url, requirementId: action.id });
-      setModalState(s => ({ ...s, link: true }));
-      return;
+        setLinkModalData({ title: action.label, url: url, requirementId: action.id });
+        setModalState(s => ({ ...s, link: true }));
+        return;
     }
+
 
     if (action.action === 'open-comprehension-test') {
       setModalState(s => ({ ...s, comprehensionTest: true }));

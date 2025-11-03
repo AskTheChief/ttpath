@@ -33,18 +33,18 @@ export default function LinkModal({
     if (title === 'Read the Quick-Start Guide') {
       return 'Open the Quick-Start Guide';
     }
-    if (title === 'Read the Trading Tribe Source Manual') {
-      return 'Open the Trading Tribe Source Manual';
+    if (title.includes('Trading Tribe Source Manual')) {
+      return `Open ${title}`;
     }
     return `Open ${title}`;
   }
 
   const getButtonText = () => {
-    if (title === 'Read the Quick-Start Guide') {
+     if (title === 'Read the Quick-Start Guide') {
         return "I understand the Quick-Start Guide";
     }
-    if (title === 'Read the Trading Tribe Source Manual') {
-        return "I understand the Trading Tribe Source Manual";
+    if (title.includes('Trading Tribe Source Manual')) {
+        return `I understand ${title}`;
     }
     return "I Understand";
   }

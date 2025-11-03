@@ -41,8 +41,9 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "",
     actions: [
-      { id: "read-full-book", label: "Read the Trading Tribe Source Manual", action: "open-full-book" },
-      { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book" },
+      { id: "read-full-book", label: "Read the Trading Tribe Source Manual (Part 1)", action: "open-full-book" },
+      { id: "read-full-book-part-2", label: "Read the Trading Tribe Source Manual (Part 2)", action: "open-full-book-part-2", dependsOn: "read-full-book"},
+      { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book-part-2" },
       { id: "complete-comprehension-test", label: "Path to Graduate", action: "complete-test", next: "graduate", dependsOn: "open-comprehension-test" }
     ],
     panelPos: "left"
