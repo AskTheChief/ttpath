@@ -361,8 +361,37 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     }));
 
     useGesture({
-        onDrag: ({ active, offset: [dx, dy] }) => {
-            api.start({ x: dx, y: dy });
+        onDrag: ({ tap, active, offset: [dx, dy], xy: [vx, vy], event }) => {
+            if (tap) {
+                if (!imageContainerRef.current) return;
+                const rect = imageContainerRef.current.getBoundingClientRect();
+                
+                const clickX_viewport = (event as MouseEvent).clientX;
+                const clickY_viewport = (event as MouseEvent).clientY;
+                
+                const rectX = rect.left;
+                const rectY = rect.top;
+                
+                const currentX = x.get();
+                const currentY = y.get();
+                const currentScale = scale.get();
+
+                const clickX_relative = clickX_viewport - rectX;
+                const clickY_relative = clickY_viewport - rectY;
+
+                const untranslatedX = clickX_relative - currentX;
+                const untranslatedY = clickY_relative - currentY;
+                
+                const unscaledX = untranslatedX / currentScale;
+                const unscaledY = untranslatedY / currentScale;
+
+                const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
+                const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
+                
+                handleMapClick(finalX, finalY);
+            } else {
+                 api.start({ x: dx, y: dy });
+            }
         },
         onPinch: ({ offset: [s] }) => {
             api.start({ scale: s });
@@ -380,44 +409,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         drag: { from: () => [x.get(), y.get()] },
         pinch: { from: () => [scale.get(), 0] },
     });
-
-    const handleContainerClick = (e: MouseEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLElement;
-        const isFeelingDot = target.classList.contains('feeling-dot');
-        const isDragging = target.hasAttribute('data-dragging');
-
-        if (isFeelingDot || isDragging) {
-            if(isDragging) target.removeAttribute('data-dragging');
-            return;
-        }
-
-        if (!imageContainerRef.current) return;
-        const rect = imageContainerRef.current.getBoundingClientRect();
-        
-        const clickX_viewport = e.clientX;
-        const clickY_viewport = e.clientY;
-        
-        const rectX = rect.left;
-        const rectY = rect.top;
-        
-        const currentX = x.get();
-        const currentY = y.get();
-        const currentScale = scale.get();
-
-        const clickX_relative = clickX_viewport - rectX;
-        const clickY_relative = clickY_viewport - rectY;
-
-        const untranslatedX = clickX_relative - currentX;
-        const untranslatedY = clickY_relative - currentY;
-        
-        const unscaledX = untranslatedX / currentScale;
-        const unscaledY = untranslatedY / currentScale;
-
-        const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
-        const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
-        
-        handleMapClick(finalX, finalY);
-    };
     
     const resetView = () => {
         api.start({ x: 0, y: 0, scale: 1 });
@@ -447,7 +438,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div
                         ref={imageContainerRef}
                         className="w-full mx-auto cursor-pointer relative h-[600px] touch-none"
-                        onClick={handleContainerClick}
                         >
                             <animated.div 
                                 className="relative w-full h-full"
