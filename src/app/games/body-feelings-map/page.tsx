@@ -63,7 +63,7 @@ export default function BodyFeelingsMapPage() {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [viewBox, setViewBox] = useState({ x: 80, y: 150, width: 340, height: 700 });
+  const [viewBox, setViewBox] = useState(initialViewBox);
 
   // Auth and initial data fetching
   useEffect(() => {
@@ -385,6 +385,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
     useGesture(
         {
+            onDragStart: () => {
+              originalViewBox.current = viewBox;
+            },
             onDrag: ({ pinching, cancel, offset: [dx, dy], tap, event }) => {
                 if (pinching) return cancel();
                  if (tap) {
@@ -401,12 +404,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 setViewBox({
                     x: originalViewBox.current.x - dx * scaleRatio,
                     y: originalViewBox.current.y - dy * scaleRatio,
-                    width: originalViewBox.current.width,
-                    height: originalViewBox.current.height,
+                    width: viewBox.width,
+                    height: viewBox.height,
                 });
-            },
-             onDragEnd: () => {
-                originalViewBox.current = viewBox;
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -431,7 +431,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
                 const newViewBox = { x: newX, y: newY, width: newWidth, height: newHeight };
                 setViewBox(newViewBox);
-                originalViewBox.current = newViewBox;
             }
         },
         {
@@ -442,10 +441,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     
     const resetView = () => {
         setViewBox(initialViewBox);
-        originalViewBox.current = initialViewBox;
     };
     
-    const circleRadius = 5 / (initialViewBox.width / viewBox.width);
+    const circleRadius = 5 / (viewBox.width / initialViewBox.width);
 
 
     return (
@@ -496,7 +494,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={0.5 / (initialViewBox.width / viewBox.width)}
+                                strokeWidth={0.5 / (viewBox.width / initialViewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
@@ -550,5 +548,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
