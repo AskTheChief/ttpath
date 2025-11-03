@@ -256,7 +256,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Click the body to add a feeling. Click a dot to edit it. Pinch or use mouse wheel to zoom, drag to pan."
+                    description="Drag to pan. Ctrl+Scroll to zoom. Click the body to add a feeling."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -396,16 +396,18 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         {
             onDrag: ({ offset: [x, y] }) => api.start({ x, y }),
             onPinch: ({ offset: [s] }) => api.start({ scale: s }),
-            onWheel: ({ event, offset: [, d] }) => {
-                event.preventDefault();
-                api.start({ scale: 1 + d / 500 });
+            onWheel: ({ event, delta: [, dy], ctrlKey }) => {
+                if (ctrlKey) {
+                    event.preventDefault();
+                    api.start({ scale: style.scale.get() - dy / 200 });
+                }
             },
         },
         {
             target: imageContainerRef,
             drag: { from: () => [style.x.get(), style.y.get()] },
             pinch: { from: () => [style.scale.get(), 0], scaleBounds: { min: 0.5, max: 4 }, rubberband: true },
-            wheel: { from: () => [0, style.scale.get()*500-500], preventDefault: true },
+            wheel: { eventOptions: { passive: false } },
         }
     );
 
