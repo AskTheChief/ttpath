@@ -420,11 +420,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 data-id={feeling.id}
                                 cx={feeling.x}
                                 cy={feeling.y}
-                                r={12 * initialViewBox.width / viewBox.width}
+                                r={12 * (viewBox.width / initialViewBox.width)}
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * initialViewBox.width / viewBox.width}
+                                strokeWidth={1.5 * (initialViewBox.width / viewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
