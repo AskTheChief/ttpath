@@ -43,7 +43,7 @@ const getOpacityFromRating = (rating: number): number => {
     return 0.5 + Math.abs(rating) / 10 * 0.5;
 }
 
-const initialViewBox = { x: 80, y: 150, width: 340, height: 700 };
+const initialViewBox = { x: 159, y: 314, width: 181, height: 372 };
 
 
 export default function BodyFeelingsMapPage() {
@@ -381,9 +381,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const zoomRatio = initialViewBox.width / viewBox.width;
-    const circleRadius = 12 / zoomRatio;
-    const strokeWidth = 1.5 / zoomRatio;
+    const zoomRatio = viewBox.width / initialViewBox.width;
+    const circleRadius = 12 * zoomRatio;
+    const strokeWidth = 1.5 * zoomRatio;
 
 
     return (
