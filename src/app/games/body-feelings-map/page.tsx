@@ -4,7 +4,7 @@
 import { useState, useRef, MouseEvent, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -373,11 +373,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 </CardHeader>
                 <CardContent className="pt-0 relative overflow-hidden">
                     {isLoading ? (
-                      <div className="flex items-center justify-center h-full aspect-[1/2]"><Loader2 className="h-12 w-12 animate-spin" /></div>
+                      <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
                       <div
                         ref={imageContainerRef}
-                        className="w-full mx-auto cursor-pointer aspect-[1/2] relative"
+                        className="w-full mx-auto cursor-pointer relative h-[600px]"
                         onClick={(e) => {
                             if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'IMG') {
                                 handleMapClick(e);
