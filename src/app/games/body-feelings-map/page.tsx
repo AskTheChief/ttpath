@@ -382,19 +382,25 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
     const originalViewBox = useRef(viewBox);
-    const panSensitivity = 1.0;
 
     useGesture(
         {
-            onDrag: ({ movement: [dx, dy], tap, event }) => {
+            onDrag: ({ pinching, cancel, offset: [dx, dy], tap, event }) => {
+                if (pinching) return cancel();
                  if (tap) {
                     handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                     return;
                 }
                 event.preventDefault();
+
+                const svg = svgRef.current;
+                if (!svg) return;
+                
+                const scaleRatio = viewBox.width / svg.clientWidth;
+
                 setViewBox({
-                    x: originalViewBox.current.x - dx * panSensitivity,
-                    y: originalViewBox.current.y - dy * panSensitivity,
+                    x: originalViewBox.current.x - dx * scaleRatio,
+                    y: originalViewBox.current.y - dy * scaleRatio,
                     width: originalViewBox.current.width,
                     height: originalViewBox.current.height,
                 });
@@ -544,3 +550,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
