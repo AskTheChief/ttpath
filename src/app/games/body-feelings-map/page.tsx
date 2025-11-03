@@ -217,7 +217,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Click the body to add a feeling. Pinch to zoom, drag to pan."
+                    description="Click the body to add a feeling. Pinch/scroll to zoom, drag to pan."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -357,21 +357,21 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         scale: 1,
         x: 0,
         y: 0,
-        config: { mass: 0.1, tension: 200, friction: 20 },
+        config: { mass: 0.5, tension: 350, friction: 40 },
     }));
 
     useGesture({
-        onDrag: ({ offset: [dx, dy] }) => {
-            api.set({ x: dx, y: dy });
+        onDrag: ({ active, offset: [dx, dy] }) => {
+            api.start({ x: dx, y: dy });
         },
         onPinch: ({ offset: [s] }) => {
-            api.set({ scale: s });
+            api.start({ scale: s });
         },
-        onWheel: ({ delta: [, dy], event }) => {
+        onWheel: ({ event, delta: [, dy] }) => {
             event.preventDefault();
             api.start(props => {
                 const newScale = props.scale - dy / 200;
-                return { scale: Math.max(1, Math.min(newScale, 5)) };
+                return { scale: Math.max(0.5, Math.min(newScale, 5)) };
             });
         },
     }, {
@@ -383,39 +383,30 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 
     const handleContainerClick = (e: MouseEvent<HTMLDivElement>) => {
         if (!imageContainerRef.current) return;
+
+        // Simple check to distinguish click from drag
+        if ((e.target as HTMLElement).hasAttribute('data-dragging')) {
+            (e.target as HTMLElement).removeAttribute('data-dragging');
+            return;
+        }
+
         const rect = imageContainerRef.current.getBoundingClientRect();
-        
-        // Raw click coordinates relative to the viewport
         const clickX_viewport = e.clientX;
         const clickY_viewport = e.clientY;
-
-        // Coordinates of container's top-left corner
         const rectX = rect.left;
         const rectY = rect.top;
-
-        // Current transformation values
         const currentX = x.get();
         const currentY = y.get();
         const currentScale = scale.get();
-
-        // Calculate click position on the untransformed image
-        // 1. Get click position relative to the container
         const clickX_relative = clickX_viewport - rectX;
         const clickY_relative = clickY_viewport - rectY;
-
-        // 2. Inverse the translation (pan)
         const untranslatedX = clickX_relative - currentX;
         const untranslatedY = clickY_relative - currentY;
-        
-        // 3. Inverse the scaling (zoom)
         const unscaledX = untranslatedX / currentScale;
         const unscaledY = untranslatedY / currentScale;
-
-        // 4. Convert to percentage
         const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
         const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
 
-        // Check if the click was on a dot
         const onDot = (e.target as HTMLElement).classList.contains('feeling-dot');
         if (!onDot) {
             handleMapClick(finalX, finalY);
@@ -456,7 +447,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 className="relative w-full h-full"
                                 style={{ x, y, scale, touchAction: 'none' }}
                              >
-                                <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert"/>
+                                <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert pointer-events-none"/>
                                 {feelings.map(feeling => (
                                     <animated.div
                                     key={feeling.id}
