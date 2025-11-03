@@ -19,8 +19,6 @@ import Image from 'next/image';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSpring, animated } from '@react-spring/web';
-import { useGesture, useDrag } from '@use-gesture/react';
 
 // Helper to get color based on rating
 const getColorFromRating = (rating: number): string => {
@@ -113,7 +111,7 @@ export default function BodyFeelingsMapPage() {
   }, [allFeelings, debouncedSave]);
 
 
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>, style: any) => {
+  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
     if (!imageContainerRef.current) return;
     const rect = imageContainerRef.current.getBoundingClientRect();
     
@@ -121,13 +119,9 @@ export default function BodyFeelingsMapPage() {
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    // Invert the transformation to find the original coordinates on the image
-    const transformedX = (clickX - style.x.get()) / style.scale.get();
-    const transformedY = (clickY - style.y.get()) / style.scale.get();
-
     // Convert to percentage
-    const x = (transformedX / imageContainerRef.current.clientWidth) * 100;
-    const y = (transformedY / imageContainerRef.current.clientHeight) * 100;
+    const x = (clickX / imageContainerRef.current.clientWidth) * 100;
+    const y = (clickY / imageContainerRef.current.clientHeight) * 100;
 
     // Sensation-first workflow
     setClickCoords({ x, y });
@@ -233,7 +227,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Drag to pan. Pinch to zoom. Click the body to add a feeling."
+                    description="Click the body to add a feeling."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -354,7 +348,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, style: any) => void;
+    handleMapClick: (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => void;
     imageContainerRef: React.RefObject<HTMLDivElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -363,35 +357,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
 }) {
-    const [{ x, y, scale }, api] = useSpring(() => ({
-        x: 0,
-        y: 0,
-        scale: 1,
-    }));
-
-    const bind = useDrag(({ down, movement: [mx, my] }) => {
-        api.start({ x: down ? mx : 0, y: down ? my : 0 });
-    }, {
-        from: () => [x.get(), y.get()],
-        target: imageContainerRef
-    });
-
-     useGesture(
-        {
-            onPinch: ({ offset: [s] }) => {
-              api.start({ scale: s });
-            },
-        },
-        {
-            target: imageContainerRef,
-            eventOptions: { passive: false },
-            pinch: { from: () => [scale.get(), 0] },
-        }
-    );
-
-    const resetView = () => {
-        api.start({ x: 0, y: 0, scale: 1 });
-    };
 
     return (
         <div className="grid md:grid-cols-3 gap-8">
@@ -404,9 +369,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                         </div>
                          <div className="flex items-center gap-2">
                             {controls}
-                            <Button variant="outline" size="icon" onClick={resetView} title="Reset View">
-                                <RotateCw className="h-4 w-4" />
-                            </Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -415,16 +377,15 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div className="flex items-center justify-center h-full aspect-[1/2]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
                       <div
-                        {...bind()}
                         ref={imageContainerRef}
-                        className="w-full mx-auto cursor-pointer aspect-[1/2]"
+                        className="w-full mx-auto cursor-pointer aspect-[1/2] relative"
                         onClick={(e) => {
-                            if (e.target === e.currentTarget || e.target === imageContainerRef.current?.firstChild) {
-                                handleMapClick(e, {x, y, scale})
+                            if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'IMG') {
+                                handleMapClick(e);
                             }
                         }}
                         >
-                            <animated.div style={{x, y, scale}} className="relative w-full h-full touch-none">
+                            <div className="relative w-full h-full touch-none">
                                 <Image src="/games/bodies.svg" alt="Body outline" fill style={{ objectFit: 'contain' }} className="filter dark:invert"/>
                                 {feelings.map(feeling => (
                                     <div
@@ -439,7 +400,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                     onClick={(e) => openEditModal(feeling, e)}
                                     />
                                 ))}
-                            </animated.div>
+                            </div>
                       </div>
                     )}
                 </CardContent>
@@ -488,3 +449,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
