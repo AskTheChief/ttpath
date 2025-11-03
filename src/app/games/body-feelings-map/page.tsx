@@ -361,7 +361,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     }));
 
     useGesture({
-        onDrag: ({ tap, active, offset: [dx, dy], xy: [vx, vy], event }) => {
+        onDrag: ({ pinching, cancel, offset: [dx, dy], tap, event }) => {
+            if (pinching) return cancel();
             if (tap) {
                 if (!imageContainerRef.current) return;
                 const rect = imageContainerRef.current.getBoundingClientRect();
@@ -369,16 +370,13 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 const clickX_viewport = (event as MouseEvent).clientX;
                 const clickY_viewport = (event as MouseEvent).clientY;
                 
-                const rectX = rect.left;
-                const rectY = rect.top;
-                
+                const clickX_relative = clickX_viewport - rect.left;
+                const clickY_relative = clickY_viewport - rect.top;
+
                 const currentX = x.get();
                 const currentY = y.get();
                 const currentScale = scale.get();
-
-                const clickX_relative = clickX_viewport - rectX;
-                const clickY_relative = clickY_viewport - rectY;
-
+                
                 const untranslatedX = clickX_relative - currentX;
                 const untranslatedY = clickY_relative - currentY;
                 
@@ -389,9 +387,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
                 
                 handleMapClick(finalX, finalY);
-            } else {
-                 api.start({ x: dx, y: dy });
+                return;
             }
+            api.start({ x: dx, y: dy });
         },
         onPinch: ({ offset: [s] }) => {
             api.start({ scale: s });
