@@ -32,6 +32,7 @@ const defaultCenter = {
 type CompleteProfileFormProps = {
   user: User | null;
   onComplete: (firstName: string) => void;
+  onClose: () => void;
 };
 
 type UserProfile = {
@@ -49,7 +50,7 @@ const idToKeyMap: Record<string, keyof UserProfile> = {
   'profile_field_phone': 'phone',
 };
 
-export default function CompleteProfileForm({ user, onComplete }: CompleteProfileFormProps) {
+export default function CompleteProfileForm({ user, onComplete, onClose }: CompleteProfileFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Partial<UserProfile>>({});
@@ -209,9 +210,12 @@ export default function CompleteProfileForm({ user, onComplete }: CompleteProfil
                 </div>
                 {error && <p className="text-sm text-destructive text-center">{error}</p>}
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Graduation & Receive Diploma'}
+                </Button>
+                <Button type="button" variant="outline" onClick={onClose} className="w-full" disabled={isLoading}>
+                    Enter This Information Later
                 </Button>
             </CardFooter>
             </form>

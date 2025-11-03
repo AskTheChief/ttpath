@@ -962,7 +962,11 @@ export default function PathJourney() {
 
       </div>
       {needsProfileCompletion && (
-          <CompleteProfileForm user={currentUser} onComplete={onProfileComplete} />
+          <CompleteProfileForm 
+            user={currentUser} 
+            onComplete={onProfileComplete} 
+            onClose={() => setNeedsProfileCompletion(false)}
+          />
       )}
       <MenuSheet 
         isOpen={modalState.menu}
