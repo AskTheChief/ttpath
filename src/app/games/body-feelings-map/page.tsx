@@ -18,8 +18,6 @@ import Image from 'next/image';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSpring, animated } from '@react-spring/web';
-import { useGesture } from '@use-gesture/react';
 
 // Helper to get color based on rating
 const getColorFromRating = (rating: number): string => {
@@ -388,6 +386,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         if (e.button !== 0) return; // Only allow left-click drags
         setIsDragging(true);
         startPoint.current = { x: e.clientX, y: e.clientY };
+        const [x, y, width, height] = viewBox.split(' ').map(Number);
+        originalViewBox.current = { x, y, width, height };
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -405,9 +405,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     const handleMouseUp = (e: React.MouseEvent) => {
         const dx = Math.abs(e.clientX - startPoint.current.x);
         const dy = Math.abs(e.clientY - startPoint.current.y);
-
+        
+        // It was a drag, so we prevent the click and update the ref
         if (isDragging && (dx > 5 || dy > 5)) {
-             // It was a drag, so we prevent the click
+            const [x, y, width, height] = viewBox.split(' ').map(Number);
+            originalViewBox.current = { x, y, width, height };
         } else {
             handleMapClick(e as any);
         }
@@ -545,3 +547,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
