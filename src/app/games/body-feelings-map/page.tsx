@@ -235,8 +235,8 @@ export default function BodyFeelingsMapPage() {
 
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-6xl">
+    <div className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Body Feelings Map</h1>
@@ -395,7 +395,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     useGesture(
         {
             onDrag: ({ offset: [x, y] }) => api.start({ x, y }),
-            onPinch: ({ offset: [s] }) => api.start({ scale: s }),
             onWheel: ({ event, delta: [, dy], ctrlKey }) => {
                 if (ctrlKey) {
                     event.preventDefault();
@@ -406,7 +405,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         {
             target: imageContainerRef,
             drag: { from: () => [style.x.get(), style.y.get()] },
-            pinch: { from: () => [style.scale.get(), 0], scaleBounds: { min: 0.5, max: 4 }, rubberband: true },
             wheel: { eventOptions: { passive: false } },
         }
     );
@@ -505,3 +503,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
