@@ -212,7 +212,7 @@ export default function BodyFeelingsMapPage() {
 
 
   return (
-    <div className="bg-background dark:bg-background p-4 sm:p-6 lg:p-8">
+    <div className="bg-background p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-6">
           <div>
@@ -354,7 +354,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     description: string;
     feelings: Feeling[];
     openEditModal: (feeling: Feeling, e?: MouseEvent) => void;
-    handleMapClick: (e: MouseEvent<HTMLDivElement> | MouseEvent<HTMLDivElement, globalThis.MouseEvent>, style: any) => void;
+    handleMapClick: (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, style: any) => void;
     imageContainerRef: React.RefObject<HTMLDivElement>;
     isSaving: boolean;
     isLoading: boolean;
@@ -369,32 +369,23 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         scale: 1,
     }));
 
-    useDrag(
-        ({ offset: [dx, dy] }) => {
-          api.start({ x: dx, y: dy });
-        },
-        { 
-            target: imageContainerRef,
-            from: () => [x.get(), y.get()],
-        }
-    );
+    const bind = useDrag(({ offset: [dx, dy] }) => {
+        api.start({ x: dx, y: dy });
+    }, {
+        target: imageContainerRef,
+        from: () => [x.get(), y.get()]
+    });
 
      useGesture(
         {
             onPinch: ({ offset: [s] }) => {
               api.start({ scale: s });
             },
-            onWheel: ({ event, delta: [, dy], ctrlKey }) => {
-                if (ctrlKey) {
-                    event.preventDefault();
-                    api.start({ scale: scale.get() - dy / 200 });
-                }
-            },
         },
         {
             target: imageContainerRef,
+            eventOptions: { passive: false },
             pinch: { from: () => [scale.get(), 0] },
-            wheel: { eventOptions: { passive: false } },
         }
     );
 
@@ -424,12 +415,10 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div className="flex items-center justify-center h-full aspect-[1/2]"><Loader2 className="h-12 w-12 animate-spin" /></div>
                     ) : (
                       <div
+                        {...bind()}
                         ref={imageContainerRef}
                         className="w-full mx-auto cursor-pointer aspect-[1/2]"
                         onClick={(e) => {
-                            // Check if the click was part of a drag by looking at the target.
-                            // The animated.div will be the target during a drag.
-                            // A simple click's target is more likely the container or an element inside.
                             if (e.target === e.currentTarget || e.target === imageContainerRef.current?.firstChild) {
                                 handleMapClick(e, {x, y, scale})
                             }
