@@ -440,7 +440,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         originalViewBox.current = initialViewBox;
     };
     
-    const circleRadius = Math.max(2, 5 * (500 / viewBox.width));
+    const circleRadius = Math.max(2, 5 * (viewBox.width / initialViewBox.width));
 
 
     return (
