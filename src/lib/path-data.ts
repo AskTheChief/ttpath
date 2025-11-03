@@ -41,9 +41,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "",
     actions: [
-      { id: "read-full-book", label: "Trading Tribe Methods", action: "open-full-book" },
-      { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book" },
-      { id: "complete-comprehension-test", label: "Path to Explorer", action: "complete-test", next: "explorer", dependsOn: "open-comprehension-test" }
+      { id: "read-full-book", label: "Read Trading Tribe Methods", action: "open-full-book", next: "explorer" },
     ],
     panelPos: "left"
   },
@@ -55,8 +53,9 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As an Explorer, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
-      { id: "read-full-book-part-2", label: "Trading Tribe Theory", action: "open-full-book-part-2"},
-      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe", dependsOn: "read-full-book-part-2"}
+      { id: "read-full-book-part-2", label: "Read Trading Tribe Theory", action: "open-full-book-part-2"},
+      { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book-part-2" },
+      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe", dependsOn: "open-comprehension-test"}
     ],
     panelPos: "right"
   },
