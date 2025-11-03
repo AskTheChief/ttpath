@@ -18,6 +18,8 @@ import Image from 'next/image';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGesture } from '@use-gesture/react';
+
 
 // Helper to get color based on rating
 const getColorFromRating = (rating: number): string => {
@@ -59,7 +61,7 @@ export default function BodyFeelingsMapPage() {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [viewBox, setViewBox] = useState('0 0 500 1000');
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 500, height: 1000 });
 
   // Auth and initial data fetching
   useEffect(() => {
@@ -368,85 +370,68 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     controls?: React.ReactNode;
     sidebarContent?: React.ReactNode;
     handleDeleteFeeling: (id: number) => void;
-    viewBox: string;
-    setViewBox: (viewBox: string) => void;
+    viewBox: { x: number; y: number; width: number; height: number; };
+    setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
-
-    const [isDragging, setIsDragging] = useState(false);
-    const startPoint = useRef({ x: 0, y: 0 });
     const originalViewBox = useRef({ x: 0, y: 0, width: 500, height: 1000 });
-    
-    useEffect(() => {
-        const [x, y, width, height] = viewBox.split(' ').map(Number);
-        originalViewBox.current = { x, y, width, height };
-    }, [viewBox]);
 
+    useGesture(
+        {
+            onDrag: ({ movement: [dx, dy], tap, event }) => {
+                if (tap) {
+                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
+                    return;
+                }
+                event.preventDefault();
+                const panSensitivity = 0.8;
+                setViewBox(prev => ({
+                    ...prev,
+                    x: originalViewBox.current.x - dx * panSensitivity,
+                    y: originalViewBox.current.y - dy * panSensitivity,
+                }));
+            },
+            onDragEnd: () => {
+                originalViewBox.current = viewBox;
+            },
+            onWheel: ({ event, delta: [dx, dy] }) => {
+                event.preventDefault();
+                const zoomSensitivity = 0.002;
+                const scale = 1 + dy * zoomSensitivity;
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button !== 0) return; // Only allow left-click drags
-        setIsDragging(true);
-        startPoint.current = { x: e.clientX, y: e.clientY };
-        const [x, y, width, height] = viewBox.split(' ').map(Number);
-        originalViewBox.current = { x, y, width, height };
-    };
+                const newWidth = viewBox.width * scale;
+                const newHeight = viewBox.height * scale;
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !svgRef.current) return;
-        e.preventDefault();
+                if (newWidth < 100 || newWidth > 2000) return;
 
-        const { x, y, width, height } = originalViewBox.current;
-        const sensitivity = 0.8;
-        const dx = (startPoint.current.x - e.clientX) * (width / svgRef.current.clientWidth) * sensitivity;
-        const dy = (startPoint.current.y - e.clientY) * (height / svgRef.current.clientHeight) * sensitivity;
-        
-        setViewBox(`${x + dx} ${y + dy} ${width} ${height}`);
-    };
+                const svg = svgRef.current;
+                if (!svg) return;
 
-    const handleMouseUp = (e: React.MouseEvent) => {
-        const dx = Math.abs(e.clientX - startPoint.current.x);
-        const dy = Math.abs(e.clientY - startPoint.current.y);
-        
-        // It was a drag, so we prevent the click and update the ref
-        if (isDragging && (dx > 5 || dy > 5)) {
-            const [x, y, width, height] = viewBox.split(' ').map(Number);
-            originalViewBox.current = { x, y, width, height };
-        } else {
-            handleMapClick(e as any);
+                const CTM = svg.getScreenCTM()!;
+                const mousePoint = svg.createSVGPoint();
+                mousePoint.x = (event as WheelEvent).clientX;
+                mousePoint.y = (event as WheelEvent).clientY;
+                const svgMousePoint = mousePoint.matrixTransform(CTM.inverse());
+
+                const newX = svgMousePoint.x - (svgMousePoint.x - viewBox.x) * scale;
+                const newY = svgMousePoint.y - (svgMousePoint.y - viewBox.y) * scale;
+
+                const newViewBox = { x: newX, y: newY, width: newWidth, height: newHeight };
+                setViewBox(newViewBox);
+                originalViewBox.current = newViewBox;
+            }
+        },
+        {
+            target: svgRef,
         }
-        setIsDragging(false);
-    };
-    
-    const handleWheel = (e: React.WheelEvent) => {
-        if (!svgRef.current) return;
-        e.preventDefault();
-
-        const { x, y, width, height } = originalViewBox.current;
-        const zoomFactor = 1.05;
-        const scale = e.deltaY < 0 ? 1 / zoomFactor : zoomFactor;
-
-        const newWidth = width * scale;
-        const newHeight = height * scale;
-        
-        if (newWidth < 100 || newWidth > 2000) return; // Zoom limits
-
-        const CTM = svgRef.current.getScreenCTM()!;
-        const mousePoint = svgRef.current.createSVGPoint();
-        mousePoint.x = e.clientX;
-        mousePoint.y = e.clientY;
-        const svgMousePoint = mousePoint.matrixTransform(CTM.inverse());
-
-        const newX = svgMousePoint.x - (svgMousePoint.x - x) * scale;
-        const newY = svgMousePoint.y - (svgMousePoint.y - y) * scale;
-        
-        setViewBox(`${newX} ${newY} ${newWidth} ${newHeight}`);
-    };
+    );
     
     const resetView = () => {
-        setViewBox('0 0 500 1000');
+        const defaultViewBox = { x: 0, y: 0, width: 500, height: 1000 };
+        setViewBox(defaultViewBox);
+        originalViewBox.current = defaultViewBox;
     };
-
-    const vb = viewBox.split(' ').map(Number);
-    const circleRadius = Math.max(2, 5 * (500 / vb[2]));
+    
+    const circleRadius = Math.max(2, 5 * (500 / viewBox.width));
 
 
     return (
@@ -473,13 +458,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                       <div className="w-full h-[600px] mx-auto relative touch-none bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                           <svg
                               ref={svgRef}
-                              viewBox={viewBox}
+                              viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                               className="w-full h-full cursor-pointer"
-                              onMouseDown={handleMouseDown}
-                              onMouseMove={handleMouseMove}
-                              onMouseUp={handleMouseUp}
-                              onMouseLeave={() => setIsDragging(false)}
-                              onWheel={handleWheel}
                           >
                             <image href="/games/bodies.svg" x="0" y="0" width="500" height="1000" className="filter dark:invert pointer-events-none"/>
 
@@ -547,5 +527,3 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
-
-    
