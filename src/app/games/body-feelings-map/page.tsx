@@ -381,19 +381,15 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     viewBox: { x: number; y: number; width: number; height: number; };
     setViewBox: (viewBox: { x: number; y: number; width: number; height: number; }) => void;
 }) {
-    const originalViewBox = useRef(viewBox);
+    const startViewBox = useRef(viewBox);
 
     useGesture(
         {
             onDragStart: () => {
-              originalViewBox.current = viewBox;
+              startViewBox.current = viewBox;
             },
-            onDrag: ({ pinching, cancel, offset: [dx, dy], tap, event }) => {
-                if (pinching) return cancel();
-                 if (tap) {
-                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
-                    return;
-                }
+            onDrag: ({ pinching, movement: [dx, dy], tap, event }) => {
+                if (pinching || tap) return;
                 event.preventDefault();
 
                 const svg = svgRef.current;
@@ -402,11 +398,14 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                 const scaleRatio = viewBox.width / svg.clientWidth;
 
                 setViewBox({
-                    x: originalViewBox.current.x - dx * scaleRatio,
-                    y: originalViewBox.current.y - dy * scaleRatio,
+                    x: startViewBox.current.x - dx * scaleRatio,
+                    y: startViewBox.current.y - dy * scaleRatio,
                     width: viewBox.width,
                     height: viewBox.height,
                 });
+            },
+            onTap: ({ event }) => {
+                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
