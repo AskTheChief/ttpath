@@ -388,7 +388,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             onDragStart: () => {
               startViewBox.current = viewBox;
             },
-            onDrag: ({ pinching, movement: [dx, dy] }) => {
+            onDrag: ({ pinching, movement: [dx, dy], tap, event }) => {
+                if (tap) {
+                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
+                    return;
+                }
                 if (pinching) return;
                 
                 const svg = svgRef.current;
@@ -402,9 +406,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                     width: viewBox.width,
                     height: viewBox.height,
                 });
-            },
-            onTap: ({ event }) => {
-                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -434,6 +435,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         {
             target: svgRef,
             eventOptions: { passive: false },
+            drag: {
+                filterTaps: true,
+            },
         }
     );
     
