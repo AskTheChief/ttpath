@@ -179,29 +179,6 @@ export default function BodyFeelingsMapPage() {
     setCurrentFeeling(feeling);
     setIsModalOpen(true);
   };
-
-  const handleLocationClick = (e: MouseEvent<HTMLDivElement>, style: any) => {
-    // This allows clicking on a dot to select it
-    if ((e.target as HTMLElement).classList.contains('feeling-dot')) {
-        return;
-    }
-
-    if (!imageContainerRef.current) return;
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    const transformedX = (clickX - style.x.get()) / style.scale.get();
-    const transformedY = (clickY - style.y.get()) / style.scale.get();
-
-    const x = (transformedX / imageContainerRef.current.clientWidth) * 100;
-    const y = (transformedY / imageContainerRef.current.clientHeight) * 100;
-
-    setClickCoords({ x, y });
-    setCurrentFeeling({ rating: 0 });
-    setEditingFeelingId(null);
-    setIsModalOpen(true);
-  };
   
   const handleDotClickForLocationView = (feeling: Feeling, e: MouseEvent) => {
     e.stopPropagation();
@@ -404,7 +381,6 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         },
         {
             target: imageContainerRef,
-            drag: { from: () => [style.x.get(), style.y.get()] },
             wheel: { eventOptions: { passive: false } },
         }
     );
