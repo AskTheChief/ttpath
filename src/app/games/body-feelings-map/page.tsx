@@ -43,7 +43,7 @@ const getOpacityFromRating = (rating: number): number => {
     return 0.5 + Math.abs(rating) / 10 * 0.5;
 }
 
-const initialViewBox = { x: 80, y: 150, width: 340, height: 700 };
+const initialViewBox = { x: 159, y: 314, width: 181, height: 372 };
 
 
 export default function BodyFeelingsMapPage() {
@@ -115,8 +115,12 @@ export default function BodyFeelingsMapPage() {
 
 
   const handleMapClick = (e: MouseEvent<SVGSVGElement>) => {
-    if (e.target !== svgRef.current) return;
     if (!svgRef.current) return;
+    
+    // Check if the click was on a circle; if so, the circle's own handler will manage it.
+    if (e.target instanceof SVGCircleElement) {
+        return;
+    }
     
     const svgPoint = svgRef.current.createSVGPoint();
     svgPoint.x = e.clientX;
@@ -318,8 +322,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         {
             onDrag: ({ tap, pinching, movement: [dx, dy] }) => {
               if (pinching) return;
+              
               if (tap) {
-                // This is handled by the SVG's main onClick handler
+                // Let the main onClick on the SVG handle this to avoid double-firing.
                 return;
               }
 
@@ -415,11 +420,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 data-id={feeling.id}
                                 cx={feeling.x}
                                 cy={feeling.y}
-                                r={circleRadius}
+                                r={12 * initialViewBox.width / viewBox.width}
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
+                                strokeWidth={1.5 * initialViewBox.width / viewBox.width}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
@@ -473,5 +478,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
 
     
