@@ -382,35 +382,41 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     });
 
     const handleContainerClick = (e: MouseEvent<HTMLDivElement>) => {
-        if (!imageContainerRef.current) return;
+        const target = e.target as HTMLElement;
+        const isFeelingDot = target.classList.contains('feeling-dot');
+        const isDragging = target.hasAttribute('data-dragging');
 
-        // Simple check to distinguish click from drag
-        if ((e.target as HTMLElement).hasAttribute('data-dragging')) {
-            (e.target as HTMLElement).removeAttribute('data-dragging');
+        if (isFeelingDot || isDragging) {
+            if(isDragging) target.removeAttribute('data-dragging');
             return;
         }
 
+        if (!imageContainerRef.current) return;
         const rect = imageContainerRef.current.getBoundingClientRect();
+        
         const clickX_viewport = e.clientX;
         const clickY_viewport = e.clientY;
+        
         const rectX = rect.left;
         const rectY = rect.top;
+        
         const currentX = x.get();
         const currentY = y.get();
         const currentScale = scale.get();
+
         const clickX_relative = clickX_viewport - rectX;
         const clickY_relative = clickY_viewport - rectY;
+
         const untranslatedX = clickX_relative - currentX;
         const untranslatedY = clickY_relative - currentY;
+        
         const unscaledX = untranslatedX / currentScale;
         const unscaledY = untranslatedY / currentScale;
+
         const finalX = (unscaledX / imageContainerRef.current.clientWidth) * 100;
         const finalY = (unscaledY / imageContainerRef.current.clientHeight) * 100;
-
-        const onDot = (e.target as HTMLElement).classList.contains('feeling-dot');
-        if (!onDot) {
-            handleMapClick(finalX, finalY);
-        }
+        
+        handleMapClick(finalX, finalY);
     };
     
     const resetView = () => {
