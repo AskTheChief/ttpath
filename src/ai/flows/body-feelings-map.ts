@@ -26,12 +26,11 @@ const adminAuth = getAuth();
 // Define the schema for a single feeling
 const FeelingSchema = z.object({
   id: z.number(),
-  name: z.string(),
+  feelingName: z.string(),
   sensation: z.string(),
-  metaFeeling: z.string(),
+  rating: z.number().min(-10).max(10),
   x: z.number(),
   y: z.number(),
-  color: z.string(),
 });
 export type Feeling = z.infer<typeof FeelingSchema>;
 
@@ -58,6 +57,12 @@ const GetFeelingsOutputSchema = z.array(FeelingSchema);
 export type GetFeelingsOutput = z.infer<typeof GetFeelingsOutputSchema>;
 
 
+// Function to standardize feeling names (e.g., capitalize first letter)
+const standardizeFeelingName = (name: string): string => {
+  if (!name) return '';
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+};
+
 // Flow for saving feelings
 const saveFeelingsFlow = ai.defineFlow(
   {
@@ -70,8 +75,14 @@ const saveFeelingsFlow = ai.defineFlow(
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const userId = decodedToken.uid;
       
+      // Standardize feeling names before saving
+      const standardizedFeelings = feelings.map(f => ({
+        ...f,
+        feelingName: standardizeFeelingName(f.feelingName),
+      }));
+
       const docRef = db.collection('body_feelings_maps').doc(userId);
-      await docRef.set({ feelings });
+      await docRef.set({ feelings: standardizedFeelings });
 
       return { success: true };
     } catch (error) {
