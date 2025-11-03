@@ -133,13 +133,13 @@ export default function BodyFeelingsMapPage() {
     const currentY = y.get();
     const currentScale = scale.get();
     
-    // 2. Undo the panning transformation
-    const untranslatedX = clickX_relative - currentX;
-    const untranslatedY = clickY_relative - currentY;
+    // 2. Undo the panning transformation to get coordinates on the scaled div
+    const unpannedX = clickX_relative - currentX;
+    const unpannedY = clickY_relative - currentY;
     
-    // 3. Undo the scaling transformation
-    const unscaledX = untranslatedX / currentScale;
-    const unscaledY = untranslatedY / currentScale;
+    // 3. Undo the scaling transformation to get coordinates on the un-scaled div
+    const unscaledX = unpannedX / currentScale;
+    const unscaledY = unpannedY / currentScale;
 
     // 4. Convert to percentage of the container's dimensions
     const finalX_percent = (unscaledX / rect.width) * 100;
