@@ -212,7 +212,7 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
             </CardContent>
             <CardFooter className="flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Register as an Explorer & Receive Diploma'}
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Register'}
                 </Button>
                 <Button type="button" variant="outline" onClick={onClose} className="w-full" disabled={isLoading}>
                     Enter This Information Later
