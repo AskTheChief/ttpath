@@ -44,17 +44,17 @@ export const pathNodesData: PathNodeData[] = [
       { id: "read-full-book", label: "Trading Tribe Methods", action: "open-full-book" },
       { id: "read-full-book-part-2", label: "Trading Tribe Theory", action: "open-full-book-part-2", dependsOn: "read-full-book"},
       { id: "open-comprehension-test", label: "Take The Tutorial", action: "open-comprehension-test", dependsOn: "read-full-book-part-2" },
-      { id: "complete-comprehension-test", label: "Path to Graduate", action: "complete-test", next: "graduate", dependsOn: "open-comprehension-test" }
+      { id: "complete-comprehension-test", label: "Path to Explorer", action: "complete-test", next: "explorer", dependsOn: "open-comprehension-test" }
     ],
     panelPos: "left"
   },
   {
-    id: "node-graduate",
+    id: "node-explorer",
     level: 3,
     pathPos: 0.40,
-    title: "Graduate",
+    title: "Explorer",
     req: "",
-    description: "As a graduate, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
+    description: "As an Explorer, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
       { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe"}
     ],

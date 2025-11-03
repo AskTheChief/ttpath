@@ -2,7 +2,7 @@
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -40,7 +40,7 @@ interface LinkModalData {
 const nodeIcons: { [key: string]: React.FC<any> } = {
   visitor: User,
   guest: UserPlus,
-  graduate: GraduationCap,
+  explorer: Compass,
   member: Users,
   chief: Crown,
   mentor: GraduationCap
@@ -344,7 +344,7 @@ export default function PathJourney() {
         await animateUserIcon(nextNode, oldLevel);
         setCurrentUserLevel(newLevel);
         
-        if (nextNode.id === 'node-graduate') {
+        if (nextNode.id === 'node-explorer') {
             setNeedsProfileCompletion(true);
         }
 
@@ -372,7 +372,7 @@ export default function PathJourney() {
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
           if (progress.currentUserLevel >= 3) {
-            // This user is a graduate but has an incomplete profile. Force completion.
+            // This user is an explorer but has an incomplete profile. Force completion.
             setNeedsProfileCompletion(true);
           }
           setCurrentUserLevel(progress.currentUserLevel || 1);
@@ -430,7 +430,7 @@ export default function PathJourney() {
     setUserFirstName(firstName);
     setNeedsProfileCompletion(false);
 
-    const targetNode = pathNodesData.find(n => n.id === 'node-graduate');
+    const targetNode = pathNodesData.find(n => n.id === 'node-explorer');
     if (targetNode) {
         setCurrentUserLevel(targetNode.level);
         if (auth.currentUser) {
@@ -443,7 +443,7 @@ export default function PathJourney() {
         }
     }
     toast({
-        title: "Congratulations, You Graduate!",
+        title: "Congratulations, You are an Explorer!",
         description: "Your diploma is in the mail. You may now join or start a tribe.",
     });
 

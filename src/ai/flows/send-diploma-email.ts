@@ -57,13 +57,13 @@ const sendDiplomaEmailFlow = ai.defineFlow(
             <div style="padding-bottom: 20px;">
               <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 150px; height: 150px; margin: 0 auto;"/>
             </div>
-            <h1 style="font-size: 50px; font-weight: bold; color: #2a433a; margin: 0;">Certificate of Graduation</h1>
+            <h1 style="font-size: 50px; font-weight: bold; color: #2a433a; margin: 0;">Certificate of Achievement</h1>
             <p style="font-size: 25px; color: #555; margin-top: 40px;">This certifies that</p>
             <p style="font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive; font-size: 48px; color: #2a433a; margin: 20px 0; border-bottom: 2px solid #c9b037; display: inline-block; padding-bottom: 5px; line-height: 1.2;">
               ${recipientName || 'Valued Member'}
             </p>
             <p style="font-size: 25px; color: #555;">has successfully completed all requirements to become a</p>
-            <p style="font-size: 30px; font-weight: bold; color: #2a433a; margin: 20px 0;">Graduate</p>
+            <p style="font-size: 30px; font-weight: bold; color: #2a433a; margin: 20px 0;">Tribe Explorer</p>
             <p style="font-size: 20px; color: #555;">on The Trading Tribe Path.</p>
             <div style="margin-top: 50px;">
               <p style="font-size: 16px; color: #777;">Your journey continues. You may now join a tribe or apply to start your own.</p>

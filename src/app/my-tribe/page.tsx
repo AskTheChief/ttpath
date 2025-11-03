@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, GraduationCap } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -62,7 +62,7 @@ const defaultCenter = {
     lng: -98.5795,
 };
 
-function GraduateView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
+function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
   return (
     <>
         <Alert>
@@ -777,7 +777,7 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Go to the graduate page to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Go to the explorer page to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
@@ -932,14 +932,14 @@ function MyTribePageContent() {
     </Tabs>
   );
 
-  const renderGraduateView = () => (
+  const renderExplorerView = () => (
     <Tabs defaultValue="next-step" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
             <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="profile-tutorial">My Profile &amp; Tutorial</TabsTrigger>
         </TabsList>
         <TabsContent value="next-step" className="m-0 space-y-8">
-             <GraduateView 
+             <ExplorerView 
               user={user}
               isLoaded={isLoaded}
               isLoading={isLoading}
@@ -1026,7 +1026,7 @@ function MyTribePageContent() {
           </Link>
         </header>
 
-        {userLevel < 4 ? renderGraduateView() : renderMemberChiefView()}
+        {userLevel < 4 ? renderExplorerView() : renderMemberChiefView()}
 
       </div>
       
@@ -1056,5 +1056,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    

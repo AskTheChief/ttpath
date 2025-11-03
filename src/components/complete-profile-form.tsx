@@ -141,7 +141,7 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
 
       toast({
         title: 'Profile Complete & Diploma Sent!',
-        description: "Congratulations, you are now a Graduate! Your diploma is in your inbox.",
+        description: "Congratulations, you are now an Explorer! Your diploma is in your inbox.",
       });
       
       onComplete(profile.firstName!);
@@ -162,9 +162,9 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 min-h-screen">
         <Card className="w-full max-w-lg">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold">Complete Your Graduation</CardTitle>
+                <CardTitle className="text-2xl font-bold">Become an Explorer</CardTitle>
                 <CardDescription>
-                    To become a Graduate, please provide your information. This helps you connect with tribes in your area.
+                    To become an Explorer, please provide your information. This helps you connect with tribes in your area.
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleProfileSubmit} noValidate>
@@ -212,7 +212,7 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
             </CardContent>
             <CardFooter className="flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Complete Graduation & Receive Diploma'}
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Become an Explorer & Receive Diploma'}
                 </Button>
                 <Button type="button" variant="outline" onClick={onClose} className="w-full" disabled={isLoading}>
                     Enter This Information Later

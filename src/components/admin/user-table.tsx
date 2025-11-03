@@ -28,7 +28,7 @@ import { deleteUser } from '@/ai/flows/delete-user';
 const levelMap: Record<number, string> = {
   1: "Visitor",
   2: "Guest",
-  3: "Graduate",
+  3: "Explorer",
   4: "Member",
   5: "Chief",
   6: "Mentor",
