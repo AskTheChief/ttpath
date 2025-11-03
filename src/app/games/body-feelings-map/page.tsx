@@ -56,7 +56,6 @@ export default function BodyFeelingsMapPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('inventory');
   const [selectedFeelingName, setSelectedFeelingName] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Feeling | null>(null);
   
   const svgRef = useRef<SVGSVGElement>(null);
   const { toast } = useToast();
@@ -179,12 +178,6 @@ export default function BodyFeelingsMapPage() {
     setIsModalOpen(true);
   };
   
-  const handleDotClickForLocationView = (feeling: Feeling, e: MouseEvent) => {
-    e.stopPropagation();
-    setActiveTab('location');
-    setSelectedLocation(feeling);
-  };
-  
   const displayedFeelings = useMemo(() => {
     if (activeTab === 'feeling' && selectedFeelingName) {
       return allFeelings.filter(f => f.feelingName === selectedFeelingName);
@@ -196,18 +189,6 @@ export default function BodyFeelingsMapPage() {
     const names = new Set(allFeelings.map(f => f.feelingName));
     return Array.from(names).sort();
   }, [allFeelings]);
-
-  const feelingsAtSelectedLocation = useMemo(() => {
-    if (activeTab === 'location' && selectedLocation) {
-        // Find all feelings within a small radius of the selected location
-        return allFeelings.filter(f => {
-            const dx = f.x - selectedLocation.x;
-            const dy = f.y - selectedLocation.y;
-            return Math.sqrt(dx * dx + dy * dy) < 5; // Radius in SVG units
-        });
-    }
-    return [];
-  }, [activeTab, selectedLocation, allFeelings]);
 
 
   return (
@@ -224,10 +205,9 @@ export default function BodyFeelingsMapPage() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="inventory">Total Inventory</TabsTrigger>
                 <TabsTrigger value="feeling">View by Feeling</TabsTrigger>
-                <TabsTrigger value="location">View by Location</TabsTrigger>
             </TabsList>
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
@@ -270,55 +250,6 @@ export default function BodyFeelingsMapPage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                    }
-                />
-            </TabsContent>
-            <TabsContent value="location" className="mt-4">
-                 <ViewLayout
-                    title="View by Location"
-                    description="Click a dot on the map to see all feelings at that location."
-                    feelings={allFeelings}
-                    openEditModal={openEditModal}
-                    handleMapClick={(e) => {
-                        const target = e.target as SVGCircleElement;
-                        if (target.tagName === 'circle') {
-                            const id = Number(target.dataset.id);
-                            const feeling = allFeelings.find(f => f.id === id);
-                            if (feeling) {
-                                handleDotClickForLocationView(feeling, e as any);
-                            }
-                        } else {
-                            handleMapClick(e as any);
-                        }
-                    }}
-                    svgRef={svgRef}
-                    isSaving={isSaving}
-                    isLoading={isLoading}
-                    user={user}
-                    handleDeleteFeeling={handleDeleteFeeling}
-                    viewBox={viewBox}
-                    setViewBox={setViewBox}
-                    sidebarContent={
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Feelings at Location</CardTitle>
-                                {selectedLocation && <CardDescription>Feelings around this point.</CardDescription>}
-                            </CardHeader>
-                            <CardContent>
-                                {feelingsAtSelectedLocation.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {feelingsAtSelectedLocation.map(f => (
-                                            <li key={f.id} className="flex items-center gap-2 p-2 border rounded">
-                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getColorFromRating(f.rating) }}></div>
-                                                <span>{f.feelingName} (Rating: {f.rating})</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">No location selected. Click a dot on the map.</p>
-                                )}
-                            </CardContent>
-                        </Card>
                     }
                 />
             </TabsContent>
@@ -445,7 +376,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 12 * (viewBox.width / initialViewBox.width);
+    const circleRadius = 12 * (initialViewBox.width / viewBox.width);
 
 
     return (
@@ -488,7 +419,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * (viewBox.width / initialViewBox.width)}
+                                strokeWidth={1.5 * (initialViewBox.width / viewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
