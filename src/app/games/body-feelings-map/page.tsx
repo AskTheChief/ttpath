@@ -43,7 +43,7 @@ const getOpacityFromRating = (rating: number): number => {
     return 0.5 + Math.abs(rating) / 10 * 0.5;
 }
 
-const initialViewBox = { x: 159, y: 314, width: 181, height: 372 };
+const initialViewBox = { x: 159 / 1.88, y: 314 / 1.88, width: 181, height: 372 };
 
 
 export default function BodyFeelingsMapPage() {
