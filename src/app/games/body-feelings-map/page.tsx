@@ -227,6 +227,7 @@ export default function BodyFeelingsMapPage() {
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
+                    handleDeleteFeeling={handleDeleteFeeling}
                 />
             </TabsContent>
             <TabsContent value="feeling" className="mt-4">
@@ -240,6 +241,7 @@ export default function BodyFeelingsMapPage() {
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
+                    handleDeleteFeeling={handleDeleteFeeling}
                     controls={
                         <Select onValueChange={setSelectedFeelingName} value={selectedFeelingName || ''}>
                             <SelectTrigger className="w-[280px]">
@@ -265,6 +267,7 @@ export default function BodyFeelingsMapPage() {
                     isSaving={isSaving}
                     isLoading={isLoading}
                     user={user}
+                    handleDeleteFeeling={handleDeleteFeeling}
                     sidebarContent={
                         <Card>
                              <CardHeader>
@@ -332,7 +335,7 @@ export default function BodyFeelingsMapPage() {
   );
 }
 
-function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent }: {
+function ViewLayout({ title, description, feelings, openEditModal, handleMapClick, imageContainerRef, isSaving, isLoading, user, controls, sidebarContent, handleDeleteFeeling }: {
     title: string;
     description: string;
     feelings: Feeling[];
@@ -344,6 +347,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     user: User | null;
     controls?: React.ReactNode;
     sidebarContent?: React.ReactNode;
+    handleDeleteFeeling: (id: number) => void;
 }) {
     return (
         <div className="grid md:grid-cols-3 gap-8">
@@ -424,5 +428,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
 
     
