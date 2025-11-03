@@ -388,12 +388,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
             onDragStart: () => {
               startViewBox.current = viewBox;
             },
-            onDrag: ({ pinching, movement: [dx, dy], tap, event }) => {
+            onDrag: ({ pinching, movement: [dx, dy], tap }) => {
+                if (pinching) return;
                 if (tap) {
-                    handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
                     return;
                 }
-                if (pinching) return;
                 
                 const svg = svgRef.current;
                 if (!svg) return;
@@ -406,6 +405,9 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                     width: viewBox.width,
                     height: viewBox.height,
                 });
+            },
+            onTap: ({ event }) => {
+                handleMapClick(event as unknown as MouseEvent<SVGSVGElement>);
             },
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
@@ -445,7 +447,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 5 / (viewBox.width / initialViewBox.width);
+    const circleRadius = 5 * (viewBox.width / initialViewBox.width);
 
 
     return (
@@ -496,7 +498,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={0.5 / (viewBox.width / initialViewBox.width)}
+                                strokeWidth={0.5 * (viewBox.width / initialViewBox.width)}
                                 className="cursor-pointer transition-all duration-150 hover:r-[10]"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
@@ -550,3 +552,5 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
