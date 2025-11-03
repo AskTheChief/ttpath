@@ -4,7 +4,7 @@
 import { useState, useRef, MouseEvent, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Loader2, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, X, RotateCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -233,7 +233,7 @@ export default function BodyFeelingsMapPage() {
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
                     title="Total Inventory"
-                    description="Drag to pan. Pinch or Ctrl+Scroll to zoom. Click the body to add a feeling."
+                    description="Drag to pan. Pinch to zoom. Click the body to add a feeling."
                     feelings={allFeelings}
                     openEditModal={openEditModal}
                     handleMapClick={handleMapClick}
@@ -369,11 +369,11 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         scale: 1,
     }));
 
-    const bind = useDrag(({ offset: [dx, dy] }) => {
-        api.start({ x: dx, y: dy });
+    const bind = useDrag(({ down, movement: [mx, my] }) => {
+        api.start({ x: down ? mx : 0, y: down ? my : 0 });
     }, {
-        target: imageContainerRef,
-        from: () => [x.get(), y.get()]
+        from: () => [x.get(), y.get()],
+        target: imageContainerRef
     });
 
      useGesture(
