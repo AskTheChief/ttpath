@@ -381,7 +381,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         setViewBox(initialViewBox);
     };
     
-    const circleRadius = 12 * (viewBox.width / initialViewBox.width);
+    const zoomRatio = viewBox.width / initialViewBox.width;
 
 
     return (
@@ -420,12 +420,12 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
                                 data-id={feeling.id}
                                 cx={feeling.x}
                                 cy={feeling.y}
-                                r={12 * (viewBox.width / initialViewBox.width)}
+                                r={12 * zoomRatio}
                                 fill={getColorFromRating(feeling.rating)}
                                 fillOpacity={getOpacityFromRating(feeling.rating)}
                                 stroke="white"
-                                strokeWidth={1.5 * (initialViewBox.width / viewBox.width)}
-                                className="cursor-pointer transition-all duration-150 hover:r-[10]"
+                                strokeWidth={1.5 * zoomRatio}
+                                className="cursor-pointer transition-all duration-150"
                                 onClick={(e) => openEditModal(feeling, e as any)}
                                 />
                             ))}
@@ -480,5 +480,8 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
 }
 
     
+
+    
+
 
     
