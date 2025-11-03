@@ -32,6 +32,21 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     }
   }
 
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'theory' | 'tutorial') => {
+    onClose();
+    const urls = {
+        pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
+        methods: 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
+        theory: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+    };
+
+    if (doc === 'tutorial') {
+        openModal('open-comprehension-test');
+    } else {
+        window.open(urls[doc], '_blank');
+    }
+  };
+
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isLink = !!item.href;
     
@@ -84,19 +99,19 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                 <DropdownMenuItem onClick={() => openModal('open-pamphlet')}>
+                 <DropdownMenuItem onClick={() => handleLibraryClick('pamphlet')}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Quick-Start Guide</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openModal('open-full-book')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('methods')}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Methods</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openModal('open-full-book-part-2')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('theory')}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Theory</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openModal('open-comprehension-test')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('tutorial')}>
                   <GraduationCap className="mr-2 h-4 w-4" />
                   <span>Tutorial</span>
                 </DropdownMenuItem>
