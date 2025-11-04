@@ -286,15 +286,7 @@ export default function BodyFeelingsMapPage() {
                                 step={1}
                                 value={[currentFeeling.rating ?? 0]}
                                 onValueChange={([val]) => setCurrentFeeling(p => ({ ...p, rating: val }))}
-                                className={cn(
-                                    '[&>span:first-child>span]:bg-gradient-to-r',
-                                    (currentFeeling.rating ?? 0) < 0 && '[&>span:first-child>span]:from-red-500 [&>span:first-child>span]:to-yellow-500',
-                                    (currentFeeling.rating ?? 0) > 0 && '[&>span:first-child>span]:from-yellow-500 [&>span:first-child>span]:to-green-500',
-                                    (currentFeeling.rating ?? 0) === 0 && '[&>span:first-child>span]:from-gray-400 [&>span:first-child>span]:to-gray-400'
-                                )}
-                                style={{
-                                  '--slider-connect-width': `${((currentFeeling.rating ?? 0) + 10) / 20 * 100}%`
-                                } as React.CSSProperties}
+                                style={{ '--track-bg': getColorFromRating(currentFeeling.rating ?? 0) } as React.CSSProperties}
                             />
                             <span className="font-bold text-green-500">Accept</span>
                         </div>
@@ -493,5 +485,7 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
         </div>
     );
 }
+
+    
 
     
