@@ -19,6 +19,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGesture } from '@use-gesture/react';
+import { cn } from '@/lib/utils';
 
 
 // Helper to get color based on rating
@@ -275,9 +276,9 @@ export default function BodyFeelingsMapPage() {
                         <Textarea id="feeling-sensation" value={currentFeeling.sensation || ''} onChange={e => setCurrentFeeling(p => ({...p, sensation: e.target.value}))} placeholder="e.g., Tightness in chest, warmth in stomach" />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="feeling-rating">Like / Dislike Rating ({currentFeeling.rating ?? 0})</Label>
+                        <Label htmlFor="feeling-rating">Judgement / Acceptance Rating ({currentFeeling.rating ?? 0})</Label>
                         <div className="flex items-center gap-4">
-                            <span className="text-red-500 font-bold">-10</span>
+                            <span className="font-bold text-red-500">Judgement</span>
                             <Slider
                                 id="feeling-rating"
                                 min={-10}
@@ -285,8 +286,17 @@ export default function BodyFeelingsMapPage() {
                                 step={1}
                                 value={[currentFeeling.rating ?? 0]}
                                 onValueChange={([val]) => setCurrentFeeling(p => ({ ...p, rating: val }))}
+                                className={cn(
+                                    '[&>span:first-child>span]:bg-gradient-to-r',
+                                    (currentFeeling.rating ?? 0) < 0 && '[&>span:first-child>span]:from-red-500 [&>span:first-child>span]:to-yellow-500',
+                                    (currentFeeling.rating ?? 0) > 0 && '[&>span:first-child>span]:from-yellow-500 [&>span:first-child>span]:to-green-500',
+                                    (currentFeeling.rating ?? 0) === 0 && '[&>span:first-child>span]:from-gray-400 [&>span:first-child>span]:to-gray-400'
+                                )}
+                                style={{
+                                  '--slider-connect-width': `${((currentFeeling.rating ?? 0) + 10) / 20 * 100}%`
+                                } as React.CSSProperties}
                             />
-                             <span className="text-green-500 font-bold">+10</span>
+                            <span className="font-bold text-green-500">Acceptance</span>
                         </div>
                     </div>
                 </div>
