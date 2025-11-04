@@ -286,7 +286,7 @@ export default function BodyFeelingsMapPage() {
                                 step={1}
                                 value={[currentFeeling.rating ?? 0]}
                                 onValueChange={([val]) => setCurrentFeeling(p => ({ ...p, rating: val }))}
-                                style={{ '--track-bg': getColorFromRating(currentFeeling.rating ?? 0) } as React.CSSProperties}
+                                style={{ '--thumb-bg': getColorFromRating(currentFeeling.rating ?? 0) } as React.CSSProperties}
                             />
                             <span className="font-bold text-green-500">Accept</span>
                         </div>
