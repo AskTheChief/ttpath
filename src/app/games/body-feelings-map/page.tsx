@@ -276,9 +276,9 @@ export default function BodyFeelingsMapPage() {
                         <Textarea id="feeling-sensation" value={currentFeeling.sensation || ''} onChange={e => setCurrentFeeling(p => ({...p, sensation: e.target.value}))} placeholder="e.g., Tightness in chest, warmth in stomach" />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="feeling-rating">Judgement / Acceptance Rating ({currentFeeling.rating ?? 0})</Label>
+                        <Label htmlFor="feeling-rating">Judge / Accept Rating ({currentFeeling.rating ?? 0})</Label>
                         <div className="flex items-center gap-4">
-                            <span className="font-bold text-red-500">Judgement</span>
+                            <span className="font-bold text-red-500">Judge</span>
                             <Slider
                                 id="feeling-rating"
                                 min={-10}
@@ -296,7 +296,7 @@ export default function BodyFeelingsMapPage() {
                                   '--slider-connect-width': `${((currentFeeling.rating ?? 0) + 10) / 20 * 100}%`
                                 } as React.CSSProperties}
                             />
-                            <span className="font-bold text-green-500">Acceptance</span>
+                            <span className="font-bold text-green-500">Accept</span>
                         </div>
                     </div>
                 </div>
