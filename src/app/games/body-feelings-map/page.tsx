@@ -57,6 +57,7 @@ export default function BodyFeelingsMapPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('inventory');
   const [selectedFeelingName, setSelectedFeelingName] = useState<string | null>(null);
+  const [selectedSensation, setSelectedSensation] = useState<string | null>(null);
   
   const svgRef = useRef<SVGSVGElement>(null);
   const { toast } = useToast();
@@ -187,12 +188,20 @@ export default function BodyFeelingsMapPage() {
     if (activeTab === 'feeling' && selectedFeelingName) {
       return allFeelings.filter(f => f.feelingName === selectedFeelingName);
     }
+    if (activeTab === 'sensation' && selectedSensation) {
+      return allFeelings.filter(f => f.sensation === selectedSensation);
+    }
     return allFeelings;
-  }, [activeTab, selectedFeelingName, allFeelings]);
+  }, [activeTab, selectedFeelingName, selectedSensation, allFeelings]);
 
   const uniqueFeelingNames = useMemo(() => {
     const names = new Set(allFeelings.map(f => f.feelingName));
     return Array.from(names).sort();
+  }, [allFeelings]);
+
+  const uniqueSensations = useMemo(() => {
+    const sensations = new Set(allFeelings.map(f => f.sensation));
+    return Array.from(sensations).sort();
   }, [allFeelings]);
 
 
@@ -210,9 +219,10 @@ export default function BodyFeelingsMapPage() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="inventory">Total Inventory</TabsTrigger>
                 <TabsTrigger value="feeling">View by Feeling</TabsTrigger>
+                <TabsTrigger value="sensation">View by Sensation</TabsTrigger>
             </TabsList>
             <TabsContent value="inventory" className="mt-4">
                 <ViewLayout
@@ -252,6 +262,34 @@ export default function BodyFeelingsMapPage() {
                             <SelectContent>
                                 {uniqueFeelingNames.map(name => (
                                     <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    }
+                />
+            </TabsContent>
+            <TabsContent value="sensation" className="mt-4">
+                <ViewLayout
+                    title="View by Sensation"
+                    description="Select a sensation to see where it appears on the map."
+                    feelings={displayedFeelings}
+                    openEditModal={openEditModal}
+                    handleMapClick={handleMapClick}
+                    svgRef={svgRef}
+                    isSaving={isSaving}
+                    isLoading={isLoading}
+                    user={user}
+                    handleDeleteFeeling={handleDeleteFeeling}
+                    viewBox={viewBox}
+                    setViewBox={setViewBox}
+                    controls={
+                        <Select onValueChange={setSelectedSensation} value={selectedSensation || ''}>
+                            <SelectTrigger className="w-[280px]">
+                                <SelectValue placeholder="Select a sensation..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {uniqueSensations.map(sensation => (
+                                    <SelectItem key={sensation} value={sensation}>{sensation}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -489,3 +527,4 @@ function ViewLayout({ title, description, feelings, openEditModal, handleMapClic
     
 
     
+
