@@ -1,5 +1,5 @@
 
-export const tutorialQuestions = [
+export const comprehensionQuestions = [
     "Explain how judgment affects communication.",
     "Describe the positive intentions of fear, anger and envy.",
     "Describe three things that exist in the past and three more that exist in the future.",

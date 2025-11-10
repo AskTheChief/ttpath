@@ -32,7 +32,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     }
   }
 
-  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'theory' | 'tutorial') => {
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'theory' | 'comprehension-test') => {
     onClose();
     const urls = {
         pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
@@ -40,7 +40,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         theory: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
     };
 
-    if (doc === 'tutorial') {
+    if (doc === 'comprehension-test') {
         openModal('open-comprehension-test');
     } else {
         window.open(urls[doc], '_blank');
@@ -111,9 +111,9 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Theory</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('tutorial')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
                   <GraduationCap className="mr-2 h-4 w-4" />
-                  <span>Tutorial</span>
+                  <span>Comprehension Test</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

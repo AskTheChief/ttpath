@@ -6,22 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { ArrowLeft, FileQuestion, Sparkles } from 'lucide-react';
-import { getAllTutorialAnswers, type UserAnswers } from '@/ai/flows/get-all-tutorial-answers';
+import { getAllComprehensionTestAnswers, type UserAnswers } from '@/ai/flows/get-all-comprehension-test-answers';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { tutorialQuestions } from '@/lib/data';
+import { comprehensionQuestions } from '@/lib/data';
 
-export default function TutorialAnswersPage() {
+export default function ComprehensionTestAnswersPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAnswers() {
       try {
-        const answers = await getAllTutorialAnswers();
+        const answers = await getAllComprehensionTestAnswers();
         setUserAnswers(answers);
       } catch (error) {
-        console.error('Error fetching tutorial answers:', error);
+        console.error('Error fetching comprehension test answers:', error);
       } finally {
         setLoading(false);
       }
@@ -33,7 +33,7 @@ export default function TutorialAnswersPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Tutorial Answers</h1>
+        <h1 className="text-3xl font-bold">Comprehension Test Answers</h1>
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -54,7 +54,7 @@ export default function TutorialAnswersPage() {
             {loading ? (
                 <p>Loading answers...</p>
             ) : userAnswers.length === 0 ? (
-                <p>No tutorial answers found.</p>
+                <p>No comprehension test answers found.</p>
             ) : (
                 <Accordion type="single" collapsible className="w-full">
                 {userAnswers.map((user) => (
@@ -70,7 +70,7 @@ export default function TutorialAnswersPage() {
                             <div>
                                 <h4 className="font-semibold mb-2">Answers</h4>
                                 <div className="space-y-4 pl-4 border-l-2">
-                                {tutorialQuestions.map((question, index) => (
+                                {comprehensionQuestions.map((question, index) => (
                                     <div key={question}>
                                     <p className="font-semibold">{`${index + 1}. ${question}`}</p>
                                     <p className="text-muted-foreground whitespace-pre-wrap pl-2">

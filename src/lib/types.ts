@@ -169,17 +169,17 @@ export const UpdateUserProfileOutputSchema = z.object({
 });
 export type UpdateUserProfileOutput = z.infer<typeof UpdateUserProfileOutputSchema>;
 
-// src/ai/flows/get-tutorial-answers.ts
+// src/ai/flows/get-comprehension-test.ts
 const LatestFeedbackSchema = z.object({
     feedback: z.string(),
     createdAt: z.string(),
 });
 
-export const GetTutorialAnswersOutputSchema = z.object({
+export const GetComprehensionTestOutputSchema = z.object({
     answers: z.record(z.string()),
     latestFeedback: LatestFeedbackSchema.optional(),
 });
-export type GetTutorialAnswersOutput = z.infer<typeof GetTutorialAnswersOutputSchema>;
+export type GetComprehensionTestOutput = z.infer<typeof GetComprehensionTestOutputSchema>;
 
 
 // src/ai/flows/get-tribe-members.ts

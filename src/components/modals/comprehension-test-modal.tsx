@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-tutorial-answers";
-import { saveTutorialAnswers } from "@/ai/flows/save-tutorial-answers";
-import { getTutorialAnswers } from "@/ai/flows/get-tutorial-answers";
-import { tutorialQuestions } from "@/lib/data";
+import { evaluateComprehensionTest } from "@/ai/flows/evaluate-comprehension-test";
+import { saveComprehensionTest } from "@/ai/flows/save-comprehension-test";
+import { getComprehensionTest } from "@/ai/flows/get-comprehension-test";
+import { comprehensionQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Loader2 } from "lucide-react";
 import { User } from "firebase/auth";
@@ -40,7 +40,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setIsFetching(true);
         try {
           const idToken = await user.getIdToken();
-          const existingData = await getTutorialAnswers({ idToken });
+          const existingData = await getComprehensionTest({ idToken });
           setAnswers(existingData.answers);
           if (existingData.latestFeedback) {
             setFeedback({
@@ -79,7 +79,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setIsSaving(true);
         try {
           const idToken = await user.getIdToken();
-          await saveTutorialAnswers({ answers, idToken });
+          await saveComprehensionTest({ answers, idToken });
         } catch (error) {
           console.error("Auto-save failed:", error);
         } finally {
@@ -113,7 +113,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         description: "Please wait for feedback.",
       });
 
-      const evaluation = await evaluateTutorialAnswers({ answers, idToken });
+      const evaluation = await evaluateComprehensionTest({ answers, idToken });
       
       const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
       setFeedback(newFeedback);
@@ -148,7 +148,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 border-b">
-          <DialogTitle className="text-2xl font-bold">Trading Tribe Source Guide Tutorial</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Comprehension Test</DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-1 text-muted-foreground">
                 <p>1. Fill in the answers below to the best of your ability.</p>
@@ -169,7 +169,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
                     </div>
                   ) : (
                     <>
-                      {tutorialQuestions.map((q, i) => (
+                      {comprehensionQuestions.map((q, i) => (
                           <div key={i} className="space-y-2">
                               <Label htmlFor={`q${i}`} className="text-md font-medium">{`${i + 1}. ${q}`}</Label>
                               <Textarea 

@@ -7,9 +7,9 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
-import { getTutorialAnswers } from '@/ai/flows/get-tutorial-answers';
-import { tutorialQuestions } from '@/lib/data';
-import { saveTutorialAnswers } from '@/ai/flows/save-tutorial-answers';
+import { getComprehensionTest } from '@/ai/flows/get-comprehension-test';
+import { comprehensionQuestions } from '@/lib/data';
+import { saveComprehensionTest } from '@/ai/flows/save-comprehension-test';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetTutorialAnswersOutput, TribeMember, MeetingReport } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -36,7 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTribeMembers } from '@/ai/flows/get-tribe-members';
 import { getMeetingReports } from '@/ai/flows/get-meeting-reports';
 import ReportModal from '@/components/modals/report-modal';
-import { evaluateTutorialAnswers } from '@/ai/flows/evaluate-tutorial-answers';
+import { evaluateComprehensionTest } from '@/ai/flows/evaluate-comprehension-test';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
@@ -158,7 +158,7 @@ function MyTribePageContent() {
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
-  const [tutorialData, setTutorialData] = useState<GetTutorialAnswersOutput>({ answers: {} });
+  const [comprehensionTestData, setComprehensionTestData] = useState<GetComprehensionTestOutput>({ answers: {} });
   const [applications, setApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
@@ -247,7 +247,7 @@ function MyTribePageContent() {
 
     } catch (error: any) {
         console.error("Error fetching page data: ", error);
-        toast({ title: 'Error', description: error.message || 'Could not load your tribe and tutorial data.', variant: 'destructive' });
+        toast({ title: 'Error', description: error.message || 'Could not load your tribe and comprehension test data.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -261,8 +261,8 @@ function MyTribePageContent() {
         setIsFetchingAnswers(true);
         try {
             const idToken = await currentUser.getIdToken();
-            const data = await getTutorialAnswers({ idToken });
-            setTutorialData(data);
+            const data = await getComprehensionTest({ idToken });
+            setComprehensionTestData(data);
         } catch (error) {
             console.error("Failed to fetch answers:", error);
             toast({ title: 'Error fetching answers', variant: 'destructive' });
@@ -273,7 +273,7 @@ function MyTribePageContent() {
         setTribes([]);
         setUserTribe(null);
         setTribeMembers([]);
-        setTutorialData({ answers: {} });
+        setComprehensionTestData({ answers: {} });
         setApplications([]);
         setTribeCreationApps([]);
         setUserProfile({});
@@ -332,7 +332,7 @@ function MyTribePageContent() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      const userAnswersData = await getTutorialAnswers({ idToken });
+      const userAnswersData = await getComprehensionTest({ idToken });
       const result = await joinTribe({ tribeId, idToken, answers: userAnswersData.answers });
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
@@ -383,7 +383,7 @@ function MyTribePageContent() {
   };
 
   const handleAnswerChange = (question: string, value: string) => {
-    setTutorialData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
+    setComprehensionTestData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
   };
 
   const handleSaveAnswers = async () => {
@@ -391,10 +391,10 @@ function MyTribePageContent() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await saveTutorialAnswers({ answers: tutorialData.answers, idToken });
-      toast({ title: 'Success', description: 'Your tutorial answers have been saved.' });
+      await saveComprehensionTest({ answers: comprehensionTestData.answers, idToken });
+      toast({ title: 'Success', description: 'Your comprehension test answers have been saved.' });
     } catch (error) {
-      console.error("Error saving tutorial answers: ", error);
+      console.error("Error saving comprehension test answers: ", error);
       toast({ title: 'Error', description: 'Failed to save your answers.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
@@ -541,9 +541,9 @@ function MyTribePageContent() {
     setIsEvaluating(true);
     try {
         const idToken = await user.getIdToken();
-        const evaluation = await evaluateTutorialAnswers({ answers: tutorialData.answers, idToken });
+        const evaluation = await evaluateComprehensionTest({ answers: comprehensionTestData.answers, idToken });
         
-        setTutorialData(prev => ({
+        setComprehensionTestData(prev => ({
             ...prev,
             latestFeedback: {
                 feedback: evaluation.feedback,
@@ -671,10 +671,10 @@ function MyTribePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                 {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                tutorialQuestions.map((q, i) => (
+                comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={comprehensionTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
@@ -683,15 +683,15 @@ function MyTribePageContent() {
                 <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
                 <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
                 </CardFooter>
-                {tutorialData.latestFeedback && (
+                {comprehensionTestData.latestFeedback && (
                 <CardContent>
                 <Alert>
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString()}</span>
                     </AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                    <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
                 </CardContent>
                 )}
@@ -845,7 +845,7 @@ function MyTribePageContent() {
                                 <div>
                                 <h4 className="font-semibold mb-2">Comprehension Answers</h4>
                                 <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
-                                    {tutorialQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
+                                    {comprehensionQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
                                     {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
                                 </div>
                                 </div>
@@ -873,7 +873,7 @@ function MyTribePageContent() {
                                 <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                 </div>
                                 <div>
-                                <h4 className="font-semibold mb-2">Tutorial Answers</h4>
+                                <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
                                 <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
                                     {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                 </div>
@@ -911,7 +911,7 @@ function MyTribePageContent() {
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
-                                      <h4 className="font-semibold mb-2">Tutorial Answers</h4>
+                                      <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
                                       <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
                                           {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                       </div>
@@ -936,7 +936,7 @@ function MyTribePageContent() {
     <Tabs defaultValue="next-step" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
             <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
-            <TabsTrigger value="profile-tutorial">My Profile &amp; Tutorial</TabsTrigger>
+            <TabsTrigger value="profile-comprehension-test">My Profile &amp; Comprehension Test</TabsTrigger>
         </TabsList>
         <TabsContent value="next-step" className="m-0 space-y-8">
              <ExplorerView 
@@ -956,7 +956,7 @@ function MyTribePageContent() {
               setSelectedTribe={setSelectedTribe}
             />
         </TabsContent>
-        <TabsContent value="profile-tutorial" className="m-0 space-y-8">
+        <TabsContent value="profile-comprehension-test" className="m-0 space-y-8">
             <Card>
                 <CardHeader>
                   <CardTitle>My Profile</CardTitle>
@@ -984,10 +984,10 @@ function MyTribePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                 {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
-                tutorialQuestions.map((q, i) => (
+                comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={tutorialData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={comprehensionTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
@@ -996,15 +996,15 @@ function MyTribePageContent() {
                 <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
                 <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
                 </CardFooter>
-                {tutorialData.latestFeedback && (
+                {comprehensionTestData.latestFeedback && (
                 <CardContent>
                 <Alert>
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{new Date(tutorialData.latestFeedback.createdAt).toLocaleString()}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString()}</span>
                     </AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap">{tutorialData.latestFeedback.feedback}</AlertDescription>
+                    <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
                 </CardContent>
                 )}

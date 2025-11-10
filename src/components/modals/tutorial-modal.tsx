@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,25 +6,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { evaluateTutorialAnswers } from "@/ai/flows/evaluate-comprehension-test-answers";
-import { saveTutorialAnswers } from "@/ai/flows/save-comprehension-test-answers";
-import { getTutorialAnswers } from "@/ai/flows/get-comprehension-test-answers";
-import { tutorialQuestions } from "@/lib/data";
+import { evaluateComprehensionTest } from "@/ai/flows/evaluate-comprehension-test";
+import { saveComprehensionTest } from "@/ai/flows/save-comprehension-test";
+import { getComprehensionTest } from "@/ai/flows/get-comprehension-test";
+import { comprehensionQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Sparkles, Loader2 } from "lucide-react";
 import { User } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 type ComprehensionTestModalProps = {
   isOpen: boolean;
@@ -37,25 +25,30 @@ type ComprehensionTestModalProps = {
 
 export default function ComprehensionTestModal({ isOpen, user, onClose, onComplete }: ComprehensionTestModalProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [agreeMeetings, setAgreeMeetings] = useState(false);
-  const [agreeMentor, setAgreeMentor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [feedback, setFeedback] = useState<{ message: string } | null>(null);
-  const [showReviewButton, setShowReviewButton] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ message: string; createdAt: string } | null>(null);
 
+  // Fetch initial answers when modal opens
   useEffect(() => {
     async function fetchAnswers() {
       if (isOpen && user) {
         setIsFetching(true);
-        setFeedback(null);
-        setShowReviewButton(false);
         try {
           const idToken = await user.getIdToken();
-          const existingAnswers = await getTutorialAnswers({ idToken });
-          setAnswers(existingAnswers);
+          const existingData = await getComprehensionTest({ idToken });
+          setAnswers(existingData.answers);
+          if (existingData.latestFeedback) {
+            setFeedback({
+              message: existingData.latestFeedback.feedback,
+              createdAt: existingData.latestFeedback.createdAt,
+            });
+          } else {
+            setFeedback(null);
+          }
         } catch (error) {
           console.error("Failed to fetch previous answers", error);
           toast({
@@ -67,57 +60,66 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
           setIsFetching(false);
         }
       } else if (isOpen && !user) {
-        // If the modal is open but there's no user, clear answers.
         setAnswers({});
+        setFeedback(null);
       }
     }
     fetchAnswers();
   }, [isOpen, user, toast]);
+  
+  // Auto-save answers with debounce
+  useEffect(() => {
+    if (isFetching || !isOpen || !user) {
+      return;
+    }
 
-  const allAgreed = agreeMeetings && agreeMentor;
+    const handler = setTimeout(async () => {
+      if (Object.keys(answers).length > 0) {
+        setIsSaving(true);
+        try {
+          const idToken = await user.getIdToken();
+          await saveComprehensionTest({ answers, idToken });
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }, 1500); // Save 1.5 seconds after user stops typing
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [answers, user, isFetching, isOpen]);
+
 
   const handleAnswerChange = (question: string, value: string) => {
     setAnswers(prev => ({ ...prev, [question]: value }));
   };
   
-  const handleSubmit = async () => {
-    if (!allAgreed) {
-      toast({
-        title: "Agreement Required",
-        description: "You must agree to both statements to proceed.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleReceiveFeedback = async () => {
     if (!user) {
         toast({ title: 'Error', description: 'You must be logged in.', variant: 'destructive'});
         return;
     }
     
     setIsLoading(true);
-    setFeedback(null);
-    setShowReviewButton(false);
-
+    
     try {
       const idToken = await user.getIdToken();
-      const saveResult = await saveTutorialAnswers({ answers, idToken });
-      if (!saveResult.success) {
-        throw new Error("Failed to save your answers. Please try again.");
-      }
-      
       toast({
         title: "The Chief Reviews Your Answers",
-        description: "The Chief provides some feedback for you to consider.",
+        description: "Please wait for feedback.",
       });
 
-      const evaluation = await evaluateTutorialAnswers({ answers });
+      const evaluation = await evaluateComprehensionTest({ answers, idToken });
       
-      setFeedback({ message: evaluation.feedback });
-      setShowReviewButton(true);
+      const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
+      setFeedback(newFeedback);
       
       toast({
         title: "You Receive Guidance",
-        description: "The Chief provides some feedback for you to consider.",
+        description: "The Chief provides new feedback for you to consider.",
       });
 
     } catch (error: any) {
@@ -133,125 +135,88 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleClose = () => {
-    setAgreeMeetings(false);
-    setAgreeMentor(false);
-    setFeedback(null);
-    setIsLoading(false);
-    setShowReviewButton(false);
-    setShowConfirmation(false);
     onClose();
   };
 
-  const handleProceedToGraduate = () => {
-    onComplete("complete-comprehension-test");
-    handleClose();
-  };
-
-  const handleNeedsMoreTime = () => {
-    toast({
-      title: "Self-Reflection",
-      description: "Please read over the source book again, reflect, and update your comprehension test until you feel ready.",
-      duration: 5000,
-    });
-    setShowConfirmation(false);
-    // We don't close the main modal, allowing the user to continue editing.
+  const handleProceed = () => {
+    onComplete("open-comprehension-test");
+    onClose();
   };
   
-  const handleReviewFeedback = () => {
-    setShowConfirmation(true);
-  }
-
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle className="text-2xl font-bold text-slate-800">Comprehension Test Study Guide</DialogTitle>
-            <DialogDescription>
-              You answer the questions below to complete the comprehension test. Your answers save as you go. You submit to The Chief for guidance when you feel ready.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 min-h-0">
-            <ScrollArea className="h-full">
-                <div className="p-6 space-y-6">
-                    {isFetching ? (
-                      <p>Loading your answers...</p>
-                    ) : (
-                      <>
-                        {tutorialQuestions.map((q, i) => (
-                            <div key={i} className="space-y-2">
-                                <Label htmlFor={`q${i}`} className="text-md font-medium text-slate-700">{`${i + 1}. ${q}`}</Label>
-                                <Textarea 
-                                  id={`q${i}`} 
-                                  rows={3}
-                                  value={answers[q] || ''}
-                                  onChange={(e) => handleAnswerChange(q, e.target.value)}
-                                  disabled={isLoading || showReviewButton}
-                                  placeholder="Your thoughtful answer..."
-                                />
-                            </div>
-                        ))}
-                        <div className="space-y-4 pt-4 border-t">
-                              <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-meetings" checked={agreeMeetings} onCheckedChange={(checked) => setAgreeMeetings(Boolean(checked))} disabled={isLoading || showReviewButton} />
-                                  <Label htmlFor="agree-meetings" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      I agree to participate fully in all meetings and to submit reports promptly. (Must Agree to Proceed)
-                                  </Label>
-                              </div>
-                              <div className="flex items-start space-x-3">
-                                  <Checkbox id="agree-mentor" checked={agreeMentor} onCheckedChange={(checked) => setAgreeMentor(Boolean(checked))} disabled={isLoading || showReviewButton} />
-                                  <Label htmlFor="agree-mentor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      I agree to act as a mentor for new chiefs. (Must agree to proceed)
-                                  </Label>
-                              </div>
-                          </div>
-                      </>
-                    )}
-                </div>
-            </ScrollArea>
-          </div>
-          {feedback && (
-            <div className="p-4">
-              <Alert>
-                <Terminal className="h-4 w-4" />
-                <AlertTitle>Guidance from The Chief</AlertTitle>
-                <AlertDescription>
-                  {feedback.message}
-                </AlertDescription>
-              </Alert>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 border-b">
+          <DialogTitle className="text-2xl font-bold">Comprehension Test</DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-1 text-muted-foreground">
+                <p>1. Fill in the answers below to the best of your ability.</p>
+                <p>2. Click on [Receive Feedback from the Chief].</p>
+                <p>3. Revise your answers. We save and update your answers as you type.</p>
+                <p>4. Repeat until you feel ready to proceed; click the [I Feel Ready to Proceed] button.</p>
+                <p>5. To take a break, press the [Return Later] button</p>
             </div>
-          )}
-          <DialogFooter className="p-4 border-t bg-slate-50 rounded-b-lg">
-            {!showReviewButton && (
-              <>
-                <Button variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
-                <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={!allAgreed || isLoading || isFetching}>
-                  {isLoading ? "Evaluating..." : "Submit to The Chief"}
-                </Button>
-              </>
-            )}
-            {showReviewButton && (
-                <Button className="bg-primary hover:bg-primary/90" onClick={handleReviewFeedback}>
-                    These answers represent my knowledge
-                </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>These answers represent my knowledge</AlertDialogTitle>
-            <AlertDialogDescription>
-              Do you now feel ready for a tribe?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleNeedsMoreTime}>No</AlertDialogCancel>
-            <AlertDialogAction onClick={handleProceedToGraduate}>Yes</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+              <div className="p-6 space-y-6">
+                  {isFetching ? (
+                    <div className="flex items-center justify-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <span className="ml-4">Loading your answers...</span>
+                    </div>
+                  ) : (
+                    <>
+                      {comprehensionQuestions.map((q, i) => (
+                          <div key={i} className="space-y-2">
+                              <Label htmlFor={`q${i}`} className="text-md font-medium">{`${i + 1}. ${q}`}</Label>
+                              <Textarea 
+                                id={`q${i}`} 
+                                rows={3}
+                                value={answers[q] || ''}
+                                onChange={(e) => handleAnswerChange(q, e.target.value)}
+                                disabled={isLoading}
+                                placeholder="Answer..."
+                              />
+                          </div>
+                      ))}
+                    </>
+                  )}
+              </div>
+          </ScrollArea>
+        </div>
+        {feedback && (
+          <div className="p-6 border-t">
+            <Alert>
+              <Sparkles className="h-4 w-4" />
+              <AlertTitle className="flex justify-between">
+                <span>Guidance from The Chief</span>
+                <span className="text-sm font-normal text-muted-foreground">{new Date(feedback.createdAt).toLocaleString()}</span>
+              </AlertTitle>
+              <AlertDescription className="whitespace-pre-wrap">
+                {feedback.message}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+        <DialogFooter className="p-4 border-t bg-muted/50 justify-between items-center">
+          <div>
+            {isSaving && <span className="text-sm text-muted-foreground flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</span>}
+          </div>
+          <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+                Return Later
+              </Button>
+              <Button variant="secondary" onClick={handleReceiveFeedback} disabled={isLoading || isFetching}>
+                {isLoading ? "Evaluating..." : "Receive Feedback from The Chief"}
+              </Button>
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleProceed} disabled={isLoading || isFetching}>
+                I Feel Ready to Proceed
+              </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
