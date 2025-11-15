@@ -58,8 +58,8 @@ const overviewMapContainerStyle = {
 }
 
 const defaultCenter = {
-    lat: 39.8283,
-    lng: -98.5795,
+    lat: 20,
+    lng: 0,
 };
 
 function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
@@ -86,7 +86,7 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     <GoogleMap
                     mapContainerStyle={{ height: '100%', width: '100%' }}
                     center={defaultCenter}
-                    zoom={4}
+                    zoom={2}
                     options={{ disableDefaultUI: true, zoomControl: true }}
                     onClick={() => setSelectedTribe(null)}
                     >
@@ -134,7 +134,7 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                 <LocationAutocomplete id="tribe-location-chief" onPlaceSelected={handlePlaceSelected} placeholder="e.g., 123 Main St, Anytown, USA" disabled={!isLoaded} initialValue={newTribeLocation} />
                 <p className="text-sm text-muted-foreground pt-1">Enter your house number, street, city, and state. Click your address from the dropdown when you see it.</p>
                 <div className="mt-2">
-                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 4} options={{ disableDefaultUI: true, zoomControl: true }} >
+                    <GoogleMap mapContainerStyle={mapContainerStyle} center={newTribeCoords || defaultCenter} zoom={newTribeCoords ? 12 : 2} options={{ disableDefaultUI: true, zoomControl: true }} >
                         {newTribeCoords && <MarkerF position={newTribeCoords} />}
                     </GoogleMap>
                 </div>
