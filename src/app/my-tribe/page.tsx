@@ -59,7 +59,7 @@ const overviewMapContainerStyle = {
 
 const defaultCenter = {
     lat: 20,
-    lng: 0,
+    lng: -30,
 };
 
 function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
