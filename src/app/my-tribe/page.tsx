@@ -86,7 +86,7 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     <GoogleMap
                     mapContainerStyle={{ height: '100%', width: '100%' }}
                     center={defaultCenter}
-                    zoom={2}
+                    zoom={1}
                     options={{ disableDefaultUI: true, zoomControl: true }}
                     onClick={() => setSelectedTribe(null)}
                     >
