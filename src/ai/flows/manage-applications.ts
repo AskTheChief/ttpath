@@ -20,7 +20,7 @@ export async function manageApplication(input: ManageApplicationInput): Promise<
   return manageApplicationFlow(input);
 }
 
-async function getApplications(userId: string, appType: 'join_tribe' | 'new_tribe' | 'new_mentor') {
+async function getApplications(userId: string, appType: 'join_tribe' | 'new_tribe' | 'new_mentor' | 'my_pending', idToken: string) {
     try {
         let applicationsSnapshot;
 
@@ -34,6 +34,11 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 .where('tribeId', 'in', tribeIds)
                 .where('status', '==', 'pending')
                 .where('type', '==', 'join_tribe')
+                .get();
+        } else if (appType === 'my_pending') {
+            applicationsSnapshot = await db.collection('tribe_applications')
+                .where('applicantId', '==', userId)
+                .where('status', '==', 'pending')
                 .get();
         } else { // new_tribe or new_mentor
             // For now, any mentor can see all new tribe and mentor applications.
@@ -109,19 +114,39 @@ const manageApplicationFlow = ai.defineFlow(
 
     if (action === 'get') {
         try {
-            const applications = await getApplications(user.uid, type);
+            const applications = await getApplications(user.uid, type, input.idToken);
             return { success: true, applications: applications };
         } catch (error: any) {
             return { success: false, message: error.message };
         }
     }
 
-    if (!applicationId || !applicantId) {
-        return { success: false, message: 'Missing required fields for this action.' };
+    if (!applicationId) {
+        return { success: false, message: 'Missing application ID.' };
     }
 
     const applicationRef = db.collection('tribe_applications').doc(applicationId);
+    const appDoc = await applicationRef.get();
+    if (!appDoc.exists) {
+      return { success: false, message: 'Application not found.' };
+    }
+    const appData = appDoc.data()!;
+
+
+    if (action === 'withdraw') {
+        if (appData.applicantId !== user.uid) {
+            return { success: false, message: 'You can only withdraw your own application.' };
+        }
+        await applicationRef.delete();
+        return { success: true, message: 'Application withdrawn.' };
+    }
+
+
+    if (!applicantId) {
+        return { success: false, message: 'Missing applicantId for this action.' };
+    }
     const applicantUserRef = db.collection('users').doc(applicantId);
+
 
     if (type === 'join_tribe') {
         if (!tribeId) return { success: false, message: 'Tribe ID is required for joining a tribe.' };
@@ -141,10 +166,6 @@ const manageApplicationFlow = ai.defineFlow(
         }
 
     } else if (type === 'new_tribe') {
-        const appDoc = await applicationRef.get();
-        if (!appDoc.exists) return { success: false, message: 'Application not found.' };
-        const appData = appDoc.data()!;
-
         if (action === 'approve') {
             const newTribeRef = db.collection('tribes').doc();
             await db.runTransaction(async (transaction) => {

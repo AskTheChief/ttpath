@@ -120,8 +120,8 @@ export const ApplicationSchema = z.object({
 export type Application = z.infer<typeof ApplicationSchema>;
 
 export const ManageApplicationInputSchema = z.object({
-  action: z.enum(['get', 'approve', 'deny']),
-  type: z.enum(['join_tribe', 'new_tribe', 'new_mentor']),
+  action: z.enum(['get', 'approve', 'deny', 'withdraw']),
+  type: z.enum(['join_tribe', 'new_tribe', 'new_mentor', 'my_pending']),
   idToken: z.string(),
   applicationId: z.string().optional(),
   tribeId: z.string().optional(),

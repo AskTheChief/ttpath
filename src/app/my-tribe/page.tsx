@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -62,20 +62,33 @@ const defaultCenter = {
     lng: -30,
 };
 
-function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe }) {
+function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication }) {
+  const tribeAppliedTo = tribes.find(t => t.id === pendingApplication?.tribeId);
+
   return (
     <>
-        <Alert>
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Instructions</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc pl-5 space-y-1">
-              <li><b>To join a tribe:</b> Use the map below to find a tribe in your area. Click on a marker to see details and apply to join. This will send an application to the Tribe Chief for their review.</li>
-              <li><b>To start a tribe:</b> If there are no tribes nearby or you wish to lead your own, fill out the "Start Your Own Tribe" form. A Mentor will review your application.</li>
-              <li>Completing either of these steps will unlock the next stage of your journey.</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
+        {pendingApplication ? (
+            <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
+                <Info className="h-4 w-4 !text-blue-600" />
+                <AlertTitle className="text-blue-800 dark:text-blue-300">Application Pending</AlertTitle>
+                <AlertDescription className="text-blue-700 dark:text-blue-400">
+                    Your application to join "{tribeAppliedTo?.name || 'a tribe'}" is awaiting review by the chief.
+                    <Button onClick={() => handleWithdrawApplication(pendingApplication.id)} variant="destructive" size="sm" className="ml-4">Withdraw Application</Button>
+                </AlertDescription>
+            </Alert>
+        ) : (
+            <Alert>
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Instructions</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><b>To join a tribe:</b> Use the map below to find a tribe in your area. Click on a marker to see details and apply to join. This will send an application to the Tribe Chief for their review.</li>
+                  <li><b>To start a tribe:</b> If there are no tribes nearby or you wish to lead your own, fill out the "Start Your Own Tribe" form. A Mentor will review your application.</li>
+                  <li>Completing either of these steps will unlock the next stage of your journey.</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+        )}
         <Card>
             <CardHeader>
                 <CardTitle>Find an Existing Tribe</CardTitle>
@@ -89,6 +102,7 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     handleJoinTribe={handleJoinTribe}
                     userTribe={userTribe}
                     isLoading={isLoading}
+                    pendingApplication={pendingApplication}
                 />
                 </div>
             </CardContent>
@@ -109,14 +123,14 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     </GoogleMap>
                 </div>
                 </div>
-                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
+                <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading || !!pendingApplication}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
             </CardContent>
         </Card>
     </>
   );
 }
 
-function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe, userTribe, isLoading }) {
+function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe, userTribe, isLoading, pendingApplication }) {
     return (
         <div className="relative">
             <div style={overviewMapContainerStyle}>
@@ -151,8 +165,8 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                             <p className="text-muted-foreground">{selectedTribe.location}</p>
                             <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
                             {handleJoinTribe && (
-                                <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
-                                    Apply to Join
+                                <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading || !!pendingApplication}>
+                                     {pendingApplication ? 'Application Pending' : 'Apply to Join'}
                                 </Button>
                             )}
                         </CardContent>
@@ -166,7 +180,6 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
 function MyTribePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get('view') || (userLevel < 4 ? 'next-step' : 'my-profile');
   
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(1);
@@ -178,8 +191,9 @@ function MyTribePageContent() {
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
   const [comprehensionTestData, setComprehensionTestData] = useState<GetComprehensionTestOutput>({ answers: {} });
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [joinApplications, setJoinApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
+  const [pendingApplication, setPendingApplication] = useState<Application | null>(null);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
@@ -195,6 +209,9 @@ function MyTribePageContent() {
   const [selectedReport, setSelectedReport] = useState<MeetingReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
+  const activeTabFromUrl = searchParams.get('view');
+  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'next-step' : 'my-profile');
+
   const { toast } = useToast();
   
   const { isLoaded, loadError } = useLoadScript({
@@ -206,7 +223,7 @@ function MyTribePageContent() {
   const isMentor = userLevel >= 6;
 
   const handleTabChange = (value: string) => {
-    router.push(`/my-tribe?view=${value}`);
+    router.push(`/my-tribe?view=${value}`, { scroll: false });
   };
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
@@ -220,14 +237,22 @@ function MyTribePageContent() {
       }).catch(err => console.log("Could not update last login, probably a new user."));
 
 
-      const [progress, allTribes, profile] = await Promise.all([
+      const [progress, allTribes, profile, myPendingAppsResult] = await Promise.all([
         getUserProgress({ idToken }),
         getTribes({}),
         getUserProfile({ idToken }),
+        manageApplication({ action: 'get', type: 'my_pending', idToken }),
       ]);
 
       setUserLevel(progress.currentUserLevel);
       setUserProfile(profile);
+      
+      if (myPendingAppsResult.success && myPendingAppsResult.applications && myPendingAppsResult.applications.length > 0) {
+        setPendingApplication(myPendingAppsResult.applications[0]);
+      } else {
+        setPendingApplication(null);
+      }
+
 
       const tribesWithMembers = allTribes.map(t => ({
         ...t,
@@ -253,7 +278,7 @@ function MyTribePageContent() {
                   ...app,
                   createdAt: new Date(app.createdAt),
               })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-              setApplications(sortedApps);
+              setJoinApplications(sortedApps);
           }
       }
       if (currentUserTribe) { // Member or Chief of a tribe
@@ -297,10 +322,11 @@ function MyTribePageContent() {
         setUserTribe(null);
         setTribeMembers([]);
         setComprehensionTestData({ answers: {} });
-        setApplications([]);
+        setJoinApplications([]);
         setTribeCreationApps([]);
         setUserProfile({});
         setUserLevel(1);
+        setPendingApplication(null);
         setIsLoading(false);
       }
     });
@@ -371,6 +397,31 @@ function MyTribePageContent() {
       setIsLoading(false);
     }
   };
+
+  const handleWithdrawApplication = async (applicationId: string) => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        const result = await manageApplication({
+            action: 'withdraw',
+            applicationId,
+            type: 'join_tribe', // Assuming only join_tribe can be withdrawn by user for now
+            idToken
+        });
+        if (result.success) {
+            toast({ title: 'Application Withdrawn', description: 'Your application has been successfully withdrawn.' });
+            fetchTribesAndUserData(user); // Refresh data
+        } else {
+            throw new Error(result.message || 'Failed to withdraw application.');
+        }
+    } catch (error: any) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   const handleLeaveTribe = async (tribeId: string) => {
     if (!user) return;
@@ -750,6 +801,7 @@ function MyTribePageContent() {
                             setSelectedTribe={setSelectedTribe}
                             userTribe={userTribe}
                             isLoading={isLoading}
+                            pendingApplication={pendingApplication}
                         />
                     </CardContent>
                 </Card>
@@ -897,12 +949,12 @@ function MyTribePageContent() {
                     </Accordion>
                 </CardContent>
                 </Card>
-                {applications && applications.length > 0 && (
+                {joinApplications && joinApplications.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle>Pending Applications</CardTitle><CardDescription>Review and respond to applicants for your tribe.</CardDescription></CardHeader>
                     <CardContent>
                     <Accordion type="single" collapsible className="w-full">
-                        {applications.map(app => (
+                        {joinApplications.map(app => (
                         <AccordionItem key={app.id} value={app.id}>
                             <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
                             <AccordionContent>
@@ -994,6 +1046,8 @@ function MyTribePageContent() {
               handleJoinTribe={handleJoinTribe}
               setNewTribeName={setNewTribeName}
               setSelectedTribe={setSelectedTribe}
+              pendingApplication={pendingApplication}
+              handleWithdrawApplication={handleWithdrawApplication}
             />
         </TabsContent>
         <TabsContent value="profile-comprehension-test" className="m-0 space-y-8">
@@ -1096,5 +1150,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
