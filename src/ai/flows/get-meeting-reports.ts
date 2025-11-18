@@ -39,15 +39,16 @@ const getMeetingReportsFlow = ai.defineFlow(
 
       const tribeRef = db.collection('tribes').doc(tribeId);
       const tribeDoc = await tribeRef.get();
+      if (!tribeDoc.exists) {
+          throw new Error("Tribe not found.");
+      }
+      
+      const tribeData = tribeDoc.data()!;
 
       // Security Check: User must be a member of the tribe OR a mentor (level 6+)
       if (userLevel < 6) {
-        if (!tribeDoc.exists || !(tribeDoc.data()?.members || []).includes(userId)) {
+        if (!(tribeData.members || []).includes(userId)) {
             throw new Error("You are not a member of this tribe and cannot view its reports.");
-        }
-      } else {
-        if (!tribeDoc.exists) {
-            throw new Error("Tribe not found.");
         }
       }
 
@@ -62,20 +63,14 @@ const getMeetingReportsFlow = ai.defineFlow(
       const userIds = [...new Set(reportsSnapshot.docs.map(doc => doc.data().userId))];
       const usersMap = new Map<string, string>();
       
-      // Fetch users one by one to avoid query limits
-      for (const uid of userIds) {
-        try {
-          const userDoc = await db.collection('users').doc(uid).get();
-          if (userDoc.exists) {
-            const data = userDoc.data();
-            usersMap.set(uid, `${data.firstName || ''} ${data.lastName || ''}`.trim());
-          }
-        } catch (userError) {
-          console.error(`Failed to fetch user document for UID: ${uid}`, userError);
-          // Continue even if one user lookup fails
-        }
+      if (userIds.length > 0) {
+        const usersSnapshot = await db.collection('users').where('__name__', 'in', userIds).get();
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            usersMap.set(doc.id, `${data.firstName || ''} ${data.lastName || ''}`.trim());
+        });
       }
-
+      
       const reports = reportsSnapshot.docs.map(doc => {
         const data = doc.data();
         return {

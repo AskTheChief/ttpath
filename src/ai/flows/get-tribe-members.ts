@@ -39,6 +39,11 @@ const getTribeMembersFlow = ai.defineFlow(
     const currentUserId = decodedToken.uid;
 
     try {
+      // Fetch the user's profile to check their level
+      const userRef = db.collection('users').doc(currentUserId);
+      const userDoc = await userRef.get();
+      const userLevel = userDoc.exists ? userDoc.data()?.currentUserLevel || 1 : 1;
+
       const tribeRef = db.collection('tribes').doc(tribeId);
       const tribeDoc = await tribeRef.get();
 
@@ -49,9 +54,9 @@ const getTribeMembersFlow = ai.defineFlow(
       const tribeData = tribeDoc.data();
       const memberIds = tribeData?.members || [];
 
-      // Security check: Ensure the requesting user is a member of the tribe
-      if (!memberIds.includes(currentUserId)) {
-          throw new Error('You are not a member of this tribe.');
+      // Security check: User must be a member of the tribe OR a mentor (level 6+)
+      if (userLevel < 6 && !memberIds.includes(currentUserId)) {
+          throw new Error('You do not have permission to view these members.');
       }
 
       if (memberIds.length === 0) {
@@ -81,9 +86,9 @@ const getTribeMembersFlow = ai.defineFlow(
       }));
 
       return members;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching tribe members:', error);
-      throw new Error('An unexpected error occurred while fetching tribe members.');
+      throw new Error(error.message || 'An unexpected error occurred while fetching tribe members.');
     }
   }
 );
