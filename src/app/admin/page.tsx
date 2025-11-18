@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -69,7 +69,7 @@ export default function AdminPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileQuestion className="h-6 w-6" />
-                Tutorial Answers
+                Comprehension Test Answers
               </CardTitle>
               <CardDescription>
                 Review all user submissions for the comprehension test.
@@ -93,6 +93,22 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>View Metrics</Button>
+            </CardContent>
+          </Card>
+        </Link>
+         <Link href="/admin/tribes-map">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Map className="h-6 w-6" />
+                Tribes Map
+              </CardTitle>
+              <CardDescription>
+                (Devs Only) View detailed information for all tribes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>View Map</Button>
             </CardContent>
           </Card>
         </Link>
