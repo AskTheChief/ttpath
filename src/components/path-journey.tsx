@@ -695,7 +695,7 @@ export default function PathJourney() {
             'open-full-book': 'Trading Tribe Methods',
             'open-full-book-part-2': 'Trading Tribe Philosophy',
             'faq': 'FAQ Pages',
-            'charts': 'Some Stock and Futures Charts',
+            'charts': 'Stock and Futures Charts',
             'reach-out': 'TT Reach-Out Pages'
         };
         setLinkModalData({
@@ -991,6 +991,7 @@ export default function PathJourney() {
         onTestCreateTribe={handleTestCreateTribe}
         onSendTestEmail={handleSendTestEmail}
         onSendTestDiploma={handleSendTestDiploma}
+        currentUser={currentUser}
       />
       <LinkModal
         isOpen={modalState.link}

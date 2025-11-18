@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
 import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
+import { User } from 'firebase/auth';
 
 type MenuSheetProps = {
   isOpen: boolean;
@@ -16,7 +17,10 @@ type MenuSheetProps = {
   onTestCreateTribe: () => void;
   onSendTestEmail: () => void;
   onSendTestDiploma: () => void;
+  currentUser: User | null;
 };
+
+const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
 const menuItems = [
     { id: 'my-tribe', icon: Swords, label: 'My Account', href: '/my-tribe' },
@@ -28,7 +32,9 @@ const newLinks = [
     { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages' },
 ]
 
-export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma }: MenuSheetProps) {
+export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: MenuSheetProps) {
+
+  const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
 
   const handleItemClick = (item: (typeof menuItems)[0]) => {
     if (item.href) {
@@ -147,7 +153,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
             </>
           )}
 
-          {isGuest && (
+          {isDeveloper && (
             <DevDropdown 
               onTestCreateTribe={onTestCreateTribe} 
               onSendTestEmail={onSendTestEmail}
