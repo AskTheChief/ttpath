@@ -24,7 +24,7 @@ const menuItems = [
 
 const newLinks = [
     { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages' },
-    { id: 'charts', icon: BarChart2, label: 'Some Stock and Futures Charts' },
+    { id: 'charts', icon: BarChart2, label: 'Stock and Futures Charts' },
     { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages' },
 ]
 
