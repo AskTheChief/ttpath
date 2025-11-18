@@ -681,16 +681,22 @@ export default function PathJourney() {
 
   const openModal = (modalName: string) => {
     setModalState(s => ({ ...s, menu: false }));
-    if (modalName === 'open-pamphlet' || modalName === 'open-full-book' || modalName === 'open-full-book-part-2') {
+    if (modalName === 'open-pamphlet' || modalName === 'open-full-book' || modalName === 'open-full-book-part-2' || modalName === 'faq' || modalName === 'charts' || modalName === 'reach-out') {
         const urls: { [key: string]: string } = {
             'open-pamphlet': 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
             'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
-            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
+            'faq': 'https://www.seykota.com/tt/FAQ_Index/',
+            'charts': 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
+            'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
         };
         const labels: { [key: string]: string } = {
             'open-pamphlet': 'Quick-Start Guide',
             'open-full-book': 'Trading Tribe Methods',
-            'open-full-book-part-2': 'Trading Tribe Theory'
+            'open-full-book-part-2': 'Trading Tribe Philosophy',
+            'faq': 'FAQ Pages',
+            'charts': 'Some Stock and Futures Charts',
+            'reach-out': 'TT Reach-Out Pages'
         };
         setLinkModalData({
             title: labels[modalName],
@@ -828,7 +834,7 @@ export default function PathJourney() {
           <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
             <Menu className="h-8 w-8 text-muted-foreground" />
           </button>
-          <span className="node-label">Menu</span>
+          <span className="node-label">Resources</span>
         </div>
 
         <div className="login-icon-container">

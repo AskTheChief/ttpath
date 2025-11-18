@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, BookOpen, GraduationCap } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
 
 type MenuSheetProps = {
   isOpen: boolean;
@@ -32,12 +32,15 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     }
   }
 
-  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'theory' | 'comprehension-test') => {
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test' | 'faq' | 'charts' | 'reach-out') => {
     onClose();
     const urls = {
         pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
         methods: 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
-        theory: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+        philosophy: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
+        faq: 'https://www.seykota.com/tt/FAQ_Index/',
+        charts: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
+        'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
     };
 
     if (doc === 'comprehension-test') {
@@ -50,8 +53,6 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isLink = !!item.href;
     
-    // The library ('pamphlet') is visible to everyone.
-    // Other items are only visible to guests (logged-in users).
     if (item.id !== 'pamphlet' && !isGuest) {
       return null;
     }
@@ -82,7 +83,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="w-80 p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle className="text-2xl">Menu</SheetTitle>
+          <SheetTitle className="text-2xl">Resources</SheetTitle>
         </SheetHeader>
         <div className="p-4">
           {menuItems.map(renderMenuItem)}
@@ -107,13 +108,26 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Methods</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('theory')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('philosophy')}>
                   <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Trading Tribe Theory</span>
+                  <span>Trading Tribe Philosophy</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
                   <GraduationCap className="mr-2 h-4 w-4" />
                   <span>Comprehension Test</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleLibraryClick('faq')}>
+                  <MessageCircleQuestion className="mr-2 h-4 w-4" />
+                  <span>FAQ Pages</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handleLibraryClick('charts')}>
+                  <BarChart2 className="mr-2 h-4 w-4" />
+                  <span>Some Stock and Futures Charts</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handleLibraryClick('reach-out')}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  <span>TT Reach-Out Pages</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
