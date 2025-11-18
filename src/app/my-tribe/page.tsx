@@ -40,7 +40,7 @@ import { evaluateComprehensionTest } from '@/ai/flows/evaluate-comprehension-tes
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const libraries: Libraries = ['places'];
@@ -82,44 +82,14 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
             </CardHeader>
             <CardContent>
                 <div className="relative">
-                <div style={overviewMapContainerStyle}>
-                    <GoogleMap
-                    mapContainerStyle={{ height: '100%', width: '100%' }}
-                    center={defaultCenter}
-                    zoom={1}
-                    options={{ disableDefaultUI: true, zoomControl: true }}
-                    onClick={() => setSelectedTribe(null)}
-                    >
-                    <MarkerClustererF>
-                        {(clusterer) =>
-                        tribes.filter(t => t.lat && t.lng).map(tribe => (
-                        <MarkerF
-                            key={tribe.id}
-                            position={{ lat: tribe.lat!, lng: tribe.lng! }}
-                            clusterer={clusterer}
-                            onClick={() => setSelectedTribe(tribe)}
-                        />
-                        ))
-                        }
-                    </MarkerClustererF>
-                    </GoogleMap>
-                </div>
-                {selectedTribe && (
-                    <div className="absolute top-4 right-4 w-full max-w-sm z-10">
-                    <Card>
-                        <CardHeader>
-                        <CardTitle>{selectedTribe.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                        <p className="text-muted-foreground">{selectedTribe.location}</p>
-                        <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
-                        <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
-                            Apply to Join
-                        </Button>
-                        </CardContent>
-                    </Card>
-                    </div>
-                )}
+                <AllTribesMap
+                    tribes={tribes}
+                    selectedTribe={selectedTribe}
+                    setSelectedTribe={setSelectedTribe}
+                    handleJoinTribe={handleJoinTribe}
+                    userTribe={userTribe}
+                    isLoading={isLoading}
+                />
                 </div>
             </CardContent>
         </Card>
@@ -144,6 +114,53 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
         </Card>
     </>
   );
+}
+
+function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe, userTribe, isLoading }) {
+    return (
+        <div className="relative">
+            <div style={overviewMapContainerStyle}>
+                <GoogleMap
+                    mapContainerStyle={{ height: '100%', width: '100%' }}
+                    center={defaultCenter}
+                    zoom={1}
+                    options={{ disableDefaultUI: true, zoomControl: true }}
+                    onClick={() => setSelectedTribe(null)}
+                >
+                    <MarkerClustererF>
+                        {(clusterer) =>
+                            tribes.filter(t => t.lat && t.lng).map(tribe => (
+                                <MarkerF
+                                    key={tribe.id}
+                                    position={{ lat: tribe.lat!, lng: tribe.lng! }}
+                                    clusterer={clusterer}
+                                    onClick={() => setSelectedTribe(tribe)}
+                                />
+                            ))
+                        }
+                    </MarkerClustererF>
+                </GoogleMap>
+            </div>
+            {selectedTribe && (
+                <div className="absolute top-4 right-4 w-full max-w-sm z-10">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{selectedTribe.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">{selectedTribe.location}</p>
+                            <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                            {handleJoinTribe && (
+                                <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading}>
+                                    Apply to Join
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+        </div>
+    );
 }
 
 function MyTribePageContent() {
@@ -714,6 +731,23 @@ function MyTribePageContent() {
                     <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="outline" className="w-full">Leave Tribe</Button>
                 </CardFooter>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>All Existing Tribes</CardTitle>
+                        <CardDescription>A global map of all active tribes.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <AllTribesMap
+                            tribes={tribes}
+                            selectedTribe={selectedTribe}
+                            setSelectedTribe={setSelectedTribe}
+                            userTribe={userTribe}
+                            isLoading={isLoading}
+                        />
+                    </CardContent>
+                </Card>
+
                 <Card>
                 <CardHeader><CardTitle>Upcoming Meetings</CardTitle></CardHeader>
                 <CardContent>
