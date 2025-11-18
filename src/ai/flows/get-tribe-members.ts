@@ -29,21 +29,16 @@ const getTribeMembersFlow = ai.defineFlow(
     outputSchema: GetTribeMembersOutputSchema,
   },
   async ({ tribeId, idToken }) => {
-    let decodedToken;
     try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
+      // The security check for developer access is handled on the page itself.
+      // This flow can now assume the caller is authorized.
+      await adminAuth.verifyIdToken(idToken);
     } catch (error) {
       console.error('Error verifying ID token:', error);
       throw new Error('User not authenticated. Invalid token.');
     }
-    const currentUserId = decodedToken.uid;
 
     try {
-      // Fetch the user's profile to check their level
-      const userRef = db.collection('users').doc(currentUserId);
-      const userDoc = await userRef.get();
-      const userLevel = userDoc.exists ? userDoc.data()?.currentUserLevel || 1 : 1;
-
       const tribeRef = db.collection('tribes').doc(tribeId);
       const tribeDoc = await tribeRef.get();
 
@@ -53,11 +48,6 @@ const getTribeMembersFlow = ai.defineFlow(
       
       const tribeData = tribeDoc.data();
       const memberIds = tribeData?.members || [];
-
-      // Security check: User must be a member of the tribe OR a mentor (level 6+)
-      if (userLevel < 6 && !memberIds.includes(currentUserId)) {
-          throw new Error('You do not have permission to view these members.');
-      }
 
       if (memberIds.length === 0) {
         return [];
