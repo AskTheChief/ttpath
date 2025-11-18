@@ -22,6 +22,12 @@ const menuItems = [
     { id: 'my-tribe', icon: Swords, label: 'My Account', href: '/my-tribe' },
 ];
 
+const newLinks = [
+    { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages' },
+    { id: 'charts', icon: BarChart2, label: 'Some Stock and Futures Charts' },
+    { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages' },
+]
+
 export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma }: MenuSheetProps) {
 
   const handleItemClick = (item: (typeof menuItems)[0]) => {
@@ -32,15 +38,22 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     }
   }
 
-  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test' | 'faq' | 'charts' | 'reach-out') => {
+  const handleLinkClick = (docId: 'faq' | 'charts' | 'reach-out') => {
+    onClose();
+    const urls = {
+        faq: 'https://www.seykota.com/tt/FAQ_Index/',
+        charts: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
+        'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
+    };
+    window.open(urls[docId], '_blank');
+  };
+
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test') => {
     onClose();
     const urls = {
         pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
         methods: 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
         philosophy: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
-        faq: 'https://www.seykota.com/tt/FAQ_Index/',
-        charts: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
-        'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
     };
 
     if (doc === 'comprehension-test') {
@@ -89,48 +102,49 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
           {menuItems.map(renderMenuItem)}
 
           {isGuest && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="w-full justify-start text-xl p-4 h-auto"
-                >
-                    <Database className="mr-4 w-10 h-10" />
-                    Library
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                 <DropdownMenuItem onClick={() => handleLibraryClick('pamphlet')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Quick-Start Guide</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('methods')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Trading Tribe Methods</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('philosophy')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Trading Tribe Philosophy</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  <span>Comprehension Test</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleLibraryClick('faq')}>
-                  <MessageCircleQuestion className="mr-2 h-4 w-4" />
-                  <span>FAQ Pages</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => handleLibraryClick('charts')}>
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  <span>Some Stock and Futures Charts</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => handleLibraryClick('reach-out')}>
-                  <Link2 className="mr-2 h-4 w-4" />
-                  <span>TT Reach-Out Pages</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                      variant="ghost"
+                      className="w-full justify-start text-xl p-4 h-auto"
+                  >
+                      <Database className="mr-4 w-10 h-10" />
+                      Library
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                   <DropdownMenuItem onClick={() => handleLibraryClick('pamphlet')}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Quick-Start Guide</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLibraryClick('methods')}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Trading Tribe Methods</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLibraryClick('philosophy')}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Trading Tribe Philosophy</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
+                    <GraduationCap className="mr-2 h-4 w-4" />
+                    <span>Comprehension Test</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {newLinks.map(link => (
+                  <Button
+                      key={link.id}
+                      variant="ghost"
+                      className="w-full justify-start text-xl p-4 h-auto"
+                      onClick={() => handleLinkClick(link.id as any)}
+                  >
+                      <link.icon className="mr-4 w-10 h-10" />
+                      {link.label}
+                  </Button>
+              ))}
+            </>
           )}
 
           {isGuest && (
