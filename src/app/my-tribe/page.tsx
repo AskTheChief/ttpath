@@ -40,7 +40,7 @@ import { evaluateComprehensionTest } from '@/ai/flows/evaluate-comprehension-tes
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
-import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const libraries: Libraries = ['places'];
@@ -165,6 +165,8 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
 
 function MyTribePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('view') || (userLevel < 4 ? 'next-step' : 'my-profile');
   
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(1);
@@ -202,6 +204,10 @@ function MyTribePageContent() {
 
   const isChief = userTribe && userTribe.chief === user?.uid;
   const isMentor = userLevel >= 6;
+
+  const handleTabChange = (value: string) => {
+    router.push(`/my-tribe?view=${value}`);
+  };
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
@@ -651,7 +657,7 @@ function MyTribePageContent() {
 };
 
   const renderMemberChiefView = () => (
-    <Tabs defaultValue="my-tribe" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
@@ -877,7 +883,7 @@ function MyTribePageContent() {
                             </div>
                             {member.answers && (
                                 <div>
-                                <h4 className="font-semibold mb-2">Comprehension Answers</h4>
+                                <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
                                 <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
                                     {comprehensionQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
                                     {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
@@ -967,7 +973,7 @@ function MyTribePageContent() {
   );
 
   const renderExplorerView = () => (
-    <Tabs defaultValue="next-step" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
             <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="profile-comprehension-test">My Profile &amp; Comprehension Test</TabsTrigger>
@@ -1090,3 +1096,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
