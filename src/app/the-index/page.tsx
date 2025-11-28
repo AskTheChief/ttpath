@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -73,14 +73,14 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                             <CardTitle className="text-lg">Contributor Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <blockquote className="text-muted-foreground whitespace-pre-wrap">
+                            <blockquote className="text-muted-foreground">
                                 <Highlight text={faq.contributor} highlight={searchTerm} />
                             </blockquote>
                         </CardContent>
                     </Card>
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
-                             <div className="text-sm text-muted-foreground flex justify-between items-center">
+                            <div className="text-sm text-muted-foreground flex justify-between items-center">
                                {faq.date !== 'Unknown Date' && <span>Date: {faq.date}</span>}
                                 <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                     <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
@@ -122,6 +122,20 @@ function QuestionList({ faqs, onSelectFaq }: { faqs: FaqItem[], onSelectFaq: (fa
     );
 }
 
+const topicColors = [
+    'hsl(190 80% 50%)', // Trading
+    'hsl(340 80% 60%)', // Feelings
+    'hsl(20 80% 60%)',  // Family
+    'hsl(280 80% 60%)', // Relationships
+    'hsl(110 70% 50%)', // Process
+    'hsl(220 80% 65%)', // TTP
+    'hsl(60 80% 50%)',  // Rocks
+    'hsl(0 80% 60%)',   // Health
+    'hsl(300 70% 55%)', // Accountability
+    'hsl(150 70% 50%)', // Beliefs
+    'hsl(250 80% 65%)', // Intention
+];
+
 
 const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> }) => {
     const [viewState, setViewState] = useState<'root' | 'topics' | 'faqs'>('root');
@@ -141,11 +155,12 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         case 'root':
           return [{ id: 'root', label: 'All Topics', type: 'root', count: faqsByTopic.All?.length || 0 }];
         case 'topics':
-          return topics.map(topic => ({
+          return topics.map((topic, index) => ({
             id: topic,
             label: topic,
             type: 'topic',
             count: faqsByTopic[topic]?.length || 0,
+            color: topicColors[index % topicColors.length],
           }));
         case 'faqs':
             return []; // Questions are now shown in a list, not as bubbles
@@ -195,30 +210,29 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
       
       const interval = setInterval(() => {
         api.start(i => {
-            const item = items[i];
-            let x = 0, y = 0;
-            if (item.type === 'root') {
-                // Root stays centered
-            } else if (items.length > 1) {
-                const angle = (i / items.length) * 2 * Math.PI;
-                const radius = Math.min(width, height) / 3.5;
-                x = Math.cos(angle) * radius;
-                y = Math.sin(angle) * radius;
-            }
-
             const currentX = springs[i].x.get();
             const currentY = springs[i].y.get();
-            const newX = currentX + (Math.random() - 0.5) * 2;
-            const newY = currentY + (Math.random() - 0.5) * 2;
+            const newX = currentX + (Math.random() - 0.5) * 5;
+            const newY = currentY + (Math.random() - 0.5) * 5;
 
             // Simple boundary check to prevent drifting too far
-            if (Math.sqrt(newX*newX + newY*newY) > Math.min(width, height) / 2) {
-                return { to: { x, y } }; // Snap back
+            if (Math.sqrt(newX*newX + newY*newY) > Math.min(width, height) / 1.8) {
+                const item = items[i];
+                let x = 0, y = 0;
+                 if (item.type === 'root') {
+                    // Root snaps back to center
+                } else if (items.length > 1) {
+                    const angle = (i / items.length) * 2 * Math.PI;
+                    const radius = Math.min(width, height) / 3.5;
+                    x = Math.cos(angle) * radius;
+                    y = Math.sin(angle) * radius;
+                }
+                return { to: { x, y } };
             }
 
-            return { to: { x: newX, y: newY }, config: { duration: 2000 } };
+            return { to: { x: newX, y: newY }, config: { mass: 20, tension: 10, friction: 50, duration: 5000 } };
         });
-      }, 2000);
+      }, 5000);
 
       api.start(i => {
         const item = items[i];
@@ -295,7 +309,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
                             </span>
                             <Button variant="outline" size="sm" onClick={() => handlePageChange('next')} disabled={currentPage === totalPages - 1}>Next</Button>
                         </div>
-                    ) : <div className="w-[188px]"></div> /* Placeholder to balance flexbox */}
+                    ) : <div className="w-[200px]"></div> /* Placeholder to balance flexbox */}
                 </div>
                  <div className="overflow-y-auto">
                     <QuestionList faqs={paginatedFaqs} onSelectFaq={setSelectedFaq} />
@@ -317,13 +331,13 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
                     key={item.id}
                     onClick={() => handleBubbleClick(item)}
                     className={cn(
-                      'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
-                      item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
-                      item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
+                      'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg text-primary-foreground',
+                      item.type === 'root' && 'bg-primary hover:bg-primary/90',
                     )}
                     style={{
                       width: size,
                       height: size,
+                      backgroundColor: item.type === 'topic' ? item.color : undefined,
                       transform: props.scale.to(s => `translate3d(0,0,0) scale(${s})`),
                       ...props,
                     }}
@@ -343,7 +357,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
+              <CardDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</CardDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
