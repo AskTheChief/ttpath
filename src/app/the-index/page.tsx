@@ -93,19 +93,33 @@ export default function TheIndexPage() {
             <Accordion type="single" collapsible className="w-full">
             {filteredFaqs.slice(0, 100).map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left">{faq.contributor}</AccordionTrigger>
+                <AccordionTrigger className="text-left hover:no-underline">
+                  <span className="truncate">{faq.contributor}</span>
+                </AccordionTrigger>
                 <AccordionContent>
-                    <div className="space-y-4">
-                        <p className="whitespace-pre-wrap font-semibold">Ed Says:</p>
-                        <p className="whitespace-pre-wrap">{faq.ed}</p>
-                        <a href={faq.url} target="_blank" rel="noopener noreferrer">
-                          <Badge variant="secondary">Source ({faq.date})</Badge>
-                        </a>
+                    <div className="space-y-6">
+                        <div>
+                            <p className="text-sm font-semibold text-muted-foreground mb-2">Contributor Says:</p>
+                            <blockquote className="border-l-2 pl-4 italic text-muted-foreground whitespace-pre-wrap">{faq.contributor}</blockquote>
+                        </div>
+                         <div>
+                            <p className="text-sm font-semibold text-muted-foreground mb-2">Ed Says:</p>
+                            <p className="whitespace-pre-wrap">{faq.ed}</p>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
+                             <span>Date: {faq.date}</span>
+                             <a href={faq.url} target="_blank" rel="noopener noreferrer">
+                                <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
+                            </a>
+                        </div>
                     </div>
                 </AccordionContent>
                 </AccordionItem>
             ))}
             </Accordion>
+            {filteredFaqs.length === 0 && !loading && (
+                <p className="text-center text-muted-foreground mt-8">No results found for "{searchTerm}".</p>
+            )}
             {filteredFaqs.length > 100 && (
                 <p className="text-center text-muted-foreground mt-4">More than 100 results found. Refine your search to see more.</p>
             )}
