@@ -48,21 +48,19 @@ export default function TheIndexPage() {
   const filteredFaqs = useMemo(() => {
     let results = faqs;
 
-    // Filter by selected topic first
+    // Filter by selected topic first, searching only the contributor's question
     if (selectedTopic !== 'All') {
         const lowercasedTopic = selectedTopic.toLowerCase();
         results = results.filter(faq =>
-            faq.contributor.toLowerCase().includes(lowercasedTopic) ||
-            faq.ed.toLowerCase().includes(lowercasedTopic)
+            faq.contributor.toLowerCase().includes(lowercasedTopic)
         );
     }
     
-    // Then filter by search term
+    // Then filter by search term, searching only the contributor's question
     if (searchTerm) {
         const lowercasedSearchTerm = searchTerm.toLowerCase();
         results = results.filter(faq =>
-            faq.contributor.toLowerCase().includes(lowercasedSearchTerm) ||
-            faq.ed.toLowerCase().includes(lowercasedSearchTerm)
+            faq.contributor.toLowerCase().includes(lowercasedSearchTerm)
         );
     }
 
@@ -86,8 +84,8 @@ export default function TheIndexPage() {
           <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers.</p>
         </div>
         <Button asChild variant="outline">
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
+          <Link href="/admin">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Admin
           </Link>
         </Button>
       </header>
