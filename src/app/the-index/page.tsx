@@ -10,11 +10,12 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useDrag } from '@use-gesture/react';
 
 type FaqItem = {
   date: string;
@@ -127,18 +128,71 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
     }, [viewState, topics, faqsByTopic]);
   
     const items = getItemsForView();
-  
+
     const [springs, api] = useSprings(items.length, i => ({
       x: 0,
       y: 0,
       scale: 1,
       opacity: 1,
-      config: { mass: 1, tension: 280, friction: 60 },
+      config: { mass: 5, tension: 500, friction: 50 },
     }));
+
+    const bind = useDrag(({ args: [index], active, movement: [mx, my] }) => {
+        const item = items[index];
+        const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
+
+        let x = 0, y = 0, scale = 1;
+        if (item.type === 'root') {
+          scale = 1.5;
+        } else if (items.length > 1) {
+          const angle = (index / items.length) * 2 * Math.PI;
+          const radius = Math.min(width, height) / 3.5;
+          x = Math.cos(angle) * radius;
+          y = Math.sin(angle) * radius;
+        }
+
+        api.start(i => {
+            if (index !== i) return;
+            const newX = active ? x + mx : x;
+            const newY = active ? y + my : y;
+            const newScale = active ? scale * 1.1 : scale;
+            return { x: newX, y: newY, scale: newScale, config: { mass: 1, tension: 280, friction: 60 } };
+        });
+    }, {
+        filterTaps: true,
+        rubberband: true
+    });
   
     useEffect(() => {
       const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
       
+      const interval = setInterval(() => {
+        api.start(i => {
+            const item = items[i];
+            let x = 0, y = 0;
+            if (item.type === 'root') {
+                // Root stays centered
+            } else if (items.length > 1) {
+                const angle = (i / items.length) * 2 * Math.PI;
+                const radius = Math.min(width, height) / 3.5;
+                x = Math.cos(angle) * radius;
+                y = Math.sin(angle) * radius;
+            }
+
+            const currentX = springs[i].x.get();
+            const currentY = springs[i].y.get();
+            const newX = currentX + (Math.random() - 0.5) * 2;
+            const newY = currentY + (Math.random() - 0.5) * 2;
+
+            // Simple boundary check to prevent drifting too far
+            if (Math.sqrt(newX*newX + newY*newY) > Math.min(width, height) / 2) {
+                return { to: { x, y } }; // Snap back
+            }
+
+            return { to: { x: newX, y: newY }, config: { duration: 2000 } };
+        });
+      }, 2000);
+
       api.start(i => {
         const item = items[i];
         let x = 0, y = 0, scale = 1;
@@ -158,7 +212,10 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           delay: i * 30,
         };
       });
-    }, [items.length, viewState, api, items, currentPage]);
+
+      return () => clearInterval(interval);
+
+    }, [items, viewState, api, springs]);
   
     const handleBubbleClick = (item: { id: string; label: string; type: string; }) => {
       if (item.type === 'root') {
@@ -209,6 +266,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
               const size = getBubbleSize(item);
               return (
                 <animated.div
+                  {...bind(i)}
                   key={item.id}
                   onClick={() => handleBubbleClick(item)}
                   className={cn(
@@ -219,6 +277,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
                   style={{
                     width: size,
                     height: size,
+                    transform: props.scale.to(s => `translate3d(0,0,0) scale(${s})`),
                     ...props,
                   }}
                 >
@@ -252,7 +311,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
+              <CardDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</CardDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
