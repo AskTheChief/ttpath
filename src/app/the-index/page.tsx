@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -37,14 +36,16 @@ const formatText = (text: string) => {
 
 const Highlight = ({ text, highlight }: { text: string; highlight: string }) => {
     if (!highlight.trim()) {
-      return <span>{formatText(text)}</span>;
+      return <span className="whitespace-pre-wrap">{formatText(text)}</span>;
     }
-    const regex = new RegExp(`(${highlight})`, 'gi');
+    const searchWords = highlight.split(/\s+/).filter(Boolean); // Split by whitespace and remove empty strings
+    const regex = new RegExp(`(${searchWords.join('|')})`, 'gi');
     const parts = formatText(text).split(regex);
+    
     return (
       <span className="whitespace-pre-wrap">
         {parts.map((part, i) =>
-          regex.test(part) ? (
+          searchWords.some(word => new RegExp(`^${word}$`, 'i').test(part)) ? (
             <mark key={i} className="bg-yellow-200 dark:bg-yellow-700 rounded-sm px-0.5">
               {part}
             </mark>
@@ -337,7 +338,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <CardDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</CardDescription>
+              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
@@ -391,10 +392,11 @@ export default function TheIndexPage() {
     let results = selectedTopic === 'All' ? faqs : (faqsByTopic[selectedTopic] || []);
     
     if (searchTerm) {
-        const lowercasedSearchTerm = searchTerm.toLowerCase();
-        results = results.filter(faq =>
-            faq.contributor.toLowerCase().includes(lowercasedSearchTerm) || faq.ed.toLowerCase().includes(lowercasedSearchTerm)
-        );
+        const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
+        results = results.filter(faq => {
+            const questionText = faq.contributor.toLowerCase();
+            return searchWords.every(word => questionText.includes(word));
+        });
     }
 
     return results;
