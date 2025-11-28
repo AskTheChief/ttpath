@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 type LoginModalProps = {
   isOpen: boolean;
@@ -24,6 +24,7 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetView, setIsResetView] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleClose = () => {
     onClose();
@@ -33,6 +34,7 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
         setError(null);
         setEmail('');
         setPassword('');
+        setShowPassword(false);
     }, 300);
   }
 
@@ -85,6 +87,8 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
     }
   };
 
+  const togglePasswordVisibility = () => setShowPassword(prev => !prev);
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
@@ -124,9 +128,29 @@ export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalPr
                 <Label htmlFor="email-login">Email Address</Label>
                 <Input type="email" id="email-login" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="password-login">Password</Label>
-                <Input type="password" id="password-login" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password-login"
+                  placeholder="••••••••"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                  <span className="sr-only">
+                    {showPassword ? 'Hide password' : 'Show password'}
+                  </span>
+                </Button>
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
