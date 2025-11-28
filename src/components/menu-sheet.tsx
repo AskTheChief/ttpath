@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion } from "lucide-react";
+import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import { User } from 'firebase/auth';
 
@@ -109,6 +109,14 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
 
           {isGuest && (
             <>
+               <Button
+                  variant="ghost"
+                  className="w-full justify-start text-xl p-4 h-auto"
+                  onClick={() => openModal('chatbot')}
+                >
+                  <MessageSquare className="mr-4 w-10 h-10" />
+                  Ask the Chief
+                </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
