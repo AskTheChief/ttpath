@@ -193,7 +193,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
   
           api.start(i => {
               const item = items[i];
-              if (!item) return;
+              if (!item) return {};
 
               let x = 0, y = 0;
               
@@ -426,7 +426,7 @@ export default function TheIndexPage() {
     commonTopics.slice(1).forEach(topic => {
       const lowercasedTopic = topic.toLowerCase();
       topicsMap[topic] = faqs.filter(faq => 
-        (faq.contributor + ' ' + faq.ed).toLowerCase().includes(lowercasedTopic)
+        faq.contributor.toLowerCase().includes(lowercasedTopic)
       );
     });
     return topicsMap;
@@ -438,7 +438,7 @@ export default function TheIndexPage() {
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
-            const questionText = (faq.contributor + ' ' + faq.ed).toLowerCase();
+            const questionText = faq.contributor.toLowerCase();
             return searchWords.every(word => questionText.includes(word));
         });
     }
