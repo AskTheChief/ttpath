@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
-import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -69,113 +68,150 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
     );
 }
 
-function BubbleView({ faqsByTopic, filteredFaqs }: { faqsByTopic: Record<string, FaqItem[]>, filteredFaqs: FaqItem[] }) {
+const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> }) => {
+    const [viewState, setViewState] = useState<'root' | 'topics' | 'faqs'>('root');
     const [activeTopic, setActiveTopic] = useState<string | null>(null);
     const [selectedFaq, setSelectedFaq] = useState<FaqItem | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
   
     const topics = Object.keys(faqsByTopic).filter(topic => topic !== 'All');
   
-    const items = activeTopic
-      ? (faqsByTopic[activeTopic] || []).map(faq => ({ type: 'faq', data: faq, id: faq.url }))
-      : topics.map(topic => ({ type: 'topic', data: { name: topic, count: faqsByTopic[topic].length }, id: topic }));
+    const getItemsForView = () => {
+      switch (viewState) {
+        case 'root':
+          return [{ id: 'root', label: 'All Topics', type: 'root', count: faqsByTopic.All?.length || 0 }];
+        case 'topics':
+          return topics.map(topic => ({
+            id: topic,
+            label: topic,
+            type: 'topic',
+            count: faqsByTopic[topic]?.length || 0,
+          }));
+        case 'faqs':
+          if (!activeTopic) return [];
+          return (faqsByTopic[activeTopic] || []).map((faq, index) => ({
+            id: `${activeTopic}-${index}`,
+            label: faq.contributor.substring(0, 30) + '...',
+            type: 'faq',
+            data: faq,
+          }));
+        default:
+          return [];
+      }
+    };
+  
+    const items = getItemsForView();
   
     const [springs, api] = useSprings(items.length, i => ({
-      x: Math.random() * 500,
-      y: Math.random() * 300,
+      x: 0,
+      y: 0,
       scale: 1,
-      config: { mass: 5, tension: 550, friction: 140 },
+      opacity: 1,
+      config: { mass: 1, tension: 280, friction: 60 },
     }));
   
-    const bind = useDrag(({ args: [index], down, movement: [mx, my] }) => {
+    useEffect(() => {
+      const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
+      
       api.start(i => {
-        if (index !== i) return;
+        const item = items[i];
+        let x = 0, y = 0, scale = 1;
+        
+        if (item.type === 'root') {
+          scale = 1.5;
+        } else if (items.length > 1) {
+          const angle = (i / (items.length)) * 2 * Math.PI;
+          const radius = Math.min(width, height) / 3;
+          x = Math.cos(angle) * radius;
+          y = Math.sin(angle) * radius;
+        }
+  
         return {
-          x: mx,
-          y: my,
-          scale: down ? 1.1 : 1,
+          to: { x, y, scale, opacity: 1 },
+          from: { x: 0, y: 0, scale: 0, opacity: 0 },
+          delay: i * 50,
         };
       });
-    });
-
-    const handleBubbleClick = (item: typeof items[number]) => {
-        if (item.type === 'topic') {
-            setActiveTopic(item.data.name);
-        } else {
-            setSelectedFaq(item.data);
-        }
-    };
-    
-    useEffect(() => {
-        const interval = setInterval(() => {
-          api.start(i => ({
-            x: springs[i].x.get() + (Math.random() - 0.5) * 5,
-            y: springs[i].y.get() + (Math.random() - 0.5) * 5,
-          }));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [api, springs]);
-
-    const getBubbleSize = (item: typeof items[number]) => {
-        if (item.type === 'topic') {
-            return 80 + Math.min(item.data.count, 200) * 0.5; // Scale size by count, with a max
-        }
-        return 90; // FAQ bubble size
+    }, [items.length, viewState, api]);
+  
+    const handleBubbleClick = (item: ReturnType<typeof getItemsForView>[number]) => {
+      if (item.type === 'root') {
+        setViewState('topics');
+      } else if (item.type === 'topic') {
+        setActiveTopic(item.label);
+        setViewState('faqs');
+      } else if (item.type === 'faq' && 'data' in item) {
+        setSelectedFaq(item.data as FaqItem);
+      }
     };
 
+    const handleBackClick = () => {
+        if (viewState === 'faqs') {
+            setViewState('topics');
+            setActiveTopic(null);
+        } else if (viewState === 'topics') {
+            setViewState('root');
+        }
+    }
+  
+    const getBubbleSize = (item: ReturnType<typeof getItemsForView>[number]) => {
+      if (item.type === 'root') return 200;
+      if (item.type === 'topic') return 80 + Math.min((item.count || 0), 200) * 0.3;
+      return 90;
+    };
+  
     return (
-        <div className="relative">
-            <div ref={containerRef} className="w-full h-[600px] bg-muted/30 rounded-lg relative overflow-hidden touch-none">
-                 {springs.map((props, i) => {
-                    const item = items[i];
-                    const size = getBubbleSize(item);
-                    return (
-                        <animated.div
-                            {...bind(i)}
-                            key={item.id}
-                            onClick={() => handleBubbleClick(item)}
-                            className={cn(
-                                'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
-                                item.type === 'topic' ? 'bg-primary/80 hover:bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
-                            )}
-                            style={{
-                                width: size,
-                                height: size,
-                                transform: props.x.to((x, s) => `translate3d(${x}px,0,0) scale(${s})`).interpolate(x => x),
-                                top: props.y,
-                                left: `calc(50% - ${size/2}px)`,
-                                ...props,
-                            }}
-                        >
-                            <span className="text-xs font-semibold select-none pointer-events-none">
-                                {item.type === 'topic' ? item.data.name : (item.data as FaqItem).contributor.substring(0, 30) + '...'}
-                            </span>
-                        </animated.div>
-                    );
-                 })}
-
-                {activeTopic && (
-                    <Button variant="outline" className="absolute top-4 left-4" onClick={() => setActiveTopic(null)}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
-                    </Button>
+      <div className="relative">
+        <div ref={containerRef} className="w-full h-[600px] bg-muted/30 rounded-lg relative overflow-hidden flex items-center justify-center">
+          {springs.map((props, i) => {
+            const item = items[i];
+            const size = getBubbleSize(item);
+            return (
+              <animated.div
+                key={item.id}
+                onClick={() => handleBubbleClick(item)}
+                className={cn(
+                  'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
+                  item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
+                  item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
+                  item.type === 'faq' && 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
                 )}
-            </div>
-
-            <Dialog open={!!selectedFaq} onOpenChange={() => setSelectedFaq(null)}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Contributor Says:</DialogTitle>
-                         <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq?.contributor}</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <h3 className="font-semibold mb-2">Ed Says:</h3>
-                        <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq?.ed}</p>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                style={{
+                  width: size,
+                  height: size,
+                  ...props,
+                }}
+              >
+                <span className="text-xs font-semibold select-none pointer-events-none">
+                  {item.label}
+                  {item.type === 'topic' && <span className="block opacity-70 text-xs">({item.count})</span>}
+                </span>
+              </animated.div>
+            );
+          })}
         </div>
+        {viewState !== 'root' && (
+            <Button variant="outline" className="absolute top-4 left-4 z-10" onClick={handleBackClick}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+        )}
+  
+        <Dialog open={!!selectedFaq} onOpenChange={() => setSelectedFaq(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Contributor Says:</DialogTitle>
+              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq?.contributor}</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <h3 className="font-semibold mb-2">Ed Says:</h3>
+              <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq?.ed}</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     );
-}
+  };
+  
 
 
 export default function TheIndexPage() {
@@ -287,7 +323,7 @@ export default function TheIndexPage() {
         {viewMode === 'list' ? (
             <ListView faqs={filteredFaqs} />
         ) : (
-            <BubbleView faqsByTopic={faqsByTopic} filteredFaqs={filteredFaqs} />
+            <BubbleView faqsByTopic={faqsByTopic} />
         )}
       </div>
     </div>
