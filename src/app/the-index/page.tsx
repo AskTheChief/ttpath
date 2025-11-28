@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -179,11 +179,60 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
       config: { mass: 5, tension: 500, friction: 50 },
     }));
 
+     useEffect(() => {
+      if (viewState === 'faqs') return;
+  
+      let isCancelled = false;
+  
+      const animate = async () => {
+        while (!isCancelled) {
+          await new Promise(resolve => setTimeout(resolve, 4000));
+          if (isCancelled) break;
+          
+          const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
+  
+          api.start(i => {
+              const item = items[i];
+              if (!item) return;
+
+              let x = 0, y = 0;
+              
+              if (item.type === 'root') {
+                // Root stays centered
+              } else if (items.length > 1) {
+                const angle = (i / items.length) * 2 * Math.PI;
+                const baseRadius = Math.min(width, height) / 3.5;
+                const randomFactor = 1 + (Math.random() - 0.5) * 0.2; // +/- 10% radius variation
+                const radius = baseRadius * randomFactor;
+                x = Math.cos(angle) * radius;
+                y = Math.sin(angle) * radius;
+              }
+      
+              return {
+                to: { x, y },
+                config: { mass: 10, tension: 20, friction: 50 },
+                delay: i * 20,
+              };
+            });
+        }
+      };
+      
+      animate();
+  
+      return () => {
+        isCancelled = true;
+        api.stop();
+      };
+    }, [items, viewState, api]);
+
     const bind = useDrag(({ args: [index], active, movement: [mx, my] }) => {
         const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
 
         let x = 0, y = 0, scale = 1;
-        if (items[index].type === 'root') {
+        const item = items[index];
+        if (!item) return;
+
+        if (item.type === 'root') {
           scale = 1.5;
         } else if (items.length > 1) {
           const angle = (index / items.length) * 2 * Math.PI;
@@ -204,49 +253,14 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         rubberband: true
     });
   
-      useEffect(() => {
+    useEffect(() => {
         if (viewState === 'faqs' || items.length === 0) return;
       
         const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
-        let isCancelled = false;
-
-        const animate = async () => {
-          while (!isCancelled) {
-            await new Promise(resolve => setTimeout(resolve, 4000));
-            if (isCancelled) break;
-            
-            api.start(i => {
-              const item = items[i];
-              if (!item) return; // Fix: Check if item exists
-              
-              let x = 0, y = 0;
-              
-              if (item.type === 'root') {
-                // Root stays centered
-              } else if (items.length > 1) {
-                const angle = (i / items.length) * 2 * Math.PI;
-                const baseRadius = Math.min(width, height) / 3.5;
-                const randomFactor = 1 + (Math.random() - 0.5) * 0.2; // +/- 10% radius variation
-                const radius = baseRadius * randomFactor;
-                x = Math.cos(angle) * radius;
-                y = Math.sin(angle) * radius;
-              }
-      
-              return {
-                to: { x, y },
-                config: { mass: 10, tension: 20, friction: 50 },
-                delay: i * 20,
-              };
-            });
-          }
-        };
-      
-        animate();
-      
-        // Initial entrance animation
+        
         api.start(i => {
           const item = items[i];
-           if (!item) return; // Fix: Check if item exists
+          if (!item) return;
 
           let x = 0, y = 0, scale = 1;
       
@@ -265,13 +279,8 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
             delay: i * 50,
           };
         });
-
-        return () => {
-          isCancelled = true;
-          api.stop();
-        };
       
-      }, [items, viewState, api]);
+    }, [items, viewState, api]);
   
     const handleBubbleClick = (item: { id: string; label: string; type: string; }) => {
       if (item.type === 'root') {
@@ -339,6 +348,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
               )}
               {springs.map((props, i) => {
                 const item = items[i];
+                if (!item) return null;
                 const size = getBubbleSize(item);
                 return (
                   <animated.div
