@@ -31,11 +31,33 @@ const commonTopics = [
 // Helper function to format text by handling newlines
 const formatText = (text: string) => {
     if (!text) return '';
+    // Replace single newlines that are not preceded or followed by another newline with a space
     return text.replace(/(?<!\n)\n(?!\n)/g, ' ').replace(/\n\s*\n/g, '\n\n');
 };
 
+const Highlight = ({ text, highlight }: { text: string; highlight: string }) => {
+    if (!highlight.trim()) {
+      return <span>{formatText(text)}</span>;
+    }
+    const regex = new RegExp(`(${highlight})`, 'gi');
+    const parts = formatText(text).split(regex);
+    return (
+      <span className="whitespace-pre-wrap">
+        {parts.map((part, i) =>
+          regex.test(part) ? (
+            <mark key={i} className="bg-yellow-200 dark:bg-yellow-700 rounded-sm px-0.5">
+              {part}
+            </mark>
+          ) : (
+            <React.Fragment key={i}>{part}</React.Fragment>
+          )
+        )}
+      </span>
+    );
+};
 
-function ListView({ faqs }: { faqs: FaqItem[] }) {
+
+function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string }) {
     if (faqs.length === 0) {
         return <p className="text-center text-muted-foreground mt-8">No results found for your query.</p>;
     }
@@ -50,12 +72,14 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                             <CardTitle className="text-lg">Contributor Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <blockquote className="text-muted-foreground whitespace-pre-wrap">{formatText(faq.contributor)}</blockquote>
+                            <blockquote className="text-muted-foreground">
+                                <Highlight text={faq.contributor} highlight={searchTerm} />
+                            </blockquote>
                         </CardContent>
                     </Card>
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
-                            <div className="text-sm text-muted-foreground flex justify-between items-center">
+                             <div className="text-sm text-muted-foreground flex justify-between items-center">
                                {faq.date !== 'Unknown Date' && <span>Date: {faq.date}</span>}
                                 <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                     <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
@@ -64,7 +88,9 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                             <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="whitespace-pre-wrap">{formatText(faq.ed)}</p>
+                            <p>
+                               <Highlight text={faq.ed} highlight={searchTerm} />
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -367,7 +393,7 @@ export default function TheIndexPage() {
     if (searchTerm) {
         const lowercasedSearchTerm = searchTerm.toLowerCase();
         results = results.filter(faq =>
-            faq.contributor.toLowerCase().includes(lowercasedSearchTerm)
+            faq.contributor.toLowerCase().includes(lowercasedSearchTerm) || faq.ed.toLowerCase().includes(lowercasedSearchTerm)
         );
     }
 
@@ -414,7 +440,7 @@ export default function TheIndexPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Refine search by keyword in questions..."
+              placeholder="Refine search by keyword..."
               className="w-full pl-10 text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -432,7 +458,7 @@ export default function TheIndexPage() {
         </div>
 
         {viewMode === 'list' ? (
-            <ListView faqs={filteredFaqs} />
+            <ListView faqs={filteredFaqs} searchTerm={searchTerm} />
         ) : (
             <BubbleView faqsByTopic={faqsByTopic} />
         )}
