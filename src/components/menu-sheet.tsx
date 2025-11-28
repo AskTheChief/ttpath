@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare } from "lucide-react";
+import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare, BookCopy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import { User } from 'firebase/auth';
 
@@ -41,9 +41,9 @@ const menuItems = [
 
 // Defines additional links that are visible to guests.
 const newLinks = [
-    { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages' },
-    { id: 'charts', icon: BarChart2, label: 'Stock and Futures Charts' },
-    { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages' },
+    { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages', action: 'link', url: 'https://www.seykota.com/tt/FAQ_Index/' },
+    { id: 'charts', icon: BarChart2, label: 'Stock and Futures Charts', action: 'link', url: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php' },
+    { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages', action: 'link', url: 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php' }
 ]
 
 /**
@@ -64,8 +64,8 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
    * @param {object} item - The menu item that was clicked.
    */
   const handleItemClick = (item: (typeof menuItems)[0]) => {
+    // If it's a link, close the sheet. Navigation is handled by the Link component.
     if (item.href) {
-        // If it's a link, close the sheet. Navigation is handled by the Link component.
         onClose();
     } else {
         // If it's a modal trigger, call the openModal function.
@@ -76,16 +76,11 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
   /**
    * Handles clicks on the external resource links.
    * Opens the corresponding URL in a new browser tab.
-   * @param {'faq' | 'charts' | 'reach-out'} docId - The identifier for the link.
+   * @param {string} url - The URL to open.
    */
-  const handleLinkClick = (docId: 'faq' | 'charts' | 'reach-out') => {
+  const handleLinkClick = (url: string) => {
     onClose();
-    const urls = {
-        faq: 'https://www.seykota.com/tt/FAQ_Index/',
-        charts: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
-        'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
-    };
-    window.open(urls[docId], '_blank');
+    window.open(url, '_blank');
   };
 
   /**
@@ -116,34 +111,33 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isLink = !!item.href;
     
-    // Only show items to logged-in users (not guests), except for specific guest-allowed items.
-    if (item.id !== 'pamphlet' && !isGuest) {
-      return null;
-    }
-
-    // The actual button UI for the menu item.
-    const content = (
-        <Button
-            variant="ghost"
-            className="w-full justify-start text-xl p-4 h-auto"
-            onClick={() => !isLink && handleItemClick(item)}
-        >
-            <item.icon className="mr-4 w-10 h-10" />
-            {item.label}
-        </Button>
-    );
-
-    // If the item is a link, wrap it in Next.js's Link component for client-side navigation.
-    if (isLink) {
-      return (
-        <Link href={item.href!} key={item.id} passHref>
-          {content}
-        </Link>
+    // Only show items to logged-in users (not guests).
+    if (isGuest) {
+      // The actual button UI for the menu item.
+      const content = (
+          <Button
+              variant="ghost"
+              className="w-full justify-start text-xl p-4 h-auto"
+              onClick={() => !isLink && handleItemClick(item)}
+          >
+              <item.icon className="mr-4 w-10 h-10" />
+              {item.label}
+          </Button>
       );
-    }
 
-    // Otherwise, just render the button.
-    return <div key={item.id}>{content}</div>;
+      // If the item is a link, wrap it in Next.js's Link component for client-side navigation.
+      if (isLink) {
+        return (
+          <Link href={item.href!} key={item.id} passHref>
+            {content}
+          </Link>
+        );
+      }
+
+      // Otherwise, just render the button.
+      return <div key={item.id}>{content}</div>;
+    }
+    return null;
   };
     
   return (
@@ -166,6 +160,16 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               <MessageSquare className="mr-4 w-10 h-10" />
               Ask the Chief
             </Button>
+            <Link href="/the-index" passHref>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-xl p-4 h-auto"
+                onClick={onClose}
+              >
+                  <BookCopy className="mr-4 w-10 h-10" />
+                  The Index
+              </Button>
+            </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -201,7 +205,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                     key={link.id}
                     variant="ghost"
                     className="w-full justify-start text-xl p-4 h-auto"
-                    onClick={() => handleLinkClick(link.id as any)}
+                    onClick={() => handleLinkClick(link.url!)}
                 >
                     <link.icon className="mr-4 w-10 h-10" />
                     {link.label}
