@@ -3,13 +3,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 type FaqItem = {
   date: string;
@@ -90,33 +89,36 @@ export default function TheIndexPage() {
 
         <div>
             <p className="text-sm text-muted-foreground mb-4">Showing {filteredFaqs.length > 100 ? 'the first 100 of' : ''} {filteredFaqs.length} results.</p>
-            <Accordion type="single" collapsible className="w-full">
-            {filteredFaqs.slice(0, 100).map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left hover:no-underline">
-                  <span className="truncate">{faq.contributor}</span>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <div className="space-y-6">
-                        <div>
-                            <p className="text-sm font-semibold text-muted-foreground mb-2">Contributor Says:</p>
-                            <blockquote className="border-l-2 pl-4 italic text-muted-foreground whitespace-pre-wrap">{faq.contributor}</blockquote>
-                        </div>
-                         <div>
-                            <p className="text-sm font-semibold text-muted-foreground mb-2">Ed Says:</p>
-                            <p className="whitespace-pre-wrap">{faq.ed}</p>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
-                             <span>Date: {faq.date}</span>
-                             <a href={faq.url} target="_blank" rel="noopener noreferrer">
-                                <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
-                            </a>
-                        </div>
+            <div className="space-y-6">
+                {filteredFaqs.slice(0, 100).map((faq, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        {/* Question Column */}
+                        <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Contributor Says:</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.contributor}</blockquote>
+                            </CardContent>
+                        </Card>
+                        {/* Answer Column */}
+                        <Card className="h-full bg-secondary/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Ed Says:</CardTitle>
+                                <CardDescription className="flex justify-between items-center">
+                                    <span>Date: {faq.date}</span>
+                                    <a href={faq.url} target="_blank" rel="noopener noreferrer">
+                                        <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
+                                    </a>
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="whitespace-pre-wrap">{faq.ed}</p>
+                            </CardContent>
+                        </Card>
                     </div>
-                </AccordionContent>
-                </AccordionItem>
-            ))}
-            </Accordion>
+                ))}
+            </div>
             {filteredFaqs.length === 0 && !loading && (
                 <p className="text-center text-muted-foreground mt-8">No results found for "{searchTerm}".</p>
             )}
