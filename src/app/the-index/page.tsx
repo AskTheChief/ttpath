@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -56,7 +57,7 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
                             <div className="text-sm text-muted-foreground flex justify-between items-center">
-                               <span>{faq.date !== 'Unknown Date' && `Date: ${faq.date}`}</span>
+                               {faq.date !== 'Unknown Date' && <span>Date: {faq.date}</span>}
                                 <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                     <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
                                 </a>
@@ -76,13 +77,19 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
     );
 }
 
+const ITEMS_PER_PAGE = 12;
+
 const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> }) => {
     const [viewState, setViewState] = useState<'root' | 'topics' | 'faqs'>('root');
     const [activeTopic, setActiveTopic] = useState<string | null>(null);
     const [selectedFaq, setSelectedFaq] = useState<FaqItem | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
   
     const topics = Object.keys(faqsByTopic).filter(topic => topic !== 'All');
+
+    const activeTopicFaqs = activeTopic ? faqsByTopic[activeTopic] || [] : [];
+    const totalPages = Math.ceil(activeTopicFaqs.length / ITEMS_PER_PAGE);
   
     const getItemsForView = () => {
       switch (viewState) {
@@ -97,8 +104,10 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           }));
         case 'faqs':
           if (!activeTopic) return [];
-          return (faqsByTopic[activeTopic] || []).map((faq, index) => ({
-            id: `${activeTopic}-${index}`,
+          const startIndex = currentPage * ITEMS_PER_PAGE;
+          const endIndex = startIndex + ITEMS_PER_PAGE;
+          return activeTopicFaqs.slice(startIndex, endIndex).map((faq, index) => ({
+            id: `${activeTopic}-${startIndex + index}`,
             label: faq.contributor.substring(0, 30) + '...',
             type: 'faq',
             data: faq,
@@ -129,24 +138,25 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           scale = 1.5;
         } else if (items.length > 1) {
           const angle = (i / (items.length)) * 2 * Math.PI;
-          const radius = Math.min(width, height) / 3;
+          const radius = Math.min(width, height) / 3.5;
           x = Math.cos(angle) * radius;
           y = Math.sin(angle) * radius;
         }
   
         return {
           to: { x, y, scale, opacity: 1 },
-          from: { x: 0, y: 0, scale: 0, opacity: 0 },
-          delay: i * 50,
+          from: { x: Math.random() * 100 - 50, y: Math.random() * 100 - 50, scale: 0, opacity: 0 },
+          delay: i * 30,
         };
       });
-    }, [items.length, viewState, api, items]);
+    }, [items.length, viewState, api, items, currentPage]);
   
     const handleBubbleClick = (item: ReturnType<typeof getItemsForView>[number]) => {
       if (item.type === 'root') {
         setViewState('topics');
       } else if (item.type === 'topic') {
         setActiveTopic(item.label);
+        setCurrentPage(0);
         setViewState('faqs');
       } else if (item.type === 'faq' && 'data' in item) {
         setSelectedFaq(item.data as FaqItem);
@@ -159,6 +169,14 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
             setActiveTopic(null);
         } else if (viewState === 'topics') {
             setViewState('root');
+        }
+    }
+
+    const handlePageChange = (direction: 'next' | 'prev') => {
+        if (direction === 'next' && currentPage < totalPages - 1) {
+            setCurrentPage(p => p + 1);
+        } else if (direction === 'prev' && currentPage > 0) {
+            setCurrentPage(p => p - 1);
         }
     }
   
@@ -198,10 +216,21 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
             );
           })}
         </div>
+        
         {viewState !== 'root' && (
             <Button variant="outline" className="absolute top-4 left-4 z-10" onClick={handleBackClick}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
+        )}
+
+        {viewState === 'faqs' && totalPages > 1 && (
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-background/70 p-1 rounded-md">
+                <Button variant="outline" size="sm" onClick={() => handlePageChange('prev')} disabled={currentPage === 0}>Prev</Button>
+                <span className="text-sm font-medium text-muted-foreground">
+                    Page {currentPage + 1} of {totalPages}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => handlePageChange('next')} disabled={currentPage === totalPages - 1}>Next</Button>
+            </div>
         )}
   
         <Dialog open={!!selectedFaq} onOpenChange={() => setSelectedFaq(null)}>
@@ -337,3 +366,4 @@ export default function TheIndexPage() {
     </div>
   );
 }
+
