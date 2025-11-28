@@ -73,7 +73,7 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                             <CardTitle className="text-lg">Contributor Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <blockquote className="text-muted-foreground">
+                            <blockquote className="text-muted-foreground whitespace-pre-wrap">
                                 <Highlight text={faq.contributor} highlight={searchTerm} />
                             </blockquote>
                         </CardContent>
@@ -89,7 +89,7 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                             <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p>
+                            <p className="whitespace-pre-wrap">
                                <Highlight text={faq.ed} highlight={searchTerm} />
                             </p>
                         </CardContent>
@@ -281,58 +281,63 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
       <div className="relative">
         <div ref={containerRef} className="w-full h-[600px] bg-muted/30 rounded-lg relative overflow-hidden flex items-center justify-center">
           {viewState === 'faqs' ? (
-              <div className="w-full h-full overflow-y-auto">
-                 <h2 className="text-xl font-bold p-4 sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
-                    Topic: {activeTopic}
-                </h2>
-                <QuestionList faqs={paginatedFaqs} onSelectFaq={setSelectedFaq} />
+              <div className="w-full h-full flex flex-col">
+                <div className="flex items-center justify-between p-4 sticky top-0 bg-muted/80 backdrop-blur-sm z-10 border-b">
+                    <Button variant="outline" onClick={handleBackClick}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
+                    </Button>
+                    <h2 className="text-xl font-bold">Topic: {activeTopic}</h2>
+                     {totalPages > 1 ? (
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handlePageChange('prev')} disabled={currentPage === 0}>Prev</Button>
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {currentPage + 1} / {totalPages}
+                            </span>
+                            <Button variant="outline" size="sm" onClick={() => handlePageChange('next')} disabled={currentPage === totalPages - 1}>Next</Button>
+                        </div>
+                    ) : <div className="w-[188px]"></div> /* Placeholder to balance flexbox */}
+                </div>
+                 <div className="overflow-y-auto">
+                    <QuestionList faqs={paginatedFaqs} onSelectFaq={setSelectedFaq} />
+                 </div>
               </div>
           ) : (
-            springs.map((props, i) => {
-              const item = items[i];
-              const size = getBubbleSize(item);
-              return (
-                <animated.div
-                  {...bind(i)}
-                  key={item.id}
-                  onClick={() => handleBubbleClick(item)}
-                  className={cn(
-                    'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
-                    item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
-                    item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
-                  )}
-                  style={{
-                    width: size,
-                    height: size,
-                    transform: props.scale.to(s => `translate3d(0,0,0) scale(${s})`),
-                    ...props,
-                  }}
-                >
-                  <span className="text-xs font-semibold select-none pointer-events-none">
-                    {item.label}
-                    {item.type === 'topic' && <span className="block opacity-70 text-xs">({item.count})</span>}
-                  </span>
-                </animated.div>
-              );
-            })
+            <>
+              {viewState !== 'root' && (
+                <Button variant="outline" className="absolute top-4 left-4 z-10" onClick={handleBackClick}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+              )}
+              {springs.map((props, i) => {
+                const item = items[i];
+                const size = getBubbleSize(item);
+                return (
+                  <animated.div
+                    {...bind(i)}
+                    key={item.id}
+                    onClick={() => handleBubbleClick(item)}
+                    className={cn(
+                      'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
+                      item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
+                      item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
+                    )}
+                    style={{
+                      width: size,
+                      height: size,
+                      transform: props.scale.to(s => `translate3d(0,0,0) scale(${s})`),
+                      ...props,
+                    }}
+                  >
+                    <span className="text-xs font-semibold select-none pointer-events-none">
+                      {item.label}
+                      {item.type === 'topic' && <span className="block opacity-70 text-xs">({item.count})</span>}
+                    </span>
+                  </animated.div>
+                );
+              })}
+            </>
           )}
         </div>
-        
-        {viewState !== 'root' && (
-            <Button variant="outline" className="absolute top-4 left-4 z-10" onClick={handleBackClick}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-        )}
-
-        {viewState === 'faqs' && totalPages > 1 && (
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-background/70 p-1 rounded-md">
-                <Button variant="outline" size="sm" onClick={() => handlePageChange('prev')} disabled={currentPage === 0}>Prev</Button>
-                <span className="text-sm font-medium text-muted-foreground">
-                    Page {currentPage + 1} of {totalPages}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => handlePageChange('next')} disabled={currentPage === totalPages - 1}>Next</Button>
-            </div>
-        )}
   
         <Dialog open={!!selectedFaq} onOpenChange={() => setSelectedFaq(null)}>
           <DialogContent className="max-w-2xl">
