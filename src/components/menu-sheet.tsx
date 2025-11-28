@@ -9,6 +9,17 @@ import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCir
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import { User } from 'firebase/auth';
 
+/**
+ * @typedef {object} MenuSheetProps - Props for the MenuSheet component.
+ * @property {boolean} isOpen - Controls whether the sheet is open or closed.
+ * @property {() => void} onClose - Function to call when the sheet should be closed.
+ * @property {(modalName: string) => void} openModal - Function to open a specific modal.
+ * @property {boolean} isGuest - Flag indicating if the current user is logged in.
+ * @property {() => void} onTestCreateTribe - Dev-only function to test tribe creation.
+ * @property {() => void} onSendTestEmail - Dev-only function to send a test email.
+ * @property {() => void} onSendTestDiploma - Dev-only function to send a test diploma.
+ * @property {User | null} currentUser - The current authenticated Firebase user, or null if not logged in.
+ */
 type MenuSheetProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -20,30 +31,53 @@ type MenuSheetProps = {
   currentUser: User | null;
 };
 
+// Hardcoded list of developer email addresses for special access.
 const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
+// Defines the primary menu items that are always visible to logged-in users.
 const menuItems = [
     { id: 'my-tribe', icon: Swords, label: 'My Account', href: '/my-tribe' },
 ];
 
+// Defines additional links that are visible to guests.
 const newLinks = [
     { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages' },
     { id: 'charts', icon: BarChart2, label: 'Stock and Futures Charts' },
     { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages' },
 ]
 
+/**
+ * Renders a slide-out sheet menu providing access to various resources and actions.
+ * The content of the menu changes based on the user's authentication status and role (guest, member, developer).
+ *
+ * @param {MenuSheetProps} props - The props for the component.
+ */
 export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: MenuSheetProps) {
 
+  // Check if the currently logged-in user is a developer.
   const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
 
+  /**
+   * Handles clicks on primary menu items.
+   * If the item has an 'href', it will be handled by the Link component.
+   * Otherwise, it calls 'openModal' to open a corresponding modal.
+   * @param {object} item - The menu item that was clicked.
+   */
   const handleItemClick = (item: (typeof menuItems)[0]) => {
     if (item.href) {
+        // If it's a link, close the sheet. Navigation is handled by the Link component.
         onClose();
     } else {
+        // If it's a modal trigger, call the openModal function.
         openModal(item.id);
     }
   }
 
+  /**
+   * Handles clicks on the external resource links.
+   * Opens the corresponding URL in a new browser tab.
+   * @param {'faq' | 'charts' | 'reach-out'} docId - The identifier for the link.
+   */
   const handleLinkClick = (docId: 'faq' | 'charts' | 'reach-out') => {
     onClose();
     const urls = {
@@ -54,6 +88,11 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     window.open(urls[docId], '_blank');
   };
 
+  /**
+   * Handles clicks within the "Library" dropdown.
+   * Opens documentation in a new tab or opens the comprehension test modal.
+   * @param {'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test'} doc - The document identifier.
+   */
   const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test') => {
     onClose();
     const urls = {
@@ -69,13 +108,20 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     }
   };
 
+  /**
+   * Renders a single menu item, either as a link or a button.
+   * This function controls which items are visible based on the user's guest status.
+   * @param {object} item - The menu item data to render.
+   */
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isLink = !!item.href;
     
+    // Only show items to logged-in users (not guests), except for specific guest-allowed items.
     if (item.id !== 'pamphlet' && !isGuest) {
       return null;
     }
 
+    // The actual button UI for the menu item.
     const content = (
         <Button
             variant="ghost"
@@ -87,6 +133,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         </Button>
     );
 
+    // If the item is a link, wrap it in Next.js's Link component for client-side navigation.
     if (isLink) {
       return (
         <Link href={item.href!} key={item.id} passHref>
@@ -95,6 +142,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
       );
     }
 
+    // Otherwise, just render the button.
     return <div key={item.id}>{content}</div>;
   };
     
@@ -105,62 +153,63 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
           <SheetTitle className="text-2xl">Resources</SheetTitle>
         </SheetHeader>
         <div className="p-4">
+          {/* Render menu items for logged-in users */}
           {menuItems.map(renderMenuItem)}
 
-          {isGuest && (
-            <>
-               <Button
-                  variant="ghost"
-                  className="w-full justify-start text-xl p-4 h-auto"
-                  onClick={() => openModal('chatbot')}
+          {/* Additional resources available for all users (guests and logged-in) */}
+          <>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-xl p-4 h-auto"
+              onClick={() => openModal('chatbot')}
+            >
+              <MessageSquare className="mr-4 w-10 h-10" />
+              Ask the Chief
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-xl p-4 h-auto"
                 >
-                  <MessageSquare className="mr-4 w-10 h-10" />
-                  Ask the Chief
+                    <Database className="mr-4 w-10 h-10" />
+                    Library
                 </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                      variant="ghost"
-                      className="w-full justify-start text-xl p-4 h-auto"
-                  >
-                      <Database className="mr-4 w-10 h-10" />
-                      Library
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                   <DropdownMenuItem onClick={() => handleLibraryClick('pamphlet')}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    <span>Quick-Start Guide</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLibraryClick('methods')}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    <span>Trading Tribe Methods</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLibraryClick('philosophy')}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    <span>Trading Tribe Philosophy</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
-                    <GraduationCap className="mr-2 h-4 w-4" />
-                    <span>Comprehension Test</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                 <DropdownMenuItem onClick={() => handleLibraryClick('pamphlet')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Quick-Start Guide</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLibraryClick('methods')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Trading Tribe Methods</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLibraryClick('philosophy')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Trading Tribe Philosophy</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  <span>Comprehension Test</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {newLinks.map(link => (
-                  <Button
-                      key={link.id}
-                      variant="ghost"
-                      className="w-full justify-start text-xl p-4 h-auto"
-                      onClick={() => handleLinkClick(link.id as any)}
-                  >
-                      <link.icon className="mr-4 w-10 h-10" />
-                      {link.label}
-                  </Button>
-              ))}
-            </>
-          )}
+            {newLinks.map(link => (
+                <Button
+                    key={link.id}
+                    variant="ghost"
+                    className="w-full justify-start text-xl p-4 h-auto"
+                    onClick={() => handleLinkClick(link.id as any)}
+                >
+                    <link.icon className="mr-4 w-10 h-10" />
+                    {link.label}
+                </Button>
+            ))}
+          </>
 
+          {/* The Dev Den is only shown if the user is a developer */}
           {isDeveloper && (
             <DevDropdown 
               onTestCreateTribe={onTestCreateTribe} 
