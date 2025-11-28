@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type FaqItem = {
   date: string;
@@ -17,10 +17,15 @@ type FaqItem = {
   ed: string;
 };
 
+const commonTopics = [
+  "All", "Trading", "Feelings", "Family", "Relationships", "Process", "TTP", "Rocks", "Health", "Accountability", "Beliefs", "Intention"
+];
+
 export default function TheIndexPage() {
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('All');
 
   useEffect(() => {
     async function fetchFaqs() {
@@ -41,16 +46,28 @@ export default function TheIndexPage() {
   }, []);
 
   const filteredFaqs = useMemo(() => {
-    if (!searchTerm) {
-      return faqs;
+    let results = faqs;
+
+    // Filter by selected topic first
+    if (selectedTopic !== 'All') {
+        const lowercasedTopic = selectedTopic.toLowerCase();
+        results = results.filter(faq =>
+            faq.contributor.toLowerCase().includes(lowercasedTopic) ||
+            faq.ed.toLowerCase().includes(lowercasedTopic)
+        );
     }
     
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
-    return faqs.filter(faq =>
-        faq.contributor.toLowerCase().includes(lowercasedSearchTerm) ||
-        faq.ed.toLowerCase().includes(lowercasedSearchTerm)
-    );
-  }, [faqs, searchTerm]);
+    // Then filter by search term
+    if (searchTerm) {
+        const lowercasedSearchTerm = searchTerm.toLowerCase();
+        results = results.filter(faq =>
+            faq.contributor.toLowerCase().includes(lowercasedSearchTerm) ||
+            faq.ed.toLowerCase().includes(lowercasedSearchTerm)
+        );
+    }
+
+    return results;
+  }, [faqs, searchTerm, selectedTopic]);
 
   if (loading) {
     return (
@@ -76,15 +93,27 @@ export default function TheIndexPage() {
       </header>
 
       <div className="space-y-8">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search by keyword (e.g., family, anger, process)..."
-            className="w-full pl-10 text-base"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col md:flex-row gap-4">
+          <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Select a topic" />
+            </SelectTrigger>
+            <SelectContent>
+              {commonTopics.map(topic => (
+                <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Refine search by keyword..."
+              className="w-full pl-10 text-base"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         <div>
@@ -120,7 +149,7 @@ export default function TheIndexPage() {
                 ))}
             </div>
             {filteredFaqs.length === 0 && !loading && (
-                <p className="text-center text-muted-foreground mt-8">No results found for "{searchTerm}".</p>
+                <p className="text-center text-muted-foreground mt-8">No results found for your query.</p>
             )}
             {filteredFaqs.length > 100 && (
                 <p className="text-center text-muted-foreground mt-4">More than 100 results found. Refine your search to see more.</p>
