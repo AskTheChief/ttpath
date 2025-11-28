@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -109,6 +109,22 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>View Map</Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/reports">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-6 w-6" />
+                All Reports
+              </CardTitle>
+              <CardDescription>
+                View all meeting reports from all tribes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>View Reports</Button>
             </CardContent>
           </Card>
         </Link>
