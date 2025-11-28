@@ -48,12 +48,12 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                     </Card>
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
-                             <CardDescription className="text-sm text-muted-foreground flex justify-between items-center">
+                             <div className="text-sm text-muted-foreground flex justify-between items-center">
                                 <span>Date: {faq.date}</span>
                                 <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                     <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
                                 </a>
-                            </CardDescription>
+                            </div>
                             <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
