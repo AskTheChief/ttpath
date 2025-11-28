@@ -132,12 +132,12 @@ export default function TheIndexPage() {
                         <Card className="h-full bg-secondary/50">
                             <CardHeader>
                                 <CardTitle className="text-lg">Ed Says:</CardTitle>
-                                <CardDescription className="flex justify-between items-center">
+                                <div className="text-sm text-muted-foreground flex justify-between items-center">
                                     <span>Date: {faq.date}</span>
                                     <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                         <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
                                     </a>
-                                </CardDescription>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="whitespace-pre-wrap">{faq.ed}</p>
