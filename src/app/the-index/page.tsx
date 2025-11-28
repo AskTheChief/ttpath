@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -30,8 +30,6 @@ const commonTopics = [
 // Helper function to format text by handling newlines
 const formatText = (text: string) => {
     if (!text) return '';
-    // Replace single newlines (not preceded or followed by another) with a space
-    // Then collapse multiple newlines into a single one for paragraph breaks.
     return text.replace(/(?<!\n)\n(?!\n)/g, ' ').replace(/\n\s*\n/g, '\n\n');
 };
 
@@ -79,6 +77,24 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
 
 const ITEMS_PER_PAGE = 12;
 
+function QuestionList({ faqs, onSelectFaq }: { faqs: FaqItem[], onSelectFaq: (faq: FaqItem) => void }) {
+    return (
+      <div className="space-y-3 p-4">
+        {faqs.map((faq, index) => (
+          <button
+            key={index}
+            onClick={() => onSelectFaq(faq)}
+            className="w-full text-left p-3 rounded-lg bg-background hover:bg-secondary transition-colors border"
+          >
+            <p className="font-medium truncate">{faq.contributor}</p>
+            <p className="text-sm text-muted-foreground truncate">Ed: {faq.ed}</p>
+          </button>
+        ))}
+      </div>
+    );
+}
+
+
 const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> }) => {
     const [viewState, setViewState] = useState<'root' | 'topics' | 'faqs'>('root');
     const [activeTopic, setActiveTopic] = useState<string | null>(null);
@@ -90,8 +106,9 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
 
     const activeTopicFaqs = activeTopic ? faqsByTopic[activeTopic] || [] : [];
     const totalPages = Math.ceil(activeTopicFaqs.length / ITEMS_PER_PAGE);
+    const paginatedFaqs = activeTopicFaqs.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
   
-    const getItemsForView = () => {
+    const getItemsForView = useCallback(() => {
       switch (viewState) {
         case 'root':
           return [{ id: 'root', label: 'All Topics', type: 'root', count: faqsByTopic.All?.length || 0 }];
@@ -103,19 +120,11 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
             count: faqsByTopic[topic]?.length || 0,
           }));
         case 'faqs':
-          if (!activeTopic) return [];
-          const startIndex = currentPage * ITEMS_PER_PAGE;
-          const endIndex = startIndex + ITEMS_PER_PAGE;
-          return activeTopicFaqs.slice(startIndex, endIndex).map((faq, index) => ({
-            id: `${activeTopic}-${startIndex + index}`,
-            label: faq.contributor.substring(0, 30) + '...',
-            type: 'faq',
-            data: faq,
-          }));
+            return []; // Questions are now shown in a list, not as bubbles
         default:
           return [];
       }
-    };
+    }, [viewState, topics, faqsByTopic]);
   
     const items = getItemsForView();
   
@@ -151,15 +160,13 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
       });
     }, [items.length, viewState, api, items, currentPage]);
   
-    const handleBubbleClick = (item: ReturnType<typeof getItemsForView>[number]) => {
+    const handleBubbleClick = (item: { id: string; label: string; type: string; }) => {
       if (item.type === 'root') {
         setViewState('topics');
       } else if (item.type === 'topic') {
         setActiveTopic(item.label);
         setCurrentPage(0);
         setViewState('faqs');
-      } else if (item.type === 'faq' && 'data' in item) {
-        setSelectedFaq(item.data as FaqItem);
       }
     };
 
@@ -180,7 +187,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         }
     }
   
-    const getBubbleSize = (item: ReturnType<typeof getItemsForView>[number]) => {
+    const getBubbleSize = (item: { type: string, count?: number }) => {
       if (item.type === 'root') return 200;
       if (item.type === 'topic') return 80 + Math.min((item.count || 0), 200) * 0.3;
       return 90;
@@ -189,32 +196,40 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
     return (
       <div className="relative">
         <div ref={containerRef} className="w-full h-[600px] bg-muted/30 rounded-lg relative overflow-hidden flex items-center justify-center">
-          {springs.map((props, i) => {
-            const item = items[i];
-            const size = getBubbleSize(item);
-            return (
-              <animated.div
-                key={item.id}
-                onClick={() => handleBubbleClick(item)}
-                className={cn(
-                  'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
-                  item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
-                  item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
-                  item.type === 'faq' && 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
-                )}
-                style={{
-                  width: size,
-                  height: size,
-                  ...props,
-                }}
-              >
-                <span className="text-xs font-semibold select-none pointer-events-none">
-                  {item.label}
-                  {item.type === 'topic' && <span className="block opacity-70 text-xs">({item.count})</span>}
-                </span>
-              </animated.div>
-            );
-          })}
+          {viewState === 'faqs' ? (
+              <div className="w-full h-full overflow-y-auto">
+                 <h2 className="text-xl font-bold p-4 sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
+                    Topic: {activeTopic}
+                </h2>
+                <QuestionList faqs={paginatedFaqs} onSelectFaq={setSelectedFaq} />
+              </div>
+          ) : (
+            springs.map((props, i) => {
+              const item = items[i];
+              const size = getBubbleSize(item);
+              return (
+                <animated.div
+                  key={item.id}
+                  onClick={() => handleBubbleClick(item)}
+                  className={cn(
+                    'absolute rounded-full cursor-pointer flex items-center justify-center text-center p-2 shadow-lg transition-colors',
+                    item.type === 'root' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
+                    item.type === 'topic' && 'bg-accent hover:bg-accent/90 text-accent-foreground',
+                  )}
+                  style={{
+                    width: size,
+                    height: size,
+                    ...props,
+                  }}
+                >
+                  <span className="text-xs font-semibold select-none pointer-events-none">
+                    {item.label}
+                    {item.type === 'topic' && <span className="block opacity-70 text-xs">({item.count})</span>}
+                  </span>
+                </animated.div>
+              );
+            })
+          )}
         </div>
         
         {viewState !== 'root' && (
@@ -366,4 +381,3 @@ export default function TheIndexPage() {
     </div>
   );
 }
-
