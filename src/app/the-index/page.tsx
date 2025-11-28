@@ -180,11 +180,10 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
     }));
 
     const bind = useDrag(({ args: [index], active, movement: [mx, my] }) => {
-        const item = items[index];
         const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
 
         let x = 0, y = 0, scale = 1;
-        if (item.type === 'root') {
+        if (items[index].type === 'root') {
           scale = 1.5;
         } else if (items.length > 1) {
           const angle = (index / items.length) * 2 * Math.PI;
@@ -206,57 +205,62 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
     });
   
     useEffect(() => {
-      const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
+        if (viewState === 'faqs' || items.length === 0) return;
       
-      const interval = setInterval(() => {
-        api.start(i => {
-            const currentX = springs[i].x.get();
-            const currentY = springs[i].y.get();
-            const newX = currentX + (Math.random() - 0.5) * 5;
-            const newY = currentY + (Math.random() - 0.5) * 5;
-
-            // Simple boundary check to prevent drifting too far
-            if (Math.sqrt(newX*newX + newY*newY) > Math.min(width, height) / 1.8) {
-                const item = items[i];
-                let x = 0, y = 0;
-                 if (item.type === 'root') {
-                    // Root snaps back to center
-                } else if (items.length > 1) {
-                    const angle = (i / items.length) * 2 * Math.PI;
-                    const radius = Math.min(width, height) / 3.5;
-                    x = Math.cos(angle) * radius;
-                    y = Math.sin(angle) * radius;
-                }
-                return { to: { x, y } };
-            }
-
-            return { to: { x: newX, y: newY }, config: { mass: 20, tension: 10, friction: 50, duration: 5000 } };
-        });
-      }, 5000);
-
-      api.start(i => {
-        const item = items[i];
-        let x = 0, y = 0, scale = 1;
-        
-        if (item.type === 'root') {
-          scale = 1.5;
-        } else if (items.length > 1) {
-          const angle = (i / (items.length)) * 2 * Math.PI;
-          const radius = Math.min(width, height) / 3.5;
-          x = Math.cos(angle) * radius;
-          y = Math.sin(angle) * radius;
-        }
-  
-        return {
-          to: { x, y, scale, opacity: 1 },
-          from: { x: Math.random() * 100 - 50, y: Math.random() * 100 - 50, scale: 0, opacity: 0 },
-          delay: i * 30,
+        const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
+      
+        const animate = async () => {
+          while (true) {
+            await Promise.all(api.start(i => {
+              const item = items[i];
+              let x = 0, y = 0;
+              
+              if (item.type === 'root') {
+                // Root stays centered
+              } else if (items.length > 1) {
+                const angle = (i / items.length) * 2 * Math.PI;
+                const baseRadius = Math.min(width, height) / 3.5;
+                const randomFactor = 1 + (Math.random() - 0.5) * 0.2; // +/- 10% radius variation
+                const radius = baseRadius * randomFactor;
+                x = Math.cos(angle) * radius;
+                y = Math.sin(angle) * radius;
+              }
+      
+              return {
+                to: { x, y },
+                config: { mass: 10, tension: 20, friction: 50 },
+                delay: i * 20,
+              };
+            }));
+            // Wait for some time before starting the next animation cycle
+            await new Promise(resolve => setTimeout(resolve, 4000));
+          }
         };
-      });
-
-      return () => clearInterval(interval);
-
-    }, [items, viewState, api, springs]);
+      
+        animate();
+      
+        // Initial entrance animation
+        api.start(i => {
+          const item = items[i];
+          let x = 0, y = 0, scale = 1;
+      
+          if (item.type === 'root') {
+            scale = 1.5;
+          } else if (items.length > 1) {
+            const angle = (i / items.length) * 2 * Math.PI;
+            const radius = Math.min(width, height) / 3.5;
+            x = Math.cos(angle) * radius;
+            y = Math.sin(angle) * radius;
+          }
+      
+          return {
+            to: { x, y, scale, opacity: 1 },
+            from: { x: 0, y: 0, scale: 0, opacity: 0 },
+            delay: i * 50,
+          };
+        });
+      
+      }, [items, viewState, api]);
   
     const handleBubbleClick = (item: { id: string; label: string; type: string; }) => {
       if (item.type === 'root') {
@@ -296,11 +300,11 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         <div ref={containerRef} className="w-full h-[600px] bg-muted/30 rounded-lg relative overflow-hidden flex items-center justify-center">
           {viewState === 'faqs' ? (
               <div className="w-full h-full flex flex-col">
-                <div className="flex items-center justify-between p-4 sticky top-0 bg-muted/80 backdrop-blur-sm z-10 border-b">
+                <div className="flex items-center justify-between p-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10 border-b">
                     <Button variant="outline" onClick={handleBackClick}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Topics
                     </Button>
-                    <h2 className="text-xl font-bold">Topic: {activeTopic}</h2>
+                    <h2 className="text-xl font-bold text-center">Topic: {activeTopic}</h2>
                      {totalPages > 1 ? (
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" onClick={() => handlePageChange('prev')} disabled={currentPage === 0}>Prev</Button>
@@ -413,7 +417,7 @@ export default function TheIndexPage() {
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
-            const questionText = faq.contributor.toLowerCase();
+            const questionText = (faq.contributor + ' ' + faq.ed).toLowerCase();
             return searchWords.every(word => questionText.includes(word));
         });
     }
