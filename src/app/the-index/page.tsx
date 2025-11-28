@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, List, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,14 @@ const commonTopics = [
   "All", "Trading", "Feelings", "Family", "Relationships", "Process", "TTP", "Rocks", "Health", "Accountability", "Beliefs", "Intention"
 ];
 
+// Helper function to format text by handling newlines
+const formatText = (text: string) => {
+    if (!text) return '';
+    // Replace single newlines (not preceded or followed by another) with a space
+    // Then collapse multiple newlines into a single one for paragraph breaks.
+    return text.replace(/(?<!\n)\n(?!\n)/g, ' ').replace(/\n\s*\n/g, '\n\n');
+};
+
 
 function ListView({ faqs }: { faqs: FaqItem[] }) {
     if (faqs.length === 0) {
@@ -42,13 +50,13 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                             <CardTitle className="text-lg">Contributor Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.contributor}</blockquote>
+                            <blockquote className="text-muted-foreground whitespace-pre-wrap">{formatText(faq.contributor)}</blockquote>
                         </CardContent>
                     </Card>
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
-                             <div className="text-sm text-muted-foreground flex justify-between items-center">
-                                <span>Date: {faq.date}</span>
+                            <div className="text-sm text-muted-foreground flex justify-between items-center">
+                               <span>{faq.date !== 'Unknown Date' && `Date: ${faq.date}`}</span>
                                 <a href={faq.url} target="_blank" rel="noopener noreferrer">
                                     <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
                                 </a>
@@ -56,7 +64,7 @@ function ListView({ faqs }: { faqs: FaqItem[] }) {
                             <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="whitespace-pre-wrap">{faq.ed}</p>
+                            <p className="whitespace-pre-wrap">{formatText(faq.ed)}</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -132,7 +140,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           delay: i * 50,
         };
       });
-    }, [items.length, viewState, api]);
+    }, [items.length, viewState, api, items]);
   
     const handleBubbleClick = (item: ReturnType<typeof getItemsForView>[number]) => {
       if (item.type === 'root') {
@@ -200,11 +208,11 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq?.contributor}</DialogDescription>
+              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
-              <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq?.ed}</p>
+              <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq ? formatText(selectedFaq.ed) : ''}</p>
             </div>
           </DialogContent>
         </Dialog>
