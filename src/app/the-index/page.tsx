@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -204,15 +204,21 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         rubberband: true
     });
   
-    useEffect(() => {
+      useEffect(() => {
         if (viewState === 'faqs' || items.length === 0) return;
       
         const { width = 600, height = 600 } = containerRef.current?.getBoundingClientRect() || {};
-      
+        let isCancelled = false;
+
         const animate = async () => {
-          while (true) {
-            await Promise.all(api.start(i => {
+          while (!isCancelled) {
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            if (isCancelled) break;
+            
+            api.start(i => {
               const item = items[i];
+              if (!item) return; // Fix: Check if item exists
+              
               let x = 0, y = 0;
               
               if (item.type === 'root') {
@@ -231,9 +237,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
                 config: { mass: 10, tension: 20, friction: 50 },
                 delay: i * 20,
               };
-            }));
-            // Wait for some time before starting the next animation cycle
-            await new Promise(resolve => setTimeout(resolve, 4000));
+            });
           }
         };
       
@@ -242,6 +246,8 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
         // Initial entrance animation
         api.start(i => {
           const item = items[i];
+           if (!item) return; // Fix: Check if item exists
+
           let x = 0, y = 0, scale = 1;
       
           if (item.type === 'root') {
@@ -259,6 +265,11 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
             delay: i * 50,
           };
         });
+
+        return () => {
+          isCancelled = true;
+          api.stop();
+        };
       
       }, [items, viewState, api]);
   
@@ -405,7 +416,7 @@ export default function TheIndexPage() {
     commonTopics.slice(1).forEach(topic => {
       const lowercasedTopic = topic.toLowerCase();
       topicsMap[topic] = faqs.filter(faq => 
-        faq.contributor.toLowerCase().includes(lowercasedTopic)
+        (faq.contributor + ' ' + faq.ed).toLowerCase().includes(lowercasedTopic)
       );
     });
     return topicsMap;
