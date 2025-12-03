@@ -11,6 +11,7 @@ import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { setDoc, doc } from 'firebase/firestore';
 import { useState } from "react";
 import { updateUserProgress } from "@/ai/flows/update-user-progress";
+import { Eye, EyeOff } from 'lucide-react';
 
 type SignupModalProps = {
   isOpen: boolean;
@@ -25,12 +26,14 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const resetState = () => {
     setEmail('');
     setPassword('');
     setError(null);
     setIsLoading(false);
+    setShowPassword(false);
   };
   
   const handleClose = () => {
@@ -79,6 +82,8 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
     }
   };
 
+  const togglePasswordVisibility = () => setShowPassword(prev => !prev);
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
@@ -96,9 +101,29 @@ export default function SignupModal({ isOpen, onClose, showLogin, onSignupSucces
               <Label htmlFor="email-signup">Email Address</Label>
               <Input type="email" id="email-signup" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="password-signup">Password</Label>
-              <Input type="password" id="password-signup" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                id="password-signup"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10"
+              />
+               <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                  <span className="sr-only">
+                    {showPassword ? 'Hide password' : 'Show password'}
+                  </span>
+                </Button>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

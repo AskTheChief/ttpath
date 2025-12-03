@@ -28,7 +28,6 @@ body {
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 145 48% 42%;
-    --radius: 0.5rem;
   }
 
   .dark {
@@ -120,6 +119,16 @@ body {
   .animated-logo {
     width: 100%;
     height: 100%;
+    animation: hue-cycle 5s linear infinite;
+  }
+
+  @keyframes hue-cycle {
+    0% {
+      filter: hue-rotate(0deg);
+    }
+    100% {
+      filter: hue-rotate(360deg);
+    }
   }
 
   .journey-title {
