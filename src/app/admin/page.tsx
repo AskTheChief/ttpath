@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, BookCopy, FileText } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -125,22 +125,6 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>View Reports</Button>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/the-index">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookCopy className="h-6 w-6" />
-                The Index
-              </CardTitle>
-              <CardDescription>
-                Search and explore the full FAQ database.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button>Go to Index</Button>
             </CardContent>
           </Card>
         </Link>
