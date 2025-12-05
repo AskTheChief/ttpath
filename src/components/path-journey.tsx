@@ -830,12 +830,14 @@ export default function PathJourney() {
           />
         </div>
 
-        <div className="menu-icon-container">
-          <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
-            <Menu className="h-8 w-8 text-muted-foreground" />
-          </button>
-          <span className="node-label">Resources</span>
-        </div>
+        {isGuest && (
+          <div className="menu-icon-container">
+            <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
+              <Menu className="h-8 w-8 text-muted-foreground" />
+            </button>
+            <span className="node-label">Resources</span>
+          </div>
+        )}
 
         <div className="login-icon-container">
             {isGuest ? (
