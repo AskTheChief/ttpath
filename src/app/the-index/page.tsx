@@ -471,7 +471,7 @@ export default function TheIndexPage() {
         </Button>
       </header>
 
-      <Accordion type="single" collapsible className="w-full mb-8">
+      <Accordion type="single" collapsible defaultValue="how-to-use" className="w-full mb-8">
         <AccordionItem value="how-to-use">
           <AccordionTrigger>How to Use the Knowledge Base</AccordionTrigger>
           <AccordionContent>
