@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type FaqItem = {
   date: string;
@@ -458,7 +459,7 @@ export default function TheIndexPage() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-4xl font-bold">The Knowledge Base</h1>
           <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers from past experiences.</p>
@@ -469,6 +470,28 @@ export default function TheIndexPage() {
           </Link>
         </Button>
       </header>
+
+      <Accordion type="single" collapsible className="w-full mb-8">
+        <AccordionItem value="how-to-use">
+          <AccordionTrigger>How to Use the Knowledge Base</AccordionTrigger>
+          <AccordionContent>
+            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground space-y-2">
+              <p>This Knowledge Base is a collection of community questions and answers. You can explore it in two ways:</p>
+              <ul className="list-disc pl-5">
+                <li>
+                  <strong>Bubble View (Default):</strong> An interactive way to explore topics. Click the "All Topics" bubble to see categories. Click a category bubble (like "Trading" or "Feelings") to see a list of related questions.
+                </li>
+                <li>
+                  <strong>List View:</strong> A traditional, searchable list of all entries. Use the toggle to switch to this view.
+                </li>
+              </ul>
+              <p>
+                Use the dropdown to filter by a major topic and the search bar to find specific keywords within the questions. The search and filters work in both views.
+              </p>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row gap-4 items-center">
