@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -382,7 +382,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <CardDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</CardDescription>
+              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
@@ -451,7 +451,7 @@ export default function TheIndexPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading The Index...</p>
+        <p className="mt-4 text-muted-foreground">Loading The Archive...</p>
       </div>
     );
   }
@@ -460,8 +460,8 @@ export default function TheIndexPage() {
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold">The Index</h1>
-          <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers.</p>
+          <h1 className="text-4xl font-bold">The Archive</h1>
+          <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers from past experiences.</p>
         </div>
         <Button asChild variant="outline">
           <Link href="/">
@@ -512,3 +512,5 @@ export default function TheIndexPage() {
     </div>
   );
 }
+
+    

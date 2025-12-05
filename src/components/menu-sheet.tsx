@@ -167,7 +167,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <BookCopy className="mr-4 w-10 h-10" />
-                  The Index
+                  The Archive
               </Button>
             </Link>
             <DropdownMenu>
@@ -219,6 +219,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               onTestCreateTribe={onTestCreateTribe} 
               onSendTestEmail={onSendTestEmail}
               onSendTestDiploma={onSendTestDiploma}
+              currentUser={currentUser}
             />
           )}
         </div>
@@ -226,3 +227,5 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
     </Sheet>
   );
 }
+
+    
