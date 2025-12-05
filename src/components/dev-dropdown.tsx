@@ -15,15 +15,21 @@ import { resetUserProgress } from "@/ai/flows/reset-user-progress";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from './ui/button';
 import { auth } from '@/lib/firebase';
+import { User } from "firebase/auth";
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
   onSendTestEmail: () => void;
   onSendTestDiploma: () => void;
+  currentUser: User | null;
 };
 
-export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma }: DevDropdownProps) {
+// Hardcoded list of developer email addresses for special access.
+const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
+
+export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: DevDropdownProps) {
   const { toast } = useToast();
+  const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
 
   const handleReset = async () => {
     const user = auth.currentUser;
@@ -71,9 +77,11 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
         <DropdownMenuContent>
           <DropdownMenuLabel>Dev Den</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <Link href="/admin" passHref>
-            <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
-          </Link>
+          {isDeveloper && (
+            <Link href="/admin" passHref>
+              <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
+            </Link>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => window.open('https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs', '_blank')}>Library</DropdownMenuItem>
           <Link href="/games" passHref><DropdownMenuItem>Game Center</DropdownMenuItem></Link>

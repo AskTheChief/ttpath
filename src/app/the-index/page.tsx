@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSprings, animated } from '@react-spring/web';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -382,7 +382,7 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
+              <CardDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</CardDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
@@ -401,7 +401,7 @@ export default function TheIndexPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('All');
-  const [viewMode, setViewMode] = useState<'list' | 'bubble'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'bubble'>('bubble');
 
   useEffect(() => {
     async function fetchFaqs() {
@@ -464,8 +464,8 @@ export default function TheIndexPage() {
           <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers.</p>
         </div>
         <Button asChild variant="outline">
-          <Link href="/admin">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Admin
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
           </Link>
         </Button>
       </header>
