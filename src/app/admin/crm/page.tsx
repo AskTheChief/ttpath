@@ -120,6 +120,7 @@ export default function CrmPage() {
                   <div className="p-1">
                     <h4 className="font-bold">{selectedUser.firstName} {selectedUser.lastName}</h4>
                     <p className="text-sm">{selectedUser.location}</p>
+                    <p className="text-sm text-blue-600">{selectedUser.email}</p>
                   </div>
                 </InfoWindowF>
               )}
