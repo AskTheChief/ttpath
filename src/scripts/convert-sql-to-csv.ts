@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'UserContact.sql');
+const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'table_0.sql');
 const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv');
 
 /**
@@ -71,7 +71,7 @@ async function convertSqlToCsv() {
 
     const allRows: string[][] = [];
     
-    // The full list of 30 headers you provided
+    // The full list of 30 headers
     const header = [
         'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
         'address', 'username', 'password', 'city', 'state', 'province', 'country', 
@@ -95,7 +95,6 @@ async function convertSqlToCsv() {
             const rowContent = rowMatch[1];
             try {
                 const parsedSqlValues = parseRowValues(rowContent);
-                // Ensure the number of columns from SQL matches the header
                 if (parsedSqlValues.length >= header.length) { 
                     const cleanedRow = parsedSqlValues.slice(0, header.length).map(cleanSqlValue);
                     allRows.push(cleanedRow);
