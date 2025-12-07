@@ -43,10 +43,11 @@ export default function CrmPage() {
           throw new Error(result.message || 'Failed to load user data.');
         }
       } catch (error: any) {
+        console.error("CRM Page Error:", error); // Log the full error to the console
         toast({
           variant: "destructive",
           title: "Error Loading Data",
-          description: error.message,
+          description: `An error occurred: ${error.message}. Check the console for more details.`,
         });
       } finally {
         setLoading(false);
