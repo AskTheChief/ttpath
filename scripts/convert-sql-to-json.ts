@@ -2,19 +2,51 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv');
 const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
+const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-type LegacyUser = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  location: string;
-  country: string;
-};
+if (!apiKey) {
+    console.error('ERROR: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set in your .env file.');
+    process.exit(1);
+}
 
-// Function to split full name into first and last name
+// Function to add a delay
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function geocodeAddress(address: string): Promise<{ lat: number, lng: number } | null> {
+    if (!address) {
+        return null;
+    }
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'OK') {
+            return data.results[0].geometry.location; // { lat, lng }
+        } else if (data.status === 'ZERO_RESULTS') {
+            console.warn(`No results found for address: "${address}"`);
+            return null;
+        } else if (data.status === 'OVER_QUERY_LIMIT') {
+            console.error('Geocoding API query limit reached. Please wait and try again, or check your billing status.');
+            throw new Error('OVER_QUERY_LIMIT');
+        } else {
+            console.error(`Geocoding failed for address "${address}": ${data.status} - ${data.error_message || ''}`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`An error occurred while geocoding: ${error}`);
+        throw error;
+    }
+}
+
 function splitName(firstName: string, lastName: string): { firstName: string, lastName:string } {
     if (firstName && !lastName) {
         const nameParts = firstName.trim().split(/\s+/);
@@ -27,95 +59,59 @@ function splitName(firstName: string, lastName: string): { firstName: string, la
     return { firstName: firstName || '', lastName: lastName || '' };
 }
 
-// Function to normalize and combine address parts into a single location string
-function normalizeLocation(address: string, city: string, state: string, country: string): string {
-    const parts = [address, city, state, country];
-    
-    const cleanedParts = parts.map(part => 
-        (part || '')
-            .trim()
-            // Remove known noise
-            .replace(/city:|state:|country:|address:/gi, '')
-            // Remove characters that are unlikely to be part of an address
-            .replace(/[~!*();?#@&=+$%^]/g, '')
-            .trim()
-    ).filter(Boolean); // Filter out empty parts
-
-    // Simple de-duplication for parts that might be repeated (e.g. city in address)
-    const uniqueParts = [];
-    const seenParts = new Set();
-    for (let i = cleanedParts.length - 1; i >= 0; i--) {
-        const part = cleanedParts[i];
-        const partLower = part.toLowerCase();
-        let isRedundant = false;
-        for (const seen of seenParts) {
-            if ((seen as string).includes(partLower)) {
-                isRedundant = true;
-                break;
-            }
-        }
-        if (!isRedundant) {
-            uniqueParts.unshift(part);
-            seenParts.add(partLower);
-        }
-    }
-    
-    return uniqueParts.join(', ');
+function createFullLocationString(address: string, city: string, state: string, zip: string, country: string): string {
+    const parts = [address, city, state, zip, country].map(p => (p || '').trim()).filter(Boolean);
+    return parts.join(', ');
 }
 
 
-async function convertCsvToJson() {
+async function convertAndGeocode() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
   if (!fs.existsSync(csvFilePath)) {
     console.error(`Error: CSV file not found at ${csvFilePath}`);
-    console.error('Please ensure the CSV file exists and the path is correct.');
+    console.error('Please ensure the CSV file exists and the path is correct. Run `npm run convert-sql` first.');
     process.exit(1);
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
+  const headers = ['id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'];
+  
   const records = parse(csvContent, {
-    columns: true,
+    columns: headers,
+    from_line: 2, // Skip the header row in the CSV file itself
     skip_empty_lines: true,
     trim: true,
   });
 
-  const header = Object.keys(records[0] || {}).map(h => h.trim());
-  const firstNameKey = header.find(h => h.toLowerCase().includes('first name'));
-  const lastNameKey = header.find(h => h.toLowerCase().includes('last name'));
-  const emailKey = header.find(h => h.toLowerCase().includes('email'));
-  const addressKey = header.find(h => h.toLowerCase().includes('address'));
-  const cityKey = header.find(h => h.toLowerCase().includes('city'));
-  const stateKey = header.find(h => h.toLowerCase().includes('state'));
-  const countryKey = header.find(h => h.toLowerCase().includes('country'));
-
-  if (!firstNameKey || !emailKey) {
-      console.error('Could not find "First Name" and "Email" columns in the CSV file. Please check the header row.');
-      console.log('Found headers:', header);
-      process.exit(1);
+  if (records.length === 0) {
+      console.log('No records found in CSV file.');
+      return;
   }
 
-  const processedRecords = records.map(record => {
-      const { firstName, lastName } = splitName(record[firstNameKey] || '', lastNameKey ? record[lastNameKey] : '');
-      const address = addressKey ? record[addressKey] : '';
-      const city = cityKey ? record[cityKey] : '';
-      const state = stateKey ? record[stateKey] : '';
-      const country = countryKey ? record[countryKey] : '';
+  const processedRecords = records.map((record: any) => {
+      const { firstName, lastName } = splitName(record.first, record.last);
+      const city = record.city || '';
+      const state = record.state || record.province || '';
+      const zip = record.code || '';
+      const country = record.country || '';
+      const address = record.address || '';
       
-      return {
-          firstName,
-          lastName,
-          name: `${firstName} ${lastName}`.trim(),
-          email: record[emailKey] || '',
-          location: normalizeLocation(address, city, state, country),
-          country: country,
+      const user: any = {
+          ...record, // Keep all original fields
+          firstName, // Add processed first name
+          lastName,  // Add processed last name
+          location: createFullLocationString(address, city, state, zip, country),
       };
-  }).filter(record => {
-    const hasName = record.name && record.name.trim() !== '';
+      return user;
+  }).filter((record: any) => {
+    // Validate based on the presence of an email and at least a first or last name from the original data
+    const hasName = (record.first && record.first.trim() !== '') || (record.last && record.last.trim() !== '');
     const hasEmail = record.email && record.email.trim() !== '';
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
+        return false;
     }
-    return hasName && hasEmail;
+    return true;
   });
 
   const uniqueUsers = new Map<string, any>();
@@ -128,15 +124,47 @@ async function convertCsvToJson() {
 
   const deDuplicatedRecords = Array.from(uniqueUsers.values());
 
-  console.log(`Successfully parsed ${records.length} records, with ${processedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
+  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
+  console.log('--- Starting Geocoding ---');
+
+  let geocodedCount = 0;
+  const finalUsers = [];
+  for (let i = 0; i < deDuplicatedRecords.length; i++) {
+    const user = deDuplicatedRecords[i];
+    const geocodeQuery = user.location;
+    console.log(`Geocoding user ${i + 1}/${deDuplicatedRecords.length}: ${user.email} (${geocodeQuery})`);
+    
+    try {
+        const coords = await geocodeAddress(geocodeQuery);
+        if (coords) {
+            user.lat = coords.lat;
+            user.lng = coords.lng;
+            geocodedCount++;
+        }
+        finalUsers.push(user);
+        
+        await sleep(50); // Be respectful to the API
+
+    } catch (error: any) {
+        if (error.message === 'OVER_QUERY_LIMIT') {
+            console.log('Stopping script due to query limit. Writing progress...');
+            finalUsers.push(user); // save the user we were working on
+            break; // Exit the loop
+        }
+        finalUsers.push(user); // Still add user even if geocoding fails
+    }
+  }
+
+  console.log('--- Geocoding Complete ---');
+  console.log(`${geocodedCount} users were successfully geocoded.`);
   
-  console.log(`Writing JSON to: ${jsonFilePath}`);
-  fs.writeFileSync(jsonFilePath, JSON.stringify(deDuplicatedRecords, null, 2));
+  console.log(`Writing final JSON with ${finalUsers.length} users to: ${jsonFilePath}`);
+  fs.writeFileSync(jsonFilePath, JSON.stringify(finalUsers, null, 2));
   
-  console.log('Conversion to JSON complete!');
+  console.log('Conversion and geocoding complete!');
 }
 
-convertCsvToJson().catch(err => {
-    console.error('An error occurred during CSV to JSON conversion:', err);
+convertAndGeocode().catch(err => {
+    console.error('An error occurred during the conversion and geocoding process:', err);
     process.exit(1);
 });

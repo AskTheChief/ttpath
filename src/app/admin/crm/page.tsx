@@ -45,7 +45,7 @@ export default function CrmPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lastName', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'last', direction: 'ascending' });
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -196,30 +196,25 @@ export default function CrmPage() {
   };
   
   const allUserFields: (keyof LegacyUser)[] = [
-    'lastName', 'firstName', 'email', 'phone', 'address', 'city', 'state', 'zip', 'country',
-    'id', 'login_first', 'login_last', 'tribe', 'username', 'password', 'province', 
-    'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 
-    'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 
-    'wish_p', 'reachouts', 'expansion_1', 'expansion_2'
+    'id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'
   ];
   
   const fieldHeaderNames: Record<keyof LegacyUser, string> = {
-    lastName: "Last Name",
-    firstName: "First Name",
-    email: "Email",
-    phone: "Phone",
-    address: "Address",
-    city: "City",
-    state: "State",
-    zip: "Zip",
-    country: "Country",
     id: "ID",
     login_first: "First Login",
     login_last: "Last Login",
+    first: "First Name",
+    last: "Last Name",
     tribe: "Tribe",
+    email: "Email",
+    phone: "Phone",
+    address: "Address",
     username: "Username",
     password: "Password",
+    city: "City",
+    state: "State",
     province: "Province",
+    country: "Country",
     code: "Zip/Code",
     book_tt: "Book TT",
     book_g: "Book G",
@@ -236,11 +231,12 @@ export default function CrmPage() {
     reachouts: "Reachouts",
     expansion_1: "Expansion 1",
     expansion_2: "Expansion 2",
-    first: 'first (raw)',
-    last: 'last (raw)',
-    location: 'Full Location',
+    firstName: "First Name (Processed)",
+    lastName: "Last Name (Processed)",
+    location: "Full Location",
     lat: 'lat',
     lng: 'lng',
+    zip: 'zip',
   };
 
 
@@ -371,52 +367,54 @@ export default function CrmPage() {
                </div>
             ) : (
              <ScrollArea className="w-full">
-                <Table className="min-w-full">
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[50px] sticky left-0 bg-card z-10">
-                                <Checkbox
-                                    checked={sortedUsers.length > 0 && numSelectedRows === sortedUsers.length}
-                                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                    aria-label="Select all"
-                                />
-                            </TableHead>
-                            {allUserFields.map(fieldKey => (
-                                <SortableHeader key={fieldKey} title={fieldHeaderNames[fieldKey]} sortKey={fieldKey} />
-                            ))}
-                            <TableHead className="text-right sticky right-0 bg-card z-10">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedUsers.map((user, index) => (
-                            <TableRow key={`${user.email}-${index}`} data-state={user.email && selectedRows[user.email] ? 'selected' : ''}>
-                                <TableCell className="sticky left-0 bg-card z-10">
-                                    <Checkbox
-                                        checked={!!(user.email && selectedRows[user.email])}
-                                        onCheckedChange={(checked) => user.email && handleRowSelect(user.email, !!checked)}
-                                        aria-label={`Select ${user.firstName} ${user.lastName}`}
-                                    />
-                                </TableCell>
-                                {allUserFields.map(fieldKey => (
-                                  <TableCell key={fieldKey}>{(user as any)[fieldKey]}</TableCell>
-                                ))}
-                                <TableCell className="text-right sticky right-0 bg-card z-10">
-                                    <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
-                                        <Mail className="mr-2 h-4 w-4" />
-                                        Email
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                         {sortedUsers.length === 0 && (
+                <div className="max-w-full overflow-x-auto">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={allUserFields.length + 2} className="text-center text-muted-foreground h-24">
-                                    {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
-                                </TableCell>
+                                <TableHead className="w-[50px] sticky left-0 bg-card z-10">
+                                    <Checkbox
+                                        checked={sortedUsers.length > 0 && numSelectedRows === sortedUsers.length}
+                                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                        aria-label="Select all"
+                                    />
+                                </TableHead>
+                                {allUserFields.map(fieldKey => (
+                                    <SortableHeader key={fieldKey} title={fieldHeaderNames[fieldKey]} sortKey={fieldKey} />
+                                ))}
+                                <TableHead className="text-right sticky right-0 bg-card z-10">Actions</TableHead>
                             </TableRow>
-                         )}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {sortedUsers.map((user, index) => (
+                                <TableRow key={`${user.email}-${index}`} data-state={user.email && selectedRows[user.email] ? 'selected' : ''}>
+                                    <TableCell className="sticky left-0 bg-card z-10">
+                                        <Checkbox
+                                            checked={!!(user.email && selectedRows[user.email])}
+                                            onCheckedChange={(checked) => user.email && handleRowSelect(user.email, !!checked)}
+                                            aria-label={`Select ${user.firstName} ${user.lastName}`}
+                                        />
+                                    </TableCell>
+                                    {allUserFields.map(fieldKey => (
+                                    <TableCell key={fieldKey}>{(user as any)[fieldKey]}</TableCell>
+                                    ))}
+                                    <TableCell className="text-right sticky right-0 bg-card z-10">
+                                        <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
+                                            <Mail className="mr-2 h-4 w-4" />
+                                            Email
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {sortedUsers.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={allUserFields.length + 2} className="text-center text-muted-foreground h-24">
+                                        {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             )}
