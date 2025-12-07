@@ -32,7 +32,7 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
     
     // In a real app, you would run the conversion script in your build process.
-    // For now, we assume it exists. If not, we fall back to sample data.
+    // If not, we fall back to sample data.
     if (!fs.existsSync(jsonFilePath)) {
         console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
