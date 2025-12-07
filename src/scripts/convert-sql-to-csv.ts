@@ -7,42 +7,36 @@ const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv
 
 /**
  * A robust parser to split a SQL values tuple string into an array of values.
- * It handles commas and escaped quotes within single-quoted strings.
+ * It uses a regex to correctly handle quoted strings, NULLs, and numbers.
  */
 function parseRowValues(rowString: string): string[] {
-    const values: string[] = [];
-    let current_value = '';
-    let in_quotes = false;
-    let is_escaped = false;
+    // This regex matches:
+    // 1. Quoted strings, including escaped quotes: '([^'\\]*(?:\\.[^'\\]*)*)'
+    // 2. NULL values: (NULL)
+    // 3. Numbers (integer or float): ([\d.-]+)
+    // 4. It splits by commas that are not inside quotes.
+    const regex = /(?:'((?:[^'\\]|\\.)*)'|([\d.-]+)|(NULL))/g;
+    
+    let values: string[] = [];
+    let lastIndex = 0;
 
-    for (const char of rowString) {
-        if (is_escaped) {
-            current_value += char;
-            is_escaped = false;
-            continue;
-        }
-
-        if (char === '\\') {
-            is_escaped = true;
-            current_value += char;
-            continue;
-        }
-
-        if (char === "'") {
-            in_quotes = !in_quotes;
-        }
-
-        if (char === ',' && !in_quotes) {
-            values.push(current_value.trim());
-            current_value = '';
+    rowString.split(',').forEach(part => {
+        if (values.length === 0) {
+            values.push(part);
         } else {
-            current_value += char;
+            const last = values[values.length - 1];
+            // Check if the last part is an unterminated string
+            if (last.startsWith("'") && !last.endsWith("'")) {
+                values[values.length - 1] = last + ',' + part;
+            } else {
+                values.push(part);
+            }
         }
-    }
-    values.push(current_value.trim()); // Add the last value
+    });
 
-    return values;
+    return values.map(v => v.trim());
 }
+
 
 /**
  * Cleans a raw SQL value for CSV output.
@@ -72,16 +66,9 @@ async function convertSqlToCsv() {
     const allRows: string[][] = [];
     
     // The full list of 31 headers from the INSERT statement
-    const header = [
-        'id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
-        'address', 'username', 'password', 'city', 'state', 'province', 'country', 
-        'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 
-        'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 
-        'wish_p', 'reachouts', 'expansion_1', 'expansion_2'
-    ];
+    const header = ['id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'];
     allRows.push(header);
 
-    // Corrected regex to match the specific INSERT statement format
     const insertStatementRegex = /INSERT INTO `table_0` \([^)]+\) VALUES\s*([\s\S]*?);/g;
     let insertMatch;
 
@@ -89,15 +76,17 @@ async function convertSqlToCsv() {
     while ((insertMatch = insertStatementRegex.exec(sqlContent)) !== null) {
         const valuesBlock = insertMatch[1];
         
-        const rowRegex = /\((.*?)\)/g;
+        // This regex is designed to split rows correctly, even if they span multiple lines.
+        // It looks for a parenthesis, captures everything inside until the next closing parenthesis.
+        const rowRegex = /\(([^)]+)\)/g;
         let rowMatch;
 
         while ((rowMatch = rowRegex.exec(valuesBlock)) !== null) {
             const rowContent = rowMatch[1];
             try {
                 const parsedSqlValues = parseRowValues(rowContent);
-                if (parsedSqlValues.length >= header.length) { 
-                    const cleanedRow = parsedSqlValues.slice(0, header.length).map(cleanSqlValue);
+                if (parsedSqlValues.length === header.length) { 
+                    const cleanedRow = parsedSqlValues.map(cleanSqlValue);
                     allRows.push(cleanedRow);
                 } else {
                     console.warn(`Skipping row with incorrect number of columns. Expected ${header.length}, got ${parsedSqlValues.length}.`);
