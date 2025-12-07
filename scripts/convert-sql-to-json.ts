@@ -27,10 +27,21 @@ async function convertCsvToJson() {
     skip_empty_lines: true,
   });
 
-  console.log(`Successfully parsed ${records.length} users from CSV.`);
+  // Filter out records that are missing essential data like name or email.
+  const validRecords = records.filter(record => {
+    const hasName = record.name && record.name.trim() !== '';
+    const hasEmail = record.email && record.email.trim() !== '';
+    if (!hasName || !hasEmail) {
+        console.warn('Skipping invalid record:', record);
+    }
+    return hasName && hasEmail;
+  });
+
+
+  console.log(`Successfully parsed ${records.length} records, with ${validRecords.length} being valid.`);
   
   console.log(`Writing JSON to: ${jsonFilePath}`);
-  fs.writeFileSync(jsonFilePath, JSON.stringify(records, null, 2));
+  fs.writeFileSync(jsonFilePath, JSON.stringify(validRecords, null, 2));
   
   console.log('Conversion to JSON complete!');
 }
