@@ -107,15 +107,15 @@ async function convertAndGeocode() {
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
   const records = parse(csvContent, {
-    columns: true,
+    columns: header => header.map((h: string) => h.toLowerCase().replace(/\s+/g, '_')),
     skip_empty_lines: true,
     trim: true,
   });
 
   const header = Object.keys(records[0] || {});
 
-  const processedRecords = records.map(record => {
-      // Use the new explicit field names from your list
+  const processedRecords = records.map((record: any) => {
+      // Correctly access normalized keys from csv-parse
       const { firstName, lastName } = splitName(record.first || record.login_first || '', record.last || record.login_last || '');
       
       const city = record.city || '';
@@ -139,18 +139,17 @@ async function convertAndGeocode() {
 
       // Include all other fields from the CSV
       header.forEach(h => {
-        // Create a JS-friendly key
-        const key = h.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_');
-        if (!user.hasOwnProperty(key)) {
-            user[key] = record[h] || '';
+        if (!user.hasOwnProperty(h)) {
+            user[h] = record[h] || '';
         }
       });
       
       return user;
-  }).filter(record => {
-    // Corrected validation: Check for the combined name and email on the processed record
+  }).filter((record: any) => {
+    // Corrected validation logic
     const hasName = record.firstName || record.lastName;
     const hasEmail = record.email && record.email.trim() !== '';
+
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
     }
@@ -186,15 +185,15 @@ async function convertAndGeocode() {
         }
         finalUsers.push(user);
         
-        await sleep(50);
+        await sleep(50); // Be respectful to the API
 
     } catch (error: any) {
         if (error.message === 'OVER_QUERY_LIMIT') {
             console.log('Stopping script due to query limit. Writing progress...');
-            finalUsers.push(user);
-            break; 
+            finalUsers.push(user); // save the user we were working on
+            break; // Exit the loop
         }
-        finalUsers.push(user);
+        finalUsers.push(user); // Still add user even if geocoding fails
     }
   }
 
