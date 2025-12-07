@@ -95,11 +95,14 @@ export default function CrmPage() {
     setSelectionBounds(null);
     setFilteredUsers(users);
     if(map) {
-      map.setOptions({ draggable: true, zoomControl: true, scrollwheel: true });
       map.setZoom(2);
       map.setCenter(center);
     }
-    setSelectionMode(false);
+    setSelectionMode(false); // Exit selection mode
+    toast({
+        title: "Selection Cleared",
+        description: "The map is back in normal navigation mode.",
+    });
   };
   
   const handleOpenEmailModal = (user: LegacyUser) => {
@@ -109,42 +112,22 @@ export default function CrmPage() {
   };
 
   const usersToDisplay = useMemo(() => {
-    return selectionMode && selectionBounds ? filteredUsers : users;
-  }, [selectionMode, selectionBounds, filteredUsers, users]);
+    return selectionMode ? filteredUsers : users;
+  }, [selectionMode, filteredUsers, users]);
 
   const toggleSelectionMode = () => {
     const newMode = !selectionMode;
     setSelectionMode(newMode);
     
     if (newMode) {
-      map?.setOptions({ 
-        draggable: false, 
-        zoomControl: true,
-        scrollwheel: true,
-        disableDoubleClickZoom: false,
-        draggableCursor: 'crosshair',
-        draggingCursor: 'crosshair',
-      });
       toast({
         title: "Selection Mode Activated",
-        description: "Zoom and move the map to define your selection area. Dragging is disabled. The table will update automatically.",
+        description: "Pan and zoom the map to define your selection. The table will update automatically.",
       });
       // Initial bounds check
       handleBoundsChanged();
     } else {
-      map?.setOptions({ 
-        draggable: true, 
-        zoomControl: true,
-        scrollwheel: true,
-        disableDoubleClickZoom: false,
-        draggableCursor: undefined,
-        draggingCursor: undefined,
-      });
       clearSelection();
-      toast({
-        title: "Pan Mode Activated",
-        description: "The map is now in normal navigation mode.",
-      });
     }
   };
   
@@ -185,7 +168,7 @@ export default function CrmPage() {
                 <CardTitle>User Location Map</CardTitle>
                 <CardDescription>
                   {selectionMode 
-                    ? "Selection Mode: Pan and zoom to define your area. Dragging is disabled."
+                    ? "Selection Mode: Pan and zoom to select users. The table will update."
                     : "Pan & Zoom Mode: Click a cluster to zoom in, or a marker to see details."
                   }
                 </CardDescription>
@@ -193,13 +176,8 @@ export default function CrmPage() {
                <div className="flex gap-2">
                  <Button variant="outline" onClick={toggleSelectionMode}>
                     {selectionMode ? <Move className="mr-2 h-4 w-4"/> : <MousePointerClick className="mr-2 h-4 w-4"/>}
-                    {selectionMode ? 'Pan Mode' : 'Select Mode'}
+                    {selectionMode ? 'Exit Select Mode' : 'Select Users'}
                  </Button>
-                 {selectionBounds && selectionMode && (
-                    <Button variant="destructive" onClick={clearSelection}>
-                        <X className="mr-2 h-4 w-4" /> Clear Selection
-                    </Button>
-                 )}
                </div>
             </div>
           </CardHeader>
@@ -254,10 +232,10 @@ export default function CrmPage() {
         <Card>
           <CardHeader>
               <CardTitle>
-                Data Manager {selectionMode && selectionBounds && `(${filteredUsers.length} users selected)`}
+                Data Manager {selectionMode && `(${filteredUsers.length} users selected)`}
               </CardTitle>
               <CardDescription>
-                  This table displays user data. {selectionMode && selectionBounds ? 'Showing users in the selected area.' : 'Use "Select Mode" on the map to filter users by location.'}
+                  This table displays user data. {selectionMode ? 'Showing users in the selected map area.' : 'Use "Select Users" on the map to filter users by location.'}
               </CardDescription>
           </CardHeader>
           <CardContent>
@@ -288,7 +266,7 @@ export default function CrmPage() {
                        {usersToDisplay.length === 0 && (
                           <TableRow>
                             <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                {selectionMode && selectionBounds ? 'No users found in the selected area.' : 'No users to display.'}
+                                {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
                        )}
@@ -309,5 +287,3 @@ export default function CrmPage() {
     </>
   );
 }
-
-    
