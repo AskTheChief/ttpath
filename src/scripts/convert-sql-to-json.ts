@@ -3,18 +3,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'UserContact.sql');
-const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
+const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.csv');
 
 type LegacyUser = {
   name: string;
   email: string;
   location: string;
   country: string;
-  lat?: number;
-  lng?: number;
 };
 
-async function convertSqlToJson() {
+// Helper to escape commas in CSV fields
+const escapeCsvField = (field: string): string => {
+  if (field.includes(',')) {
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+  return field;
+};
+
+async function convertSqlToCsv() {
   console.log(`Reading SQL file from: ${sqlFilePath}`);
   const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
   console.log(`File read successfully. Total length: ${sqlContent.length} characters.`);
@@ -64,10 +70,23 @@ async function convertSqlToJson() {
   console.log(`Found ${totalMatches} INSERT statements.`);
   console.log(`Successfully parsed ${users.length} users.`);
   
-  console.log(`Writing JSON to: ${jsonFilePath}`);
-  fs.writeFileSync(jsonFilePath, JSON.stringify(users, null, 2));
+  // Convert to CSV
+  const header = 'name,email,location,country\n';
+  const csvRows = users.map(user => 
+    [
+      escapeCsvField(user.name),
+      escapeCsvField(user.email),
+      escapeCsvField(user.location),
+      escapeCsvField(user.country),
+    ].join(',')
+  );
   
-  console.log('Conversion complete!');
+  const csvContent = header + csvRows.join('\n');
+  
+  console.log(`Writing CSV to: ${csvFilePath}`);
+  fs.writeFileSync(csvFilePath, csvContent);
+  
+  console.log('Conversion to CSV complete!');
 }
 
-convertSqlToJson();
+convertSqlToCsv();
