@@ -10,31 +10,33 @@ const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv
  * It uses a regex to correctly handle quoted strings, NULLs, and numbers.
  */
 function parseRowValues(rowString: string): string[] {
-    // This regex matches:
-    // 1. Quoted strings, including escaped quotes: '([^'\\]*(?:\\.[^'\\]*)*)'
-    // 2. NULL values: (NULL)
-    // 3. Numbers (integer or float): ([\d.-]+)
-    // 4. It splits by commas that are not inside quotes.
-    const regex = /(?:'((?:[^'\\]|\\.)*)'|([\d.-]+)|(NULL))/g;
-    
-    let values: string[] = [];
+    const values: string[] = [];
+    // This regex will match:
+    // 1. Quoted strings, including those with escaped quotes: '((?:[^'\\]|\\.)*)'
+    // 2. Numbers (including decimals and negatives): ([\d.-]+)
+    // 3. NULL keyword: (NULL)
+    // 4. Empty values between commas
+    const regex = /'((?:[^'\\]|\\.)*)'|([\d.-]+)|(NULL)|(,|(?=\)))/g;
     let lastIndex = 0;
+    let match;
+    
+    // Add a comma at the end to ensure the last value is captured.
+    const processingString = rowString + ',';
 
-    rowString.split(',').forEach(part => {
-        if (values.length === 0) {
-            values.push(part);
-        } else {
-            const last = values[values.length - 1];
-            // Check if the last part is an unterminated string
-            if (last.startsWith("'") && !last.endsWith("'")) {
-                values[values.length - 1] = last + ',' + part;
+    while ((match = regex.exec(processingString)) !== null) {
+        if (match[4] === ',' || match[4] === ')') { // If we hit a comma or end parenthesis
+            const segment = processingString.substring(lastIndex, match.index).trim();
+            if (segment.startsWith("'") && segment.endsWith("'")) {
+                values.push(segment.slice(1, -1).replace(/\\'/g, "'"));
+            } else if (segment === 'NULL') {
+                values.push('NULL');
             } else {
-                values.push(part);
+                values.push(segment);
             }
+            lastIndex = match.index + 1;
         }
-    });
-
-    return values.map(v => v.trim());
+    }
+    return values;
 }
 
 
@@ -45,10 +47,7 @@ function cleanSqlValue(value: string): string {
     if (!value || value === 'NULL') {
         return '';
     }
-    // Remove surrounding quotes and handle escaped single quotes.
-    if (value.startsWith("'") && value.endsWith("'")) {
-        return value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '""');
-    }
+    // The value is already un-quoted by parseRowValues, so just handle CSV special characters.
     return value.replace(/"/g, '""');
 }
 
@@ -65,11 +64,11 @@ async function convertSqlToCsv() {
 
     const allRows: string[][] = [];
     
-    // The full list of 31 headers from the INSERT statement
     const header = ['id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'];
     allRows.push(header);
 
-    const insertStatementRegex = /INSERT INTO `table_0` \([^)]+\) VALUES\s*([\s\S]*?);/g;
+    // This regex finds all INSERT statements, and is case-insensitive for "INSERT" and "VALUES"
+    const insertStatementRegex = /INSERT INTO `table_0` \([^)]+\) VALUES\s*([\s\S]*?);/gi;
     let insertMatch;
 
     console.log('Searching for INSERT statements...');
@@ -85,6 +84,12 @@ async function convertSqlToCsv() {
             const rowContent = rowMatch[1];
             try {
                 const parsedSqlValues = parseRowValues(rowContent);
+                
+                // Trim trailing empty strings that might result from trailing commas
+                while (parsedSqlValues.length > 0 && parsedSqlValues[parsedSqlValues.length - 1] === '') {
+                    parsedSqlValues.pop();
+                }
+
                 if (parsedSqlValues.length === header.length) { 
                     const cleanedRow = parsedSqlValues.map(cleanSqlValue);
                     allRows.push(cleanedRow);
