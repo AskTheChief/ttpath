@@ -28,3 +28,4 @@ import '@/ai/flows/send-test-email.ts';
 import '@/ai/flows/update-user-level.ts';
 import '@/ai/flows/delete-user.ts';
 import '@/ai/flows/get-legacy-users.ts';
+import '@/ai/flows/send-direct-email.ts';
