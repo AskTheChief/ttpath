@@ -12,12 +12,14 @@ type LegacyUser = {
   country: string;
 };
 
-// Helper to escape commas in CSV fields
+// Helper to escape commas and quotes in CSV fields
 const escapeCsvField = (field: string): string => {
-  if (field.includes(',')) {
-    return `"${field.replace(/"/g, '""')}"`;
+  if (!field) return '';
+  const escapedField = field.replace(/"/g, '""');
+  if (escapedField.includes(',')) {
+    return `"${escapedField}"`;
   }
-  return field;
+  return escapedField;
 };
 
 async function convertSqlToCsv() {
@@ -30,10 +32,8 @@ async function convertSqlToCsv() {
   // This regex finds all INSERT INTO blocks and captures the values part.
   const insertRegex = /INSERT INTO `table_0` .*? VALUES\s*([\s\S]*?);/g;
   let insertMatch;
-  let totalMatches = 0;
 
   while ((insertMatch = insertRegex.exec(sqlContent)) !== null) {
-    totalMatches++;
     const valuesBlock = insertMatch[1];
     
     // This regex splits the block into individual rows: ( ... ), ( ... ), ...
@@ -67,26 +67,29 @@ async function convertSqlToCsv() {
     }
   }
 
-  console.log(`Found ${totalMatches} INSERT statements.`);
   console.log(`Successfully parsed ${users.length} users.`);
   
-  // Convert to CSV
-  const header = 'name,email,location,country\n';
-  const csvRows = users.map(user => 
-    [
-      escapeCsvField(user.name),
-      escapeCsvField(user.email),
-      escapeCsvField(user.location),
-      escapeCsvField(user.country),
-    ].join(',')
-  );
-  
-  const csvContent = header + csvRows.join('\n');
-  
-  console.log(`Writing CSV to: ${csvFilePath}`);
-  fs.writeFileSync(csvFilePath, csvContent);
-  
-  console.log('Conversion to CSV complete!');
+  if (users.length > 0) {
+    // Convert to CSV
+    const header = 'name,email,location,country\n';
+    const csvRows = users.map(user => 
+      [
+        escapeCsvField(user.name),
+        escapeCsvField(user.email),
+        escapeCsvField(user.location),
+        escapeCsvField(user.country),
+      ].join(',')
+    );
+    
+    const csvContent = header + csvRows.join('\n');
+    
+    console.log(`Writing CSV to: ${csvFilePath}`);
+    fs.writeFileSync(csvFilePath, csvContent);
+    
+    console.log('Conversion to CSV complete!');
+  } else {
+    console.log('No users were parsed, so no CSV file was written.');
+  }
 }
 
 convertSqlToCsv();
