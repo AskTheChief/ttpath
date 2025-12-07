@@ -6,17 +6,6 @@ import { parse } from 'csv-parse/sync';
 const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv');
 const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
 
-type LegacyUser = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  location: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string;
-};
-
 // Function to split full name into first and last name
 function splitName(firstName: string, lastName: string): { firstName: string, lastName:string } {
     if (firstName && !lastName) {

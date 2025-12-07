@@ -168,18 +168,6 @@ export default function CrmPage() {
     let sortableItems = [...filteredUsers];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        if (sortConfig.key === 'location') {
-          const aCity = (a.location || '').split(',')[0].trim();
-          const bCity = (b.location || '').split(',')[0].trim();
-          if (aCity < bCity) {
-            return sortConfig.direction === 'ascending' ? -1 : 1;
-          }
-          if (aCity > bCity) {
-            return sortConfig.direction === 'ascending' ? 1 : -1;
-          }
-          return 0;
-        }
-
         const aVal = a[sortConfig.key] || '';
         const bVal = b[sortConfig.key] || '';
         if (aVal < bVal) {
@@ -346,7 +334,9 @@ export default function CrmPage() {
                           <SortableHeader title="First Name" sortKey="firstName" />
                           <SortableHeader title="Last Name" sortKey="lastName" />
                           <SortableHeader title="Email" sortKey="email" />
-                          <SortableHeader title="Location" sortKey="location" />
+                          <SortableHeader title="City" sortKey="city" />
+                          <SortableHeader title="State" sortKey="state" />
+                          <SortableHeader title="Zip" sortKey="zip" />
                           <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
@@ -363,7 +353,9 @@ export default function CrmPage() {
                               <TableCell>{user.firstName}</TableCell>
                               <TableCell>{user.lastName}</TableCell>
                               <TableCell>{user.email}</TableCell>
-                              <TableCell>{user.location}</TableCell>
+                              <TableCell>{user.city}</TableCell>
+                              <TableCell>{user.state}</TableCell>
+                              <TableCell>{user.zip}</TableCell>
                               <TableCell className="text-right">
                                 <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                     <Mail className="mr-2 h-4 w-4" />
@@ -374,7 +366,7 @@ export default function CrmPage() {
                       ))}
                        {sortedUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center text-muted-foreground">
                                 {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
