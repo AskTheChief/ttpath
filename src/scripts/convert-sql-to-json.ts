@@ -112,8 +112,16 @@ async function convertAndGeocode() {
     trim: true,
   });
 
-  const processedRecords = records.map((record: any) => {
-      const { firstName, lastName } = splitName(record.first || '', record.last || '');
+  const processedRecords = records.filter((record: any) => {
+    const hasName = record.first || record.last;
+    const hasEmail = record.email && record.email.trim() !== '';
+    if (!hasName || !hasEmail) {
+        console.warn('Skipping invalid record due to missing name or email:', record);
+        return false;
+    }
+    return true;
+  }).map((record: any) => {
+      const { firstName, lastName } = splitName(record.first, record.last);
       
       const city = record.city || '';
       const state = record.state || record.province || '';
@@ -126,11 +134,6 @@ async function convertAndGeocode() {
           lastName,
           email: record.email || '',
           location: createFullLocationString(address, city, state, zip, country),
-          address,
-          city,
-          state,
-          zip,
-          country,
           phone: record.phone || '',
       };
       
@@ -143,16 +146,6 @@ async function convertAndGeocode() {
       });
       
       return user;
-  }).filter((record: any) => {
-    // Validation should check the properties of the processed object
-    const hasName = record.firstName || record.lastName;
-    const hasEmail = record.email && record.email.trim() !== '';
-
-    if (!hasName || !hasEmail) {
-        console.warn('Skipping invalid record due to missing name or email:', record);
-        return false;
-    }
-    return true;
   });
 
   const uniqueUsers = new Map<string, any>();
@@ -165,7 +158,7 @@ async function convertAndGeocode() {
 
   const deDuplicatedRecords = Array.from(uniqueUsers.values());
 
-  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid.`);
+  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
   console.log('--- Starting Geocoding ---');
 
   let geocodedCount = 0;
