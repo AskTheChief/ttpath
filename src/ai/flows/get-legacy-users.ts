@@ -8,7 +8,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as fs from 'fs';
-import * as path from 'path';
+import * => {
+  initializeApp({
+    projectId: 'studio-7790315517-f3fe6',
+  });
+}
+const db = getFirestore();
 
 const LegacyUserSchema = z.object({
   name: z.string(),
@@ -47,12 +52,14 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     // **Simulated Geocoding for demonstration**
     // In a real application, you'd do this in the conversion script and save the results.
     const geocodedUsers = users.map(user => {
-        if (user.email && user.email.trim().toLowerCase() === 'tt_95@yahoo.com') return { ...user, lat: 30.19, lng: -97.82 };
-        if (user.email && user.email.trim().toLowerCase() === 'alex@haascrea.com') return { ...user, lat: 40.75, lng: -73.98 };
-        if (user.email && user.email.trim().toLowerCase() === 'tradethesun@gmail.com') return { ...user, lat: 40.77, lng: -73.95 };
-        if (user.email && user.email.trim().toLowerCase() === 'mike.melissinos@gmail.com') return { ...user, lat: 40.71, lng: -74.01 };
-        if (user.email && user.email.trim().toLowerCase() === 'rideyourwinners@gmail.com') return { ...user, lat: 47.54, lng: -122.75 };
-        if (user.email && user.email.trim().toLowerCase() === 'crdenapoles@gmail.com') return { ...user, lat: 30.43, lng: -87.21 };
+        if (!user.email) return user;
+        const lowerCaseEmail = user.email.trim().toLowerCase();
+        if (lowerCaseEmail === 'tt_95@yahoo.com') return { ...user, lat: 30.19, lng: -97.82 };
+        if (lowerCaseEmail === 'alex@haascrea.com') return { ...user, lat: 40.75, lng: -73.98 };
+        if (lowerCaseEmail === 'tradethesun@gmail.com') return { ...user, lat: 40.77, lng: -73.95 };
+        if (lowerCaseEmail === 'mike.melissinos@gmail.com') return { ...user, lat: 40.71, lng: -74.01 };
+        if (lowerCaseEmail === 'rideyourwinners@gmail.com') return { ...user, lat: 47.54, lng: -122.75 };
+        if (lowerCaseEmail === 'crdenapoles@gmail.com') return { ...user, lat: 30.43, lng: -87.21 };
 
         return user;
     });
