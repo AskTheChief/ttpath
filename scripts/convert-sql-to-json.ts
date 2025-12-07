@@ -19,7 +19,7 @@ async function convertSqlToJson() {
   const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
 
   const users: LegacyUser[] = [];
-  const insertRegex = /INSERT INTO `table_0` VALUES \((.*?)\);/g;
+  const insertRegex = /INSERT INTO `table_0` \((?:`.*?`, )*?`.*?`\) VALUES \((.*?)\);/g;
   let match;
 
   while ((match = insertRegex.exec(sqlContent)) !== null) {
