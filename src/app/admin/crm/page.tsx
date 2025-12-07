@@ -168,6 +168,18 @@ export default function CrmPage() {
     let sortableItems = [...filteredUsers];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
+        if (sortConfig.key === 'location') {
+          const aCity = (a.location || '').split(',')[0].trim();
+          const bCity = (b.location || '').split(',')[0].trim();
+          if (aCity < bCity) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (aCity > bCity) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+        }
+
         const aVal = a[sortConfig.key] || '';
         const bVal = b[sortConfig.key] || '';
         if (aVal < bVal) {
