@@ -94,9 +94,9 @@ export default function CrmPage() {
               zoom={2}
               center={center}
             >
-              {users.map(user => 
+              {users.map((user, index) => 
                 user.lat && user.lng && (
-                  <MarkerF key={user.email} position={{ lat: user.lat, lng: user.lng }} title={user.name} />
+                  <MarkerF key={`${user.email}-${index}`} position={{ lat: user.lat, lng: user.lng }} title={user.name} />
                 )
               )}
             </GoogleMap>
@@ -129,8 +129,8 @@ export default function CrmPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {users.map(user => (
-                        <TableRow key={user.email}>
+                    {users.map((user, index) => (
+                        <TableRow key={`${user.email}-${index}`}>
                             <TableCell>{user.name}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.location}</TableCell>
