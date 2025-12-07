@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, X } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { GoogleMap, useLoadScript, MarkerF, Libraries } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF } from '@react-google-maps/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const libraries: Libraries = ['places'];
@@ -27,6 +27,7 @@ export default function CrmPage() {
   const [users, setUsers] = useState<LegacyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<LegacyUser | null>(null);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -84,7 +85,7 @@ export default function CrmPage() {
       <Card>
         <CardHeader>
           <CardTitle>User Location Map</CardTitle>
-          <CardDescription>A map showing the distribution of your legacy members.</CardDescription>
+          <CardDescription>A map showing the distribution of your legacy members. Click a marker to see details.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading && <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}
@@ -93,11 +94,29 @@ export default function CrmPage() {
               mapContainerStyle={mapContainerStyle}
               zoom={2}
               center={center}
+              onClick={() => setSelectedUser(null)}
             >
               {users.map((user, index) => 
                 user.lat && user.lng && (
-                  <MarkerF key={`${user.email}-${index}`} position={{ lat: user.lat, lng: user.lng }} title={user.name} />
+                  <MarkerF 
+                    key={`${user.email}-${index}`} 
+                    position={{ lat: user.lat, lng: user.lng }} 
+                    title={user.name}
+                    onClick={() => setSelectedUser(user)}
+                  />
                 )
+              )}
+
+              {selectedUser && selectedUser.lat && selectedUser.lng && (
+                <InfoWindowF
+                  position={{ lat: selectedUser.lat, lng: selectedUser.lng }}
+                  onCloseClick={() => setSelectedUser(null)}
+                >
+                  <div className="p-1">
+                    <h4 className="font-bold">{selectedUser.name}</h4>
+                    <p className="text-sm">{selectedUser.location}</p>
+                  </div>
+                </InfoWindowF>
               )}
             </GoogleMap>
           )}
