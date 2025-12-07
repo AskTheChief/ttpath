@@ -47,10 +47,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number, lng: numb
     }
 }
 
-
-// Function to split full name into first and last name
 function splitName(firstName: string, lastName: string): { firstName: string, lastName:string } {
-    // If last name is missing but first name seems to contain both
     if (firstName && !lastName) {
         const nameParts = firstName.trim().split(/\s+/);
         if (nameParts.length > 1) {
@@ -59,41 +56,12 @@ function splitName(firstName: string, lastName: string): { firstName: string, la
             return { firstName: first, lastName: last };
         }
     }
-    // Default case
     return { firstName: firstName || '', lastName: lastName || '' };
 }
 
-// Function to normalize and combine address parts into a single location string for display
 function createFullLocationString(address: string, city: string, state: string, zip: string, country: string): string {
-    const parts = [address, city, state, zip, country];
-    
-    const cleanedParts = parts.map(part => 
-        (part || '')
-            .trim()
-            .replace(/city:|state:|country:|address:|zip:/gi, '')
-            .replace(/[~!*();?#@&=+$%^]/g, '')
-            .trim()
-    ).filter(Boolean);
-
-    const uniqueParts = [];
-    const seenParts = new Set();
-    for (let i = cleanedParts.length - 1; i >= 0; i--) {
-        const part = cleanedParts[i];
-        const partLower = part.toLowerCase();
-        let isRedundant = false;
-        for (const seen of seenParts) {
-            if ((seen as string).includes(partLower)) {
-                isRedundant = true;
-                break;
-            }
-        }
-        if (!isRedundant) {
-            uniqueParts.unshift(part);
-            seenParts.add(partLower);
-        }
-    }
-    
-    return uniqueParts.join(', ');
+    const parts = [address, city, state, zip, country].filter(Boolean);
+    return parts.join(', ');
 }
 
 
@@ -107,7 +75,7 @@ async function convertAndGeocode() {
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
   const records = parse(csvContent, {
-    columns: true, // This uses the first row as headers and creates objects
+    columns: true,
     skip_empty_lines: true,
     trim: true,
   });
@@ -135,9 +103,13 @@ async function convertAndGeocode() {
           email: record.email || '',
           location: createFullLocationString(address, city, state, zip, country),
           phone: record.phone || '',
+          address: address,
+          city: city,
+          state: state,
+          zip: zip,
+          country: country
       };
       
-      // Get all headers from the parsed record and pass them through
       const allHeaders = Object.keys(record);
       allHeaders.forEach(header => {
           if (!user.hasOwnProperty(header)) {
