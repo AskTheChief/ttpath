@@ -71,11 +71,12 @@ async function convertSqlToCsv() {
 
     const allRows: string[][] = [];
     
-    // Define the full header based on the SQL table structure
     const header = [
-        'id', 'field_1', 'field_2', 'First Name', 'Last Name', 'field_5', 
-        'Email', 'field_7', 'field_8', 'Address', 'field_10', 'City', 
-        'State', 'Zip', 'Country', 'Phone'
+        'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
+        'address', 'username', 'password', 'city', 'state', 'province', 'country', 
+        'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 
+        'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 
+        'wish_p', 'reachouts', 'expansion_1', 'expansion_2'
     ];
     allRows.push(header);
 
@@ -93,9 +94,12 @@ async function convertSqlToCsv() {
             const rowContent = rowMatch[1];
             try {
                 const parsedSqlValues = parseRowValues(rowContent);
-                if (parsedSqlValues.length >= 15) { // Ensure we have enough columns
-                    const cleanedRow = parsedSqlValues.map(cleanSqlValue);
+                // The number of columns should match the header
+                if (parsedSqlValues.length >= header.length) { 
+                    const cleanedRow = parsedSqlValues.slice(0, header.length).map(cleanSqlValue);
                     allRows.push(cleanedRow);
+                } else {
+                    console.warn(`Skipping row with incorrect number of columns. Expected ${header.length}, got ${parsedSqlValues.length}.`);
                 }
             } catch (e: any) {
                 console.warn(`Could not parse a row. Skipping. Error: ${e.message}.`);

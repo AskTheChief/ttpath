@@ -133,7 +133,7 @@ export default function CrmPage() {
   };
   
   const handleOpenEmailModalForGroup = () => {
-      const recipients = sortedUsers.filter(user => selectedRows[user.email]);
+      const recipients = sortedUsers.filter(user => user.email && selectedRows[user.email]);
       if (recipients.length > 0) {
           setEmailRecipients(recipients);
           setIsEmailModalOpen(true);
@@ -347,7 +347,7 @@ export default function CrmPage() {
                     </TableHeader>
                     <TableBody>
                         {sortedUsers.map((user, index) => (
-                            <TableRow key={`${user.email}-${index}`} data-state={selectedRows[user.email] ? 'selected' : ''}>
+                            <TableRow key={`${user.email}-${index}`} data-state={user.email && selectedRows[user.email] ? 'selected' : ''}>
                                 <TableCell className="sticky left-0 bg-card z-10">
                                     <Checkbox
                                         checked={!!(user.email && selectedRows[user.email])}
@@ -391,7 +391,7 @@ export default function CrmPage() {
         <EmailComposerModal
             isOpen={isEmailModalOpen}
             onClose={() => setIsEmailModalOpen(false)}
-            recipientEmails={emailRecipients.map(u => u.email).filter(Boolean)}
+            recipientEmails={emailRecipients.map(u => u.email).filter((e): e is string => !!e)}
             recipientNames={emailRecipients.map(u => `${u.firstName} ${u.lastName}`)}
         />
       )}

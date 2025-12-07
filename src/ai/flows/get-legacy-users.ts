@@ -19,10 +19,10 @@ if (!getApps().length) {
 }
 
 const LegacyUserSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string(),
-  location: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().optional(),
+  location: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -31,14 +31,31 @@ const LegacyUserSchema = z.object({
   phone: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
-  // Add other fields as optional strings
-  id: z.string().optional(),
-  field_1: z.string().optional(),
-  field_2: z.string().optional(),
-  field_5: z.string().optional(),
-  field_7: z.string().optional(),
-  field_8: z.string().optional(),
-  field_10: z.string().optional(),
+  // Retain all other fields as optional strings
+  login_first: z.string().optional(),
+  login_last: z.string().optional(),
+  first: z.string().optional(),
+  last: z.string().optional(),
+  tribe: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  province: z.string().optional(),
+  code: z.string().optional(),
+  book_tt: z.string().optional(),
+  book_g: z.string().optional(),
+  attend_w: z.string().optional(),
+  attend_3: z.string().optional(),
+  attend_t: z.string().optional(),
+  chief: z.string().optional(),
+  faq_read: z.string().optional(),
+  faq_write: z.string().optional(),
+  wish_j: z.string().optional(),
+  wish_w: z.string().optional(),
+  wish_b: z.string().optional(),
+  wish_p: z.string().optional(),
+  reachouts: z.string().optional(),
+  expansion_1: z.string().optional(),
+  expansion_2: z.string().optional(),
 });
 export type LegacyUser = z.infer<typeof LegacyUserSchema>;
 
@@ -61,21 +78,9 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
     const usersFromFile = JSON.parse(jsonContent);
 
-    // No mapping needed if the JSON is already in the correct format
+    // Pass all user data through, ensuring it matches the schema
     return usersFromFile.map((user: any) => ({
-      ...user, // Pass through all fields
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      location: user.location,
-      address: user.address,
-      city: user.city,
-      state: user.state,
-      zip: user.zip,
-      country: user.country,
-      phone: user.phone,
-      lat: user.lat,
-      lng: user.lng,
+      ...user, // Pass through all fields from the JSON
     }));
 }
 

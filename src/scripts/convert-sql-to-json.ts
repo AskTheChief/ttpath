@@ -16,7 +16,6 @@ if (!apiKey) {
     process.exit(1);
 }
 
-
 // Function to add a delay
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -51,6 +50,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number, lng: numb
 
 // Function to split full name into first and last name
 function splitName(firstName: string, lastName: string): { firstName: string, lastName:string } {
+    // If last name is missing but first name seems to contain both
     if (firstName && !lastName) {
         const nameParts = firstName.trim().split(/\s+/);
         if (nameParts.length > 1) {
@@ -59,6 +59,7 @@ function splitName(firstName: string, lastName: string): { firstName: string, la
             return { firstName: first, lastName: last };
         }
     }
+    // Default case
     return { firstName: firstName || '', lastName: lastName || '' };
 }
 
@@ -100,7 +101,7 @@ async function convertAndGeocode() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
   if (!fs.existsSync(csvFilePath)) {
     console.error(`Error: CSV file not found at ${csvFilePath}`);
-    console.error('Please ensure the CSV file exists and the path is correct.');
+    console.error('Please ensure the CSV file exists and the path is correct. Run `npm run convert-sql` first.');
     process.exit(1);
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
@@ -111,43 +112,29 @@ async function convertAndGeocode() {
     trim: true,
   });
 
-  const header = Object.keys(records[0] || {}).map(h => h.trim());
-  const firstNameKey = header.find(h => h.toLowerCase().includes('first name'));
-  const lastNameKey = header.find(h => h.toLowerCase().includes('last name'));
-  const emailKey = header.find(h => h.toLowerCase().includes('email'));
-  const addressKey = header.find(h => h.toLowerCase().includes('address'));
-  const cityKey = header.find(h => h.toLowerCase().includes('city'));
-  const stateKey = header.find(h => h.toLowerCase().includes('state'));
-  const zipKey = header.find(h => h.toLowerCase().includes('zip'));
-  const countryKey = header.find(h => h.toLowerCase().includes('country'));
-  const phoneKey = header.find(h => h.toLowerCase().includes('phone'));
-
-  if (!firstNameKey || !emailKey) {
-      console.error('Could not find "First Name" and "Email" columns in the CSV file. Please check the header row.');
-      console.log('Found headers:', header);
-      process.exit(1);
-  }
+  const header = Object.keys(records[0] || {});
 
   const processedRecords = records.map(record => {
-      const { firstName, lastName } = splitName(record[firstNameKey] || '', lastNameKey ? record[lastNameKey] : '');
-      const address = addressKey ? record[addressKey] : '';
-      const city = cityKey ? record[cityKey] : '';
-      const state = stateKey ? record[stateKey] : '';
-      const zip = zipKey ? record[zipKey] : '';
-      const country = countryKey ? record[countryKey] : '';
-      const phone = phoneKey ? record[phoneKey] : '';
+      // Use the new explicit field names from your list
+      const { firstName, lastName } = splitName(record.first || record.login_first || '', record.last || record.login_last || '');
+      
+      const city = record.city || '';
+      const state = record.state || record.province || '';
+      const zip = record.code || '';
+      const country = record.country || '';
+      const address = record.address || '';
       
       const user: any = {
           firstName,
           lastName,
-          email: record[emailKey] || '',
+          email: record.email || '',
           location: createFullLocationString(address, city, state, zip, country),
           address,
           city,
           state,
-          zip,
+          zip, // Use 'zip' as the consistent key
           country,
-          phone,
+          phone: record.phone || '',
       };
 
       // Include all other fields from the CSV
@@ -161,7 +148,7 @@ async function convertAndGeocode() {
       
       return user;
   }).filter(record => {
-    const hasName = (record.firstName || record.lastName) && (record.firstName.trim() !== '' || record.lastName.trim() !== '');
+    const hasName = (record.firstName || record.lastName);
     const hasEmail = record.email && record.email.trim() !== '';
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
@@ -186,10 +173,11 @@ async function convertAndGeocode() {
   const finalUsers = [];
   for (let i = 0; i < deDuplicatedRecords.length; i++) {
     const user = deDuplicatedRecords[i];
-    console.log(`Geocoding user ${i + 1}/${deDuplicatedRecords.length}: ${user.email} (${user.location})`);
+    const geocodeQuery = user.location;
+    console.log(`Geocoding user ${i + 1}/${deDuplicatedRecords.length}: ${user.email} (${geocodeQuery})`);
     
     try {
-        const coords = await geocodeAddress(user.location);
+        const coords = await geocodeAddress(geocodeQuery);
         if (coords) {
             user.lat = coords.lat;
             user.lng = coords.lng;
