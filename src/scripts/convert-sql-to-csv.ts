@@ -6,18 +6,60 @@ const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'UserContact.
 const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.csv');
 
 /**
- * Parses a single value from a SQL INSERT statement, handling quotes and NULLs.
- * @param value The raw string value from SQL.
- * @returns A cleaned string, ready for CSV.
+ * A robust parser to split a SQL values tuple string into an array of values.
+ * It handles commas and escaped quotes within single-quoted strings.
+ * e.g., ('John', 'O\'Malley, Jr.', 'Some text, with a comma') -> ["'John'", "'O\\'Malley, Jr.'", "'Some text, with a comma'"]
  */
-function parseSqlValue(value: string): string {
-    value = value.trim();
+function parseRowValues(rowString: string): string[] {
+    const values = [];
+    let current_value = '';
+    let in_quotes = false;
+    let is_escaped = false;
+
+    for (const char of rowString) {
+        if (is_escaped) {
+            current_value += char;
+            is_escaped = false;
+            continue;
+        }
+
+        if (char === '\\') {
+            is_escaped = true;
+            current_value += char;
+            continue;
+        }
+
+        if (char === "'") {
+            in_quotes = !in_quotes;
+        }
+
+        if (char === ',' && !in_quotes) {
+            values.push(current_value.trim());
+            current_value = '';
+        } else {
+            current_value += char;
+        }
+    }
+    values.push(current_value.trim()); // Add the last value
+
+    if (values.length < 15) { // A crude check for a valid user row
+        throw new Error(`Could not parse row correctly. Found only ${values.length} columns.`);
+    }
+
+    return values;
+}
+
+/**
+ * Cleans a raw SQL value for CSV output.
+ * @param value The raw string value from the parsed row.
+ * @returns A cleaned string.
+ */
+function cleanSqlValue(value: string): string {
     if (value === 'NULL') {
         return '';
     }
+    // Remove surrounding quotes and handle escaped single quotes.
     if (value.startsWith("'") && value.endsWith("'")) {
-        // Remove surrounding quotes and escape internal quotes by doubling them.
-        // Also handle escaped single quotes within the string.
         return value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '""');
     }
     return value.replace(/"/g, '""');
@@ -36,39 +78,35 @@ async function convertSqlToCsv() {
 
     const allUsers: any[] = [];
     
-    // This regex is designed to find all `VALUES` blocks associated with `table_0`.
-    const valuesRegex = /INSERT INTO `table_0` .*? VALUES\s*([\s\S]*?);/g;
-    let valuesMatch;
+    const insertStatementRegex = /INSERT INTO `table_0` VALUES\s*([\s\S]*?);/g;
+    let insertMatch;
 
     console.log('Searching for INSERT statements...');
-    while ((valuesMatch = valuesRegex.exec(sqlContent)) !== null) {
-        const valuesBlock = valuesMatch[1];
+    while ((insertMatch = insertStatementRegex.exec(sqlContent)) !== null) {
+        const valuesBlock = insertMatch[1];
         
         // This regex finds each individual row tuple, e.g., (1, 'Ed', 'Seykota', ...).
-        // It's designed to handle nested parentheses within quoted strings, though less likely here.
-        const rowRegex = /\(((?:[^()']|'[^']*')*)\)/g;
+        const rowRegex = /\((.*?)\)/g;
         let rowMatch;
 
         while ((rowMatch = rowRegex.exec(valuesBlock)) !== null) {
-            // This complex regex splits by comma, but ignores commas inside single quotes.
-            const rowValues = rowMatch[1].split(/,(?=(?:(?:[^']*'){2})*[^']*$)/);
-            
-            if (rowValues.length > 15) { // User data rows have many columns.
-                try {
-                    const first = parseSqlValue(rowValues[3]);
-                    const last = parseSqlValue(rowValues[4]);
-                    const email = parseSqlValue(rowValues[6]);
-                    const city = parseSqlValue(rowValues[11]);
-                    const state = parseSqlValue(rowValues[12]);
-                    const country = parseSqlValue(rowValues[14]);
+            const rowContent = rowMatch[1];
+            try {
+                const rowValues = parseRowValues(rowContent);
 
-                    const name = `${first} ${last}`.trim();
-                    const location = `${city}, ${state}`.replace(/^,|,$/g, '').trim();
+                const first = cleanSqlValue(rowValues[3]);
+                const last = cleanSqlValue(rowValues[4]);
+                const email = cleanSqlValue(rowValues[6]);
+                const city = cleanSqlValue(rowValues[11]);
+                const state = cleanSqlValue(rowValues[12]);
+                const country = cleanSqlValue(rowValues[14]);
 
-                    allUsers.push({ name, email, location, country });
-                } catch (e) {
-                    console.warn('Could not parse a row. It might be malformed:', rowMatch[1]);
-                }
+                const name = `${first} ${last}`.trim();
+                const location = `${city}, ${state}`.replace(/^, |,$/g, '').trim();
+
+                allUsers.push({ name, email, location, country });
+            } catch (e: any) {
+                console.warn(`Could not parse a row. It might be malformed. Skipping. Error: ${e.message}. Row content: ${rowContent.substring(0, 100)}...`);
             }
         }
     }
@@ -80,12 +118,11 @@ async function convertSqlToCsv() {
 
     console.log(`Successfully parsed ${allUsers.length} users.`);
 
-    // Convert to CSV format.
     const header = ['name', 'email', 'location', 'country'];
     const csvRows = [
         header.join(','),
         ...allUsers.map(user => 
-            header.map(fieldName => `"${user[fieldName] ? user[fieldName].replace(/"/g, '""') : ''}"`).join(',')
+            header.map(fieldName => `"${user[fieldName] ? user[fieldName] : ''}"`).join(',')
         )
     ];
     
