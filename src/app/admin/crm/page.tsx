@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -26,6 +26,12 @@ const center = {
   lng: 10.0,
 };
 
+type SortConfig = {
+  key: keyof LegacyUser;
+  direction: 'ascending' | 'descending';
+} | null;
+
+
 export default function CrmPage() {
   const [users, setUsers] = useState<LegacyUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<LegacyUser[]>([]);
@@ -38,6 +44,7 @@ export default function CrmPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -125,21 +132,17 @@ export default function CrmPage() {
   };
   
   const handleOpenEmailModalForGroup = () => {
-      const recipients = usersToDisplay.filter(user => selectedRows[user.email]);
+      const recipients = sortedUsers.filter(user => selectedRows[user.email]);
       if (recipients.length > 0) {
           setEmailRecipients(recipients);
           setIsEmailModalOpen(true);
       }
   };
 
-  const usersToDisplay = useMemo(() => {
-    return selectionMode ? filteredUsers : users;
-  }, [selectionMode, filteredUsers, users]);
-
   const handleSelectAll = (checked: boolean) => {
     const newSelectedRows: Record<string, boolean> = {};
     if (checked) {
-      usersToDisplay.forEach(user => {
+      sortedUsers.forEach(user => {
         newSelectedRows[user.email] = true;
       });
     }
@@ -152,6 +155,45 @@ export default function CrmPage() {
       [email]: checked,
     }));
   };
+
+  const requestSort = (key: keyof LegacyUser) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const sortedUsers = useMemo(() => {
+    let sortableItems = [...filteredUsers];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aVal = a[sortConfig.key] || '';
+        const bVal = b[sortConfig.key] || '';
+        if (aVal < bVal) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aVal > bVal) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredUsers, sortConfig]);
+
+  const SortableHeader = ({ title, sortKey }: { title: string; sortKey: keyof LegacyUser; }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <TableHead>
+            <Button variant="ghost" onClick={() => requestSort(sortKey)}>
+                {title}
+                <ArrowUpDown className={`ml-2 h-4 w-4 ${isSorted ? 'text-foreground' : 'text-muted-foreground/50'}`} />
+            </Button>
+        </TableHead>
+    );
+  };
+  
 
   const numSelectedRows = Object.values(selectedRows).filter(Boolean).length;
   
@@ -284,20 +326,22 @@ export default function CrmPage() {
                       <TableRow>
                           <TableHead className="w-[50px]">
                             <Checkbox
-                                checked={numSelectedRows > 0 && numSelectedRows === usersToDisplay.length}
+                                checked={numSelectedRows > 0 && numSelectedRows === sortedUsers.length}
                                 onCheckedChange={(checked) => handleSelectAll(!!checked)}
                                 aria-label="Select all"
                             />
                           </TableHead>
-                          <TableHead>First Name</TableHead>
-                          <TableHead>Last Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Location</TableHead>
+                          <SortableHeader title="First Name" sortKey="firstName" />
+                          <SortableHeader title="Last Name" sortKey="lastName" />
+                          <SortableHeader title="Email" sortKey="email" />
+                          <SortableHeader title="City" sortKey="city" />
+                          <SortableHeader title="State" sortKey="state" />
+                          <SortableHeader title="Zip" sortKey="zip" />
                           <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {usersToDisplay.map((user, index) => (
+                      {sortedUsers.map((user, index) => (
                           <TableRow key={`${user.email}-${index}`} data-state={selectedRows[user.email] ? 'selected' : ''}>
                               <TableCell>
                                 <Checkbox
@@ -309,7 +353,9 @@ export default function CrmPage() {
                               <TableCell>{user.firstName}</TableCell>
                               <TableCell>{user.lastName}</TableCell>
                               <TableCell>{user.email}</TableCell>
-                              <TableCell>{user.location}</TableCell>
+                              <TableCell>{user.city}</TableCell>
+                              <TableCell>{user.state}</TableCell>
+                              <TableCell>{user.zip}</TableCell>
                               <TableCell className="text-right">
                                 <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                     <Mail className="mr-2 h-4 w-4" />
@@ -318,9 +364,9 @@ export default function CrmPage() {
                               </TableCell>
                           </TableRow>
                       ))}
-                       {usersToDisplay.length === 0 && (
+                       {sortedUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center text-muted-foreground">
                                 {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>

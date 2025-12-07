@@ -23,6 +23,9 @@ const LegacyUserSchema = z.object({
   lastName: z.string(),
   email: z.string(),
   location: z.string(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   country: z.string(),
   lat: z.number().optional(),
   lng: z.number().optional(),
@@ -43,24 +46,25 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     if (!fs.existsSync(jsonFilePath)) {
         console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
-            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', country: 'USA', lat: 40.7128, lng: -74.0060 },
-            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', country: 'UK', lat: 51.5074, lng: -0.1278 },
+            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', city: 'New York', state: 'NY', zip: '10001', country: 'USA', lat: 40.7128, lng: -74.0060 },
+            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', city: 'London', state: '', zip: '', country: 'UK', lat: 51.5074, lng: -0.1278 },
         ];
     }
 
     const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
     const usersFromFile = JSON.parse(jsonContent);
 
-    // Map the fields from users.json to what the front-end expects (LegacyUserSchema)
     const users = usersFromFile.map((user: any) => ({
-      name: `${user.firstName} ${user.lastName}`.trim(), // Keep 'name' for backwards compatibility if needed anywhere
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       location: user.location,
+      city: user.city,
+      state: user.state,
+      zip: user.zip,
       country: user.country,
-      lat: user.lat, // Pass the pre-geocoded latitude
-      lng: user.lng, // Pass the pre-geocoded longitude
+      lat: user.lat,
+      lng: user.lng,
     }));
     
     return users;
@@ -79,15 +83,7 @@ const getLegacyUsersFlow = ai.defineFlow(
       if (!users || users.length === 0) {
         return { success: false, message: "No users found in the data file or the file is empty." };
       }
-
-      // We now rename the `name` field to `fullName` before sending to the client,
-      // and ensure lat/lng are included.
-      const clientUsers = users.map(u => ({
-          ...u,
-          name: `${u.firstName} ${u.lastName}`.trim(),
-      }))
-
-      return { success: true, users: clientUsers };
+      return { success: true, users };
 
     } catch (error: any) {
       console.error('Error processing legacy user data:', error);
