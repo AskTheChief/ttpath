@@ -80,16 +80,33 @@ async function convertAndGeocode() {
     trim: true,
   });
 
+  if (records.length === 0) {
+      console.log('No records found in CSV file.');
+      return;
+  }
+
+  // Find the actual keys for first name, last name, and email
+  const headers = Object.keys(records[0]);
+  const firstKey = headers.find(h => h.toLowerCase().includes('first'));
+  const lastKey = headers.find(h => h.toLowerCase().includes('last'));
+  const emailKey = headers.find(h => h.toLowerCase().includes('email'));
+  
+  if (!firstKey || !lastKey || !emailKey) {
+      console.error('Could not find required columns (first, last, email) in CSV headers:', headers);
+      process.exit(1);
+  }
+
+
   const processedRecords = records.filter((record: any) => {
-    const hasName = record.first || record.last;
-    const hasEmail = record.email && record.email.trim() !== '';
+    const hasName = (record[firstKey] && record[firstKey].trim() !== '') || (record[lastKey] && record[lastKey].trim() !== '');
+    const hasEmail = record[emailKey] && record[emailKey].trim() !== '';
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
         return false;
     }
     return true;
   }).map((record: any) => {
-      const { firstName, lastName } = splitName(record.first, record.last);
+      const { firstName, lastName } = splitName(record[firstKey], record[lastKey]);
       
       const city = record.city || '';
       const state = record.state || record.province || '';
@@ -110,9 +127,11 @@ async function convertAndGeocode() {
           country: country
       };
       
+      // Copy all original fields from the record
       const allHeaders = Object.keys(record);
       allHeaders.forEach(header => {
-          if (!user.hasOwnProperty(header)) {
+          // Only add if not one of the specially handled fields to avoid conflicts
+          if (!['firstName', 'lastName', 'location'].includes(header) && record[header] !== undefined) {
             user[header] = record[header];
           }
       });
