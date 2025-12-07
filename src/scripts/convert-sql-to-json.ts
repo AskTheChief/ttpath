@@ -15,6 +15,11 @@ type LegacyUser = {
 
 async function convertCsvToJson() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
+  if (!fs.existsSync(csvFilePath)) {
+    console.error(`Error: CSV file not found at ${csvFilePath}`);
+    console.error('Please run "npm run convert-sql" first to generate the CSV file.');
+    process.exit(1);
+  }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
   const records: LegacyUser[] = parse(csvContent, {
@@ -30,4 +35,7 @@ async function convertCsvToJson() {
   console.log('Conversion to JSON complete!');
 }
 
-convertCsvToJson();
+convertCsvToJson().catch(err => {
+    console.error('An error occurred during CSV to JSON conversion:', err);
+    process.exit(1);
+});
