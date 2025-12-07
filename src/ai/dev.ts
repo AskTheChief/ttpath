@@ -31,3 +31,4 @@ import '@/ai/flows/delete-user.ts';
 import '@/ai/flows/send-diploma-email.ts';
 import '@/ai/flows/body-feelings-map.ts';
 import '@/ai/flows/get-all-meeting-reports.ts';
+import '@/ai/flows/get-legacy-users.ts';

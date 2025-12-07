@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText, Database } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -77,6 +77,22 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>View Answers</Button>
+            </CardContent>
+          </Card>
+        </Link>
+         <Link href="/admin/crm">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-6 w-6" />
+                CRM / Data Manager
+              </CardTitle>
+              <CardDescription>
+                View and manage legacy user data.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>Manage Data</Button>
             </CardContent>
           </Card>
         </Link>
