@@ -12,14 +12,13 @@ const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.csv');
  */
 function parseSqlValue(value: string): string {
     value = value.trim();
-    // Handle NULL values
     if (value === 'NULL') {
         return '';
     }
-    // Handle quoted strings
     if (value.startsWith("'") && value.endsWith("'")) {
-        // Remove surrounding quotes and escape internal quotes
-        return value.slice(1, -1).replace(/"/g, '""');
+        // Remove surrounding quotes and escape internal quotes by doubling them.
+        // Also handle escaped single quotes within the string.
+        return value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '""');
     }
     return value.replace(/"/g, '""');
 }
@@ -31,27 +30,30 @@ async function convertSqlToCsv() {
     console.log(`Reading SQL file from: ${sqlFilePath}`);
     if (!fs.existsSync(sqlFilePath)) {
         console.error(`Error: SQL file not found at ${sqlFilePath}`);
-        return;
+        process.exit(1);
     }
     const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
 
-    // Regex to find all INSERT statements for table_0
-    const insertRegex = /INSERT INTO `table_0` .*? VALUES\s*([\s\S]*?);/g;
-    let insertMatch;
     const allUsers: any[] = [];
+    
+    // This regex is designed to find all `VALUES` blocks associated with `table_0`.
+    const valuesRegex = /INSERT INTO `table_0` .*? VALUES\s*([\s\S]*?);/g;
+    let valuesMatch;
 
     console.log('Searching for INSERT statements...');
-    while ((insertMatch = insertRegex.exec(sqlContent)) !== null) {
-        const valuesBlock = insertMatch[1];
+    while ((valuesMatch = valuesRegex.exec(sqlContent)) !== null) {
+        const valuesBlock = valuesMatch[1];
         
-        // Regex to find each individual row within the VALUES block, e.g., (1, 'Ed', 'Seykota', ...)
-        const rowRegex = /\((.*?)\)/g;
+        // This regex finds each individual row tuple, e.g., (1, 'Ed', 'Seykota', ...).
+        // It's designed to handle nested parentheses within quoted strings, though less likely here.
+        const rowRegex = /\(((?:[^()']|'[^']*')*)\)/g;
         let rowMatch;
 
         while ((rowMatch = rowRegex.exec(valuesBlock)) !== null) {
+            // This complex regex splits by comma, but ignores commas inside single quotes.
             const rowValues = rowMatch[1].split(/,(?=(?:(?:[^']*'){2})*[^']*$)/);
             
-            if (rowValues.length > 15) { // Ensure it's a user data row
+            if (rowValues.length > 15) { // User data rows have many columns.
                 try {
                     const first = parseSqlValue(rowValues[3]);
                     const last = parseSqlValue(rowValues[4]);
@@ -61,34 +63,29 @@ async function convertSqlToCsv() {
                     const country = parseSqlValue(rowValues[14]);
 
                     const name = `${first} ${last}`.trim();
-                    const location = `${city}, ${state}`.trim().replace(/^, |,$/g, '');
+                    const location = `${city}, ${state}`.replace(/^,|,$/g, '').trim();
 
-                    allUsers.push({
-                        name,
-                        email,
-                        location,
-                        country
-                    });
+                    allUsers.push({ name, email, location, country });
                 } catch (e) {
-                    console.warn('Could not parse a row:', rowValues);
+                    console.warn('Could not parse a row. It might be malformed:', rowMatch[1]);
                 }
             }
         }
     }
 
     if (allUsers.length === 0) {
-        console.error('No users were parsed. Please check the SQL file format and regex.');
+        console.error('No users were parsed. Please check the SQL file format and the parsing logic.');
         return;
     }
 
     console.log(`Successfully parsed ${allUsers.length} users.`);
 
-    // Convert to CSV
+    // Convert to CSV format.
     const header = ['name', 'email', 'location', 'country'];
     const csvRows = [
         header.join(','),
         ...allUsers.map(user => 
-            header.map(fieldName => `"${user[fieldName].replace(/"/g, '""')}"`).join(',')
+            header.map(fieldName => `"${user[fieldName] ? user[fieldName].replace(/"/g, '""') : ''}"`).join(',')
         )
     ];
     
