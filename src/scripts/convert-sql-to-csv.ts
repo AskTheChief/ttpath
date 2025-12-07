@@ -71,6 +71,7 @@ async function convertSqlToCsv() {
 
     const allRows: string[][] = [];
     
+    // The full list of 30 headers you provided
     const header = [
         'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
         'address', 'username', 'password', 'city', 'state', 'province', 'country', 
@@ -94,7 +95,7 @@ async function convertSqlToCsv() {
             const rowContent = rowMatch[1];
             try {
                 const parsedSqlValues = parseRowValues(rowContent);
-                // The number of columns should match the header
+                // Ensure the number of columns from SQL matches the header
                 if (parsedSqlValues.length >= header.length) { 
                     const cleanedRow = parsedSqlValues.slice(0, header.length).map(cleanSqlValue);
                     allRows.push(cleanedRow);
