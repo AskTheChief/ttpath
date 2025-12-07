@@ -32,6 +32,7 @@ const LegacyUserSchema = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   // Retain all other fields as optional strings
+  id: z.string().optional(),
   login_first: z.string().optional(),
   login_last: z.string().optional(),
   first: z.string().optional(),

@@ -107,15 +107,12 @@ async function convertAndGeocode() {
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
   const records = parse(csvContent, {
-    columns: header => header.map((h: string) => h.toLowerCase().replace(/\s+/g, '_')),
+    columns: true, // This uses the first row as headers and creates objects
     skip_empty_lines: true,
     trim: true,
   });
 
-  const header = Object.keys(records[0] || {});
-
   const processedRecords = records.map((record: any) => {
-      // Correctly access normalized keys from csv-parse. Only use 'first' and 'last' for names.
       const { firstName, lastName } = splitName(record.first || '', record.last || '');
       
       const city = record.city || '';
@@ -136,24 +133,26 @@ async function convertAndGeocode() {
           country,
           phone: record.phone || '',
       };
-
-      // Include all other fields from the CSV
-      header.forEach(h => {
-        if (!user.hasOwnProperty(h)) {
-            user[h] = record[h] || '';
-        }
+      
+      // Get all headers from the parsed record and pass them through
+      const allHeaders = Object.keys(record);
+      allHeaders.forEach(header => {
+          if (!user.hasOwnProperty(header)) {
+            user[header] = record[header];
+          }
       });
       
       return user;
   }).filter((record: any) => {
-    // Corrected validation logic to check the final processed object.
+    // Validation should check the properties of the processed object
     const hasName = record.firstName || record.lastName;
     const hasEmail = record.email && record.email.trim() !== '';
 
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
+        return false;
     }
-    return hasName && hasEmail;
+    return true;
   });
 
   const uniqueUsers = new Map<string, any>();
@@ -166,7 +165,7 @@ async function convertAndGeocode() {
 
   const deDuplicatedRecords = Array.from(uniqueUsers.values());
 
-  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
+  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid.`);
   console.log('--- Starting Geocoding ---');
 
   let geocodedCount = 0;

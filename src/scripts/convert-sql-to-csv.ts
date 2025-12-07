@@ -71,9 +71,9 @@ async function convertSqlToCsv() {
 
     const allRows: string[][] = [];
     
-    // The full list of 30 headers
+    // The full list of 31 headers from the INSERT statement
     const header = [
-        'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
+        'id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 
         'address', 'username', 'password', 'city', 'state', 'province', 'country', 
         'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 
         'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 

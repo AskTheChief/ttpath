@@ -195,6 +195,54 @@ export default function CrmPage() {
     );
   };
   
+  const allUserFields: (keyof LegacyUser)[] = [
+    'lastName', 'firstName', 'email', 'phone', 'location',
+    'id', 'login_first', 'login_last', 'tribe', 'username', 'password', 'city', 'state', 'province', 'country', 
+    'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 
+    'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 
+    'wish_p', 'reachouts', 'expansion_1', 'expansion_2'
+  ];
+  
+  const fieldHeaderNames: Record<keyof LegacyUser, string> = {
+    lastName: "Last Name",
+    firstName: "First Name",
+    email: "Email",
+    phone: "Phone",
+    location: "Full Location",
+    id: "ID",
+    login_first: "First Login",
+    login_last: "Last Login",
+    tribe: "Tribe",
+    username: "Username",
+    password: "Password",
+    city: "City",
+    state: "State",
+    province: "Province",
+    country: "Country",
+    code: "Zip/Code",
+    book_tt: "Book TT",
+    book_g: "Book G",
+    attend_w: "Attend W",
+    attend_3: "Attend 3",
+    attend_t: "Attend T",
+    chief: "Chief",
+    faq_read: "FAQ Read",
+    faq_write: "FAQ Write",
+    wish_j: "Wish J",
+    wish_w: "Wish W",
+    wish_b: "Wish B",
+    wish_p: "Wish P",
+    reachouts: "Reachouts",
+    expansion_1: "Expansion 1",
+    expansion_2: "Expansion 2",
+    first: 'first',
+    last: 'last',
+    address: 'address',
+    zip: 'zip',
+    lat: 'lat',
+    lng: 'lng',
+  };
+
 
   const numSelectedRows = Object.values(selectedRows).filter(Boolean).length;
   
@@ -333,15 +381,9 @@ export default function CrmPage() {
                                     aria-label="Select all"
                                 />
                             </TableHead>
-                            <SortableHeader title="Last Name" sortKey="lastName" />
-                            <SortableHeader title="First Name" sortKey="firstName" />
-                            <SortableHeader title="Email" sortKey="email" />
-                            <SortableHeader title="Phone" sortKey="phone" />
-                            <SortableHeader title="Address" sortKey="address" />
-                            <SortableHeader title="City" sortKey="city" />
-                            <SortableHeader title="State" sortKey="state" />
-                            <SortableHeader title="Zip" sortKey="zip" />
-                            <SortableHeader title="Country" sortKey="country" />
+                            {allUserFields.map(fieldKey => (
+                                <SortableHeader key={fieldKey} title={fieldHeaderNames[fieldKey]} sortKey={fieldKey} />
+                            ))}
                             <TableHead className="text-right sticky right-0 bg-card z-10">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -355,15 +397,9 @@ export default function CrmPage() {
                                         aria-label={`Select ${user.firstName} ${user.lastName}`}
                                     />
                                 </TableCell>
-                                <TableCell>{user.lastName}</TableCell>
-                                <TableCell>{user.firstName}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.phone}</TableCell>
-                                <TableCell>{user.address}</TableCell>
-                                <TableCell>{user.city}</TableCell>
-                                <TableCell>{user.state}</TableCell>
-                                <TableCell>{user.zip}</TableCell>
-                                <TableCell>{user.country}</TableCell>
+                                {allUserFields.map(fieldKey => (
+                                  <TableCell key={fieldKey}>{(user as any)[fieldKey]}</TableCell>
+                                ))}
                                 <TableCell className="text-right sticky right-0 bg-card z-10">
                                     <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                         <Mail className="mr-2 h-4 w-4" />
@@ -374,7 +410,7 @@ export default function CrmPage() {
                         ))}
                          {sortedUsers.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={11} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={allUserFields.length + 2} className="text-center text-muted-foreground h-24">
                                     {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                                 </TableCell>
                             </TableRow>
