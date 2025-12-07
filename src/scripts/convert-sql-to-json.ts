@@ -19,8 +19,8 @@ function splitName(firstName: string, lastName: string): { firstName: string, la
     return { firstName: firstName || '', lastName: lastName || '' };
 }
 
-// Function to normalize and combine address parts into a single location string
-function normalizeLocation(address: string, city: string, state: string, zip: string, country: string): string {
+// Function to normalize and combine address parts into a single location string for display
+function createFullLocationString(address: string, city: string, state: string, zip: string, country: string): string {
     const parts = [address, city, state, zip, country];
     
     const cleanedParts = parts.map(part => 
@@ -97,7 +97,7 @@ async function convertCsvToJson() {
           lastName,
           name: `${firstName} ${lastName}`.trim(),
           email: record[emailKey] || '',
-          location: normalizeLocation(address, city, state, zip, country),
+          location: createFullLocationString(address, city, state, zip, country),
           city: city,
           state: state,
           zip: zip,
