@@ -114,7 +114,15 @@ async function convertAndGeocode() {
 
   const header = Object.keys(records[0] || {});
 
-  const processedRecords = records.map(record => {
+  const processedRecords = records.filter(record => {
+    // Corrected validation: Check the original record from the CSV for any valid name/email.
+    const hasName = !!(record.first || record.login_first || record.last || record.login_last);
+    const hasEmail = record.email && record.email.trim() !== '';
+    if (!hasName || !hasEmail) {
+        console.warn('Skipping invalid record due to missing name or email:', record);
+    }
+    return hasName && hasEmail;
+  }).map(record => {
       // Use the new explicit field names from your list
       const { firstName, lastName } = splitName(record.first || record.login_first || '', record.last || record.login_last || '');
       
@@ -132,7 +140,7 @@ async function convertAndGeocode() {
           address,
           city,
           state,
-          zip, // Use 'zip' as the consistent key
+          zip,
           country,
           phone: record.phone || '',
       };
@@ -147,13 +155,6 @@ async function convertAndGeocode() {
       });
       
       return user;
-  }).filter(record => {
-    const hasName = (record.firstName || record.lastName);
-    const hasEmail = record.email && record.email.trim() !== '';
-    if (!hasName || !hasEmail) {
-        console.warn('Skipping invalid record due to missing name or email:', record);
-    }
-    return hasName && hasEmail;
   });
 
   const uniqueUsers = new Map<string, any>();
