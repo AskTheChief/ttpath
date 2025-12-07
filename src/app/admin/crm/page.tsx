@@ -252,6 +252,7 @@ export default function CrmPage() {
                           <TableHead>Last Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Location</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -261,11 +262,17 @@ export default function CrmPage() {
                               <TableCell>{user.lastName}</TableCell>
                               <TableCell>{user.email}</TableCell>
                               <TableCell>{user.location}</TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="outline" size="sm" onClick={() => handleOpenEmailModal(user)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Email
+                                </Button>
+                              </TableCell>
                           </TableRow>
                       ))}
                        {usersToDisplay.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">
                                 {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
