@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
 
-const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.csv');
+const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv');
 const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
 
 type LegacyUser = {
@@ -17,7 +17,7 @@ async function convertCsvToJson() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
   if (!fs.existsSync(csvFilePath)) {
     console.error(`Error: CSV file not found at ${csvFilePath}`);
-    console.error('Please run "npm run convert-sql" first to generate the CSV file.');
+    console.error('Please ensure the CSV file exists.');
     process.exit(1);
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
