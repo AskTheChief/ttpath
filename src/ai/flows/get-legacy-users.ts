@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for parsing and retrieving user data from the legacy SQL file.
+ * @fileOverview A Genkit flow for retrieving user data from a pre-converted JSON file.
  */
 
 import { ai } from '@/ai/genkit';
@@ -27,69 +27,35 @@ const GetLegacyUsersOutputSchema = z.object({
 });
 export type GetLegacyUsersOutput = z.infer<typeof GetLegacyUsersOutputSchema>;
 
-// This function now parses the real SQL file.
-async function parseSqlFile(): Promise<LegacyUser[]> {
-    const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'UserContact.sql');
-    const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
-
-    const users: LegacyUser[] = [];
-    const insertRegex = /INSERT INTO `UserContact` VALUES \((.*?)\);/g;
-    let match;
-
-    while ((match = insertRegex.exec(sqlContent)) !== null) {
-        // This regex is brittle and assumes a specific format for the VALUES clause.
-        // It splits the values by comma, but handles commas within quotes poorly.
-        const values = match[1].split(/,(?=(?:(?:[^"']*["']){2})*[^"']*$)/).map(v => {
-            let value = v.trim();
-            // Remove surrounding quotes and un-escape characters
-            if (value.startsWith("'") && value.endsWith("'")) {
-                value = value.substring(1, value.length - 1);
-            }
-            return value.replace(/\\'/g, "'").replace(/\\\\/g, "\\");
-        });
-
-        // This mapping is based on the assumed structure of the UserContact table.
-        // It may need adjustment if the table structure is different.
-        if (values.length >= 7) { // Assuming at least 7 columns
-            const user: LegacyUser = {
-                name: values[1], // Corresponds to `FullName`
-                email: values[5], // Corresponds to `Email`
-                location: `${values[3]}, ${values[4]}`, // City, State
-                country: values[2], // Country
-            };
-
-            // **Simulated Geocoding for the first few entries for demonstration**
-            // In a real application, you'd use a geocoding API here and cache results.
-            if (user.email === 'john.d@example.com') {
-                user.lat = 40.7128;
-                user.lng = -74.0060;
-            } else if (user.email === 'jane.s@example.com') {
-                user.lat = 51.5074;
-                user.lng = -0.1278;
-            } else if (user.email === 'carlos.r@example.com') {
-                user.lat = 40.4168;
-                user.lng = -3.7038;
-            } else if (user.email === 'mei.l@example.com') {
-                user.lat = 31.2304;
-                user.lng = 121.4737;
-            } else if (user.email === 'frank.m@example.com') {
-                 user.lat = 52.5200;
-                 user.lng = 13.4050;
-            }
-
-            users.push(user);
-        }
-    }
+// This function now reads from a pre-converted JSON file.
+async function getParsedUsers(): Promise<LegacyUser[]> {
+    const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
     
-    // Add sample data if parsing fails or returns no users, so the page doesn't break.
-    if (users.length === 0) {
+    // In a real app, you would run the conversion script in your build process.
+    // For now, we assume it exists. If not, we fall back to sample data.
+    if (!fs.existsSync(jsonFilePath)) {
+        console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
             { name: 'John Doe (Sample)', email: 'john.d@example.com', location: 'New York', country: 'USA', lat: 40.7128, lng: -74.0060 },
             { name: 'Jane Smith (Sample)', email: 'jane.s@example.com', location: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
         ];
     }
-    
-    return users;
+
+    const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
+    const users: LegacyUser[] = JSON.parse(jsonContent);
+
+    // **Simulated Geocoding for demonstration**
+    // In a real application, you'd do this in the conversion script and save the results.
+    const geocodedUsers = users.map(user => {
+        if (user.email === 'john.d@example.com') return { ...user, lat: 40.7128, lng: -74.0060 };
+        if (user.email === 'jane.s@example.com') return { ...user, lat: 51.5074, lng: -0.1278 };
+        if (user.email === 'carlos.r@example.com') return { ...user, lat: 40.4168, lng: -3.7038 };
+        if (user.email === 'mei.l@example.com') return { ...user, lat: 31.2304, lng: 121.4737 };
+        if (user.email === 'frank.m@example.com') return { ...user, lat: 52.5200, lng: 13.4050 };
+        return user;
+    });
+
+    return geocodedUsers;
 }
 
 
@@ -100,7 +66,7 @@ const getLegacyUsersFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const users = await parseSqlFile();
+      const users = await getParsedUsers();
       
       if (!users || users.length === 0) {
         return { success: false, message: "No users found in the data file or the file is empty." };
