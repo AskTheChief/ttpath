@@ -81,7 +81,8 @@ async function convertSqlToCsv() {
     ];
     allRows.push(header);
 
-    const insertStatementRegex = /INSERT INTO `table_0` VALUES\s*([\s\S]*?);/g;
+    // Corrected regex to match the specific INSERT statement format
+    const insertStatementRegex = /INSERT INTO `table_0` \([^)]+\) VALUES\s*([\s\S]*?);/g;
     let insertMatch;
 
     console.log('Searching for INSERT statements...');
