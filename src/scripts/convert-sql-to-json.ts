@@ -7,11 +7,48 @@ const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv
 const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
 
 type LegacyUser = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   location: string;
   country: string;
 };
+
+// Function to split full name into first and last name
+function splitName(fullName: string): { firstName: string, lastName:string } {
+    const nameParts = fullName.trim().split(/\s+/);
+    if (nameParts.length > 1) {
+        const lastName = nameParts.pop() || '';
+        const firstName = nameParts.join(' ');
+        return { firstName, lastName };
+    }
+    return { firstName: fullName, lastName: '' };
+}
+
+// Function to normalize location strings for better geocoding results
+function normalizeLocation(location: string, country: string): string {
+    if (!location) return country;
+    
+    let cleaned = location
+        // Remove known noise
+        .replace(/city:|state:|country:/gi, '')
+        // Remove characters that are unlikely to be part of an address
+        .replace(/[~!*();?#@&=+$%^]/g, '')
+        .trim();
+
+    // If the cleaned location doesn't already contain the country, and the country is valid, append it.
+    if (country && !cleaned.toLowerCase().includes(country.toLowerCase())) {
+        cleaned = `${cleaned}, ${country}`;
+    }
+    
+    // Consolidate multiple commas or spaces
+    cleaned = cleaned.replace(/,+/g, ',').replace(/\s,/, ',').replace(/,\s*/g, ', ').trim();
+    // Remove leading or trailing commas
+    cleaned = cleaned.replace(/^,|,$/g, '').trim();
+    
+    return cleaned;
+}
+
 
 async function convertCsvToJson() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
@@ -22,14 +59,12 @@ async function convertCsvToJson() {
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
-  // Robustly parse the CSV, automatically detecting headers.
   const records = parse(csvContent, {
-    columns: true, // Use the first line as headers
+    columns: true,
     skip_empty_lines: true,
-    trim: true, // Trim spaces from headers and values
+    trim: true,
   });
 
-  // Dynamically find the keys for name and email, case-insensitively.
   const header = Object.keys(records[0] || {}).map(h => h.trim());
   const nameKey = header.find(h => h.toLowerCase().includes('name'));
   const emailKey = header.find(h => h.toLowerCase().includes('email'));
@@ -42,14 +77,20 @@ async function convertCsvToJson() {
       process.exit(1);
   }
 
-  // Filter out records that are missing essential data like name or email.
-  const validRecords = records.map(record => ({
-      name: record[nameKey] || '',
-      email: record[emailKey] || '',
-      location: locationKey ? record[locationKey] : '',
-      country: countryKey ? record[countryKey] : '',
-  })).filter(record => {
-    const hasName = record.name && record.name.trim() !== '';
+  const processedRecords = records.map(record => {
+      const { firstName, lastName } = splitName(record[nameKey] || '');
+      const location = locationKey ? record[locationKey] : '';
+      const country = countryKey ? record[countryKey] : '';
+      
+      return {
+          firstName,
+          lastName,
+          email: record[emailKey] || '',
+          location: normalizeLocation(location, country),
+          country: country,
+      };
+  }).filter(record => {
+    const hasName = record.firstName && record.firstName.trim() !== '';
     const hasEmail = record.email && record.email.trim() !== '';
     if (!hasName || !hasEmail) {
         console.warn('Skipping invalid record due to missing name or email:', record);
@@ -57,9 +98,8 @@ async function convertCsvToJson() {
     return hasName && hasEmail;
   });
 
-  // De-duplicate records based on email address, case-insensitively.
   const uniqueUsers = new Map<string, LegacyUser>();
-  for (const user of validRecords) {
+  for (const user of processedRecords) {
     const normalizedEmail = user.email.toLowerCase().trim();
     if (!uniqueUsers.has(normalizedEmail)) {
       uniqueUsers.set(normalizedEmail, user);
@@ -68,7 +108,7 @@ async function convertCsvToJson() {
 
   const deDuplicatedRecords = Array.from(uniqueUsers.values());
 
-  console.log(`Successfully parsed ${records.length} records, with ${validRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
+  console.log(`Successfully parsed ${records.length} records, with ${processedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
   
   console.log(`Writing JSON to: ${jsonFilePath}`);
   fs.writeFileSync(jsonFilePath, JSON.stringify(deDuplicatedRecords, null, 2));
