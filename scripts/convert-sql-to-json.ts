@@ -17,7 +17,7 @@ async function convertCsvToJson() {
   console.log(`Reading CSV file from: ${csvFilePath}`);
   if (!fs.existsSync(csvFilePath)) {
     console.error(`Error: CSV file not found at ${csvFilePath}`);
-    console.error('Please ensure the CSV file exists.');
+    console.error('Please ensure the CSV file exists and the path is correct.');
     process.exit(1);
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
@@ -57,10 +57,21 @@ async function convertCsvToJson() {
     return hasName && hasEmail;
   });
 
-  console.log(`Successfully parsed ${records.length} records, with ${validRecords.length} being valid.`);
+  // De-duplicate records based on email address
+  const uniqueUsers = new Map<string, LegacyUser>();
+  for (const user of validRecords) {
+    const normalizedEmail = user.email.toLowerCase().trim();
+    if (!uniqueUsers.has(normalizedEmail)) {
+      uniqueUsers.set(normalizedEmail, user);
+    }
+  }
+
+  const deDuplicatedRecords = Array.from(uniqueUsers.values());
+
+  console.log(`Successfully parsed ${records.length} records, with ${validRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
   
   console.log(`Writing JSON to: ${jsonFilePath}`);
-  fs.writeFileSync(jsonFilePath, JSON.stringify(validRecords, null, 2));
+  fs.writeFileSync(jsonFilePath, JSON.stringify(deDuplicatedRecords, null, 2));
   
   console.log('Conversion to JSON complete!');
 }
