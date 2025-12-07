@@ -22,21 +22,40 @@ async function convertCsvToJson() {
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
-  const records: LegacyUser[] = parse(csvContent, {
-    columns: true,
+  // Robustly parse the CSV, automatically detecting headers.
+  const records = parse(csvContent, {
+    columns: true, // Use the first line as headers
     skip_empty_lines: true,
+    trim: true, // Trim spaces from headers and values
   });
 
+  // Dynamically find the keys for name and email, case-insensitively.
+  const header = Object.keys(records[0] || {});
+  const nameKey = header.find(h => h.toLowerCase().includes('name'));
+  const emailKey = header.find(h => h.toLowerCase().includes('email'));
+  const locationKey = header.find(h => h.toLowerCase().includes('location'));
+  const countryKey = header.find(h => h.toLowerCase().includes('country'));
+
+  if (!nameKey || !emailKey) {
+      console.error('Could not find "name" and "email" columns in the CSV file. Please check the header row.');
+      console.log('Found headers:', header);
+      process.exit(1);
+  }
+
   // Filter out records that are missing essential data like name or email.
-  const validRecords = records.filter(record => {
+  const validRecords = records.map(record => ({
+      name: record[nameKey] || '',
+      email: record[emailKey] || '',
+      location: locationKey ? record[locationKey] : '',
+      country: countryKey ? record[countryKey] : '',
+  })).filter(record => {
     const hasName = record.name && record.name.trim() !== '';
     const hasEmail = record.email && record.email.trim() !== '';
     if (!hasName || !hasEmail) {
-        console.warn('Skipping invalid record:', record);
+        console.warn('Skipping invalid record due to missing name or email:', record);
     }
     return hasName && hasEmail;
   });
-
 
   console.log(`Successfully parsed ${records.length} records, with ${validRecords.length} being valid.`);
   
