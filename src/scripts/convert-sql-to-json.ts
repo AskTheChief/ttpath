@@ -60,7 +60,7 @@ function splitName(firstName: string, lastName: string): { firstName: string, la
 }
 
 function createFullLocationString(address: string, city: string, state: string, zip: string, country: string): string {
-    const parts = [address, city, state, zip, country].filter(Boolean);
+    const parts = [address, city, state, zip, country].map(p => (p || '').trim()).filter(Boolean);
     return parts.join(', ');
 }
 
@@ -74,8 +74,11 @@ async function convertAndGeocode() {
   }
   const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
   
+  const headers = ['id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'];
+  
   const records = parse(csvContent, {
-    columns: true,
+    columns: headers,
+    from_line: 2, // Skip the header row in the CSV file itself
     skip_empty_lines: true,
     trim: true,
   });
@@ -85,29 +88,8 @@ async function convertAndGeocode() {
       return;
   }
 
-  // Find the actual keys for first name, last name, and email
-  const headers = Object.keys(records[0]);
-  const firstKey = headers.find(h => h.toLowerCase().includes('first'));
-  const lastKey = headers.find(h => h.toLowerCase().includes('last'));
-  const emailKey = headers.find(h => h.toLowerCase().includes('email'));
-  
-  if (!firstKey || !lastKey || !emailKey) {
-      console.error('Could not find required columns (first, last, email) in CSV headers:', headers);
-      process.exit(1);
-  }
-
-
-  const processedRecords = records.filter((record: any) => {
-    const hasName = (record[firstKey] && record[firstKey].trim() !== '') || (record[lastKey] && record[lastKey].trim() !== '');
-    const hasEmail = record[emailKey] && record[emailKey].trim() !== '';
-    if (!hasName || !hasEmail) {
-        console.warn('Skipping invalid record due to missing name or email:', record);
-        return false;
-    }
-    return true;
-  }).map((record: any) => {
-      const { firstName, lastName } = splitName(record[firstKey], record[lastKey]);
-      
+  const processedRecords = records.map((record: any) => {
+      const { firstName, lastName } = splitName(record.first, record.last);
       const city = record.city || '';
       const state = record.state || record.province || '';
       const zip = record.code || '';
@@ -115,28 +97,21 @@ async function convertAndGeocode() {
       const address = record.address || '';
       
       const user: any = {
-          firstName,
-          lastName,
-          email: record.email || '',
+          ...record, // Keep all original fields
+          firstName, // Add processed first name
+          lastName,  // Add processed last name
           location: createFullLocationString(address, city, state, zip, country),
-          phone: record.phone || '',
-          address: address,
-          city: city,
-          state: state,
-          zip: zip,
-          country: country
       };
-      
-      // Copy all original fields from the record
-      const allHeaders = Object.keys(record);
-      allHeaders.forEach(header => {
-          // Only add if not one of the specially handled fields to avoid conflicts
-          if (!['firstName', 'lastName', 'location'].includes(header) && record[header] !== undefined) {
-            user[header] = record[header];
-          }
-      });
-      
       return user;
+  }).filter((record: any) => {
+    // Validate based on the presence of an email and at least a first or last name from the original data
+    const hasName = (record.first && record.first.trim() !== '') || (record.last && record.last.trim() !== '');
+    const hasEmail = record.email && record.email.trim() !== '';
+    if (!hasName || !hasEmail) {
+        console.warn('Skipping invalid record due to missing name or email:', record);
+        return false;
+    }
+    return true;
   });
 
   const uniqueUsers = new Map<string, any>();
@@ -149,7 +124,7 @@ async function convertAndGeocode() {
 
   const deDuplicatedRecords = Array.from(uniqueUsers.values());
 
-  console.log(`Successfully parsed ${records.length} records, with ${deDuplicatedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
+  console.log(`Successfully parsed ${records.length} records, with ${processedRecords.length} being valid. After de-duplication, there are ${deDuplicatedRecords.length} unique users.`);
   console.log('--- Starting Geocoding ---');
 
   let geocodedCount = 0;
