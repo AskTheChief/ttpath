@@ -16,6 +16,8 @@ const LegacyUserSchema = z.object({
   email: z.string(),
   location: z.string(),
   country: z.string(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
 });
 export type LegacyUser = z.infer<typeof LegacyUserSchema>;
 
@@ -34,11 +36,11 @@ async function parseSqlFile(): Promise<LegacyUser[]> {
             // Sample data structure based on a typical user table.
             // In a real implementation, you would parse `public/UserData/UserContact.sql` here.
             const sampleUsers: LegacyUser[] = [
-                { name: 'John Doe', email: 'john.d@example.com', location: 'New York', country: 'USA' },
-                { name: 'Jane Smith', email: 'jane.s@example.com', location: 'London', country: 'UK' },
-                { name: 'Carlos Ruiz', email: 'carlos.r@example.com', location: 'Madrid', country: 'Spain' },
-                { name: 'Mei Lin', email: 'mei.l@example.com', location: 'Shanghai', country: 'China' },
-                { name: 'Frank Mueller', email: 'frank.m@example.com', location: 'Berlin', country: 'Germany' },
+                { name: 'John Doe', email: 'john.d@example.com', location: 'New York', country: 'USA', lat: 40.7128, lng: -74.0060 },
+                { name: 'Jane Smith', email: 'jane.s@example.com', location: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
+                { name: 'Carlos Ruiz', email: 'carlos.r@example.com', location: 'Madrid', country: 'Spain', lat: 40.4168, lng: -3.7038 },
+                { name: 'Mei Lin', email: 'mei.l@example.com', location: 'Shanghai', country: 'China', lat: 31.2304, lng: 121.4737 },
+                { name: 'Frank Mueller', email: 'frank.m@example.com', location: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
             ];
             resolve(sampleUsers);
         }, 1500); // Simulate a 1.5-second parsing delay

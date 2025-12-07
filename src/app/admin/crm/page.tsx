@@ -9,11 +9,29 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { GoogleMap, useLoadScript, MarkerF, Libraries } from '@react-google-maps/api';
+
+const libraries: Libraries = ['places'];
+const mapContainerStyle = {
+  width: '100%',
+  height: '400px',
+  borderRadius: '0.5rem',
+};
+
+const center = {
+  lat: 45.0,
+  lng: 10.0,
+};
 
 export default function CrmPage() {
   const [users, setUsers] = useState<LegacyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   useEffect(() => {
     async function fetchUsers() {
@@ -48,6 +66,31 @@ export default function CrmPage() {
             </Link>
         </Button>
       </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>User Location Map</CardTitle>
+          <CardDescription>A map showing the distribution of your legacy members.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading && <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+          {!loading && isLoaded && (
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              zoom={2}
+              center={center}
+            >
+              {users.map(user => 
+                user.lat && user.lng && (
+                  <MarkerF key={user.email} position={{ lat: user.lat, lng: user.lng }} title={user.name} />
+                )
+              )}
+            </GoogleMap>
+          )}
+          {loadError && <div>Error loading maps. Please check your API key.</div>}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
             <CardTitle>Data Manager</CardTitle>
