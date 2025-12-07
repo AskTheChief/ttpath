@@ -60,9 +60,24 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     
 
     // **Simulated Geocoding for demonstration**
-    // In a real application, you'd do this in a separate batch script and save the results.
+    // In a real application, you'd use a dedicated geocoding service in a one-time batch script.
+    // This simple hash-based simulation provides coordinates for visualization without API calls.
     const geocodedUsers = users.map((user: LegacyUser) => {
-        if (!user.email) return user;
+        if (!user.location) return user;
+        
+        // Simple hash function to create pseudo-random (but consistent) coordinates
+        let hash = 0;
+        for (let i = 0; i < user.location.length; i++) {
+            const char = user.location.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32bit integer
+        }
+        
+        // Generate lat/lng within a plausible global range
+        const lat = (hash % 18000) / 100 - 90; // -90 to 90
+        const lng = (hash % 36000) / 100 - 180; // -180 to 180
+
+        // Manually override specific users for better accuracy in the demo
         const lowerCaseEmail = user.email.trim().toLowerCase();
         if (lowerCaseEmail === 'tt_95@yahoo.com') return { ...user, lat: 30.19, lng: -97.82 };
         if (lowerCaseEmail === 'alex@haascrea.com') return { ...user, lat: 40.75, lng: -73.98 };
@@ -71,7 +86,7 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
         if (lowerCaseEmail === 'rideyourwinners@gmail.com') return { ...user, lat: 47.54, lng: -122.75 };
         if (lowerCaseEmail === 'crdenapoles@gmail.com') return { ...user, lat: 30.43, lng: -87.21 };
 
-        return user;
+        return { ...user, lat, lng };
     });
 
     return geocodedUsers;
