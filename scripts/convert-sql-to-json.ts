@@ -19,7 +19,7 @@ async function convertSqlToJson() {
   const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
 
   const users: LegacyUser[] = [];
-  const insertRegex = /INSERT INTO `UserContact` VALUES \((.*?)\);/g;
+  const insertRegex = /INSERT INTO `table_0` VALUES \((.*?)\);/g;
   let match;
 
   while ((match = insertRegex.exec(sqlContent)) !== null) {
@@ -27,17 +27,17 @@ async function convertSqlToJson() {
         const values = match[1].split(/,(?=(?:(?:[^"']*["']){2})*[^"']*$)/).map(v => {
             let value = v.trim();
             if (value.startsWith("'") && value.endsWith("'")) {
-                value = value.substring(1, value.length - 1);
+                value = value.substring(1, value.length - 1).trim();
             }
             return value.replace(/\\'/g, "'").replace(/\\\\/g, "\\");
         });
 
-        if (values.length >= 7) {
+        if (values.length >= 15) {
             const user: LegacyUser = {
-                name: values[1],
-                email: values[5],
-                location: `${values[3]}, ${values[4]}`,
-                country: values[2],
+                name: `${values[3]} ${values[4]}`.trim(),
+                email: values[6],
+                location: `${values[11]}, ${values[12]}`.trim(),
+                country: values[14],
             };
             users.push(user);
         }
