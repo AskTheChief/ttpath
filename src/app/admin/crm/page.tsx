@@ -5,12 +5,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, MousePointerClick, Move } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
+import { useToast } from '@/hooks/use-toast';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -35,6 +36,7 @@ export default function CrmPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
+  const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -46,8 +48,9 @@ export default function CrmPage() {
       try {
         const result = await getLegacyUsers();
         if (result.success && result.users) {
-          setUsers(result.users);
-          setFilteredUsers(result.users); // Initially, show all users
+          const validUsers = result.users.filter(u => u.lat && u.lng);
+          setUsers(validUsers);
+          setFilteredUsers(validUsers); // Initially, show all users
         } else {
           throw new Error(result.message || 'Failed to load user data.');
         }
@@ -67,12 +70,15 @@ export default function CrmPage() {
 
   const handleBoundsChanged = () => {
     if (map && selectionMode) {
-      setSelectionBounds(map.getBounds() ?? null);
+      const newBounds = map.getBounds();
+      if (newBounds) {
+        setSelectionBounds(newBounds);
+      }
     }
   };
 
   useEffect(() => {
-    if (selectionBounds) {
+    if (selectionMode && selectionBounds) {
       const selected = users.filter(user => {
         if (user.lat && user.lng) {
           return selectionBounds.contains({ lat: user.lat, lng: user.lng });
@@ -80,14 +86,16 @@ export default function CrmPage() {
         return false;
       });
       setFilteredUsers(selected);
+    } else {
+      setFilteredUsers(users);
     }
-  }, [selectionBounds, users]);
+  }, [selectionBounds, selectionMode, users]);
 
   const clearSelection = () => {
     setSelectionBounds(null);
     setFilteredUsers(users);
     if(map) {
-      map.setOptions({ draggable: true, zoomControl: true });
+      map.setOptions({ draggable: true, zoomControl: true, scrollwheel: true });
       map.setZoom(2);
       map.setCenter(center);
     }
@@ -101,26 +109,34 @@ export default function CrmPage() {
   };
 
   const usersToDisplay = useMemo(() => {
-    return selectionBounds ? filteredUsers : users;
-  }, [selectionBounds, filteredUsers, users]);
+    return selectionMode && selectionBounds ? filteredUsers : users;
+  }, [selectionMode, selectionBounds, filteredUsers, users]);
 
   const toggleSelectionMode = () => {
-    if (!selectionMode) {
-      setSelectionMode(true);
+    const newMode = !selectionMode;
+    setSelectionMode(newMode);
+    
+    if (newMode) {
       map?.setOptions({ 
-        draggable: false, 
-        zoomControl: false,
-        scrollwheel: false,
-        disableDoubleClickZoom: true,
+        draggable: true, 
+        zoomControl: true,
+        scrollwheel: true,
+        disableDoubleClickZoom: false,
         draggableCursor: 'crosshair',
         draggingCursor: 'crosshair',
       });
       toast({
         title: "Selection Mode Activated",
-        description: "Hold 'Alt' and drag to draw a selection box on the map.",
+        description: "Pan and zoom the map to define your selection area. The table will update automatically.",
       });
+      // Initial bounds check
+      handleBoundsChanged();
     } else {
       clearSelection();
+      toast({
+        title: "Pan Mode Activated",
+        description: "The map is now in normal navigation mode.",
+      });
     }
   };
   
@@ -161,7 +177,7 @@ export default function CrmPage() {
                 <CardTitle>User Location Map</CardTitle>
                 <CardDescription>
                   {selectionMode 
-                    ? "Selection Mode: Hold 'Alt' and drag to select users in an area."
+                    ? "Selection Mode: Pan and zoom to define your area. The table below will update."
                     : "Pan & Zoom Mode: Click a cluster to zoom in, or a marker to see details."
                   }
                 </CardDescription>
@@ -171,7 +187,7 @@ export default function CrmPage() {
                     {selectionMode ? <Move className="mr-2 h-4 w-4"/> : <MousePointerClick className="mr-2 h-4 w-4"/>}
                     {selectionMode ? 'Pan Mode' : 'Select Mode'}
                  </Button>
-                 {selectionBounds && (
+                 {selectionBounds && selectionMode && (
                     <Button variant="destructive" onClick={clearSelection}>
                         <X className="mr-2 h-4 w-4" /> Clear Selection
                     </Button>
@@ -188,17 +204,6 @@ export default function CrmPage() {
                 center={center}
                 onLoad={onMapLoad}
                 onBoundsChanged={handleBoundsChanged}
-                options={{
-                  // Default options
-                  draggable: true,
-                  zoomControl: true,
-                  scrollwheel: true,
-                  disableDoubleClickZoom: false,
-                  // Options for selection
-                  gestureHandling: 'auto',
-                  draggableCursor: 'grab',
-                  draggingCursor: 'grabbing',
-                }}
               >
                 <MarkerClustererF>
                   {(clusterer) =>
@@ -241,17 +246,17 @@ export default function CrmPage() {
         <Card>
           <CardHeader>
               <CardTitle>
-                Data Manager {selectionBounds && `(${filteredUsers.length} users selected)`}
+                Data Manager {selectionMode && selectionBounds && `(${filteredUsers.length} users selected)`}
               </CardTitle>
               <CardDescription>
-                  This table displays user data. {selectionBounds ? 'Showing users in the selected area.' : 'Use "Select Mode" on the map to filter users by location.'}
+                  This table displays user data. {selectionMode && selectionBounds ? 'Showing users in the selected area.' : 'Use "Select Mode" on the map to filter users by location.'}
               </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
                <div className="flex items-center justify-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="ml-4">Loading and parsing user data...</p>
+                  <p className="ml-4">Loading user data...</p>
                </div>
             ) : (
               <Table>
@@ -275,7 +280,7 @@ export default function CrmPage() {
                        {usersToDisplay.length === 0 && (
                           <TableRow>
                             <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                {selectionBounds ? 'No users found in the selected area.' : 'No users to display.'}
+                                {selectionMode && selectionBounds ? 'No users found in the selected area.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
                        )}
@@ -296,5 +301,3 @@ export default function CrmPage() {
     </>
   );
 }
-
-    
