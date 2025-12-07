@@ -120,6 +120,7 @@ async function convertAndGeocode() {
   const stateKey = header.find(h => h.toLowerCase().includes('state'));
   const zipKey = header.find(h => h.toLowerCase().includes('zip'));
   const countryKey = header.find(h => h.toLowerCase().includes('country'));
+  const phoneKey = header.find(h => h.toLowerCase().includes('phone'));
 
   if (!firstNameKey || !emailKey) {
       console.error('Could not find "First Name" and "Email" columns in the CSV file. Please check the header row.');
@@ -134,17 +135,31 @@ async function convertAndGeocode() {
       const state = stateKey ? record[stateKey] : '';
       const zip = zipKey ? record[zipKey] : '';
       const country = countryKey ? record[countryKey] : '';
+      const phone = phoneKey ? record[phoneKey] : '';
       
-      return {
+      const user: any = {
           firstName,
           lastName,
           email: record[emailKey] || '',
           location: createFullLocationString(address, city, state, zip, country),
-          city: city,
-          state: state,
-          zip: zip,
-          country: country,
+          address,
+          city,
+          state,
+          zip,
+          country,
+          phone,
       };
+
+      // Include all other fields from the CSV
+      header.forEach(h => {
+        // Create a JS-friendly key
+        const key = h.toLowerCase().replace(/ /g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+        if (!user.hasOwnProperty(key)) {
+            user[key] = record[h] || '';
+        }
+      });
+      
+      return user;
   }).filter(record => {
     const hasName = (record.firstName || record.lastName) && (record.firstName.trim() !== '' || record.lastName.trim() !== '');
     const hasEmail = record.email && record.email.trim() !== '';
@@ -182,13 +197,12 @@ async function convertAndGeocode() {
         }
         finalUsers.push(user);
         
-        // Add a delay to avoid hitting rate limits
-        await sleep(50); // ~20 requests per second
+        await sleep(50);
 
     } catch (error: any) {
         if (error.message === 'OVER_QUERY_LIMIT') {
             console.log('Stopping script due to query limit. Writing progress...');
-            finalUsers.push(user); // add current user without coords
+            finalUsers.push(user);
             break; 
         }
         finalUsers.push(user);

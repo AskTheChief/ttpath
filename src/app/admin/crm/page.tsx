@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -44,7 +45,7 @@ export default function CrmPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lastName', direction: 'ascending' });
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -143,7 +144,7 @@ export default function CrmPage() {
     const newSelectedRows: Record<string, boolean> = {};
     if (checked) {
       sortedUsers.forEach(user => {
-        newSelectedRows[user.email] = true;
+        if (user.email) newSelectedRows[user.email] = true;
       });
     }
     setSelectedRows(newSelectedRows);
@@ -185,7 +186,7 @@ export default function CrmPage() {
   const SortableHeader = ({ title, sortKey }: { title: string; sortKey: keyof LegacyUser; }) => {
     const isSorted = sortConfig?.key === sortKey;
     return (
-        <TableHead>
+        <TableHead className="whitespace-nowrap">
             <Button variant="ghost" onClick={() => requestSort(sortKey)}>
                 {title}
                 <ArrowUpDown className={`ml-2 h-4 w-4 ${isSorted ? 'text-foreground' : 'text-muted-foreground/50'}`} />
@@ -321,58 +322,67 @@ export default function CrmPage() {
                   <p className="ml-4">Loading user data...</p>
                </div>
             ) : (
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead className="w-[50px]">
-                            <Checkbox
-                                checked={numSelectedRows > 0 && numSelectedRows === sortedUsers.length}
-                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                aria-label="Select all"
-                            />
-                          </TableHead>
-                          <SortableHeader title="First Name" sortKey="firstName" />
-                          <SortableHeader title="Last Name" sortKey="lastName" />
-                          <SortableHeader title="Email" sortKey="email" />
-                          <SortableHeader title="City" sortKey="city" />
-                          <SortableHeader title="State" sortKey="state" />
-                          <SortableHeader title="Zip" sortKey="zip" />
-                          <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {sortedUsers.map((user, index) => (
-                          <TableRow key={`${user.email}-${index}`} data-state={selectedRows[user.email] ? 'selected' : ''}>
-                              <TableCell>
+             <ScrollArea className="w-full">
+                <Table className="min-w-full">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[50px] sticky left-0 bg-card z-10">
                                 <Checkbox
-                                    checked={selectedRows[user.email] || false}
-                                    onCheckedChange={(checked) => handleRowSelect(user.email, !!checked)}
-                                    aria-label={`Select ${user.firstName} ${user.lastName}`}
+                                    checked={sortedUsers.length > 0 && numSelectedRows === sortedUsers.length}
+                                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                    aria-label="Select all"
                                 />
-                              </TableCell>
-                              <TableCell>{user.firstName}</TableCell>
-                              <TableCell>{user.lastName}</TableCell>
-                              <TableCell>{user.email}</TableCell>
-                              <TableCell>{user.city}</TableCell>
-                              <TableCell>{user.state}</TableCell>
-                              <TableCell>{user.zip}</TableCell>
-                              <TableCell className="text-right">
-                                <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    Email
-                                </Button>
-                              </TableCell>
-                          </TableRow>
-                      ))}
-                       {sortedUsers.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground">
-                                {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
-                            </TableCell>
-                          </TableRow>
-                       )}
-                  </TableBody>
-              </Table>
+                            </TableHead>
+                            <SortableHeader title="Last Name" sortKey="lastName" />
+                            <SortableHeader title="First Name" sortKey="firstName" />
+                            <SortableHeader title="Email" sortKey="email" />
+                            <SortableHeader title="Phone" sortKey="phone" />
+                            <SortableHeader title="Address" sortKey="address" />
+                            <SortableHeader title="City" sortKey="city" />
+                            <SortableHeader title="State" sortKey="state" />
+                            <SortableHeader title="Zip" sortKey="zip" />
+                            <SortableHeader title="Country" sortKey="country" />
+                            <TableHead className="text-right sticky right-0 bg-card z-10">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {sortedUsers.map((user, index) => (
+                            <TableRow key={`${user.email}-${index}`} data-state={selectedRows[user.email] ? 'selected' : ''}>
+                                <TableCell className="sticky left-0 bg-card z-10">
+                                    <Checkbox
+                                        checked={!!(user.email && selectedRows[user.email])}
+                                        onCheckedChange={(checked) => user.email && handleRowSelect(user.email, !!checked)}
+                                        aria-label={`Select ${user.firstName} ${user.lastName}`}
+                                    />
+                                </TableCell>
+                                <TableCell>{user.lastName}</TableCell>
+                                <TableCell>{user.firstName}</TableCell>
+                                <TableCell>{user.email}</TableCell>
+                                <TableCell>{user.phone}</TableCell>
+                                <TableCell>{user.address}</TableCell>
+                                <TableCell>{user.city}</TableCell>
+                                <TableCell>{user.state}</TableCell>
+                                <TableCell>{user.zip}</TableCell>
+                                <TableCell>{user.country}</TableCell>
+                                <TableCell className="text-right sticky right-0 bg-card z-10">
+                                    <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        Email
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                         {sortedUsers.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={11} className="text-center text-muted-foreground h-24">
+                                    {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
+                                </TableCell>
+                            </TableRow>
+                         )}
+                    </TableBody>
+                </Table>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
@@ -381,7 +391,7 @@ export default function CrmPage() {
         <EmailComposerModal
             isOpen={isEmailModalOpen}
             onClose={() => setIsEmailModalOpen(false)}
-            recipientEmails={emailRecipients.map(u => u.email)}
+            recipientEmails={emailRecipients.map(u => u.email).filter(Boolean)}
             recipientNames={emailRecipients.map(u => `${u.firstName} ${u.lastName}`)}
         />
       )}

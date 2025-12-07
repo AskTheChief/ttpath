@@ -3,15 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const sqlFilePath = path.join(process.cwd(), 'public', 'UserData', 'UserContact.sql');
-const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.csv');
+const csvFilePath = path.join(process.cwd(), 'public', 'UserData', 'OldUsers.csv');
 
 /**
  * A robust parser to split a SQL values tuple string into an array of values.
  * It handles commas and escaped quotes within single-quoted strings.
- * e.g., ('John', 'O\'Malley, Jr.', 'Some text, with a comma') -> ["'John'", "'O\\'Malley, Jr.'", "'Some text, with a comma'"]
  */
 function parseRowValues(rowString: string): string[] {
-    const values = [];
+    const values: string[] = [];
     let current_value = '';
     let in_quotes = false;
     let is_escaped = false;
@@ -42,20 +41,14 @@ function parseRowValues(rowString: string): string[] {
     }
     values.push(current_value.trim()); // Add the last value
 
-    if (values.length < 15) { // A crude check for a valid user row
-        throw new Error(`Could not parse row correctly. Found only ${values.length} columns.`);
-    }
-
     return values;
 }
 
 /**
  * Cleans a raw SQL value for CSV output.
- * @param value The raw string value from the parsed row.
- * @returns A cleaned string.
  */
 function cleanSqlValue(value: string): string {
-    if (value === 'NULL') {
+    if (!value || value === 'NULL') {
         return '';
     }
     // Remove surrounding quotes and handle escaped single quotes.
@@ -66,7 +59,7 @@ function cleanSqlValue(value: string): string {
 }
 
 /**
- * Converts the custom SQL dump file to a clean CSV file.
+ * Converts the custom SQL dump file to a clean CSV file with all fields.
  */
 async function convertSqlToCsv() {
     console.log(`Reading SQL file from: ${sqlFilePath}`);
@@ -76,8 +69,16 @@ async function convertSqlToCsv() {
     }
     const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
 
-    const allUsers: any[] = [];
+    const allRows: string[][] = [];
     
+    // Define the full header based on the SQL table structure
+    const header = [
+        'id', 'field_1', 'field_2', 'First Name', 'Last Name', 'field_5', 
+        'Email', 'field_7', 'field_8', 'Address', 'field_10', 'City', 
+        'State', 'Zip', 'Country', 'Phone'
+    ];
+    allRows.push(header);
+
     const insertStatementRegex = /INSERT INTO `table_0` VALUES\s*([\s\S]*?);/g;
     let insertMatch;
 
@@ -85,49 +86,36 @@ async function convertSqlToCsv() {
     while ((insertMatch = insertStatementRegex.exec(sqlContent)) !== null) {
         const valuesBlock = insertMatch[1];
         
-        // This regex finds each individual row tuple, e.g., (1, 'Ed', 'Seykota', ...).
         const rowRegex = /\((.*?)\)/g;
         let rowMatch;
 
         while ((rowMatch = rowRegex.exec(valuesBlock)) !== null) {
             const rowContent = rowMatch[1];
             try {
-                const rowValues = parseRowValues(rowContent);
-
-                const first = cleanSqlValue(rowValues[3]);
-                const last = cleanSqlValue(rowValues[4]);
-                const email = cleanSqlValue(rowValues[6]);
-                const city = cleanSqlValue(rowValues[11]);
-                const state = cleanSqlValue(rowValues[12]);
-                const country = cleanSqlValue(rowValues[14]);
-
-                const name = `${first} ${last}`.trim();
-                const location = `${city}, ${state}`.replace(/^, |,$/g, '').trim();
-
-                allUsers.push({ name, email, location, country });
+                const parsedSqlValues = parseRowValues(rowContent);
+                if (parsedSqlValues.length >= 15) { // Ensure we have enough columns
+                    const cleanedRow = parsedSqlValues.map(cleanSqlValue);
+                    allRows.push(cleanedRow);
+                }
             } catch (e: any) {
-                console.warn(`Could not parse a row. It might be malformed. Skipping. Error: ${e.message}. Row content: ${rowContent.substring(0, 100)}...`);
+                console.warn(`Could not parse a row. Skipping. Error: ${e.message}.`);
             }
         }
     }
 
-    if (allUsers.length === 0) {
+    if (allRows.length <= 1) { // Only header row
         console.error('No users were parsed. Please check the SQL file format and the parsing logic.');
         return;
     }
 
-    console.log(`Successfully parsed ${allUsers.length} users.`);
+    console.log(`Successfully parsed ${allRows.length - 1} user rows.`);
 
-    const header = ['name', 'email', 'location', 'country'];
-    const csvRows = [
-        header.join(','),
-        ...allUsers.map(user => 
-            header.map(fieldName => `"${user[fieldName] ? user[fieldName] : ''}"`).join(',')
-        )
-    ];
+    const csvContent = allRows.map(row => 
+        row.map(field => `"${field}"`).join(',')
+    ).join('\n');
     
     console.log(`Writing CSV to: ${csvFilePath}`);
-    fs.writeFileSync(csvFilePath, csvRows.join('\n'));
+    fs.writeFileSync(csvFilePath, csvContent);
     
     console.log('Conversion to CSV complete!');
 }

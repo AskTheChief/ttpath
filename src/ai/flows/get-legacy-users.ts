@@ -23,12 +23,22 @@ const LegacyUserSchema = z.object({
   lastName: z.string(),
   email: z.string(),
   location: z.string(),
+  address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zip: z.string().optional(),
-  country: z.string(),
+  country: z.string().optional(),
+  phone: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
+  // Add other fields as optional strings
+  id: z.string().optional(),
+  field_1: z.string().optional(),
+  field_2: z.string().optional(),
+  field_5: z.string().optional(),
+  field_7: z.string().optional(),
+  field_8: z.string().optional(),
+  field_10: z.string().optional(),
 });
 export type LegacyUser = z.infer<typeof LegacyUserSchema>;
 
@@ -44,30 +54,29 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
     
     if (!fs.existsSync(jsonFilePath)) {
-        console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
-        return [
-            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', city: 'New York', state: 'NY', zip: '10001', country: 'USA', lat: 40.7128, lng: -74.0060 },
-            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', city: 'London', state: '', zip: '', country: 'UK', lat: 51.5074, lng: -0.1278 },
-        ];
+        console.warn('users.json not found. Run `npm run convert-users` to generate it.');
+        return [];
     }
 
     const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
     const usersFromFile = JSON.parse(jsonContent);
 
-    const users = usersFromFile.map((user: any) => ({
+    // No mapping needed if the JSON is already in the correct format
+    return usersFromFile.map((user: any) => ({
+      ...user, // Pass through all fields
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       location: user.location,
+      address: user.address,
       city: user.city,
       state: user.state,
       zip: user.zip,
       country: user.country,
+      phone: user.phone,
       lat: user.lat,
       lng: user.lng,
     }));
-    
-    return users;
 }
 
 
