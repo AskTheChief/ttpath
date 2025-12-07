@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, MousePointerClick, Move } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -26,11 +26,15 @@ const center = {
 
 export default function CrmPage() {
   const [users, setUsers] = useState<LegacyUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<LegacyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<LegacyUser | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState<LegacyUser | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -43,6 +47,7 @@ export default function CrmPage() {
         const result = await getLegacyUsers();
         if (result.success && result.users) {
           setUsers(result.users);
+          setFilteredUsers(result.users); // Initially, show all users
         } else {
           throw new Error(result.message || 'Failed to load user data.');
         }
@@ -56,12 +61,69 @@ export default function CrmPage() {
     fetchUsers();
   }, []);
 
+  const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+  }, []);
+
+  const handleBoundsChanged = () => {
+    if (map && selectionMode) {
+      setSelectionBounds(map.getBounds() ?? null);
+    }
+  };
+
+  useEffect(() => {
+    if (selectionBounds) {
+      const selected = users.filter(user => {
+        if (user.lat && user.lng) {
+          return selectionBounds.contains({ lat: user.lat, lng: user.lng });
+        }
+        return false;
+      });
+      setFilteredUsers(selected);
+    }
+  }, [selectionBounds, users]);
+
+  const clearSelection = () => {
+    setSelectionBounds(null);
+    setFilteredUsers(users);
+    if(map) {
+      map.setOptions({ draggable: true, zoomControl: true });
+      map.setZoom(2);
+      map.setCenter(center);
+    }
+    setSelectionMode(false);
+  };
+  
   const handleOpenEmailModal = (user: LegacyUser) => {
     setEmailRecipient(user);
     setIsEmailModalOpen(true);
     setSelectedUser(null); // Close info window when opening modal
   };
 
+  const usersToDisplay = useMemo(() => {
+    return selectionBounds ? filteredUsers : users;
+  }, [selectionBounds, filteredUsers, users]);
+
+  const toggleSelectionMode = () => {
+    if (!selectionMode) {
+      setSelectionMode(true);
+      map?.setOptions({ 
+        draggable: false, 
+        zoomControl: false,
+        scrollwheel: false,
+        disableDoubleClickZoom: true,
+        draggableCursor: 'crosshair',
+        draggingCursor: 'crosshair',
+      });
+      toast({
+        title: "Selection Mode Activated",
+        description: "Hold 'Alt' and drag to draw a selection box on the map.",
+      });
+    } else {
+      clearSelection();
+    }
+  };
+  
   return (
     <>
       <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
@@ -94,8 +156,28 @@ export default function CrmPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>User Location Map</CardTitle>
-            <CardDescription>A map showing the distribution of your legacy members. Click a cluster to zoom in, or a marker to see details.</CardDescription>
+             <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>User Location Map</CardTitle>
+                <CardDescription>
+                  {selectionMode 
+                    ? "Selection Mode: Hold 'Alt' and drag to select users in an area."
+                    : "Pan & Zoom Mode: Click a cluster to zoom in, or a marker to see details."
+                  }
+                </CardDescription>
+              </div>
+               <div className="flex gap-2">
+                 <Button variant="outline" onClick={toggleSelectionMode}>
+                    {selectionMode ? <Move className="mr-2 h-4 w-4"/> : <MousePointerClick className="mr-2 h-4 w-4"/>}
+                    {selectionMode ? 'Pan Mode' : 'Select Mode'}
+                 </Button>
+                 {selectionBounds && (
+                    <Button variant="destructive" onClick={clearSelection}>
+                        <X className="mr-2 h-4 w-4" /> Clear Selection
+                    </Button>
+                 )}
+               </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading && <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}
@@ -104,7 +186,19 @@ export default function CrmPage() {
                 mapContainerStyle={mapContainerStyle}
                 zoom={2}
                 center={center}
-                onClick={() => setSelectedUser(null)}
+                onLoad={onMapLoad}
+                onBoundsChanged={handleBoundsChanged}
+                options={{
+                  // Default options
+                  draggable: true,
+                  zoomControl: true,
+                  scrollwheel: true,
+                  disableDoubleClickZoom: false,
+                  // Options for selection
+                  gestureHandling: 'auto',
+                  draggableCursor: 'grab',
+                  draggingCursor: 'grabbing',
+                }}
               >
                 <MarkerClustererF>
                   {(clusterer) =>
@@ -146,9 +240,11 @@ export default function CrmPage() {
 
         <Card>
           <CardHeader>
-              <CardTitle>Data Manager</CardTitle>
+              <CardTitle>
+                Data Manager {selectionBounds && `(${filteredUsers.length} users selected)`}
+              </CardTitle>
               <CardDescription>
-                  This table displays the user data parsed from your `OldUsers.csv` file. You can run the geocoding script to populate lat/lng coordinates.
+                  This table displays user data. {selectionBounds ? 'Showing users in the selected area.' : 'Use "Select Mode" on the map to filter users by location.'}
               </CardDescription>
           </CardHeader>
           <CardContent>
@@ -168,7 +264,7 @@ export default function CrmPage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {users.map((user, index) => (
+                      {usersToDisplay.map((user, index) => (
                           <TableRow key={`${user.email}-${index}`}>
                               <TableCell>{user.firstName}</TableCell>
                               <TableCell>{user.lastName}</TableCell>
@@ -176,6 +272,13 @@ export default function CrmPage() {
                               <TableCell>{user.location}</TableCell>
                           </TableRow>
                       ))}
+                       {usersToDisplay.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                {selectionBounds ? 'No users found in the selected area.' : 'No users to display.'}
+                            </TableCell>
+                          </TableRow>
+                       )}
                   </TableBody>
               </Table>
             )}
@@ -193,3 +296,5 @@ export default function CrmPage() {
     </>
   );
 }
+
+    
