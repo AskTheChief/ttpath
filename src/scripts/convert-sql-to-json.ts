@@ -30,7 +30,7 @@ async function convertCsvToJson() {
   });
 
   // Dynamically find the keys for name and email, case-insensitively.
-  const header = Object.keys(records[0] || {});
+  const header = Object.keys(records[0] || {}).map(h => h.trim());
   const nameKey = header.find(h => h.toLowerCase().includes('name'));
   const emailKey = header.find(h => h.toLowerCase().includes('email'));
   const locationKey = header.find(h => h.toLowerCase().includes('location'));
