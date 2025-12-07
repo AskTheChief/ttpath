@@ -118,7 +118,7 @@ export default function CrmPage() {
     
     if (newMode) {
       map?.setOptions({ 
-        draggable: true, 
+        draggable: false, 
         zoomControl: true,
         scrollwheel: true,
         disableDoubleClickZoom: false,
@@ -127,11 +127,19 @@ export default function CrmPage() {
       });
       toast({
         title: "Selection Mode Activated",
-        description: "Pan and zoom the map to define your selection area. The table will update automatically.",
+        description: "Zoom and move the map to define your selection area. Dragging is disabled. The table will update automatically.",
       });
       // Initial bounds check
       handleBoundsChanged();
     } else {
+      map?.setOptions({ 
+        draggable: true, 
+        zoomControl: true,
+        scrollwheel: true,
+        disableDoubleClickZoom: false,
+        draggableCursor: undefined,
+        draggingCursor: undefined,
+      });
       clearSelection();
       toast({
         title: "Pan Mode Activated",
@@ -177,7 +185,7 @@ export default function CrmPage() {
                 <CardTitle>User Location Map</CardTitle>
                 <CardDescription>
                   {selectionMode 
-                    ? "Selection Mode: Pan and zoom to define your area. The table below will update."
+                    ? "Selection Mode: Pan and zoom to define your area. Dragging is disabled."
                     : "Pan & Zoom Mode: Click a cluster to zoom in, or a marker to see details."
                   }
                 </CardDescription>
@@ -301,3 +309,5 @@ export default function CrmPage() {
     </>
   );
 }
+
+    
