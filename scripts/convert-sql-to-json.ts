@@ -17,32 +17,41 @@ type LegacyUser = {
 async function convertSqlToJson() {
   console.log(`Reading SQL file from: ${sqlFilePath}`);
   const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
+  const lines = sqlContent.split('\n');
 
   const users: LegacyUser[] = [];
-  const insertRegex = /INSERT INTO `table_0` \((?:`.*?`, )*?`.*?`\) VALUES \((.*?)\);/g;
-  let match;
+  const valueRegex = /VALUES \((.*?)\);/;
 
-  while ((match = insertRegex.exec(sqlContent)) !== null) {
+  for (const line of lines) {
+    if (!line.startsWith('INSERT INTO')) {
+      continue;
+    }
+
+    const match = line.match(valueRegex);
+    if (!match || !match[1]) {
+      continue;
+    }
+
     try {
-        const values = match[1].split(/,(?=(?:(?:[^"']*["']){2})*[^"']*$)/).map(v => {
-            let value = v.trim();
-            if (value.startsWith("'") && value.endsWith("'")) {
-                value = value.substring(1, value.length - 1).trim();
-            }
-            return value.replace(/\\'/g, "'").replace(/\\\\/g, "\\");
-        });
-
-        if (values.length >= 15) {
-            const user: LegacyUser = {
-                name: `${values[3]} ${values[4]}`.trim(),
-                email: values[6],
-                location: `${values[11]}, ${values[12]}`.trim(),
-                country: values[14],
-            };
-            users.push(user);
+      const values = match[1].split(/,(?=(?:(?:[^"']*["']){2})*[^"']*$)/).map(v => {
+        let value = v.trim();
+        if (value.startsWith("'") && value.endsWith("'")) {
+          value = value.substring(1, value.length - 1).trim();
         }
+        return value.replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+      });
+
+      if (values.length >= 15) {
+        const user: LegacyUser = {
+          name: `${values[3]} ${values[4]}`.trim(),
+          email: values[6],
+          location: `${values[11]}, ${values[12]}`.trim(),
+          country: values[14],
+        };
+        users.push(user);
+      }
     } catch (e) {
-        console.error("Skipping malformed row:", match[1]);
+      console.error("Skipping malformed row:", line);
     }
   }
 
