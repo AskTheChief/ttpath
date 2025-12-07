@@ -329,6 +329,7 @@ export default function CrmPage() {
                   <p className="ml-4">Loading user data...</p>
                </div>
             ) : (
+              <ScrollArea className="w-full whitespace-nowrap">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -341,7 +342,8 @@ export default function CrmPage() {
                             </TableHead>
                             <SortableHeader title="First Name" sortKey="firstName" />
                             <SortableHeader title="Last Name" sortKey="lastName" />
-                            <SortableHeader title="Location" sortKey="location" />
+                            <SortableHeader title="City" sortKey="city" />
+                            <SortableHeader title="State" sortKey="state" />
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -357,7 +359,8 @@ export default function CrmPage() {
                                 </TableCell>
                                 <TableCell>{user.firstName}</TableCell>
                                 <TableCell>{user.lastName}</TableCell>
-                                <TableCell>{user.location}</TableCell>
+                                <TableCell>{user.city}</TableCell>
+                                <TableCell>{user.state}</TableCell>
                                 <TableCell className="text-right space-x-2">
                                     <Button variant="outline" size="sm" onClick={() => handleViewRecord(user)}>
                                         <Eye className="mr-2 h-4 w-4" />
@@ -372,13 +375,15 @@ export default function CrmPage() {
                         ))}
                         {sortedUsers.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                                     {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
@@ -394,7 +399,7 @@ export default function CrmPage() {
       {viewingUser && (
         <ViewRecordModal
           isOpen={isRecordModalOpen}
-          onClose={() => setIsRecordModalOpen(false)}
+          onClose={() => setViewingUser(null)}
           userRecord={viewingUser}
         />
       )}
