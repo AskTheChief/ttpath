@@ -9,19 +9,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import Mailgun from 'mailgun.js';
 import formData from 'form-data';
-
-export const SendDirectEmailInputSchema = z.object({
-  recipientEmail: z.string().email().describe("The email address of the recipient."),
-  subject: z.string().describe("The subject of the email."),
-  body: z.string().describe("The HTML content of the email body."),
-});
-export type SendDirectEmailInput = z.infer<typeof SendDirectEmailInputSchema>;
-
-export const SendDirectEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
-export type SendDirectEmailOutput = z.infer<typeof SendDirectEmailOutputSchema>;
+import { SendDirectEmailInputSchema, SendDirectEmailOutputSchema, type SendDirectEmailInput, type SendDirectEmailOutput } from '@/lib/types';
 
 export async function sendDirectEmail(input: SendDirectEmailInput): Promise<SendDirectEmailOutput> {
   return sendDirectEmailFlow(input);
