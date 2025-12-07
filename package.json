@@ -12,8 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "convert-sql": "tsx src/scripts/convert-sql-to-csv.ts",
-    "convert-users": "tsx scripts/convert-sql-to-json.ts",
-    "geocode-users": "tsx src/scripts/geocode-users.ts"
+    "convert-users": "tsx src/scripts/convert-sql-to-json.ts"
   },
   "dependencies": {
     "@genkit-ai/firebase": "^1.20.0",
