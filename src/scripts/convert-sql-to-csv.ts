@@ -15,7 +15,7 @@ function parseRowValues(rowString: string): string[] {
     // 1. Quoted strings, including those with escaped quotes: '((?:[^'\\]|\\.)*)'
     // 2. Numbers (including decimals and negatives): ([\d.-]+)
     // 3. NULL keyword: (NULL)
-    // 4. Empty values between commas
+    // 4. Commas or the closing parenthesis to delimit fields
     const regex = /'((?:[^'\\]|\\.)*)'|([\d.-]+)|(NULL)|(,|(?=\)))/g;
     let lastIndex = 0;
     let match;
@@ -24,13 +24,16 @@ function parseRowValues(rowString: string): string[] {
     const processingString = rowString + ',';
 
     while ((match = regex.exec(processingString)) !== null) {
-        if (match[4] === ',' || match[4] === ')') { // If we hit a comma or end parenthesis
+        // If we hit a comma or end parenthesis, it's the end of a field
+        if (match[4] === ',' || match[4] === ')') { 
             const segment = processingString.substring(lastIndex, match.index).trim();
             if (segment.startsWith("'") && segment.endsWith("'")) {
+                // It's a quoted string, un-escape it.
                 values.push(segment.slice(1, -1).replace(/\\'/g, "'"));
-            } else if (segment === 'NULL') {
+            } else if (segment.toUpperCase() === 'NULL') {
                 values.push('NULL');
             } else {
+                // It's a number or unquoted value
                 values.push(segment);
             }
             lastIndex = match.index + 1;
@@ -44,7 +47,7 @@ function parseRowValues(rowString: string): string[] {
  * Cleans a raw SQL value for CSV output.
  */
 function cleanSqlValue(value: string): string {
-    if (!value || value === 'NULL') {
+    if (!value || value.toUpperCase() === 'NULL') {
         return '';
     }
     // The value is already un-quoted by parseRowValues, so just handle CSV special characters.
@@ -67,40 +70,32 @@ async function convertSqlToCsv() {
     const header = ['id', 'login_first', 'login_last', 'first', 'last', 'tribe', 'email', 'phone', 'address', 'username', 'password', 'city', 'state', 'province', 'country', 'code', 'book_tt', 'book_g', 'attend_w', 'attend_3', 'attend_t', 'chief', 'faq_read', 'faq_write', 'wish_j', 'wish_w', 'wish_b', 'wish_p', 'reachouts', 'expansion_1', 'expansion_2'];
     allRows.push(header);
 
-    // This regex finds all INSERT statements, and is case-insensitive for "INSERT" and "VALUES"
-    const insertStatementRegex = /INSERT INTO `table_0` \([^)]+\) VALUES\s*([\s\S]*?);/gi;
-    let insertMatch;
+    // This regex finds all individual VALUES tuples: `( ... ),` or `( ... );`
+    const rowRegex = /\(([^)]+)\)[,;]/g;
+    let rowMatch;
 
-    console.log('Searching for INSERT statements...');
-    while ((insertMatch = insertStatementRegex.exec(sqlContent)) !== null) {
-        const valuesBlock = insertMatch[1];
-        
-        // This regex is designed to split rows correctly, even if they span multiple lines.
-        // It looks for a parenthesis, captures everything inside until the next closing parenthesis.
-        const rowRegex = /\(([^)]+)\)/g;
-        let rowMatch;
-
-        while ((rowMatch = rowRegex.exec(valuesBlock)) !== null) {
-            const rowContent = rowMatch[1];
-            try {
-                const parsedSqlValues = parseRowValues(rowContent);
-                
-                // Trim trailing empty strings that might result from trailing commas
-                while (parsedSqlValues.length > 0 && parsedSqlValues[parsedSqlValues.length - 1] === '') {
-                    parsedSqlValues.pop();
-                }
-
-                if (parsedSqlValues.length === header.length) { 
-                    const cleanedRow = parsedSqlValues.map(cleanSqlValue);
-                    allRows.push(cleanedRow);
-                } else {
-                    console.warn(`Skipping row with incorrect number of columns. Expected ${header.length}, got ${parsedSqlValues.length}.`);
-                }
-            } catch (e: any) {
-                console.warn(`Could not parse a row. Skipping. Error: ${e.message}.`);
+    console.log('Searching for all user data rows...');
+    while ((rowMatch = rowRegex.exec(sqlContent)) !== null) {
+        const rowContent = rowMatch[1];
+        try {
+            const parsedSqlValues = parseRowValues(rowContent);
+            
+            // Trim trailing empty strings that might result from trailing commas
+            while (parsedSqlValues.length > 0 && parsedSqlValues[parsedSqlValues.length - 1] === '') {
+                parsedSqlValues.pop();
             }
+
+            if (parsedSqlValues.length === header.length) { 
+                const cleanedRow = parsedSqlValues.map(cleanSqlValue);
+                allRows.push(cleanedRow);
+            } else {
+                console.warn(`Skipping row with incorrect number of columns. Expected ${header.length}, got ${parsedSqlValues.length}.`);
+            }
+        } catch (e: any) {
+            console.warn(`Could not parse a row. Skipping. Error: ${e.message}.`);
         }
     }
+
 
     if (allRows.length <= 1) { // Only header row
         console.error('No users were parsed. Please check the SQL file format and the parsing logic.');
