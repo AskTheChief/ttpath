@@ -115,8 +115,8 @@ async function convertAndGeocode() {
   const header = Object.keys(records[0] || {});
 
   const processedRecords = records.map((record: any) => {
-      // Correctly access normalized keys from csv-parse
-      const { firstName, lastName } = splitName(record.first || record.login_first || '', record.last || record.login_last || '');
+      // Correctly access normalized keys from csv-parse. Only use 'first' and 'last' for names.
+      const { firstName, lastName } = splitName(record.first || '', record.last || '');
       
       const city = record.city || '';
       const state = record.state || record.province || '';
@@ -146,7 +146,7 @@ async function convertAndGeocode() {
       
       return user;
   }).filter((record: any) => {
-    // Corrected validation logic
+    // Corrected validation logic to check the final processed object.
     const hasName = record.firstName || record.lastName;
     const hasEmail = record.email && record.email.trim() !== '';
 
