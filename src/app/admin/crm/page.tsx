@@ -12,6 +12,7 @@ import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerCluste
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -32,10 +33,11 @@ export default function CrmPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<LegacyUser | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [emailRecipient, setEmailRecipient] = useState<LegacyUser | null>(null);
+  const [emailRecipients, setEmailRecipients] = useState<LegacyUser[]>([]);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -50,7 +52,7 @@ export default function CrmPage() {
         if (result.success && result.users) {
           const validUsers = result.users.filter(u => u.lat && u.lng);
           setUsers(validUsers);
-          setFilteredUsers(validUsers); // Initially, show all users
+          setFilteredUsers(validUsers);
         } else {
           throw new Error(result.message || 'Failed to load user data.');
         }
@@ -86,34 +88,11 @@ export default function CrmPage() {
         return false;
       });
       setFilteredUsers(selected);
+      setSelectedRows({}); // Clear selection when map filter changes
     } else {
       setFilteredUsers(users);
     }
   }, [selectionBounds, selectionMode, users]);
-
-  const clearSelection = () => {
-    setSelectionBounds(null);
-    setFilteredUsers(users);
-    if(map) {
-      map.setZoom(2);
-      map.setCenter(center);
-    }
-    setSelectionMode(false); // Exit selection mode
-    toast({
-        title: "Selection Cleared",
-        description: "The map is back in normal navigation mode.",
-    });
-  };
-  
-  const handleOpenEmailModal = (user: LegacyUser) => {
-    setEmailRecipient(user);
-    setIsEmailModalOpen(true);
-    setSelectedUser(null); // Close info window when opening modal
-  };
-
-  const usersToDisplay = useMemo(() => {
-    return selectionMode ? filteredUsers : users;
-  }, [selectionMode, filteredUsers, users]);
 
   const toggleSelectionMode = () => {
     const newMode = !selectionMode;
@@ -124,12 +103,57 @@ export default function CrmPage() {
         title: "Selection Mode Activated",
         description: "Pan and zoom the map to define your selection. The table will update automatically.",
       });
-      // Initial bounds check
       handleBoundsChanged();
     } else {
-      clearSelection();
+      setSelectionBounds(null);
+      setFilteredUsers(users);
+      if(map) {
+        map.setZoom(2);
+        map.setCenter(center);
+      }
+      toast({
+          title: "Selection Cleared",
+          description: "The map is back in normal navigation mode.",
+      });
     }
   };
+  
+  const handleOpenEmailModalForSingleUser = (user: LegacyUser) => {
+    setEmailRecipients([user]);
+    setIsEmailModalOpen(true);
+    setSelectedUser(null);
+  };
+  
+  const handleOpenEmailModalForGroup = () => {
+      const recipients = usersToDisplay.filter(user => selectedRows[user.email]);
+      if (recipients.length > 0) {
+          setEmailRecipients(recipients);
+          setIsEmailModalOpen(true);
+      }
+  };
+
+  const usersToDisplay = useMemo(() => {
+    return selectionMode ? filteredUsers : users;
+  }, [selectionMode, filteredUsers, users]);
+
+  const handleSelectAll = (checked: boolean) => {
+    const newSelectedRows: Record<string, boolean> = {};
+    if (checked) {
+      usersToDisplay.forEach(user => {
+        newSelectedRows[user.email] = true;
+      });
+    }
+    setSelectedRows(newSelectedRows);
+  };
+
+  const handleRowSelect = (email: string, checked: boolean) => {
+    setSelectedRows(prev => ({
+      ...prev,
+      [email]: checked,
+    }));
+  };
+
+  const numSelectedRows = Object.values(selectedRows).filter(Boolean).length;
   
   return (
     <>
@@ -216,7 +240,7 @@ export default function CrmPage() {
                       <h4 className="font-bold">{selectedUser.firstName} {selectedUser.lastName}</h4>
                       <p className="text-sm">{selectedUser.location}</p>
                       <p className="text-sm text-blue-600">{selectedUser.email}</p>
-                      <Button size="sm" className="w-full" onClick={() => handleOpenEmailModal(selectedUser)}>
+                      <Button size="sm" className="w-full" onClick={() => handleOpenEmailModalForSingleUser(selectedUser)}>
                           <Mail className="mr-2 h-4 w-4" />
                           Send Email
                       </Button>
@@ -231,12 +255,22 @@ export default function CrmPage() {
 
         <Card>
           <CardHeader>
-              <CardTitle>
-                Data Manager {selectionMode && `(${filteredUsers.length} users selected)`}
-              </CardTitle>
-              <CardDescription>
-                  This table displays user data. {selectionMode ? 'Showing users in the selected map area.' : 'Use "Select Users" on the map to filter users by location.'}
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>
+                        Data Manager {selectionMode && `(${filteredUsers.length} users selected)`}
+                    </CardTitle>
+                    <CardDescription>
+                        {selectionMode ? 'Showing users in the selected map area.' : 'Use "Select Users" on the map to filter users by location.'}
+                    </CardDescription>
+                  </div>
+                  {numSelectedRows > 0 && (
+                      <Button onClick={handleOpenEmailModalForGroup}>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Email Selected ({numSelectedRows})
+                      </Button>
+                  )}
+              </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -248,6 +282,13 @@ export default function CrmPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
+                          <TableHead className="w-[50px]">
+                            <Checkbox
+                                checked={numSelectedRows > 0 && numSelectedRows === usersToDisplay.length}
+                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                aria-label="Select all"
+                            />
+                          </TableHead>
                           <TableHead>First Name</TableHead>
                           <TableHead>Last Name</TableHead>
                           <TableHead>Email</TableHead>
@@ -257,13 +298,20 @@ export default function CrmPage() {
                   </TableHeader>
                   <TableBody>
                       {usersToDisplay.map((user, index) => (
-                          <TableRow key={`${user.email}-${index}`}>
+                          <TableRow key={`${user.email}-${index}`} data-state={selectedRows[user.email] ? 'selected' : ''}>
+                              <TableCell>
+                                <Checkbox
+                                    checked={selectedRows[user.email] || false}
+                                    onCheckedChange={(checked) => handleRowSelect(user.email, !!checked)}
+                                    aria-label={`Select ${user.firstName} ${user.lastName}`}
+                                />
+                              </TableCell>
                               <TableCell>{user.firstName}</TableCell>
                               <TableCell>{user.lastName}</TableCell>
                               <TableCell>{user.email}</TableCell>
                               <TableCell>{user.location}</TableCell>
                               <TableCell className="text-right">
-                                <Button variant="outline" size="sm" onClick={() => handleOpenEmailModal(user)}>
+                                <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                     <Mail className="mr-2 h-4 w-4" />
                                     Email
                                 </Button>
@@ -272,7 +320,7 @@ export default function CrmPage() {
                       ))}
                        {usersToDisplay.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground">
                                 {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
@@ -283,12 +331,12 @@ export default function CrmPage() {
           </CardContent>
         </Card>
       </div>
-      {emailRecipient && (
+      {emailRecipients.length > 0 && (
         <EmailComposerModal
             isOpen={isEmailModalOpen}
             onClose={() => setIsEmailModalOpen(false)}
-            recipientEmail={emailRecipient.email}
-            recipientName={`${emailRecipient.firstName} ${emailRecipient.lastName}`}
+            recipientEmails={emailRecipients.map(u => u.email)}
+            recipientNames={emailRecipients.map(u => `${u.firstName} ${u.lastName}`)}
         />
       )}
     </>

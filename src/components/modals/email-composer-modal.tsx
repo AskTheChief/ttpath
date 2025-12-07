@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,15 +14,23 @@ import { Loader2 } from 'lucide-react';
 type EmailComposerModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  recipientEmail: string;
-  recipientName: string;
+  recipientEmails: string[];
+  recipientNames: string[];
 };
 
-export default function EmailComposerModal({ isOpen, onClose, recipientEmail, recipientName }: EmailComposerModalProps) {
+export default function EmailComposerModal({ isOpen, onClose, recipientEmails, recipientNames }: EmailComposerModalProps) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const recipientDescription = useMemo(() => {
+    if (recipientNames.length === 0) return '';
+    if (recipientNames.length === 1) return recipientNames[0];
+    if (recipientNames.length === 2) return `${recipientNames[0]} and ${recipientNames[1]}`;
+    return `${recipientNames.length} selected users`;
+  }, [recipientNames]);
+
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
@@ -36,21 +44,23 @@ export default function EmailComposerModal({ isOpen, onClose, recipientEmail, re
 
     setIsLoading(true);
     try {
-      const result = await sendDirectEmail({
-        recipientEmail,
-        subject,
-        body,
-      });
+        for (const recipientEmail of recipientEmails) {
+             const result = await sendDirectEmail({
+                recipientEmail,
+                subject,
+                body,
+            });
+             if (!result.success) {
+                throw new Error(result.message || `Failed to send to ${recipientEmail}`);
+             }
+        }
 
-      if (result.success) {
         toast({
-          title: 'Email Sent!',
-          description: `Your message has been sent to ${recipientName}.`,
+          title: 'Email(s) Sent!',
+          description: `Your message has been sent to ${recipientDescription}.`,
         });
         onClose(); // Close modal on success
-      } else {
-        throw new Error(result.message);
-      }
+      
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -68,7 +78,7 @@ export default function EmailComposerModal({ isOpen, onClose, recipientEmail, re
         <DialogHeader>
           <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>
-            Compose an email to <span className="font-medium text-foreground">{recipientName}</span> ({recipientEmail}).
+            Compose an email to <span className="font-medium text-foreground">{recipientDescription}</span>.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
