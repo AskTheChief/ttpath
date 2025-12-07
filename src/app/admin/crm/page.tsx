@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Loader2, X } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries } from '@react-google-maps/api';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -26,7 +26,7 @@ const center = {
 export default function CrmPage() {
   const [users, setUsers] = useState<LegacyUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -43,18 +43,14 @@ export default function CrmPage() {
           throw new Error(result.message || 'Failed to load user data.');
         }
       } catch (error: any) {
-        console.error("CRM Page Error:", error); // Log the full error to the console
-        toast({
-          variant: "destructive",
-          title: "Error Loading Data",
-          description: `An error occurred: ${error.message}. Check the console for more details.`,
-        });
+        console.error("CRM Page Error:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     }
     fetchUsers();
-  }, [toast]);
+  }, []);
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
@@ -67,6 +63,23 @@ export default function CrmPage() {
             </Link>
         </Button>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle className="flex items-center justify-between">
+            An Error Occurred
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setError(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertTitle>
+          <AlertDescription>
+            <p className="mb-2">The following error was reported while trying to load user data:</p>
+            <pre className="whitespace-pre-wrap bg-destructive/10 p-2 rounded-md font-mono text-xs text-destructive-foreground">
+              {error}
+            </pre>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card>
         <CardHeader>
