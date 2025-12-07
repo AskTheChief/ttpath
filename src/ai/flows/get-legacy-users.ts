@@ -23,9 +23,6 @@ const LegacyUserSchema = z.object({
   lastName: z.string(),
   email: z.string(),
   location: z.string(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
   country: z.string(),
   lat: z.number().optional(),
   lng: z.number().optional(),
@@ -46,8 +43,8 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
     if (!fs.existsSync(jsonFilePath)) {
         console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
-            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', city: 'New York', state: 'NY', zip: '10001', country: 'USA', lat: 40.7128, lng: -74.0060 },
-            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', city: 'London', state: '', zip: '', country: 'UK', lat: 51.5074, lng: -0.1278 },
+            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', country: 'USA', lat: 40.7128, lng: -74.0060 },
+            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', country: 'UK', lat: 51.5074, lng: -0.1278 },
         ];
     }
 
@@ -59,9 +56,6 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
       lastName: user.lastName,
       email: user.email,
       location: user.location,
-      city: user.city,
-      state: user.state,
-      zip: user.zip,
       country: user.country,
       lat: user.lat,
       lng: user.lng,

@@ -334,9 +334,7 @@ export default function CrmPage() {
                           <SortableHeader title="First Name" sortKey="firstName" />
                           <SortableHeader title="Last Name" sortKey="lastName" />
                           <SortableHeader title="Email" sortKey="email" />
-                          <SortableHeader title="City" sortKey="city" />
-                          <SortableHeader title="State" sortKey="state" />
-                          <SortableHeader title="Zip" sortKey="zip" />
+                          <SortableHeader title="Location" sortKey="location" />
                           <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
@@ -353,9 +351,7 @@ export default function CrmPage() {
                               <TableCell>{user.firstName}</TableCell>
                               <TableCell>{user.lastName}</TableCell>
                               <TableCell>{user.email}</TableCell>
-                              <TableCell>{user.city}</TableCell>
-                              <TableCell>{user.state}</TableCell>
-                              <TableCell>{user.zip}</TableCell>
+                              <TableCell>{user.location}</TableCell>
                               <TableCell className="text-right">
                                 <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                     <Mail className="mr-2 h-4 w-4" />
@@ -366,7 +362,7 @@ export default function CrmPage() {
                       ))}
                        {sortedUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground">
                                 {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                             </TableCell>
                           </TableRow>
