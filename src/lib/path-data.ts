@@ -64,7 +64,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.60,
     title: "Tribe Member",
     req: "",
-    description: "You also have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
+    description: "As a member of a Tribe, you now have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
     actions: [
       { id: "go-to-my-account-member", label: "Go to My Account", action: "navigate-my-tribe", next: "member" }
     ],
@@ -76,7 +76,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.8,
     title: "Tribe Chief",
     req: "",
-    description: "As a Tribe Chief, you lead your Tribe. You can also apply to become a Mentor to help other new Chiefs.",
+    description: "As a Tribe Chief, you are in charge of your Tribe. You can also apply to become a Mentor to help other new Chiefs.",
     actions: [
       { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe" },
       { id: "apply-for-mentor", label: "Apply to be a Mentor", action: "navigate-my-tribe" }
@@ -89,7 +89,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 1.0,
     title: "Mentor",
     req: "",
-    description: "As a Mentor, you help guide new Chiefs.",
+    description: "As a Mentor, you help new Chiefs learn to run their Tribes.",
     actions: [
       { id: "go-to-my-account-mentor", label: "Go to My Account", action: "navigate-my-tribe", next: "mentor" }
     ],
