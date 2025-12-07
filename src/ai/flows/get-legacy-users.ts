@@ -19,7 +19,8 @@ if (!getApps().length) {
 }
 
 const LegacyUserSchema = z.object({
-  name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
   email: z.string(),
   location: z.string(),
   country: z.string(),
@@ -35,15 +36,15 @@ const GetLegacyUsersOutputSchema = z.object({
 });
 export type GetLegacyUsersOutput = z.infer<typeof GetLegacyUsersOutputSchema>;
 
-// This function now reads from a pre-converted JSON file.
+// This function now reads from a pre-converted and geocoded JSON file.
 async function getParsedUsers(): Promise<LegacyUser[]> {
     const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
     
     if (!fs.existsSync(jsonFilePath)) {
         console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
-            { name: 'John Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', country: 'USA', lat: 40.7128, lng: -74.0060 },
-            { name: 'Jane Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', country: 'UK', lat: 51.5074, lng: -0.1278 },
+            { firstName: 'John', lastName: 'Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', country: 'USA', lat: 40.7128, lng: -74.0060 },
+            { firstName: 'Jane', lastName: 'Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', country: 'UK', lat: 51.5074, lng: -0.1278 },
         ];
     }
 
@@ -52,44 +53,17 @@ async function getParsedUsers(): Promise<LegacyUser[]> {
 
     // Map the fields from users.json to what the front-end expects (LegacyUserSchema)
     const users = usersFromFile.map((user: any) => ({
-      name: `${user.firstName} ${user.lastName}`.trim(),
+      name: `${user.firstName} ${user.lastName}`.trim(), // Keep 'name' for backwards compatibility if needed anywhere
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       location: user.location,
       country: user.country,
+      lat: user.lat, // Pass the pre-geocoded latitude
+      lng: user.lng, // Pass the pre-geocoded longitude
     }));
     
-
-    // **Simulated Geocoding for demonstration**
-    // In a real application, you'd use a dedicated geocoding service in a one-time batch script.
-    // This simple hash-based simulation provides coordinates for visualization without API calls.
-    const geocodedUsers = users.map((user: LegacyUser) => {
-        if (!user.location) return user;
-        
-        // Simple hash function to create pseudo-random (but consistent) coordinates
-        let hash = 0;
-        for (let i = 0; i < user.location.length; i++) {
-            const char = user.location.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0; // Convert to 32bit integer
-        }
-        
-        // Generate lat/lng within a plausible global range
-        const lat = (hash % 18000) / 100 - 90; // -90 to 90
-        const lng = (hash % 36000) / 100 - 180; // -180 to 180
-
-        // Manually override specific users for better accuracy in the demo
-        const lowerCaseEmail = user.email.trim().toLowerCase();
-        if (lowerCaseEmail === 'tt_95@yahoo.com') return { ...user, lat: 30.19, lng: -97.82 };
-        if (lowerCaseEmail === 'alex@haascrea.com') return { ...user, lat: 40.75, lng: -73.98 };
-        if (lowerCaseEmail === 'tradethesun@gmail.com') return { ...user, lat: 40.77, lng: -73.95 };
-        if (lowerCaseEmail === 'mike.melissinos@gmail.com') return { ...user, lat: 40.71, lng: -74.01 };
-        if (lowerCaseEmail === 'rideyourwinners@gmail.com') return { ...user, lat: 47.54, lng: -122.75 };
-        if (lowerCaseEmail === 'crdenapoles@gmail.com') return { ...user, lat: 30.43, lng: -87.21 };
-
-        return { ...user, lat, lng };
-    });
-
-    return geocodedUsers;
+    return users;
 }
 
 
@@ -106,7 +80,14 @@ const getLegacyUsersFlow = ai.defineFlow(
         return { success: false, message: "No users found in the data file or the file is empty." };
       }
 
-      return { success: true, users: users };
+      // We now rename the `name` field to `fullName` before sending to the client,
+      // and ensure lat/lng are included.
+      const clientUsers = users.map(u => ({
+          ...u,
+          name: `${u.firstName} ${u.lastName}`.trim(),
+      }))
+
+      return { success: true, users: clientUsers };
 
     } catch (error: any) {
       console.error('Error processing legacy user data:', error);

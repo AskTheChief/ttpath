@@ -103,7 +103,7 @@ export default function CrmPage() {
                       <MarkerF 
                         key={`${user.email}-${index}`} 
                         position={{ lat: user.lat, lng: user.lng }} 
-                        title={user.name}
+                        title={`${user.firstName} ${user.lastName}`}
                         clusterer={clusterer}
                         onClick={() => setSelectedUser(user)}
                       />
@@ -118,7 +118,7 @@ export default function CrmPage() {
                   onCloseClick={() => setSelectedUser(null)}
                 >
                   <div className="p-1">
-                    <h4 className="font-bold">{selectedUser.name}</h4>
+                    <h4 className="font-bold">{selectedUser.firstName} {selectedUser.lastName}</h4>
                     <p className="text-sm">{selectedUser.location}</p>
                   </div>
                 </InfoWindowF>
@@ -133,7 +133,7 @@ export default function CrmPage() {
         <CardHeader>
             <CardTitle>Data Manager</CardTitle>
             <CardDescription>
-                This table displays the user data parsed from your `UserContact.sql` file. We can now work on cleaning, homogenizing, and visualizing this data.
+                This table displays the user data parsed from your `OldUsers.csv` file. You can run the geocoding script to populate lat/lng coordinates.
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -146,19 +146,19 @@ export default function CrmPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
+                        <TableHead>First Name</TableHead>
+                        <TableHead>Last Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead>Country</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {users.map((user, index) => (
                         <TableRow key={`${user.email}-${index}`}>
-                            <TableCell>{user.name}</TableCell>
+                            <TableCell>{user.firstName}</TableCell>
+                            <TableCell>{user.lastName}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.location}</TableCell>
-                            <TableCell>{user.country}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
