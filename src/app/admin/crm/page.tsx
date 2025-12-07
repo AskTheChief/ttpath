@@ -5,12 +5,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
+import ViewRecordModal from '@/components/modals/view-record-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -41,6 +42,8 @@ export default function CrmPage() {
   const [selectedUser, setSelectedUser] = useState<LegacyUser | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<LegacyUser[]>([]);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<LegacyUser | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
@@ -138,6 +141,11 @@ export default function CrmPage() {
           setEmailRecipients(recipients);
           setIsEmailModalOpen(true);
       }
+  };
+
+  const handleViewRecord = (user: LegacyUser) => {
+    setViewingUser(user);
+    setIsRecordModalOpen(true);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -397,7 +405,11 @@ export default function CrmPage() {
                                     {allUserFields.map(fieldKey => (
                                     <TableCell key={fieldKey}>{(user as any)[fieldKey]}</TableCell>
                                     ))}
-                                    <TableCell className="text-right sticky right-0 bg-card z-10">
+                                    <TableCell className="text-right sticky right-0 bg-card z-10 space-x-2">
+                                        <Button variant="outline" size="sm" onClick={() => handleViewRecord(user)}>
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View
+                                        </Button>
                                         <Button variant="outline" size="sm" onClick={() => handleOpenEmailModalForSingleUser(user)}>
                                             <Mail className="mr-2 h-4 w-4" />
                                             Email
@@ -427,6 +439,13 @@ export default function CrmPage() {
             onClose={() => setIsEmailModalOpen(false)}
             recipientEmails={emailRecipients.map(u => u.email).filter((e): e is string => !!e)}
             recipientNames={emailRecipients.map(u => `${u.firstName} ${u.lastName}`)}
+        />
+      )}
+      {viewingUser && (
+        <ViewRecordModal
+          isOpen={isRecordModalOpen}
+          onClose={() => setIsRecordModalOpen(false)}
+          userRecord={viewingUser}
         />
       )}
     </>
