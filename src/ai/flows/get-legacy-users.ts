@@ -9,9 +9,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
-
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -19,7 +17,6 @@ if (!getApps().length) {
     projectId: 'studio-7790315517-f3fe6',
   });
 }
-const db = getFirestore();
 
 const LegacyUserSchema = z.object({
   name: z.string(),
@@ -42,22 +39,29 @@ export type GetLegacyUsersOutput = z.infer<typeof GetLegacyUsersOutputSchema>;
 async function getParsedUsers(): Promise<LegacyUser[]> {
     const jsonFilePath = path.join(process.cwd(), 'public', 'UserData', 'users.json');
     
-    // In a real app, you would run the conversion script in your build process.
-    // If not, we fall back to sample data.
     if (!fs.existsSync(jsonFilePath)) {
         console.warn('users.json not found. Returning sample data. Run `npm run convert-users` to generate it.');
         return [
-            { name: 'John Doe (Sample)', email: 'john.d@example.com', location: 'New York', country: 'USA', lat: 40.7128, lng: -74.0060 },
-            { name: 'Jane Smith (Sample)', email: 'jane.s@example.com', location: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
+            { name: 'John Doe (Sample)', email: 'john.d@example.com', location: 'New York, USA', country: 'USA', lat: 40.7128, lng: -74.0060 },
+            { name: 'Jane Smith (Sample)', email: 'jane.s@example.com', location: 'London, UK', country: 'UK', lat: 51.5074, lng: -0.1278 },
         ];
     }
 
     const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
-    const users: LegacyUser[] = JSON.parse(jsonContent);
+    const usersFromFile = JSON.parse(jsonContent);
+
+    // Map the fields from users.json to what the front-end expects (LegacyUserSchema)
+    const users = usersFromFile.map((user: any) => ({
+      name: `${user.firstName} ${user.lastName}`.trim(),
+      email: user.email,
+      location: user.location,
+      country: user.country,
+    }));
+    
 
     // **Simulated Geocoding for demonstration**
-    // In a real application, you'd do this in the conversion script and save the results.
-    const geocodedUsers = users.map(user => {
+    // In a real application, you'd do this in a separate batch script and save the results.
+    const geocodedUsers = users.map((user: LegacyUser) => {
         if (!user.email) return user;
         const lowerCaseEmail = user.email.trim().toLowerCase();
         if (lowerCaseEmail === 'tt_95@yahoo.com') return { ...user, lat: 30.19, lng: -97.82 };
