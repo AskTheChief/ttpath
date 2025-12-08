@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getOutboxEmails, type OutboundEmail } from '@/ai/flows/get-outbox-emails';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, Send, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -48,9 +48,9 @@ export default function OutboxPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Outbox</h1>
         <Button asChild variant="outline">
-          <Link href="/admin">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Admin
+          <Link href="/admin/crm">
+            <Users className="h-4 w-4 mr-2" />
+            Back to CRM
           </Link>
         </Button>
       </div>

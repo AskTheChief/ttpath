@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Inbox as InboxIcon, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, Inbox as InboxIcon, Send, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -94,9 +94,9 @@ export default function InboxPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Inbox</h1>
         <Button asChild variant="outline">
-          <Link href="/admin">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Admin
+          <Link href="/admin/crm">
+            <Users className="h-4 w-4 mr-2" />
+            Back to CRM
           </Link>
         </Button>
       </div>
