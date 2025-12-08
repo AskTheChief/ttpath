@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
@@ -30,7 +30,10 @@ export default function InboxPage() {
     return () => unsubscribe();
   }, []);
 
-  const fetchEmails = async () => {
+  const fetchEmails = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setLoading(true);
+    }
     try {
       setError(null);
       const fetchedEmails = await getInboundEmails();
@@ -39,13 +42,20 @@ export default function InboxPage() {
       setError(e.message || 'Failed to load emails.');
       console.error("Error fetching inbound emails: ", e);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchEmails();
-  }, []);
+    fetchEmails(true); // Initial fetch
+    const interval = setInterval(() => {
+      fetchEmails(false); // Subsequent background fetches
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, [fetchEmails]);
   
   const handleSendTestEmail = async () => {
     if (!currentUser || !currentUser.email) {
@@ -113,7 +123,7 @@ export default function InboxPage() {
       <Card>
         <CardHeader>
           <CardTitle>Received Emails</CardTitle>
-          <CardDescription>Replies and other emails sent to your application.</CardDescription>
+          <CardDescription>Replies and other emails sent to your application. Refreshes every 10 seconds.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
