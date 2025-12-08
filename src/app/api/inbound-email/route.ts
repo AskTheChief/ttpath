@@ -4,10 +4,10 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
+// By not passing any credentials, the SDK will automatically use the
+// service account associated with the App Hosting environment.
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 
@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     emailData.receivedAt = Timestamp.now();
     
     // The 'body-plain' field usually contains the text version of the email.
-    // The full structure of what Mailgun sends can be complex.
     // We are storing the whole payload for flexibility.
 
     await db.collection('inbound_emails').add(emailData);
