@@ -36,7 +36,7 @@ const sendDirectEmailFlow = ai.defineFlow(
       const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
       const messageData = {
-        from: `The Trading Tribe <noreply@${mailgunDomain}>`,
+        from: `The Trading Tribe <info@${mailgunDomain}>`,
         to: recipientEmail,
         subject: subject,
         html: body,

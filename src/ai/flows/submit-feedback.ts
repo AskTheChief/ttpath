@@ -50,7 +50,7 @@ async function sendEmailNotification(feedback: string, fromEmail?: string, fromN
   const fromUser = fromName ? `${fromName} (${fromEmail || 'no email'})` : fromEmail || 'Anonymous';
 
   const messageData = {
-    from: `TTpath Feedback Bot <noreply@${mailgunDomain}>`,
+    from: `TTpath Feedback Bot <info@${mailgunDomain}>`,
     to: toEmails,
     subject: 'New Feedback Submitted',
     text: `You have received new feedback:\n\n${feedback}\n\nFrom: ${fromUser}`,

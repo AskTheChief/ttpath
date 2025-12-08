@@ -55,7 +55,7 @@ async function sendNewChiefApplicationEmailToMentors(applicantName: string, trib
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
         const messageData = {
-            from: `TTpath Notifier <noreply@${mailgunDomain}>`,
+            from: `TTpath Notifier <info@${mailgunDomain}>`,
             to: mentorEmails,
             subject: `New Tribe Application: "${tribeName}"`,
             text: `Hello Mentors,\n\nA new application has been submitted by ${applicantName} to create the tribe "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The TTpath Team`,
