@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       emailData[key] = value;
     });
 
-    // We can't use FieldValue.serverTimestamp() in a webhook, so we use a regular JS Date.
+    // Use the correct Admin SDK Timestamp.now() method.
     emailData.receivedAt = Timestamp.now();
     
     // The 'body-plain' field usually contains the text version of the email.
