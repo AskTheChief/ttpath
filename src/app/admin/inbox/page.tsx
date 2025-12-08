@@ -7,30 +7,77 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Inbox as InboxIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Inbox as InboxIcon, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { sendTestEmail } from '@/ai/flows/send-test-email';
 
 export default function InboxPage() {
   const [emails, setEmails] = useState<InboundEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchEmails() {
-      try {
-        const fetchedEmails = await getInboundEmails();
-        setEmails(fetchedEmails);
-      } catch (e: any) {
-        setError(e.message || 'Failed to load emails.');
-        console.error("Error fetching inbound emails: ", e);
-      } finally {
-        setLoading(false);
-      }
-    }
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
+  const fetchEmails = async () => {
+    try {
+      setError(null);
+      const fetchedEmails = await getInboundEmails();
+      setEmails(fetchedEmails);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load emails.');
+      console.error("Error fetching inbound emails: ", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchEmails();
   }, []);
+  
+  const handleSendTestEmail = async () => {
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test email.",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const result = await sendTestEmail({ recipientEmail: currentUser.email });
+      if (result.success) {
+        toast({
+          title: "Test Email Sent",
+          description: `An email has been sent to ${currentUser.email}.`,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Email",
+        description: error.message,
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
@@ -44,13 +91,24 @@ export default function InboxPage() {
         </Button>
       </div>
       
-      <Alert>
-          <InboxIcon className="h-4 w-4" />
-          <AlertTitle>How this works</AlertTitle>
-          <AlertDescription>
-            This page displays emails sent to your system's reply-to address. To enable this, your Mailgun domain needs to be configured with an Inbound Route that forwards parsed email data to a webhook endpoint, which then saves the data to the `inbound_emails` collection in Firestore.
-          </AlertDescription>
-      </Alert>
+      <Card>
+        <CardHeader>
+          <CardTitle>Test Your Email Route</CardTitle>
+          <CardDescription>
+            Click the button below to send a test email to your logged-in address ({currentUser?.email || '...loading'}). Reply to that email, and if your route is configured correctly, the reply will appear in this inbox.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={handleSendTestEmail} disabled={isSending || !currentUser}>
+            {isSending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="mr-2 h-4 w-4" />
+            )}
+            Send Test Email to Myself
+          </Button>
+        </CardContent>
+      </Card>
       
       <Card>
         <CardHeader>
@@ -63,7 +121,10 @@ export default function InboxPage() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : error ? (
-            <p className="text-center text-destructive p-8">{error}</p>
+            <Alert variant="destructive">
+              <AlertTitle>Error Loading Inbox</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : emails.length === 0 ? (
              <p className="text-center text-muted-foreground p-8">Your inbox is empty.</p>
           ) : (

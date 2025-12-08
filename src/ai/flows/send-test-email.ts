@@ -46,10 +46,11 @@ const sendTestEmailFlow = ai.defineFlow(
       const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
       const messageData = {
-        from: `TTpath <test@${mailgunDomain}>`,
+        from: `TTpath Test <test@${mailgunDomain}>`,
         to: recipientEmail,
-        subject: 'Mailgun Test from TTpath',
-        text: 'This is a test email to confirm that your Mailgun configuration is working correctly.',
+        subject: 'This is a test email from your TTpath App',
+        text: 'Reply to this email. If your Mailgun route is configured correctly, your reply will appear in the app\'s inbox.',
+        'h:Reply-To': `replies@${mailgunDomain}`,
       };
 
       const result = await mg.messages.create(mailgunDomain, messageData);
