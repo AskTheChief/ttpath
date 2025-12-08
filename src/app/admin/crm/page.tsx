@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -213,6 +213,12 @@ export default function CrmPage() {
            <h1 className="text-3xl font-bold">CRM - Legacy User Data</h1>
             <div className="flex items-center gap-2">
               <Button asChild variant="outline">
+                  <Link href="/admin/outbox">
+                      <Send className="h-4 w-4 mr-2" />
+                      Open Outbox
+                  </Link>
+              </Button>
+              <Button asChild variant="outline">
                   <Link href="/admin/inbox">
                       <Inbox className="h-4 w-4 mr-2" />
                       Open Inbox
@@ -415,3 +421,5 @@ export default function CrmPage() {
     </>
   );
 }
+
+    
