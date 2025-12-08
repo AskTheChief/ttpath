@@ -81,8 +81,9 @@ export default function CrmPage() {
     setMap(mapInstance);
   }, []);
 
-  const handleBoundsChanged = () => {
-    if (map && selectionMode) {
+  const handleBoundsChanged = (mode?: boolean) => {
+    const isSelectionActive = mode !== undefined ? mode : selectionMode;
+    if (map && isSelectionActive) {
       const newBounds = map.getBounds();
       if (newBounds) {
         setSelectionBounds(newBounds);
@@ -114,7 +115,7 @@ export default function CrmPage() {
         title: "Selection Mode Activated",
         description: "Pan and zoom the map to define your selection. The table will update automatically.",
       });
-      handleBoundsChanged();
+      handleBoundsChanged(newMode);
     } else {
       setSelectionBounds(null);
       setFilteredUsers(users);
@@ -263,7 +264,7 @@ export default function CrmPage() {
                 zoom={2}
                 center={center}
                 onLoad={onMapLoad}
-                onBoundsChanged={handleBoundsChanged}
+                onBoundsChanged={() => handleBoundsChanged()}
               >
                 <MarkerClustererF>
                   {(clusterer) =>
