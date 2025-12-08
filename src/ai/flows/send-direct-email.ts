@@ -40,6 +40,7 @@ const sendDirectEmailFlow = ai.defineFlow(
         to: recipientEmail,
         subject: subject,
         html: body,
+        'h:Reply-To': `replies@${mailgunDomain}`,
       };
 
       const result = await mg.messages.create(mailgunDomain, messageData);
