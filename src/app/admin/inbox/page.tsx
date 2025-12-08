@@ -142,8 +142,8 @@ export default function InboxPage() {
               {emails.map(email => (
                 <AccordionItem key={email.id} value={email.id}>
                   <AccordionTrigger>
-                    <div className="flex flex-col text-left gap-1 w-full">
-                       <div className="flex justify-between items-center w-full pr-4">
+                    <div className="flex flex-col text-left gap-1 w-full pr-4">
+                       <div className="flex justify-between items-center w-full">
                            <span className="font-semibold truncate" title={email.subject}>{email.subject}</span>
                            <span className="text-xs text-muted-foreground whitespace-nowrap">
                              {format(new Date(email.receivedAt), 'PPP p')}
@@ -152,6 +152,9 @@ export default function InboxPage() {
                        <span className="text-sm text-muted-foreground truncate" title={email.from}>
                          From: {email.from}
                        </span>
+                        <p className="text-sm text-muted-foreground text-left truncate pt-1">
+                          {email.body.split('\n')[0]}
+                        </p>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
