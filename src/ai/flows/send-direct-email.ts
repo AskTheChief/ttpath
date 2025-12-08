@@ -45,7 +45,7 @@ const sendDirectEmailFlow = ai.defineFlow(
       const mailgun = new Mailgun(formData);
       const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
       
-      const plainTextBody = body.replace(/<[^>]+>/g, '');
+      const plainTextBody = body ? body.replace(/<[^>]+>/g, '') : '';
 
       const messageData = {
         from: `TTpath <info@${mailgunDomain}>`,
