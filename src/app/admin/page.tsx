@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText, Database, Inbox } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText, Database, Inbox, Send } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -61,6 +61,22 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>Open Inbox</Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/outbox">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-6 w-6" />
+                Outbox
+              </CardTitle>
+              <CardDescription>
+                View a log of all emails sent from the application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>Open Outbox</Button>
             </CardContent>
           </Card>
         </Link>

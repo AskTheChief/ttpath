@@ -272,6 +272,7 @@ export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
 // src/ai/flows/send-direct-email.ts
 export const SendDirectEmailInputSchema = z.object({
   recipientEmail: z.string().email().describe("The email address of the recipient."),
+  recipientName: z.string().optional().describe("The name of the recipient (for logging)."),
   subject: z.string().describe("The subject of the email."),
   body: z.string().describe("The HTML content of the email body."),
 });

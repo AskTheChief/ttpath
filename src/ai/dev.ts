@@ -31,3 +31,4 @@ import '@/ai/flows/send-direct-email.ts';
 import '@/ai/flows/get-inbound-emails.ts';
 import '@/ai/flows/send-test-email.ts';
 import '@/ai/flows/save-inbound-email.ts';
+import '@/ai/flows/get-outbox-emails.ts';

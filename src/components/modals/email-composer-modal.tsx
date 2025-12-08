@@ -43,23 +43,30 @@ export default function EmailComposerModal({ isOpen, onClose, recipientEmails, r
     }
 
     setIsLoading(true);
+    let successCount = 0;
     try {
-        for (const recipientEmail of recipientEmails) {
+        for (let i = 0; i < recipientEmails.length; i++) {
+             const recipientEmail = recipientEmails[i];
+             const recipientName = recipientNames[i];
+
              const result = await sendDirectEmail({
                 recipientEmail,
+                recipientName,
                 subject,
                 body,
             });
              if (!result.success) {
-                throw new Error(result.message || `Failed to send to ${recipientEmail}`);
+                console.error(`Failed to send email to ${recipientEmail}: ${result.message}`);
+             } else {
+                successCount++;
              }
         }
 
         toast({
-          title: 'Email(s) Sent!',
-          description: `Your message has been sent to ${recipientDescription}.`,
+          title: `Email Process Complete`,
+          description: `${successCount} of ${recipientEmails.length} messages sent. Check the Outbox for details.`,
         });
-        onClose(); // Close modal on success
+        onClose();
       
     } catch (error: any) {
       toast({
