@@ -34,12 +34,16 @@ const sendDirectEmailFlow = ai.defineFlow(
     try {
       const mailgun = new Mailgun(formData);
       const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
+      
+      // Basic conversion of HTML to plain text for the 'text' field
+      const plainTextBody = body.replace(/<[^>]+>/g, '');
 
       const messageData = {
         from: `TTpath <info@${mailgunDomain}>`,
         to: recipientEmail,
         subject: subject,
         html: body,
+        text: plainTextBody, // Add plain text version
         'h:Reply-To': `replies@${mailgunDomain}`,
       };
 
