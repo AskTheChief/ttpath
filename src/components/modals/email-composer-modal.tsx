@@ -50,8 +50,8 @@ export default function EmailComposerModal({ isOpen, onClose, recipientEmails, r
              const recipientName = recipientNames[i];
 
              const result = await sendDirectEmail({
-                recipientEmail,
-                recipientName,
+                recipientEmail: recipientEmail.trim(),
+                recipientName: recipientName.trim(),
                 subject,
                 body,
             });
