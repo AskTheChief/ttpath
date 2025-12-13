@@ -46,26 +46,38 @@ const resetUserProgressFlow = ai.defineFlow(
     const user = { uid: decodedToken.uid };
 
     try {
-      // Reset user progress
-      await db.collection('users').doc(user.uid).set({
-        currentUserLevel: 1,
-        requirementsState: {},
+      const writeBatch = db.batch();
+
+      // Reset user's level to Explorer and clear their requirements state
+      const userRef = db.collection('users').doc(user.uid);
+      writeBatch.set(userRef, {
+        currentUserLevel: 3,
+        requirementsState: {
+            'sign-up': true,
+            'read-book': true,
+            'register-as-explorer': true,
+        },
       }, { merge: true });
 
-      // Remove user from tribes they are a member of
+      // Remove user from any tribes they are a member of
       const memberOfTribesSnapshot = await db.collection('tribes').where('members', 'array-contains', user.uid).get();
-      const batch = db.batch();
       memberOfTribesSnapshot.forEach(doc => {
-        batch.update(doc.ref, { members: FieldValue.arrayRemove(user.uid) });
+        writeBatch.update(doc.ref, { members: FieldValue.arrayRemove(user.uid) });
       });
 
       // Delete tribes where the user is the chief
       const chiefOfTribesSnapshot = await db.collection('tribes').where('chief', '==', user.uid).get();
       chiefOfTribesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
+        writeBatch.delete(doc.ref);
       });
       
-      await batch.commit();
+      // Delete any pending applications the user has submitted
+      const myApplicationsSnapshot = await db.collection('tribe_applications').where('applicantId', '==', user.uid).get();
+      myApplicationsSnapshot.forEach(doc => {
+        writeBatch.delete(doc.ref);
+      });
+
+      await writeBatch.commit();
 
       return { success: true };
     } catch (error) {
