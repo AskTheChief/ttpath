@@ -18,13 +18,14 @@ type DevDropdownProps = {
   onTestCreateTribe: () => void;
   onSendTestEmail: () => void;
   onSendTestDiploma: () => void;
+  onResendDiplomas: () => void;
   currentUser: User | null;
 };
 
 // Hardcoded list of developer email addresses for special access.
 const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
-export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: DevDropdownProps) {
+export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, onResendDiplomas, currentUser }: DevDropdownProps) {
   const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
 
   return (
@@ -55,6 +56,7 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onSendTestEmail}>Send Test Email</DropdownMenuItem>
           <DropdownMenuItem onClick={onSendTestDiploma}>Send Test Diploma</DropdownMenuItem>
+          <DropdownMenuItem onClick={onResendDiplomas}>Resend All Diplomas</DropdownMenuItem>
           <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

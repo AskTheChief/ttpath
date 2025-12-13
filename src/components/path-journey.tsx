@@ -28,6 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 import CompleteProfileForm from './complete-profile-form';
+import { resendAllDiplomas } from '@/ai/flows/resend-all-diplomas';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -785,6 +786,31 @@ export default function PathJourney() {
     }
   };
 
+  const handleResendDiplomas = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    toast({
+      title: "Resending Diplomas...",
+      description: "This may take a moment. Please wait.",
+    });
+    try {
+      const result = await resendAllDiplomas();
+      if (result.success) {
+        toast({
+          title: "Process Complete",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Resend Diplomas",
+        description: error.message,
+      });
+    }
+  };
+
   const renderChatbotIcon = () => {
     const content = (
       <button
@@ -993,6 +1019,7 @@ export default function PathJourney() {
         onTestCreateTribe={handleTestCreateTribe}
         onSendTestEmail={handleSendTestEmail}
         onSendTestDiploma={handleSendTestDiploma}
+        onResendDiplomas={handleResendDiplomas}
         currentUser={currentUser}
       />
       <LinkModal

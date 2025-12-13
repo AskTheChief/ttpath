@@ -18,6 +18,7 @@ import { User } from 'firebase/auth';
  * @property {() => void} onTestCreateTribe - Dev-only function to test tribe creation.
  * @property {() => void} onSendTestEmail - Dev-only function to send a test email.
  * @property {() => void} onSendTestDiploma - Dev-only function to send a test diploma.
+ * @property {() => void} onResendDiplomas - Dev-only function to resend diplomas to all qualified users.
  * @property {User | null} currentUser - The current authenticated Firebase user, or null if not logged in.
  */
 type MenuSheetProps = {
@@ -28,6 +29,7 @@ type MenuSheetProps = {
   onTestCreateTribe: () => void;
   onSendTestEmail: () => void;
   onSendTestDiploma: () => void;
+  onResendDiplomas: () => void;
   currentUser: User | null;
 };
 
@@ -52,7 +54,7 @@ const newLinks = [
  *
  * @param {MenuSheetProps} props - The props for the component.
  */
-export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: MenuSheetProps) {
+export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestCreateTribe, onSendTestEmail, onSendTestDiploma, onResendDiplomas, currentUser }: MenuSheetProps) {
 
   // Check if the currently logged-in user is a developer.
   const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
@@ -219,6 +221,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               onTestCreateTribe={onTestCreateTribe} 
               onSendTestEmail={onSendTestEmail}
               onSendTestDiploma={onSendTestDiploma}
+              onResendDiplomas={onResendDiplomas}
               currentUser={currentUser}
             />
           )}
