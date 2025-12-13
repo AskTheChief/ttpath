@@ -29,6 +29,7 @@ import { sendTestEmail } from '@/ai/flows/send-test-email';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 import CompleteProfileForm from './complete-profile-form';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
+import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -786,6 +787,43 @@ export default function PathJourney() {
     }
   };
 
+  const handleSendBugFinderDiploma = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test certificate.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Certificate...",
+      description: `Sending a Bug Finder certificate to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendBugFinderDiploma({ 
+        recipientEmail: currentUser.email,
+        recipientName: userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : "Valued Developer",
+        bugDescription: "This is a test certificate from the Dev Den."
+       });
+      if (result.success) {
+        toast({
+          title: "Certificate Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Certificate",
+        description: error.message,
+      });
+    }
+  }
+
   const handleResetProgress = async () => {
     setModalState(s => ({ ...s, menu: false }));
     if (!currentUser) {
@@ -1024,6 +1062,7 @@ export default function PathJourney() {
         onTestCreateTribe={handleTestCreateTribe}
         onSendTestEmail={handleSendTestEmail}
         onSendTestDiploma={handleSendTestDiploma}
+        onSendBugFinderDiploma={handleSendBugFinderDiploma}
         onResetProgress={handleResetProgress}
         currentUser={currentUser}
       />
