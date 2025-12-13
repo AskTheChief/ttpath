@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, GraduationCap } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { deleteUser } from '@/ai/flows/delete-user';
+import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 
 
 const levelMap: Record<number, string> = {
@@ -105,6 +106,27 @@ export default function UserTable() {
     }
   };
 
+  const handleResendDiploma = async (user: User) => {
+    if (!user.email || !user.firstName) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'User email or name is missing.' });
+        return;
+    }
+    toast({ title: 'Sending Diploma...', description: `Sending to ${user.email}.` });
+    try {
+        const result = await sendDiplomaEmail({
+            recipientEmail: user.email,
+            recipientName: `${user.firstName} ${user.lastName || ''}`.trim(),
+        });
+        if (result.success) {
+            toast({ title: 'Diploma Sent!', description: `A new diploma has been sent to ${user.email}.` });
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Send Failed', description: error.message });
+    }
+  };
+
 
   return (
     <Table>
@@ -148,7 +170,16 @@ export default function UserTable() {
                 </Select>
               </TableCell>
               <TableCell>{user.myAccountVisits ?? 0}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right space-x-2">
+                 <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleResendDiploma(user)}
+                    disabled={(user.currentUserLevel || 0) < 3}
+                    title="Resend Diploma"
+                 >
+                    <GraduationCap className="h-4 w-4" />
+                 </Button>
                  <AlertDialog>
                   <AlertDialogTrigger asChild>
                      <Button variant="destructive" size="icon" disabled={user.uid === adminUser?.uid}>

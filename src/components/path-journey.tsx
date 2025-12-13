@@ -28,7 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 import CompleteProfileForm from './complete-profile-form';
-import { resendAllDiplomas } from '@/ai/flows/resend-all-diplomas';
+import { resetUserProgress } from '@/ai/flows/reset-user-progress';
 
 type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
 
@@ -786,26 +786,31 @@ export default function PathJourney() {
     }
   };
 
-  const handleResendDiplomas = async () => {
+  const handleResetProgress = async () => {
     setModalState(s => ({ ...s, menu: false }));
-    toast({
-      title: "Resending Diplomas...",
-      description: "This may take a moment. Please wait.",
-    });
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Not Authenticated",
+        description: "You must be logged in to reset progress.",
+      });
+      return;
+    }
+
     try {
-      const result = await resendAllDiplomas();
-      if (result.success) {
-        toast({
-          title: "Process Complete",
-          description: result.message,
-        });
-      } else {
-        throw new Error(result.message);
-      }
+      const idToken = await currentUser.getIdToken();
+      await resetUserProgress({ idToken });
+      toast({
+        title: "Progress Reset",
+        description: "Your progress has been reset back to the Explorer stage. The page will now reload.",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Failed to Resend Diplomas",
+        title: "Error Resetting Progress",
         description: error.message,
       });
     }
@@ -1019,7 +1024,7 @@ export default function PathJourney() {
         onTestCreateTribe={handleTestCreateTribe}
         onSendTestEmail={handleSendTestEmail}
         onSendTestDiploma={handleSendTestDiploma}
-        onResendDiplomas={handleResendDiplomas}
+        onResetProgress={handleResetProgress}
         currentUser={currentUser}
       />
       <LinkModal
