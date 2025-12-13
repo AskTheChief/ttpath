@@ -22,7 +22,7 @@ const SendDiplomaEmailOutputSchema = z.object({
 });
 export type SendDiplomaEmailOutput = z.infer<typeof SendDiplomaEmailOutputSchema>;
 
-const logoUrl = 'https://i.postimg.cc/nLK9vRbm/logo-1.png';
+const logoUrl = 'https://storage.googleapis.com/stytch-public-production-data/emails/v1/logo-1.png';
 
 export async function sendDiplomaEmail(input: SendDiplomaEmailInput): Promise<SendDiplomaEmailOutput> {
   return sendDiplomaEmailFlow(input);
