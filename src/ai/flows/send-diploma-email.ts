@@ -22,7 +22,7 @@ const SendDiplomaEmailOutputSchema = z.object({
 });
 export type SendDiplomaEmailOutput = z.infer<typeof SendDiplomaEmailOutputSchema>;
 
-const logoUrl = 'https://ttpath.net/logo.png';
+const logoUrl = 'https://ttpath.net/logo/logo.png';
 
 export async function sendDiplomaEmail(input: SendDiplomaEmailInput): Promise<SendDiplomaEmailOutput> {
   return sendDiplomaEmailFlow(input);
