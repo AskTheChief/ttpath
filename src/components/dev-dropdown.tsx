@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Shield } from 'lucide-react';
 import Link from 'next/link';
-import { resetUserProgress } from "@/ai/flows/reset-user-progress";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from './ui/button';
-import { auth } from '@/lib/firebase';
 import { User } from "firebase/auth";
 
 type DevDropdownProps = {
@@ -28,39 +25,7 @@ type DevDropdownProps = {
 const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
 export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, currentUser }: DevDropdownProps) {
-  const { toast } = useToast();
   const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
-
-  const handleReset = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Not Authenticated",
-        description: "You must be logged in to reset progress.",
-      });
-      return;
-    }
-
-    try {
-      const idToken = await user.getIdToken();
-      await resetUserProgress({ idToken });
-      toast({
-        title: "Progress Reset",
-        description: "Your progress has been reset. Refreshing...",
-      });
-      // Use a timeout to allow the toast to be seen before reload
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error resetting progress",
-        description: error.message,
-      });
-    }
-  };
 
   return (
     <>
@@ -91,7 +56,6 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
           <DropdownMenuItem onClick={onSendTestEmail}>Send Test Email</DropdownMenuItem>
           <DropdownMenuItem onClick={onSendTestDiploma}>Send Test Diploma</DropdownMenuItem>
           <DropdownMenuItem onClick={onTestCreateTribe}>Start a Tribe (Test)</DropdownMenuItem>
-          <DropdownMenuItem onClick={handleReset}>Reset Progress</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>

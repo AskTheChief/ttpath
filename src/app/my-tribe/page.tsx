@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -41,6 +41,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { resetUserProgress } from '@/ai/flows/reset-user-progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 const libraries: Libraries = ['places'];
@@ -640,6 +652,35 @@ function MyTribePageContent() {
         setIsEvaluating(false);
     }
   };
+
+  const handleResetProgress = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Not Authenticated",
+        description: "You must be logged in to reset progress.",
+      });
+      return;
+    }
+
+    try {
+      const idToken = await user.getIdToken();
+      await resetUserProgress({ idToken });
+      toast({
+        title: "Progress Reset",
+        description: "Your progress has been reset back to the Explorer stage. The page will now reload.",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error Resetting Progress",
+        description: error.message,
+      });
+    }
+  };
   
   if (isLoading || !isLoaded) {
     return (
@@ -770,6 +811,34 @@ function MyTribePageContent() {
                 </CardContent>
                 )}
             </Card>
+            <Card>
+              <CardHeader>
+                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                  <CardDescription>Actions in this zone are permanent and can result in data loss.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="destructive">
+                              <AlertTriangle className="mr-2 h-4 w-4" />
+                              Reset My Progress
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  This action is irreversible. It will reset your progress back to the "Explorer" stage. You will be removed from your current tribe and any tribe chief responsibilities will be revoked.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetProgress}>Yes, reset my progress</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+              </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="my-tribe" className="m-0 space-y-8">
