@@ -23,7 +23,7 @@ const SendBugFinderDiplomaOutputSchema = z.object({
 });
 export type SendBugFinderDiplomaOutput = z.infer<typeof SendBugFinderDiplomaOutputSchema>;
 
-const logoUrl = 'https://ttpath.com/logo.png'; 
+const logoUrl = 'https://ttpath.net/logo.png'; 
 
 export async function sendBugFinderDiploma(input: SendBugFinderDiplomaInput): Promise<SendBugFinderDiplomaOutput> {
   return sendBugFinderDiplomaFlow(input);
