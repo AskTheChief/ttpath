@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
             We retain your personal information for as long as your account is active. You have the right to request the deletion of your account and all associated data at any time.
           </p>
           <p>
-            To delete your data, please send an email to <a href="mailto:support@example.com" className="text-primary hover:underline">support@example.com</a> with the subject line "Data Deletion Request" from the email address associated with your account. We will permanently delete your account and all related data from our systems within 30 days.
+            To delete your data, please send an email to <a href="mailto:support@mail.ttpath.net" className="text-primary hover:underline">support@mail.ttpath.net</a> with the subject line "Data Deletion Request" from the email address associated with your account. We will permanently delete your account and all related data from our systems within 30 days.
           </p>
         </section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-2">8. Contact Us</h2>
           <p>
-            For more information about our privacy practices or if you have any questions, please contact us by email at <a href="mailto:support@example.com" className="text-primary hover:underline">support@example.com</a>.
+            If you have any questions about our privacy practices or if you have any questions, please contact us by email at <a href="mailto:support@mail.ttpath.net" className="text-primary hover:underline">support@mail.ttpath.net</a>.
           </p>
         </section>
       </div>
