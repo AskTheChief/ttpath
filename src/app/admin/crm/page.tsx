@@ -210,7 +210,7 @@ export default function CrmPage() {
     <>
       <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
          <div className="flex items-center justify-between">
-           <h1 className="text-3xl font-bold">CRM - Legacy User Data</h1>
+           <h1 className="text-3xl font-bold">CRM / Data Manager</h1>
             <div className="flex items-center gap-2">
               <Button asChild variant="outline">
                   <Link href="/admin/outbox">
@@ -421,5 +421,3 @@ export default function CrmPage() {
     </>
   );
 }
-
-    

@@ -144,6 +144,38 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </Link>
+        <Link href="/admin/inbox">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Inbox className="h-6 w-6" />
+                CRM Inbox
+              </CardTitle>
+              <CardDescription>
+                View emails sent to your app from users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>Open Inbox</Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/outbox">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-6 w-6" />
+                CRM Outbox
+              </CardTitle>
+              <CardDescription>
+                View a log of all emails sent from your app.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>Open Outbox</Button>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
