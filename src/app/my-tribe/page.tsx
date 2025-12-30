@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -42,6 +42,9 @@ import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
+import { getOutboxEmails, type OutboundEmail } from '@/ai/flows/get-outbox-emails';
+import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
+import EmailComposerModal from '@/components/modals/email-composer-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -220,6 +223,11 @@ function MyTribePageContent() {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [selectedReport, setSelectedReport] = useState<MeetingReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [outbox, setOutbox] = useState<OutboundEmail[]>([]);
+  const [inbox, setInbox] = useState<InboundEmail[]>([]);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState<{email: string, name: string}[]>([]);
 
   useEffect(() => {
     // This effect runs only on the client
@@ -246,6 +254,33 @@ function MyTribePageContent() {
   const handleTabChange = (value: string) => {
     router.push(`/my-tribe?view=${value}`, { scroll: false });
   };
+
+  const fetchEmails = useCallback(async () => {
+    setIsEmailLoading(true);
+    try {
+        const [inboxEmails, outboxEmails] = await Promise.all([
+            getInboundEmails(),
+            getOutboxEmails(),
+        ]);
+        // Simple filter for user's own emails
+        if (user?.email) {
+            const userEmail = user.email.toLowerCase();
+            setInbox(inboxEmails.filter(e => e.to.toLowerCase().includes(userEmail)));
+            setOutbox(outboxEmails); // Outbox shows all emails sent BY this user, which we don't track, so show all
+        }
+    } catch (e: any) {
+        toast({ title: "Error fetching emails", description: e.message, variant: "destructive" });
+    } finally {
+        setIsEmailLoading(false);
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+      if (activeTab === 'email' && user) {
+          fetchEmails();
+      }
+  }, [activeTab, user, fetchEmails]);
+
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
@@ -339,16 +374,6 @@ function MyTribePageContent() {
             setIsFetchingAnswers(false);
         }
       } else {
-        setTribes([]);
-        setUserTribe(null);
-        setTribeMembers([]);
-        setComprehensionTestData({ answers: {} });
-        setJoinApplications([]);
-        setTribeCreationApps([]);
-        setUserProfile({});
-        setUserLevel(1);
-        setPendingApplication(null);
-        setIsLoading(false);
         router.push('/'); // Redirect to home if not logged in
       }
     });
@@ -695,6 +720,23 @@ function MyTribePageContent() {
       });
     }
   };
+
+  const openComposerForChief = async () => {
+    if (!userTribe) return;
+    const chief = tribeMembers.find(m => m.uid === userTribe.chief);
+    if (chief?.email) {
+        setEmailRecipients([{ email: chief.email, name: `${chief.firstName} ${chief.lastName}` }]);
+        setIsEmailModalOpen(true);
+    } else {
+        toast({ title: "Chief's email not found", variant: "destructive" });
+    }
+  };
+
+  const openComposerForMembers = async () => {
+    const memberRecipients = tribeMembers.map(m => ({ email: m.email, name: `${m.firstName} ${m.lastName}` }));
+    setEmailRecipients(memberRecipients);
+    setIsEmailModalOpen(true);
+  };
   
   if (isLoading || !isLoaded || !currentTime || !user) {
     return (
@@ -753,9 +795,10 @@ function MyTribePageContent() {
 
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
+            {renderLockedTabTrigger("email", "Email", 4)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
         </TabsList>
@@ -946,6 +989,56 @@ function MyTribePageContent() {
             </Card>
             )}
         </TabsContent>
+
+        <TabsContent value="email" className="m-0 space-y-8">
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Email Client</CardTitle>
+                            <CardDescription>Communicate with your tribe.</CardDescription>
+                        </div>
+                        {isChief ? (
+                            <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
+                        ) : (
+                            <Button onClick={openComposerForChief}><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="inbox" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="inbox">Inbox</TabsTrigger>
+                            <TabsTrigger value="outbox">Outbox</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="inbox" className="mt-4">
+                            {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : inbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your inbox is empty.</p> : (
+                                <Accordion type="single" collapsible>
+                                    {inbox.map(email => (
+                                        <AccordionItem key={email.id} value={email.id}>
+                                            <AccordionTrigger>{email.subject}</AccordionTrigger>
+                                            <AccordionContent><p className="whitespace-pre-wrap">{email.body}</p></AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            )}
+                        </TabsContent>
+                         <TabsContent value="outbox" className="mt-4">
+                             {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
+                                <Accordion type="single" collapsible>
+                                    {outbox.map(email => (
+                                        <AccordionItem key={email.id} value={email.id}>
+                                            <AccordionTrigger>{email.subject}</AccordionTrigger>
+                                            <AccordionContent><div className="prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: email.body }}/></AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+        </TabsContent>
         
         {isChief && userTribe && (
             <TabsContent value="chief-dashboard" className="m-0 space-y-8">
@@ -1097,7 +1190,7 @@ function MyTribePageContent() {
   );
 
   const renderExplorerView = () => (
-    <Tabs defaultValue="find-or-start-tribe" className="w-full">
+    <Tabs defaultValue="find-or-start-tribe" className="w-full" onValueChange={handleTabChange} value={activeTab}>
         <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="profile-comprehension-test" className="text-base">My Profile &amp; Comprehension Test</TabsTrigger>
@@ -1208,6 +1301,15 @@ function MyTribePageContent() {
               setIsReportModalOpen(false);
               if (user) fetchTribesAndUserData(user);
             }}
+          />
+      )}
+
+      {isEmailModalOpen && (
+          <EmailComposerModal
+              isOpen={isEmailModalOpen}
+              onClose={() => setIsEmailModalOpen(false)}
+              recipientEmails={emailRecipients.map(r => r.email)}
+              recipientNames={emailRecipients.map(r => r.name)}
           />
       )}
     </>
