@@ -36,7 +36,8 @@ export default function InboxPage() {
     }
     try {
       setError(null);
-      const fetchedEmails = await getInboundEmails();
+      // Pass no email to get all emails for the admin view
+      const fetchedEmails = await getInboundEmails({});
       setEmails(fetchedEmails);
     } catch (e: any) {
       setError(e.message || 'Failed to load emails.');
@@ -149,9 +150,14 @@ export default function InboxPage() {
                              {format(new Date(email.receivedAt), 'PPP p')}
                            </span>
                        </div>
-                       <span className="text-sm text-muted-foreground truncate" title={email.from}>
-                         From: {email.from}
-                       </span>
+                       <div className="flex justify-between items-center w-full">
+                           <span className="text-sm text-muted-foreground truncate" title={email.from}>
+                             From: {email.from}
+                           </span>
+                           <span className="text-sm text-muted-foreground truncate" title={email.to}>
+                             To: {email.to}
+                           </span>
+                       </div>
                         <p className="text-sm text-muted-foreground text-left truncate pt-1">
                           {email.body.split('\n')[0]}
                         </p>

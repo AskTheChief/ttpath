@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for retrieving inbound emails from Firestore.
+ * @fileOverview A Genkit flow for retrieving inbound emails from Firestore for a specific user.
  */
 
 import { ai } from '@/ai/genkit';
@@ -18,6 +18,12 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
+const GetInboundEmailsInputSchema = z.object({
+  recipientEmail: z.string().email().optional().describe("The email address of the user whose inbox should be fetched."),
+});
+export type GetInboundEmailsInput = z.infer<typeof GetInboundEmailsInputSchema>;
+
+
 const InboundEmailSchema = z.object({
   id: z.string(),
   from: z.string(),
@@ -31,18 +37,26 @@ export type InboundEmail = z.infer<typeof InboundEmailSchema>;
 const GetInboundEmailsOutputSchema = z.array(InboundEmailSchema);
 export type GetInboundEmailsOutput = z.infer<typeof GetInboundEmailsOutputSchema>;
 
-export async function getInboundEmails(): Promise<GetInboundEmailsOutput> {
-  return getInboundEmailsFlow();
+export async function getInboundEmails(input: GetInboundEmailsInput): Promise<GetInboundEmailsOutput> {
+  return getInboundEmailsFlow(input);
 }
 
 const getInboundEmailsFlow = ai.defineFlow(
   {
     name: 'getInboundEmailsFlow',
+    inputSchema: GetInboundEmailsInputSchema,
     outputSchema: GetInboundEmailsOutputSchema,
   },
-  async () => {
+  async ({ recipientEmail }) => {
     try {
-      const emailsSnapshot = await db.collection('inbound_emails').orderBy('receivedAt', 'desc').get();
+      let query = db.collection('inbound_emails').orderBy('receivedAt', 'desc');
+
+      if (recipientEmail) {
+        query = query.where('recipient', '==', recipientEmail);
+      }
+
+      const emailsSnapshot = await query.get();
+
       if (emailsSnapshot.empty) {
         return [];
       }
@@ -53,7 +67,7 @@ const getInboundEmailsFlow = ai.defineFlow(
         return {
           id: doc.id,
           from: data.from || 'Unknown Sender',
-          to: data.to || 'Unknown Recipient',
+          to: data.to || data.recipient || 'Unknown Recipient',
           subject: data.subject || 'No Subject',
           body: data['body-plain'] || 'No content.',
           receivedAt: receivedAt.toDate().toISOString(),

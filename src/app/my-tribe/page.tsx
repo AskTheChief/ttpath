@@ -256,18 +256,15 @@ function MyTribePageContent() {
   };
 
   const fetchEmails = useCallback(async () => {
+    if (!user?.email) return;
     setIsEmailLoading(true);
     try {
         const [inboxEmails, outboxEmails] = await Promise.all([
-            getInboundEmails(),
+            getInboundEmails({ recipientEmail: user.email }),
             getOutboxEmails(),
         ]);
-        // Simple filter for user's own emails
-        if (user?.email) {
-            const userEmail = user.email.toLowerCase();
-            setInbox(inboxEmails.filter(e => e.to.toLowerCase().includes(userEmail)));
-            setOutbox(outboxEmails); // Outbox shows all emails sent BY this user, which we don't track, so show all
-        }
+        setInbox(inboxEmails);
+        setOutbox(outboxEmails);
     } catch (e: any) {
         toast({ title: "Error fetching emails", description: e.message, variant: "destructive" });
     } finally {
