@@ -9,6 +9,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { notifyUserOfNewEmail } from './notify-user-of-new-email';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -43,7 +44,6 @@ const saveInboundEmailFlow = ai.defineFlow(
     try {
       const docRef = db.collection('inbound_emails').doc();
       
-      // Add a server-side timestamp for when we received the email
       const dataToSave = {
         ...emailData,
         receivedAt: Timestamp.now(),
@@ -52,6 +52,19 @@ const saveInboundEmailFlow = ai.defineFlow(
       await docRef.set(dataToSave);
       
       console.log(`Successfully saved inbound email ${docRef.id} from ${emailData.from}`);
+      
+      // After saving, trigger the notification flow. Don't block completion for this.
+      if (emailData.recipient) {
+        notifyUserOfNewEmail({
+          recipientEmail: emailData.recipient,
+          subject: emailData.subject,
+          sender: emailData.from,
+        }).catch(err => {
+            // Log the error but don't fail the main flow
+            console.error(`Failed to send notification for email ${docRef.id}:`, err);
+        });
+      }
+
       return { success: true, message: `Email ${docRef.id} saved.` };
 
     } catch (error: any) {

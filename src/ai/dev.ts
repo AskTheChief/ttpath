@@ -34,4 +34,5 @@ import '@/ai/flows/save-inbound-email.ts';
 import '@/ai/flows/get-outbox-emails.ts';
 import '@/ai/flows/send-diploma-email.ts';
 import '@/ai/flows/send-bug-finder-diploma.ts';
+import '@/ai/flows/notify-user-of-new-email.ts';
 
