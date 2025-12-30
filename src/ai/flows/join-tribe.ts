@@ -43,11 +43,25 @@ async function sendNewApplicationEmail(chiefId: string, applicantId: string, tri
         const mailgun = new Mailgun(formData);
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
+        const dashboardUrl = `https://ttpath.net/my-tribe?view=chief-dashboard`;
+
+        const textBody = `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application:\n${dashboardUrl}\n\n- The TTpath Team`;
+        const htmlBody = `
+            <p>Hello Chief,</p>
+            <p>You have received a new application from <strong>${applicantName}</strong> to join your tribe, "<strong>${tribeName}</strong>".</p>
+            <p>Please click the link below to review the application in your Chief Dashboard.</p>
+            <p><a href="${dashboardUrl}" style="padding: 10px 15px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px;">Review Application</a></p>
+            <p>If the button does not work, copy and paste this link into your browser: ${dashboardUrl}</p>
+            <br>
+            <p>- The TTpath Team</p>
+        `;
+
         const messageData = {
             from: `TTpath Notifier <info@${mailgunDomain}>`,
             to: chiefEmail,
             subject: `New Application for Your Tribe: ${tribeName}`,
-            text: `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The TTpath Team`,
+            text: textBody,
+            html: htmlBody,
         };
 
         await mg.messages.create(mailgunDomain, messageData);
