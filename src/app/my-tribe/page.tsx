@@ -349,13 +349,14 @@ function MyTribePageContent() {
         setUserLevel(1);
         setPendingApplication(null);
         setIsLoading(false);
+        router.push('/'); // Redirect to home if not logged in
       }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [fetchTribesAndUserData, toast]);
+  }, [fetchTribesAndUserData, toast, router]);
 
   const handleCreateTribe = async () => {
     if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
@@ -695,7 +696,7 @@ function MyTribePageContent() {
     }
   };
   
-  if (isLoading || !isLoaded || !currentTime) {
+  if (isLoading || !isLoaded || !currentTime || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -707,17 +708,6 @@ function MyTribePageContent() {
   
   if (loadError) {
     return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">You must be logged in to view your account.</p>
-        <Link href="/" passHref>
-          <Button>Back to Path</Button>
-        </Link>
-      </div>
-    );
   }
 
   const now = new Date();
