@@ -437,15 +437,21 @@ function MyTribePageContent() {
 
   const handleLeaveTribe = async (tribeId: string) => {
     if (!user) return;
+    setIsLoading(true);
     try {
       await leaveTribe(tribeId, user.uid);
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { currentUserLevel: 3 }, { merge: true });
-      toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      if (user) fetchTribesAndUserData(user);
+      toast({ title: 'Left Tribe', description: 'You have successfully left the tribe. Refreshing your data...' });
+      
+      // Force a full refresh of user data to resync state
+      await fetchTribesAndUserData(user);
+
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1221,5 +1227,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    
