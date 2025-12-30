@@ -359,8 +359,8 @@ function MyTribePageContent() {
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       if (currentUser) {
+        setUser(currentUser);
         await fetchTribesAndUserData(currentUser);
         setIsFetchingAnswers(true);
         try {
@@ -738,6 +738,15 @@ function MyTribePageContent() {
     setIsEmailModalOpen(true);
   };
   
+  const openComposerForSingleMember = (member: TribeMember) => {
+    if (member.email) {
+      setEmailRecipients([{ email: member.email, name: `${member.firstName} ${member.lastName}` }]);
+      setIsEmailModalOpen(true);
+    } else {
+      toast({ title: "Member's email not found", variant: "destructive" });
+    }
+  };
+
   if (isLoading || !isLoaded || !currentTime || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -1093,7 +1102,15 @@ function MyTribePageContent() {
                         <AccordionTrigger>{member.firstName} {member.lastName}</AccordionTrigger>
                         <AccordionContent>
                             <div className="space-y-4">
-                            <div><p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p><p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p></div>
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p>
+                                  <p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p>
+                                </div>
+                                <Button size="sm" variant="outline" onClick={() => openComposerForSingleMember(member)}>
+                                  <Mail className="mr-2 h-4 w-4" /> Email Member
+                                </Button>
+                              </div>
                             <div>
                               <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
                               <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
