@@ -157,7 +157,6 @@ export default function UserTable() {
                 <Select
                   value={user.currentUserLevel?.toString()}
                   onValueChange={(value) => handleLevelChange(user.uid, value)}
-                  disabled={user.uid === adminUser?.uid}
                 >
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Set level" />
