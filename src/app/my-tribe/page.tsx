@@ -210,7 +210,7 @@ function MyTribePageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [hour, setHour] = useState('12');
@@ -221,8 +221,17 @@ function MyTribePageContent() {
   const [selectedReport, setSelectedReport] = useState<MeetingReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
+  useEffect(() => {
+    // This effect runs only on the client
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
   const activeTabFromUrl = searchParams.get('view');
-  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'next-step' : 'my-profile');
+  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'find-or-start-tribe' : 'my-profile');
 
   const { toast } = useToast();
   
@@ -343,11 +352,8 @@ function MyTribePageContent() {
       }
     });
 
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-
     return () => {
       unsubscribe();
-      clearInterval(timer);
     };
   }, [fetchTribesAndUserData, toast]);
 
@@ -445,12 +451,11 @@ function MyTribePageContent() {
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe. Refreshing your data...' });
       
       // Force a full refresh of user data to resync state
-      await fetchTribesAndUserData(user);
+      window.location.reload();
 
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -690,7 +695,7 @@ function MyTribePageContent() {
     }
   };
   
-  if (isLoading || !isLoaded) {
+  if (isLoading || !isLoaded || !currentTime) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -731,7 +736,7 @@ function MyTribePageContent() {
     const tooltipContent = `Requires Level ${requiredLevel} (${{4: 'Member', 5: 'Chief', 6: 'Mentor'}[requiredLevel]}).`;
     
     const Trigger = (
-        <TabsTrigger value={value} disabled={!isUnlocked} className={cn(!isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
+        <TabsTrigger value={value} disabled={!isUnlocked} className={cn("text-base", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
             {title}
             {!isUnlocked && <Lock className="h-3 w-3 ml-2" />}
         </TabsTrigger>
@@ -759,7 +764,7 @@ function MyTribePageContent() {
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 h-auto p-1">
-            <TabsTrigger value="my-profile">My Profile</TabsTrigger>
+            <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
@@ -957,7 +962,7 @@ function MyTribePageContent() {
                  <Card>
                     <CardHeader>
                     <CardTitle>Manage Meetings</CardTitle><CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                    <p className="text-sm font-semibold pt-2">Current Time: {currentTime.toLocaleTimeString()}</p>
+                    <p className="text-sm font-semibold pt-2">Current Time: {currentTime?.toLocaleTimeString()}</p>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -1102,12 +1107,12 @@ function MyTribePageContent() {
   );
 
   const renderExplorerView = () => (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+    <Tabs defaultValue="find-or-start-tribe" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
-            <TabsTrigger value="next-step">Find or Start a Tribe</TabsTrigger>
-            <TabsTrigger value="profile-comprehension-test">My Profile &amp; Comprehension Test</TabsTrigger>
+            <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
+            <TabsTrigger value="profile-comprehension-test" className="text-base">My Profile &amp; Comprehension Test</TabsTrigger>
         </TabsList>
-        <TabsContent value="next-step" className="m-0 space-y-8">
+        <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
               user={user}
               isLoaded={isLoaded}
