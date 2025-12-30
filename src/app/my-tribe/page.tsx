@@ -25,7 +25,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport, OutboundEmail } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -42,7 +42,7 @@ import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
-import { getOutboxEmails, type OutboundEmail } from '@/ai/flows/get-outbox-emails';
+import { getOutboxEmails } from '@/ai/flows/get-outbox-emails';
 import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
 import {
@@ -224,7 +224,6 @@ function MyTribePageContent() {
   const [selectedReport, setSelectedReport] = useState<MeetingReport | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [outbox, setOutbox] = useState<OutboundEmail[]>([]);
-  const [inbox, setInbox] = useState<InboundEmail[]>([]);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<{email: string, name: string}[]>([]);
@@ -259,14 +258,10 @@ function MyTribePageContent() {
     if (!user?.email) return;
     setIsEmailLoading(true);
     try {
-        const [inboxEmails, outboxEmails] = await Promise.all([
-            getInboundEmails({ recipientEmail: user.email }),
-            getOutboxEmails(),
-        ]);
-        setInbox(inboxEmails);
+        const outboxEmails = await getOutboxEmails();
         setOutbox(outboxEmails);
     } catch (e: any) {
-        toast({ title: "Error fetching emails", description: e.message, variant: "destructive" });
+        toast({ title: "Error fetching outbox", description: e.message, variant: "destructive" });
     } finally {
         setIsEmailLoading(false);
     }
@@ -1012,25 +1007,12 @@ function MyTribePageContent() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="inbox" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="inbox">Inbox</TabsTrigger>
+                    <Tabs defaultValue="outbox" className="w-full">
+                        <TabsList className="grid w-full grid-cols-1">
                             <TabsTrigger value="outbox">Outbox</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="inbox" className="mt-4">
-                            {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : inbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your inbox is empty.</p> : (
-                                <Accordion type="single" collapsible>
-                                    {inbox.map(email => (
-                                        <AccordionItem key={email.id} value={email.id}>
-                                            <AccordionTrigger>{email.subject}</AccordionTrigger>
-                                            <AccordionContent><p className="whitespace-pre-wrap">{email.body}</p></AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            )}
-                        </TabsContent>
-                         <TabsContent value="outbox" className="mt-4">
-                             {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
+                        <TabsContent value="outbox" className="mt-4">
+                            {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
                                 <Accordion type="single" collapsible>
                                     {outbox.map(email => (
                                         <AccordionItem key={email.id} value={email.id}>
