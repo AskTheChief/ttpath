@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc, increment, setDoc } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
 import { getComprehensionTest } from '@/ai/flows/get-comprehension-test';
 import { comprehensionQuestions } from '@/lib/data';
@@ -439,8 +439,10 @@ function MyTribePageContent() {
     if (!user) return;
     try {
       await leaveTribe(tribeId, user.uid);
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, { currentUserLevel: 3 }, { merge: true });
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe.' });
-      if (user) fetchTribesAndUserData(user); // Refresh data
+      if (user) fetchTribesAndUserData(user);
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -1219,3 +1221,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
