@@ -1,3 +1,4 @@
+'use client';
 
 import PathJourney from '@/components/path-journey';
 import { Toaster } from '@/components/ui/toaster';
