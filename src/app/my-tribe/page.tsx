@@ -858,7 +858,9 @@ function MyTribePageContent() {
         <Card>
             <CardHeader>
                 <CardTitle>New Journal Entry</CardTitle>
-                <CardDescription>Record your thoughts, feelings, and experiences here. Your entries are private, but you can share them with a mentor if you choose.</CardDescription>
+                <CardDescription>
+                  This tool supports your personal growth. You record your thoughts and feelings. A mentor may offer feedback.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <Textarea 
