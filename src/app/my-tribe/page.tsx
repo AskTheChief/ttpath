@@ -43,6 +43,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
+import { getOutboxEmails } from '@/ai/flows/get-outbox-emails';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -852,13 +853,102 @@ function MyTribePageContent() {
     );
 };
 
+  const renderJournalView = () => (
+     <div className="m-0 space-y-8">
+        <Card>
+            <CardHeader>
+                <CardTitle>New Journal Entry</CardTitle>
+                <CardDescription>Record your thoughts, feelings, and experiences here. Your entries are private, but you can share them with a mentor if you choose.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Textarea 
+                    placeholder="Start writing..."
+                    rows={8}
+                    value={newEntryContent}
+                    onChange={(e) => setNewEntryContent(e.target.value)}
+                    disabled={isJournalLoading}
+                />
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
+                    {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                    Save Entry
+                </Button>
+            </CardFooter>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Your Past Entries</CardTitle>
+                <CardDescription>Review and reflect on your journey.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isJournalLoading && journalEntries.length === 0 ? (
+                    <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                ) : journalEntries.length === 0 ? (
+                    <p className="text-center text-muted-foreground p-8">You have no journal entries yet.</p>
+                ) : (
+                    <Accordion type="single" collapsible className="w-full">
+                        {journalEntries.map(entry => (
+                            <AccordionItem key={entry.id} value={entry.id}>
+                                <div className="flex items-center w-full p-4">
+                                    <AccordionTrigger className="flex-grow p-0">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-semibold">Entry from {format(new Date(entry.createdAt), 'PPP p')}</span>
+                                            <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="ml-4 flex-shrink-0 h-8 w-8">
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteJournalEntry(entry.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                <AccordionContent>
+                                    <p className="whitespace-pre-wrap">{entry.entryContent}</p>
+                                    {entry.feedback && entry.feedback.length > 0 && (
+                                      <div className="mt-6 space-y-4">
+                                          <h4 className="font-semibold text-md">Feedback from Mentors</h4>
+                                          {entry.feedback.map((fb, index) => (
+                                              <Alert key={index} className="bg-muted/50">
+                                                  <UserIcon className="h-4 w-4" />
+                                                  <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
+                                                  <AlertDescription>
+                                                      <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
+                                                      <p className="text-xs text-muted-foreground mt-2">{format(new Date(fb.createdAt), 'PPP p')}</p>
+                                                  </AlertDescription>
+                                              </Alert>
+                                          ))}
+                                      </div>
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </CardContent>
+        </Card>
+    </div>
+  );
+
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-6 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
-            {renderLockedTabTrigger("journal", "My Journal", 4)}
-            {renderLockedTabTrigger("email", "Email", 4)}
+            {renderLockedTabTrigger("journal", "My Journal", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
         </TabsList>
@@ -959,8 +1049,27 @@ function MyTribePageContent() {
                     <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
                     <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
                 </CardContent>
-                <CardFooter>
-                    <Button onClick={() => handleLeaveTribe(userTribe.id)} variant="outline" className="w-full">Leave Tribe</Button>
+                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                    {isChief ? null : (
+                         <Button onClick={openComposerForChief} className="w-full sm:w-auto"><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="w-full sm:w-auto sm:ml-auto">Leave Tribe</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure you want to leave this tribe?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  This action will remove you from the tribe. You will need to re-apply if you wish to join again.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleLeaveTribe(userTribe.id)}>Yes, Leave Tribe</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </CardFooter>
                 </Card>
 
@@ -1050,122 +1159,8 @@ function MyTribePageContent() {
             )}
         </TabsContent>
         
-        <TabsContent value="journal" className="m-0 space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>New Journal Entry</CardTitle>
-                    <CardDescription>Record your thoughts, feelings, and experiences here. Your entries are private.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Textarea 
-                        placeholder="Start writing..."
-                        rows={8}
-                        value={newEntryContent}
-                        onChange={(e) => setNewEntryContent(e.target.value)}
-                        disabled={isJournalLoading}
-                    />
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
-                        {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                        Save Entry
-                    </Button>
-                </CardFooter>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Your Past Entries</CardTitle>
-                    <CardDescription>Review and reflect on your journey.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isJournalLoading && journalEntries.length === 0 ? (
-                        <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
-                    ) : journalEntries.length === 0 ? (
-                        <p className="text-center text-muted-foreground p-8">You have no journal entries yet.</p>
-                    ) : (
-                        <Accordion type="single" collapsible className="w-full">
-                            {journalEntries.map(entry => (
-                                <AccordionItem key={entry.id} value={entry.id}>
-                                    <div className="flex items-center w-full p-4">
-                                        <AccordionTrigger className="flex-grow p-0">
-                                            <div className="flex flex-col items-start text-left">
-                                                <span className="font-semibold">Entry from {format(new Date(entry.createdAt), 'PPP p')}</span>
-                                                <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="ml-4 flex-shrink-0 h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDeleteJournalEntry(entry.id)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                    <AccordionContent>
-                                        <p className="whitespace-pre-wrap">{entry.entryContent}</p>
-                                        {/* Feedback section will go here in Phase 2 */}
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    )}
-                </CardContent>
-            </Card>
-        </TabsContent>
-
-        <TabsContent value="email" className="m-0 space-y-8">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Email Client</CardTitle>
-                            <CardDescription>Communicate with your tribe.</CardDescription>
-                        </div>
-                        {userTribe && (
-                          isChief ? (
-                              <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
-                          ) : (
-                              <Button onClick={openComposerForChief}><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
-                          )
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                     {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
-                        <Accordion type="single" collapsible>
-                            {outbox.map(email => (
-                                <AccordionItem key={email.id} value={email.id}>
-                                    <AccordionTrigger>
-                                      <div className="flex flex-col text-left gap-1 w-full pr-4">
-                                          <div className="flex justify-between items-center w-full">
-                                              <span className="font-semibold truncate" title={email.subject}>{email.subject}</span>
-                                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                                {format(new Date(email.sentAt), 'PPP p')}
-                                              </span>
-                                          </div>
-                                          <span className="text-sm text-muted-foreground truncate" title={email.recipientEmail}>
-                                            To: {email.recipientName ? `${email.recipientName} <${email.recipientEmail}>` : email.recipientEmail}
-                                          </span>
-                                      </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent><div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: email.body }}/></AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    )}
-                </CardContent>
-            </Card>
+        <TabsContent value="journal" className="m-0">
+          {renderJournalView()}
         </TabsContent>
         
         {isChief && userTribe && (
@@ -1211,14 +1206,19 @@ function MyTribePageContent() {
                 </Card>
                 <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Users />Tribe Members</CardTitle>
-                    <CardDescription>As Chief, you can view member details and their test answers.</CardDescription>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Users />Tribe Members</CardTitle>
+                            <CardDescription>As Chief, you can view member details and their test answers.</CardDescription>
+                        </div>
+                        <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full">
                     {tribeMembers.map(member => (
                         <AccordionItem key={member.uid} value={member.uid}>
-                        <AccordionTrigger>{member.firstName} {member.lastName}</AccordionTrigger>
+                        <AccordionTrigger>{member.uid === userTribe.chief ? 'Chief: ' : ''}{member.firstName} {member.lastName}</AccordionTrigger>
                         <AccordionContent>
                             <div className="space-y-4">
                               <div className="flex justify-between items-start">
@@ -1327,9 +1327,10 @@ function MyTribePageContent() {
 
   const renderExplorerView = () => (
     <Tabs defaultValue="find-or-start-tribe" className="w-full" onValueChange={handleTabChange} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-2 mb-6 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
-            <TabsTrigger value="profile-comprehension-test" className="text-base">My Profile &amp; Comprehension Test</TabsTrigger>
+            <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
+            {renderLockedTabTrigger("journal", "My Journal", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -1351,7 +1352,7 @@ function MyTribePageContent() {
               handleWithdrawApplication={handleWithdrawApplication}
             />
         </TabsContent>
-        <TabsContent value="profile-comprehension-test" className="m-0 space-y-8">
+        <TabsContent value="my-profile" className="m-0 space-y-8">
             <Card>
                 <CardHeader>
                   <CardTitle>My Profile</CardTitle>
@@ -1404,6 +1405,9 @@ function MyTribePageContent() {
                 </CardContent>
                 )}
             </Card>
+        </TabsContent>
+        <TabsContent value="journal" className="m-0">
+          {renderJournalView()}
         </TabsContent>
     </Tabs>
   );
@@ -1460,3 +1464,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
+    
