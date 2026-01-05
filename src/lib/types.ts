@@ -297,6 +297,14 @@ export const OutboundEmailSchema = z.object({
 export type OutboundEmail = z.infer<typeof OutboundEmailSchema>;
 
 // src/ai/flows/journal.ts
+export const JournalFeedbackSchema = z.object({
+    mentorId: z.string(),
+    mentorName: z.string(),
+    feedbackContent: z.string(),
+    createdAt: z.string(),
+});
+export type JournalFeedback = z.infer<typeof JournalFeedbackSchema>;
+
 export const JournalEntrySchema = z.object({
     id: z.string(),
     userId: z.string(),
@@ -304,6 +312,6 @@ export const JournalEntrySchema = z.object({
     entryContent: z.string(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
-    // Feedback array will be added in Phase 2
+    feedback: z.array(JournalFeedbackSchema).optional(),
 });
 export type JournalEntry = z.infer<typeof JournalEntrySchema>;

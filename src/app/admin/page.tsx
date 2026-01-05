@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText, Database, Inbox, Send } from 'lucide-react';
+import { MessageSquare, Users, Mail, ArrowLeft, FileQuestion, BarChart, Map, FileText, Database, Inbox, Send, BookHeart } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -141,6 +141,22 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Button>View Reports</Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/journal-entries">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookHeart className="h-6 w-6" />
+                Journal Entries
+              </CardTitle>
+              <CardDescription>
+                Review and provide feedback on user journal entries.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button>Review Entries</Button>
             </CardContent>
           </Card>
         </Link>
