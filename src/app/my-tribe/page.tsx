@@ -43,7 +43,6 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
 import { getOutboxEmails } from '@/ai/flows/get-outbox-emails';
-import { getInboundEmails, type InboundEmail } from '@/ai/flows/get-inbound-emails';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
 import {
   AlertDialog,

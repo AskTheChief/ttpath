@@ -35,4 +35,5 @@ import '@/ai/flows/get-outbox-emails.ts';
 import '@/ai/flows/send-diploma-email.ts';
 import '@/ai/flows/send-bug-finder-diploma.ts';
 import '@/ai/flows/notify-user-of-new-email.ts';
+import '@/ai/flows/reset-user-progress.ts';
 
