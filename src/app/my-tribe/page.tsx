@@ -19,13 +19,13 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport, OutboundEmail } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -42,7 +42,6 @@ import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
-import { getOutboxEmails } from '@/ai/flows/get-outbox-emails';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
 import {
   AlertDialog,
@@ -55,6 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { saveJournalEntry, getJournalEntries, deleteJournalEntry } from '@/ai/flows/journal';
 
 
 const libraries: Libraries = ['places'];
@@ -226,6 +226,11 @@ function MyTribePageContent() {
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<{email: string, name: string}[]>([]);
+  
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [newEntryContent, setNewEntryContent] = useState('');
+  const [isJournalLoading, setIsJournalLoading] = useState(false);
+
 
   useEffect(() => {
     // This effect runs only on the client
@@ -253,7 +258,7 @@ function MyTribePageContent() {
     router.push(`/my-tribe?view=${value}`, { scroll: false });
   };
 
-  const fetchEmails = useCallback(async () => {
+  const fetchOutbox = useCallback(async () => {
     if (!user?.email) return;
     setIsEmailLoading(true);
     try {
@@ -266,11 +271,29 @@ function MyTribePageContent() {
     }
   }, [user, toast]);
 
+  const fetchJournal = useCallback(async () => {
+    if (!user) return;
+    setIsJournalLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        const entries = await getJournalEntries({ idToken });
+        setJournalEntries(entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (e: any) {
+        toast({ title: "Error fetching journal", description: e.message, variant: "destructive" });
+    } finally {
+        setIsJournalLoading(false);
+    }
+  }, [user, toast]);
+  
+  
   useEffect(() => {
       if (activeTab === 'email' && user) {
-          fetchEmails();
+          fetchOutbox();
       }
-  }, [activeTab, user, fetchEmails]);
+      if (activeTab === 'journal' && user) {
+        fetchJournal();
+      }
+  }, [activeTab, user, fetchOutbox, fetchJournal]);
 
 
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
@@ -737,6 +760,42 @@ function MyTribePageContent() {
       toast({ title: "Member's email not found", variant: "destructive" });
     }
   };
+  
+  const handleSaveJournalEntry = async () => {
+    if (!newEntryContent.trim()) {
+      toast({ title: 'Entry is empty', variant: 'destructive' });
+      return;
+    }
+    if (!user) return;
+    
+    setIsJournalLoading(true);
+    try {
+      const idToken = await user.getIdToken();
+      await saveJournalEntry({ entryContent: newEntryContent, idToken });
+      setNewEntryContent('');
+      toast({ title: 'Journal Entry Saved' });
+      fetchJournal(); // Refresh journal entries
+    } catch(e: any) {
+      toast({ title: "Error Saving Entry", description: e.message, variant: 'destructive' });
+    } finally {
+      setIsJournalLoading(false);
+    }
+  };
+
+  const handleDeleteJournalEntry = async (entryId: string) => {
+    if (!user) return;
+    setIsJournalLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        await deleteJournalEntry({ entryId, idToken });
+        toast({ title: 'Entry Deleted' });
+        fetchJournal();
+    } catch (e: any) {
+        toast({ title: 'Error Deleting Entry', description: e.message, variant: 'destructive' });
+    } finally {
+        setIsJournalLoading(false);
+    }
+  };
 
   if (isLoading || !isLoaded || !currentTime || !user) {
     return (
@@ -795,9 +854,10 @@ function MyTribePageContent() {
 
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
+            {renderLockedTabTrigger("journal", "My Journal", 4)}
             {renderLockedTabTrigger("email", "Email", 4)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
@@ -989,6 +1049,80 @@ function MyTribePageContent() {
             </Card>
             )}
         </TabsContent>
+        
+        <TabsContent value="journal" className="m-0 space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>New Journal Entry</CardTitle>
+                    <CardDescription>Record your thoughts, feelings, and experiences here. Your entries are private.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Textarea 
+                        placeholder="Start writing..."
+                        rows={8}
+                        value={newEntryContent}
+                        onChange={(e) => setNewEntryContent(e.target.value)}
+                        disabled={isJournalLoading}
+                    />
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
+                        {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Save Entry
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Your Past Entries</CardTitle>
+                    <CardDescription>Review and reflect on your journey.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isJournalLoading && journalEntries.length === 0 ? (
+                        <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                    ) : journalEntries.length === 0 ? (
+                        <p className="text-center text-muted-foreground p-8">You have no journal entries yet.</p>
+                    ) : (
+                        <Accordion type="single" collapsible className="w-full">
+                            {journalEntries.map(entry => (
+                                <AccordionItem key={entry.id} value={entry.id}>
+                                    <div className="flex items-center w-full p-4">
+                                        <AccordionTrigger className="flex-grow p-0">
+                                            <div className="flex flex-col items-start text-left">
+                                                <span className="font-semibold">Entry from {format(new Date(entry.createdAt), 'PPP p')}</span>
+                                                <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="ml-4 flex-shrink-0 h-8 w-8">
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteJournalEntry(entry.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                    <AccordionContent>
+                                        <p className="whitespace-pre-wrap">{entry.entryContent}</p>
+                                        {/* Feedback section will go here in Phase 2 */}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
 
         <TabsContent value="email" className="m-0 space-y-8">
             <Card>
@@ -998,31 +1132,38 @@ function MyTribePageContent() {
                             <CardTitle>Email Client</CardTitle>
                             <CardDescription>Communicate with your tribe.</CardDescription>
                         </div>
-                        {isChief ? (
-                            <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
-                        ) : (
-                            <Button onClick={openComposerForChief}><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
+                        {userTribe && (
+                          isChief ? (
+                              <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
+                          ) : (
+                              <Button onClick={openComposerForChief}><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
+                          )
                         )}
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="outbox" className="w-full">
-                        <TabsList className="grid w-full grid-cols-1">
-                            <TabsTrigger value="outbox">Outbox</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="outbox" className="mt-4">
-                            {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
-                                <Accordion type="single" collapsible>
-                                    {outbox.map(email => (
-                                        <AccordionItem key={email.id} value={email.id}>
-                                            <AccordionTrigger>{email.subject}</AccordionTrigger>
-                                            <AccordionContent><div className="prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: email.body }}/></AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            )}
-                        </TabsContent>
-                    </Tabs>
+                     {isEmailLoading ? <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" /> : outbox.length === 0 ? <p className="text-center text-muted-foreground p-8">Your outbox is empty.</p> : (
+                        <Accordion type="single" collapsible>
+                            {outbox.map(email => (
+                                <AccordionItem key={email.id} value={email.id}>
+                                    <AccordionTrigger>
+                                      <div className="flex flex-col text-left gap-1 w-full pr-4">
+                                          <div className="flex justify-between items-center w-full">
+                                              <span className="font-semibold truncate" title={email.subject}>{email.subject}</span>
+                                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                {format(new Date(email.sentAt), 'PPP p')}
+                                              </span>
+                                          </div>
+                                          <span className="text-sm text-muted-foreground truncate" title={email.recipientEmail}>
+                                            To: {email.recipientName ? `${email.recipientName} <${email.recipientEmail}>` : email.recipientEmail}
+                                          </span>
+                                      </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent><div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: email.body }}/></AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    )}
                 </CardContent>
             </Card>
         </TabsContent>

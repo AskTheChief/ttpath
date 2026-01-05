@@ -283,3 +283,27 @@ export const SendDirectEmailOutputSchema = z.object({
   message: z.string(),
 });
 export type SendDirectEmailOutput = z.infer<typeof SendDirectEmailOutputSchema>;
+
+
+// src/ai/flows/get-outbox-emails.ts
+export const OutboundEmailSchema = z.object({
+  id: z.string(),
+  recipientEmail: z.string(),
+  recipientName: z.string().optional(),
+  subject: z.string(),
+  body: z.string(),
+  sentAt: z.string(),
+});
+export type OutboundEmail = z.infer<typeof OutboundEmailSchema>;
+
+// src/ai/flows/journal.ts
+export const JournalEntrySchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    userName: z.string(),
+    entryContent: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string().optional(),
+    // Feedback array will be added in Phase 2
+});
+export type JournalEntry = z.infer<typeof JournalEntrySchema>;
