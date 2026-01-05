@@ -99,14 +99,13 @@ const getJournalEntriesFlow = ai.defineFlow(
 
     const snapshot = await db.collection('journal_entries')
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
       
     if (snapshot.empty) {
       return [];
     }
     
-    return snapshot.docs.map(doc => {
+    const entries = snapshot.docs.map(doc => {
       const data = doc.data();
       const feedback = (data.feedback || []).map((f: any) => ({
           ...f,
@@ -121,6 +120,9 @@ const getJournalEntriesFlow = ai.defineFlow(
         feedback: feedback,
       } as JournalEntry;
     });
+
+    // Sort in memory to avoid needing a composite index
+    return entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 );
 export async function getJournalEntries(input: GetJournalEntriesInput): Promise<GetJournalEntriesOutput> {
