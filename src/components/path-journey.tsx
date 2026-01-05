@@ -522,22 +522,22 @@ export default function PathJourney() {
     }
   };
 
-  const handleActionClick = async (action: PathAction, node: PathNodeData) => {
-    const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
+  const handleActionClick = async (action: PathAction) => {
+    const isLocked = action.dependsOn && !requirementsState[action.dependsOn];
 
     if (isLocked) {
-      playSound('locked', 'A2', '16n');
-      const buttonEl = document.querySelector(`[data-action-id="${action.id}"]`);
-      if (buttonEl) {
-        buttonEl.classList.add('button-shake');
-        setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
-      }
-      setLockedAlertContent({
-        title: "Prerequisite Not Met",
-        description: "You must complete the previous steps on the path before you can perform this action."
-      });
-      setShowLockedAlert(true);
-      return;
+        playSound('locked', 'A2', '16n');
+        const buttonEl = document.querySelector(`[data-action-id="${action.id}"]`);
+        if (buttonEl) {
+            buttonEl.classList.add('button-shake');
+            setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
+        }
+        setLockedAlertContent({
+            title: "Prerequisite Not Met",
+            description: "You must complete the previous steps on the path before you can perform this action."
+        });
+        setShowLockedAlert(true);
+        return;
     }
 
     playSound('action', 'C4', '8n');
@@ -639,7 +639,7 @@ export default function PathJourney() {
       <div className="space-y-2">
         {node.actions.map(action => {
           const isCompleted = requirementsState[action.id];
-          const isLocked = node.level > currentUserLevel || (action.dependsOn && !requirementsState[action.dependsOn]);
+          const isLocked = action.dependsOn && !requirementsState[action.dependsOn];
           
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
@@ -657,7 +657,7 @@ export default function PathJourney() {
               size="sm"
               className={cn('w-full justify-start h-auto p-2 text-wrap text-left')}
               data-action-id={action.id}
-              onClick={() => handleActionClick(action, node)}
+              onClick={() => handleActionClick(action)}
               disabled={isLocked}
             >
               {isCompleted && !action.next ? Checkmark : null}
