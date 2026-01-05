@@ -6,10 +6,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { JournalEntrySchema } from '@/lib/types';
+import { GetAllJournalEntriesOutputSchema, type GetAllJournalEntriesOutput } from '@/lib/types';
 
 
 if (!getApps().length) {
@@ -18,9 +17,6 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
-
-export const GetAllJournalEntriesOutputSchema = z.array(JournalEntrySchema);
-export type GetAllJournalEntriesOutput = z.infer<typeof GetAllJournalEntriesOutputSchema>;
 
 const getAllJournalEntriesFlow = ai.defineFlow(
   {

@@ -295,6 +295,8 @@ export const OutboundEmailSchema = z.object({
   sentAt: z.string(),
 });
 export type OutboundEmail = z.infer<typeof OutboundEmailSchema>;
+export const GetOutboxEmailsOutputSchema = z.array(OutboundEmailSchema);
+export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutputSchema>;
 
 // src/ai/flows/journal.ts
 export const JournalFeedbackSchema = z.object({
@@ -315,3 +317,21 @@ export const JournalEntrySchema = z.object({
     feedback: z.array(JournalFeedbackSchema).optional(),
 });
 export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+
+// src/ai/flows/add-journal-feedback.ts
+export const AddJournalFeedbackInputSchema = z.object({
+  idToken: z.string(),
+  entryId: z.string(),
+  feedbackContent: z.string(),
+});
+export type AddJournalFeedbackInput = z.infer<typeof AddJournalFeedbackInputSchema>;
+
+export const AddJournalFeedbackOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type AddJournalFeedbackOutput = z.infer<typeof AddJournalFeedbackOutputSchema>;
+
+// src/ai/flows/get-all-journal-entries.ts
+export const GetAllJournalEntriesOutputSchema = z.array(JournalEntrySchema);
+export type GetAllJournalEntriesOutput = z.infer<typeof GetAllJournalEntriesOutputSchema>;

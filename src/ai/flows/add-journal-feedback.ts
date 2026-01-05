@@ -6,10 +6,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { AddJournalFeedbackInputSchema, AddJournalFeedbackOutputSchema, type AddJournalFeedbackInput, type AddJournalFeedbackOutput } from '@/lib/types';
 
 if (!getApps().length) {
   initializeApp({
@@ -18,19 +18,6 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
-
-export const AddJournalFeedbackInputSchema = z.object({
-  idToken: z.string(),
-  entryId: z.string(),
-  feedbackContent: z.string(),
-});
-export type AddJournalFeedbackInput = z.infer<typeof AddJournalFeedbackInputSchema>;
-
-export const AddJournalFeedbackOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string().optional(),
-});
-export type AddJournalFeedbackOutput = z.infer<typeof AddJournalFeedbackOutputSchema>;
 
 const addJournalFeedbackFlow = ai.defineFlow(
   {

@@ -6,9 +6,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { GetOutboxEmailsOutputSchema, type GetOutboxEmailsOutput, type OutboundEmail } from '@/lib/types';
 
 if (!getApps().length) {
   initializeApp({
@@ -16,19 +16,6 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
-
-const OutboundEmailSchema = z.object({
-  id: z.string(),
-  recipientEmail: z.string(),
-  recipientName: z.string().optional(),
-  subject: z.string(),
-  body: z.string(),
-  sentAt: z.string(),
-});
-export type OutboundEmail = z.infer<typeof OutboundEmailSchema>;
-
-const GetOutboxEmailsOutputSchema = z.array(OutboundEmailSchema);
-export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutputSchema>;
 
 export async function getOutboxEmails(): Promise<GetOutboxEmailsOutput> {
   return getOutboxEmailsFlow();
