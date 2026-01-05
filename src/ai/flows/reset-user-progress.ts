@@ -59,16 +59,10 @@ const resetUserProgressFlow = ai.defineFlow(
         },
       }, { merge: true });
 
-      // Remove user from any tribes they are a member of
+      // Remove user from any tribes they are a member of (including as chief)
       const memberOfTribesSnapshot = await db.collection('tribes').where('members', 'array-contains', user.uid).get();
       memberOfTribesSnapshot.forEach(doc => {
         writeBatch.update(doc.ref, { members: FieldValue.arrayRemove(user.uid) });
-      });
-
-      // Delete tribes where the user is the chief
-      const chiefOfTribesSnapshot = await db.collection('tribes').where('chief', '==', user.uid).get();
-      chiefOfTribesSnapshot.forEach(doc => {
-        writeBatch.delete(doc.ref);
       });
       
       // Delete any pending applications the user has submitted
