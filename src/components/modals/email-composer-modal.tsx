@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -16,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getEmailTemplates, saveEmailTemplate } from '@/ai/flows/email-templates';
 import type { EmailTemplate } from '@/lib/types';
+import { ScrollArea } from '../ui/scroll-area';
 
 type EmailComposerModalProps = {
   isOpen: boolean;
@@ -226,10 +226,12 @@ export default function EmailComposerModal({
             </TabsContent>
             <TabsContent value="preview">
                  <Label className="sr-only">Email Preview</Label>
-                <div className="h-[450px] w-full rounded-md border border-input bg-white p-4 overflow-y-auto text-black">
-                    <div
-                        dangerouslySetInnerHTML={{ __html: body }}
-                    />
+                <div className="h-[450px] w-full rounded-md border border-input bg-white p-4 text-black overflow-hidden">
+                    <ScrollArea className="h-full w-full">
+                        <div
+                            dangerouslySetInnerHTML={{ __html: body }}
+                        />
+                    </ScrollArea>
                 </div>
             </TabsContent>
           </Tabs>
