@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send, Search } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -15,6 +15,7 @@ import ViewRecordModal from '@/components/modals/view-record-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -49,6 +50,7 @@ export default function CrmPage() {
   const [selectionBounds, setSelectionBounds] = useState<google.maps.LatLngBounds | null>(null);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lastName', direction: 'ascending' });
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -176,6 +178,16 @@ export default function CrmPage() {
   
   const sortedUsers = useMemo(() => {
     let sortableItems = [...filteredUsers];
+
+    if (searchQuery.trim() !== '') {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        sortableItems = sortableItems.filter(user =>
+            (user.firstName?.toLowerCase().includes(lowercasedQuery)) ||
+            (user.lastName?.toLowerCase().includes(lowercasedQuery)) ||
+            (user.email?.toLowerCase().includes(lowercasedQuery))
+        );
+    }
+
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aVal = a[sortConfig.key] || '';
@@ -190,7 +202,7 @@ export default function CrmPage() {
       });
     }
     return sortableItems;
-  }, [filteredUsers, sortConfig]);
+  }, [filteredUsers, sortConfig, searchQuery]);
 
   const SortableHeader = ({ title, sortKey }: { title: string; sortKey: keyof LegacyUser; }) => {
     const isSorted = sortConfig?.key === sortKey;
@@ -205,6 +217,7 @@ export default function CrmPage() {
   };
 
   const numSelectedRows = Object.values(selectedRows).filter(Boolean).length;
+  const totalInView = selectionMode ? filteredUsers.length : users.length;
   
   return (
     <>
@@ -256,7 +269,7 @@ export default function CrmPage() {
               <div>
                 <CardTitle>User Location Map</CardTitle>
                 <CardDescription>
-                  Use this map to visually filter users by location. Activate 'Select Users' mode to draw a selection area on the map. The table below will update to show only users within that area.
+                  Use this map to visually filter users by location. Activate 'Select Users' mode to draw a selection area on the map.
                 </CardDescription>
               </div>
                <div className="flex gap-2">
@@ -316,22 +329,34 @@ export default function CrmPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-              <div className="flex justify-between items-center">
+           <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <CardTitle>
-                        Data Manager {selectionMode && `(${filteredUsers.length} users selected)`}
+                        Data Manager
                     </CardTitle>
                     <CardDescription>
-                        Browse, sort, and select users from the list. You can view a user's full data record or compose individual or group emails.
+                      Showing {sortedUsers.length} of {totalInView} users. {selectionMode ? `(Filtered by map)` : ''}
                     </CardDescription>
                   </div>
-                  {numSelectedRows > 0 && (
-                      <Button onClick={handleOpenEmailModalForGroup}>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Email Selected ({numSelectedRows})
-                      </Button>
-                  )}
+                  <div className="flex w-full sm:w-auto items-center gap-2">
+                        <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                              type="search"
+                              placeholder="Search name or email..."
+                              className="w-full pl-10"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                      </div>
+                      {numSelectedRows > 0 && (
+                          <Button onClick={handleOpenEmailModalForGroup} className="shrink-0">
+                              <Mail className="mr-2 h-4 w-4" />
+                              Email ({numSelectedRows})
+                          </Button>
+                      )}
+                  </div>
               </div>
           </CardHeader>
           <CardContent>
