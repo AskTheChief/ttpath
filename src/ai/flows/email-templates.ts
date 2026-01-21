@@ -22,16 +22,22 @@ const db = getFirestore();
 const templatesCollection = db.collection('email_templates');
 
 async function seedDefaultTemplates() {
-    const snapshot = await templatesCollection.limit(1).get();
-    if (snapshot.empty) {
-        console.log('No email templates found, seeding default templates...');
-        const batch = db.batch();
-        defaultTemplates.forEach(template => {
-            const docRef = templatesCollection.doc(template.id);
+    const batch = db.batch();
+    let templatesToAdd = 0;
+
+    for (const template of defaultTemplates) {
+        const docRef = templatesCollection.doc(template.id);
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) {
             batch.set(docRef, template);
-        });
+            templatesToAdd++;
+        }
+    }
+
+    if (templatesToAdd > 0) {
+        console.log(`Seeding ${templatesToAdd} new default email template(s)...`);
         await batch.commit();
-        console.log('Default templates seeded.');
+        console.log('Default templates seeded successfully.');
     }
 }
 
