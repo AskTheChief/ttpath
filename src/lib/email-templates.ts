@@ -42,7 +42,7 @@ export const emailTemplates: EmailTemplate[] = [
     subject: 'An Invitation to Join the South Austin Trading Tribe',
     body: `
 <div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
-  <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+  <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
     <div style="text-align: center; padding: 40px 20px 20px 20px; border-bottom: 1px solid #eeeeee;">
       <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 120px; height: 120px; margin: 0 auto;"/>
     </div>
@@ -53,14 +53,14 @@ export const emailTemplates: EmailTemplate[] = [
       <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">These issues can appear in any area of life—from trading and professional challenges to personal relationships and finding a graceful livelihood.</p>
       <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">To learn more and to apply to join the Tribe, you might like to visit the new website.</p>
       <div style="text-align: center; margin-bottom: 30px;">
-        <a href="https://ttpath.net" style="background-color: #14532d; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Visit TTPath.net</a>
+        <a href="https://ttpath.net" style="background-color: #3c9d6f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Visit TTPath.net</a>
       </div>
       <p style="margin-bottom: 10px; font-size: 16px;">Yours truly,</p>
       <p style="font-family: 'Georgia', serif; font-size: 28px; color: #222; margin-top: 0; margin-bottom: 30px;">Ed</p>
     </div>
     <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
       <p style="margin: 0; font-weight: bold; color: #444;">Ed Seykota</p>
-      <p style="margin: 0;"><a href="mailto:tt_95@yahoo.com" style="color: #14532d; text-decoration: none;">tt_95@yahoo.com</a> | 775-813-8895</p>
+      <p style="margin: 0;"><a href="mailto:tt_95@yahoo.com" style="color: #3c9d6f; text-decoration: none;">tt_95@yahoo.com</a> | 775-813-8895</p>
     </div>
   </div>
 </div>
