@@ -13,6 +13,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { emailTemplates } from '@/lib/email-templates';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type EmailComposerModalProps = {
   isOpen: boolean;
@@ -176,16 +177,31 @@ export default function EmailComposerModal({
               placeholder="Email subject"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="body">Message (HTML is supported)</Label>
-            <Textarea
-              id="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your message here..."
-              rows={10}
-            />
-          </div>
+          <Tabs defaultValue="compose" className="space-y-2">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="compose">Compose</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+            </TabsList>
+            <TabsContent value="compose">
+                <Label htmlFor="body" className="sr-only">Message Body</Label>
+                <Textarea
+                    id="body"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Write your message here. HTML is supported."
+                    rows={10}
+                />
+            </TabsContent>
+            <TabsContent value="preview">
+                <Label className="sr-only">Email Preview</Label>
+                <div className="min-h-[244px] w-full rounded-md border border-input bg-background p-4">
+                    <div
+                        className="prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: body }}
+                    />
+                </div>
+            </TabsContent>
+          </Tabs>
         </div>
         <DialogFooter className="flex justify-between w-full">
            <div>
