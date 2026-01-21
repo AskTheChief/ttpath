@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -19,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -1011,14 +1012,14 @@ function MyTribePageContent() {
             </Card>
             <Card>
               <CardHeader>
-                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                  <CardDescription>Actions in this zone are permanent and can result in data loss.</CardDescription>
+                  <CardTitle>Reset Me to Explorer</CardTitle>
+                  <CardDescription>This action resets your journey back to the Explorer stage, allowing you to join a different tribe or start a new one.</CardDescription>
               </CardHeader>
               <CardContent>
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
-                          <Button variant="destructive">
-                              <AlertTriangle className="mr-2 h-4 w-4" />
+                          <Button variant="outline">
+                              <RefreshCw className="mr-2 h-4 w-4" />
                               Reset My Progress
                           </Button>
                       </AlertDialogTrigger>
@@ -1026,12 +1027,12 @@ function MyTribePageContent() {
                           <AlertDialogHeader>
                               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                  This action is irreversible. It will reset your progress back to the "Explorer" stage. You will be removed from your current tribe and any tribe chief responsibilities will be revoked.
+                                  This is a permanent action. It will reset your progress to the "Explorer" stage, remove you from your current tribe, and clear any chief responsibilities. Are you sure you want to continue?
                               </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleResetProgress}>Yes, reset my progress</AlertDialogAction>
+                              <AlertDialogAction onClick={handleResetProgress}>Yes, Reset My Progress</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
