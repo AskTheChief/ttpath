@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Shield } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { User } from "firebase/auth";
 
@@ -27,6 +27,7 @@ type DevDropdownProps = {
 const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
 export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, onSendBugFinderDiploma, onResetProgress, currentUser }: DevDropdownProps) {
+  const router = useRouter();
   const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
 
   return (
@@ -45,15 +46,15 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
           <DropdownMenuLabel>Dev Den</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {isDeveloper && (
-            <Link href="/admin" passHref>
-              <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem onClick={() => router.push('/admin')}>
+              Admin Dashboard
+            </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => window.open('https://docs.google.com/document/d/1QzGpGfP7wSR-2TeNhOZ4W9D-Xm2FDeXCzTMyJ7aLgqs', '_blank')}>Library</DropdownMenuItem>
-          <Link href="/games" passHref><DropdownMenuItem>Game Center</DropdownMenuItem></Link>
-          <Link href="/store" passHref><DropdownMenuItem>Store</DropdownMenuItem></Link>
-          <Link href="/trading" passHref><DropdownMenuItem>Trading</DropdownMenuItem></Link>
+          <DropdownMenuItem onClick={() => router.push('/games')}>Game Center</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push('/store')}>Store</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push('/trading')}>Trading</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onSendTestEmail}>Send Test Email</DropdownMenuItem>
           <DropdownMenuItem onClick={onSendTestDiploma}>Send Test Diploma</DropdownMenuItem>
