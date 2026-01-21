@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { sendDirectEmail } from '@/ai/flows/send-direct-email';
 import { Loader2, Sparkles } from 'lucide-react';
 import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { emailTemplates } from '@/lib/email-templates';
 
 type EmailComposerModalProps = {
   isOpen: boolean;
@@ -51,6 +53,24 @@ export default function EmailComposerModal({
     return `${recipientNames.length} selected users`;
   }, [recipientNames]);
 
+
+  const handleTemplateSelect = (templateId: string) => {
+    const template = emailTemplates.find(t => t.id === templateId);
+    if (!template) {
+        setSubject('');
+        setBody('');
+        return;
+    }
+
+    let finalBody = template.body;
+    if (recipientNames.length === 1) {
+        const firstName = recipientNames[0].split(' ')[0] || 'there';
+        finalBody = template.body.replace(/\[Name\]/g, firstName);
+    }
+    
+    setSubject(template.subject);
+    setBody(finalBody);
+  };
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
@@ -130,10 +150,23 @@ export default function EmailComposerModal({
         <DialogHeader>
           <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>
-            Compose an email to <span className="font-medium text-foreground">{recipientDescription}</span>.
+            Compose an email to <span className="font-medium text-foreground">{recipientDescription}</span>. You can optionally start from a template.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="template">Template</Label>
+            <Select onValueChange={handleTemplateSelect}>
+                <SelectTrigger id="template">
+                    <SelectValue placeholder="Start from a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {emailTemplates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input
@@ -144,7 +177,7 @@ export default function EmailComposerModal({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="body">Message</Label>
+            <Label htmlFor="body">Message (HTML is supported)</Label>
             <Textarea
               id="body"
               value={body}
