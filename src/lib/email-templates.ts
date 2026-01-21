@@ -42,7 +42,7 @@ export const emailTemplates: EmailTemplate[] = [
     subject: 'An Invitation to Join the South Austin Trading Tribe',
     body: `
 <div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
-  <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+  <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
     <div style="text-align: center; padding: 40px 20px 20px 20px; border-bottom: 1px solid #eeeeee;">
       <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 120px; height: 120px; margin: 0 auto;"/>
     </div>
