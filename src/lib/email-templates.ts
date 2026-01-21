@@ -23,12 +23,28 @@ export const emailTemplates: EmailTemplate[] = [
   <p>We are reaching out to individuals in the [Area] area who have shown an interest in the Trading Tribe. We are forming a new local tribe and would like to invite you to connect with us.</p>
   <p>The Trading Tribe provides a supportive environment for personal growth and for developing skills in trading and life. Joining a local tribe is a powerful step on this journey.</p>
   <p>If you are interested in learning more or participating, please reply to this email.</p>
-  <p>We look forward to the possibility of connecting with you.</p>
   <br>
   <p>Sincerely,</p>
   <p>The Trading Tribe Team</p>
 </div>
     `.trim(),
   },
-  // You can add more templates here in the future
+  {
+    id: 'letter-head',
+    name: 'Letter Head',
+    subject: '',
+    body: `
+<div style="font-family: sans-serif; line-height: 1.6;">
+  <div style="text-align: center; padding-bottom: 20px;">
+    <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 100px; height: 100px; margin: 0 auto;"/>
+  </div>
+  <p>Hello [Name],</p>
+  <br>
+  <p>[Your message here]</p>
+  <br>
+  <p>Sincerely,</p>
+  <p>The Trading Tribe Team</p>
+</div>
+    `.trim(),
+  },
 ];
