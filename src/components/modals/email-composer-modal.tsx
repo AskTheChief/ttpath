@@ -226,9 +226,10 @@ export default function EmailComposerModal({
             </TabsContent>
             <TabsContent value="preview">
                  <Label className="sr-only">Email Preview</Label>
-                <div className="h-[450px] w-full rounded-md border border-input bg-white p-4 text-black overflow-hidden">
+                <div className="h-64 w-full rounded-md border border-input bg-white p-4">
                     <ScrollArea className="h-full w-full">
                         <div
+                            className="prose dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3"
                             dangerouslySetInnerHTML={{ __html: body }}
                         />
                     </ScrollArea>
