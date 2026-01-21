@@ -226,9 +226,9 @@ export default function EmailComposerModal({
             </TabsContent>
             <TabsContent value="preview">
                 <Label className="sr-only">Email Preview</Label>
-                <div className="min-h-[244px] w-full rounded-md border border-input bg-background p-4">
+                <div className="min-h-[244px] w-full rounded-md border border-input bg-white p-4">
                     <div
-                        className="prose prose-sm dark:prose-invert max-w-none"
+                        className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: body }}
                     />
                 </div>
