@@ -256,10 +256,7 @@ export default function CrmPage() {
               <div>
                 <CardTitle>User Location Map</CardTitle>
                 <CardDescription>
-                  {selectionMode 
-                    ? "Selection Mode: Pan and zoom to select users. The table will update."
-                    : "Pan & Zoom Mode: Click a cluster to zoom in, or a marker to see details."
-                  }
+                  Use this map to visually filter users by location. Activate 'Select Users' mode to draw a selection area on the map. The table below will update to show only users within that area.
                 </CardDescription>
               </div>
                <div className="flex gap-2">
@@ -326,7 +323,7 @@ export default function CrmPage() {
                         Data Manager {selectionMode && `(${filteredUsers.length} users selected)`}
                     </CardTitle>
                     <CardDescription>
-                        {selectionMode ? 'Showing users in the selected map area.' : 'Use "Select Users" on the map to filter users by location.'}
+                        Browse, sort, and select users from the list. You can view a user's full data record or compose individual or group emails.
                     </CardDescription>
                   </div>
                   {numSelectedRows > 0 && (

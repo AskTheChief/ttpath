@@ -335,3 +335,29 @@ export type AddJournalFeedbackOutput = z.infer<typeof AddJournalFeedbackOutputSc
 // src/ai/flows/get-all-journal-entries.ts
 export const GetAllJournalEntriesOutputSchema = z.array(JournalEntrySchema);
 export type GetAllJournalEntriesOutput = z.infer<typeof GetAllJournalEntriesOutputSchema>;
+
+// src/ai/flows/email-templates.ts
+export const EmailTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  subject: z.string(),
+  body: z.string(),
+});
+export type EmailTemplate = z.infer<typeof EmailTemplateSchema>;
+
+export const SaveEmailTemplateInputSchema = z.object({
+  name: z.string(),
+  subject: z.string(),
+  body: z.string(),
+});
+export type SaveEmailTemplateInput = z.infer<typeof SaveEmailTemplateInputSchema>;
+
+export const SaveEmailTemplateOutputSchema = z.object({
+  success: z.boolean(),
+  templateId: z.string().optional(),
+  message: z.string().optional(),
+});
+export type SaveEmailTemplateOutput = z.infer<typeof SaveEmailTemplateOutputSchema>;
+
+export const GetEmailTemplatesOutputSchema = z.array(EmailTemplateSchema);
+export type GetEmailTemplatesOutput = z.infer<typeof GetEmailTemplatesOutputSchema>;

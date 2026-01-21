@@ -12,8 +12,10 @@ import { sendDirectEmail } from '@/ai/flows/send-direct-email';
 import { Loader2, Sparkles } from 'lucide-react';
 import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { emailTemplates } from '@/lib/email-templates';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { getEmailTemplates, saveEmailTemplate } from '@/ai/flows/email-templates';
+import type { EmailTemplate } from '@/lib/types';
 
 type EmailComposerModalProps = {
   isOpen: boolean;
@@ -38,14 +40,30 @@ export default function EmailComposerModal({
   const [body, setBody] = useState(initialBody);
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingDiploma, setIsSendingDiploma] = useState(false);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
       setSubject(initialSubject);
       setBody(initialBody);
+      setSaveAsTemplate(false);
+      setNewTemplateName('');
+
+      async function fetchTemplates() {
+        try {
+          const fetchedTemplates = await getEmailTemplates();
+          setTemplates(fetchedTemplates);
+        } catch (error) {
+          console.error("Failed to fetch email templates:", error);
+          toast({ title: 'Could not load templates', variant: 'destructive' });
+        }
+      }
+      fetchTemplates();
     }
-  }, [isOpen, initialSubject, initialBody]);
+  }, [isOpen, initialSubject, initialBody, toast]);
 
   const recipientDescription = useMemo(() => {
     if (recipientNames.length === 0) return '';
@@ -56,7 +74,7 @@ export default function EmailComposerModal({
 
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = emailTemplates.find(t => t.id === templateId);
+    const template = templates.find(t => t.id === templateId);
     if (!template) {
         setSubject('');
         setBody('');
@@ -82,10 +100,24 @@ export default function EmailComposerModal({
       });
       return;
     }
+    
+    if (saveAsTemplate && !newTemplateName.trim()) {
+        toast({ variant: 'destructive', title: 'Template name required', description: 'Please provide a name for the new template.' });
+        return;
+    }
 
     setIsLoading(true);
     let successCount = 0;
     try {
+        if (saveAsTemplate) {
+            await saveEmailTemplate({
+                name: newTemplateName,
+                subject,
+                body,
+            });
+            toast({ title: 'Template Saved!', description: `"${newTemplateName}" is now available for reuse.`});
+        }
+        
         for (let i = 0; i < recipientEmails.length; i++) {
              const recipientEmail = recipientEmails[i].trim();
              const recipientName = recipientNames[i].trim();
@@ -151,7 +183,7 @@ export default function EmailComposerModal({
         <DialogHeader>
           <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>
-            Compose an email to <span className="font-medium text-foreground">{recipientDescription}</span>. You can optionally start from a template.
+            Compose an email to <span className="font-medium text-foreground">{recipientDescription}</span>. You can start from a template, preview your message, and save it as a new template for future use.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -162,7 +194,7 @@ export default function EmailComposerModal({
                     <SelectValue placeholder="Start from a template..." />
                 </SelectTrigger>
                 <SelectContent>
-                    {emailTemplates.map(template => (
+                    {templates.map(template => (
                         <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                     ))}
                 </SelectContent>
@@ -202,6 +234,23 @@ export default function EmailComposerModal({
                 </div>
             </TabsContent>
           </Tabs>
+           <div className="pt-4 space-y-3">
+            <div className="flex items-center space-x-2">
+                <Checkbox id="save-as-template" checked={saveAsTemplate} onCheckedChange={(checked) => setSaveAsTemplate(!!checked)} />
+                <Label htmlFor="save-as-template" className="font-medium">Save this email as a new template</Label>
+            </div>
+            {saveAsTemplate && (
+                <div className="grid gap-2 pl-6">
+                <Label htmlFor="new-template-name">New Template Name</Label>
+                <Input
+                    id="new-template-name"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    placeholder="e.g., Follow-up Invitation"
+                />
+                </div>
+            )}
+            </div>
         </div>
         <DialogFooter className="flex justify-between w-full">
            <div>

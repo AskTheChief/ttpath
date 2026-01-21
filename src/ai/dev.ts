@@ -39,4 +39,4 @@ import '@/ai/flows/reset-user-progress.ts';
 import '@/ai/flows/journal.ts';
 import '@/ai/flows/get-all-journal-entries.ts';
 import '@/ai/flows/add-journal-feedback.ts';
-
+import '@/ai/flows/email-templates.ts';
