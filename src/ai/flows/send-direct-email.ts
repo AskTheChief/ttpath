@@ -10,7 +10,7 @@ import { z } from 'genkit';
 import Mailgun from 'mailgun.js';
 import formData from 'form-data';
 import { SendDirectEmailInputSchema, SendDirectEmailOutputSchema, type SendDirectEmailInput, type SendDirectEmailOutput } from '@/lib/types';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 
 if (!getApps().length) {
@@ -58,6 +58,22 @@ const sendDirectEmailFlow = ai.defineFlow(
 
       const result = await mg.messages.create(mailgunDomain, messageData);
       console.log('Direct email sent successfully:', result);
+
+      // Increment the email counter for the user
+      try {
+        const usersRef = db.collection('users');
+        const userQuery = await usersRef.where('email', '==', recipientEmail).limit(1).get();
+        if (!userQuery.empty) {
+          const userDoc = userQuery.docs[0];
+          await userDoc.ref.update({
+            emailsSent: FieldValue.increment(1)
+          });
+        }
+      } catch (counterError) {
+        console.error(`Failed to increment email count for ${recipientEmail}, but email was sent:`, counterError);
+        // Do not fail the whole flow if only the counter fails.
+      }
+
 
       // Log the sent email to the outbox
       try {

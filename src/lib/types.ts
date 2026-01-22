@@ -146,6 +146,7 @@ export const UserProfileSchema = z.object({
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
   myAccountVisits: z.number().optional(),
+  emailsSent: z.number().optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 

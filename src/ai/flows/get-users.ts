@@ -25,6 +25,7 @@ const UserSchema = z.object({
   myAccountVisits: z.number().optional(),
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
+  emailsSent: z.number().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -50,6 +51,7 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
       myAccountVisits: data.myAccountVisits,
       issue: data.issue,
       serviceProject: data.serviceProject,
+      emailsSent: data.emailsSent,
     };
 };
 

@@ -138,13 +138,14 @@ export default function UserTable() {
           <TableHead>Phone</TableHead>
           <TableHead>Level</TableHead>
           <TableHead>Account Visits</TableHead>
+          <TableHead>Emails Sent</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={8} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
@@ -169,6 +170,7 @@ export default function UserTable() {
                 </Select>
               </TableCell>
               <TableCell>{user.myAccountVisits ?? 0}</TableCell>
+              <TableCell>{user.emailsSent ?? 0}</TableCell>
               <TableCell className="text-right space-x-2">
                  <Button
                     variant="outline"
@@ -209,7 +211,7 @@ export default function UserTable() {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={8} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>
