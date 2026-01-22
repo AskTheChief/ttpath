@@ -362,3 +362,22 @@ export type SaveEmailTemplateOutput = z.infer<typeof SaveEmailTemplateOutputSche
 
 export const GetEmailTemplatesOutputSchema = z.array(EmailTemplateSchema);
 export type GetEmailTemplatesOutput = z.infer<typeof GetEmailTemplatesOutputSchema>;
+
+// src/ai/flows/add-user.ts
+export const AddUserInputSchema = z.object({
+  idToken: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  currentUserLevel: z.number().optional().default(1),
+});
+export type AddUserInput = z.infer<typeof AddUserInputSchema>;
+
+export const AddUserOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  userId: z.string().optional(),
+});
+export type AddUserOutput = z.infer<typeof AddUserOutputSchema>;

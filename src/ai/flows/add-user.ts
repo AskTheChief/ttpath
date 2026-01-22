@@ -2,10 +2,15 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import {
+  AddUserInputSchema,
+  AddUserOutputSchema,
+  type AddUserInput,
+  type AddUserOutput,
+} from '@/lib/types';
 
 if (!getApps().length) {
   initializeApp({
@@ -15,24 +20,6 @@ if (!getApps().length) {
 const db = getFirestore();
 const adminAuth = getAuth();
 const ADMIN_LEVEL = 6;
-
-export const AddUserInputSchema = z.object({
-  idToken: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  currentUserLevel: z.number().optional().default(1),
-});
-export type AddUserInput = z.infer<typeof AddUserInputSchema>;
-
-export const AddUserOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  userId: z.string().optional(),
-});
-export type AddUserOutput = z.infer<typeof AddUserOutputSchema>;
 
 export async function addUser(input: AddUserInput): Promise<AddUserOutput> {
   return addUserFlow(input);
