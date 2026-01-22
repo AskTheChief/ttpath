@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send, Search, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send, Search, Check, UserPlus } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -16,6 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import AddContactModal from '@/components/modals/add-contact-modal';
 
 const libraries: Libraries = ['places'];
 const mapContainerStyle = {
@@ -51,12 +54,22 @@ export default function CrmPage() {
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lastName', direction: 'ascending' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -225,6 +238,10 @@ export default function CrmPage() {
          <div className="flex items-center justify-between">
            <h1 className="text-3xl font-bold">CRM / Data Manager</h1>
             <div className="flex items-center gap-2">
+               <Button onClick={() => setIsAddContactModalOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Contact
+              </Button>
               <Button asChild variant="outline">
                   <Link href="/admin/outbox">
                       <Send className="h-4 w-4 mr-2" />
@@ -446,6 +463,16 @@ export default function CrmPage() {
           userRecord={viewingUser}
         />
       )}
+      <AddContactModal 
+        isOpen={isAddContactModalOpen} 
+        onClose={() => setIsAddContactModalOpen(false)} 
+        adminUser={currentUser}
+        onContactAdded={() => {
+            // The CRM page shows legacy data from a static file.
+            // New contacts are added to Firestore and will appear on the /admin/users page.
+            // A success toast is shown inside the modal.
+        }}
+      />
     </>
   );
 }
