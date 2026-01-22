@@ -67,6 +67,32 @@ export const emailTemplates: EmailTemplate[] = [
     `.trim(),
   },
   {
+    id: 're-engagement-invitation',
+    name: 'Re-Engagement Invitation',
+    subject: 'An Invitation to Reconnect with The Trading Tribe',
+    body: `
+<div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
+  <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <div style="text-align: center; padding: 40px 20px 20px 20px;">
+      <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 90px; height: 90px; margin: 0 auto;"/>
+    </div>
+    <div style="padding: 30px 40px;">
+      <h2 style="color: #222; font-size: 24px; margin-bottom: 20px;">An Invitation to Reconnect</h2>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">Hello [Name],</p>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">We're reaching out to you as a past member or friend of the Trading Tribe community. We have launched a new online platform, TTPath.net, to help members connect, form tribes, and continue their journey.</p>
+      <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">We invite you to visit the new site and rediscover the path.</p>
+      <div style="text-align: center; margin-bottom: 30px;">
+        <a href="https://ttpath.net" style="background-color: #38985C; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Visit TTPath.net</a>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
+      <p style="margin: 0; font-weight: bold; color: #444;">The Trading Tribe Team</p>
+    </div>
+  </div>
+</div>
+    `.trim(),
+  },
+  {
     id: 'local-invitation',
     name: 'Local Area Invitation',
     subject: 'Invitation to Join a Local Trading Tribe',
