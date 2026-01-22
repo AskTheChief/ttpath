@@ -10,8 +10,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 const mapContainerStyle = {
   width: '100%',
@@ -24,7 +22,6 @@ const center = {
 };
 
 const libraries: Libraries = ['places'];
-const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
 
 function AdminTribesMapContent() {
   const router = useRouter();
@@ -34,53 +31,24 @@ function AdminTribesMapContent() {
   });
 
   const [tribes, setTribes] = useState<GetTribesOutput>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [isDev, setIsDev] = useState(false);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
-      setUser(currentUser);
-      const isDeveloper = !!currentUser && devEmails.includes(currentUser.email || '');
-      setIsDev(isDeveloper);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (isDev) {
-      async function fetchTribes() {
-        try {
-          const fetchedTribes = await getTribes({});
-          setTribes(fetchedTribes.filter(t => t.lat && t.lng));
-        } catch(e) {
-          console.error(e);
-          toast({ variant: 'destructive', title: 'Could not fetch tribes' });
-        }
+    async function fetchTribes() {
+      try {
+        const fetchedTribes = await getTribes({});
+        setTribes(fetchedTribes.filter(t => t.lat && t.lng));
+      } catch(e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Could not fetch tribes' });
       }
-      fetchTribes();
     }
-  }, [isDev, toast]);
+    fetchTribes();
+  }, [toast]);
 
   const handleMarkerClick = (tribeId: string) => {
     router.push(`/admin/tribe-details/${tribeId}`);
   };
-
-  if (loading) {
-    return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
-  if (!isDev) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p>You do not have permission to view this page.</p>
-        <Button asChild variant="link" className="mt-4"><Link href="/admin">Back to Admin</Link></Button>
-      </div>
-    );
-  }
 
   const renderMap = () => (
     <GoogleMap

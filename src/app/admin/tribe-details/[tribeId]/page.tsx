@@ -15,15 +15,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ArrowLeft, Loader2, Users, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
-const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
-
 function TribeDetailsContent() {
   const params = useParams();
   const router = useRouter();
   const tribeId = params.tribeId as string;
 
   const [user, setUser] = useState<User | null>(null);
-  const [isDev, setIsDev] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tribe, setTribe] = useState<Tribe | null>(null);
   const [members, setMembers] = useState<TribeMember[]>([]);
@@ -32,10 +29,10 @@ function TribeDetailsContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      const isDeveloper = !!currentUser && devEmails.includes(currentUser.email || '');
-      setIsDev(isDeveloper);
-
-      if (!currentUser || !isDeveloper) {
+      
+      if (!currentUser) {
+        // The admin layout will handle redirection if not authorized.
+        // This is just a safeguard.
         setLoading(false);
         return;
       }
@@ -73,16 +70,6 @@ function TribeDetailsContent() {
 
   if (loading) {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
-  if (!isDev) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p>You do not have permission to view this page.</p>
-        <Button asChild variant="link" className="mt-4"><button onClick={() => router.push('/admin')}>Back to Admin</button></Button>
-      </div>
-    );
   }
   
   if (!tribe) {

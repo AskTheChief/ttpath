@@ -5,6 +5,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
 
 if (!getApps().length) {
   initializeApp({
@@ -12,6 +14,14 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
+
+
+const NormalizePhoneNumbersInputSchema = z.object({
+  idToken: z.string().describe("The admin's Firebase ID token for authentication."),
+});
+export type NormalizePhoneNumbersInput = z.infer<typeof NormalizePhoneNumbersInputSchema>;
 
 const NormalizePhoneNumbersOutputSchema = z.object({
   success: z.boolean(),
@@ -21,16 +31,33 @@ const NormalizePhoneNumbersOutputSchema = z.object({
 });
 export type NormalizePhoneNumbersOutput = z.infer<typeof NormalizePhoneNumbersOutputSchema>;
 
-export async function normalizePhoneNumbers(): Promise<NormalizePhoneNumbersOutput> {
-  return normalizePhoneNumbersFlow();
+export async function normalizePhoneNumbers(input: NormalizePhoneNumbersInput): Promise<NormalizePhoneNumbersOutput> {
+  return normalizePhoneNumbersFlow(input);
 }
 
 const normalizePhoneNumbersFlow = ai.defineFlow(
   {
     name: 'normalizePhoneNumbersFlow',
+    inputSchema: NormalizePhoneNumbersInputSchema,
     outputSchema: NormalizePhoneNumbersOutputSchema,
   },
-  async () => {
+  async ({ idToken }) => {
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const adminUserDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (!adminUserDoc.exists() || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+        throw new Error('Permission denied. User is not an admin.');
+      }
+    } catch (error: any) {
+      console.error('Admin authentication failed:', error.message);
+      return { 
+        success: false, 
+        message: 'Admin authentication failed.',
+        processedCount: 0,
+        updatedCount: 0,
+       };
+    }
+      
     try {
       const usersSnapshot = await db.collection('users').get();
       let processedCount = 0;

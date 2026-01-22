@@ -14,6 +14,7 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
 
 export async function deleteUser(input: DeleteUserInput): Promise<DeleteUserOutput> {
   return deleteUserFlow(input);
@@ -28,8 +29,13 @@ const deleteUserFlow = ai.defineFlow(
   async ({ idToken, targetUserId }) => {
     
     try {
-      await adminAuth.verifyIdToken(idToken);
-    } catch (error) {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const adminUserDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (!adminUserDoc.exists() || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+        throw new Error('Permission denied. User is not an admin.');
+      }
+    } catch (error: any) {
+      console.error('Admin authentication failed:', error.message);
       return { success: false, message: 'Admin authentication failed.' };
     }
 

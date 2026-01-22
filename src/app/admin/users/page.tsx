@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UserTable from '@/components/admin/user-table';
@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
 import { normalizePhoneNumbers } from '@/ai/flows/normalize-phone-numbers';
 import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,11 +27,28 @@ export default function UsersPage() {
   const [isNormalizing, setIsNormalizing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Used to force-refresh the UserTable
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+        setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleNormalizePhones = async () => {
+    if (!currentUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to perform this action.',
+        });
+        return;
+    }
     setIsNormalizing(true);
     try {
-      const result = await normalizePhoneNumbers();
+      const idToken = await currentUser.getIdToken(true);
+      const result = await normalizePhoneNumbers({ idToken });
       if (result.success) {
         toast({
           title: "Normalization Complete",
@@ -71,7 +90,7 @@ export default function UsersPage() {
           </div>
            <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="secondary" disabled={isNormalizing}>
+              <Button variant="secondary" disabled={isNormalizing || !currentUser}>
                 {isNormalizing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (

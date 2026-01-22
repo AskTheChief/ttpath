@@ -13,6 +13,9 @@ import { Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { User } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 type DevDropdownProps = {
   onTestCreateTribe: () => void;
@@ -23,12 +26,28 @@ type DevDropdownProps = {
   currentUser: User | null;
 };
 
-// Hardcoded list of developer email addresses for special access.
-const devEmails = ['tt_95@yahoo.com', 'zizseykota@gmail.com'];
+const ADMIN_LEVEL = 6;
 
 export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSendTestDiploma, onSendBugFinderDiploma, onResetProgress, currentUser }: DevDropdownProps) {
   const router = useRouter();
-  const isDeveloper = currentUser && devEmails.includes(currentUser.email || '');
+  const [isAuthorizedAdmin, setIsAuthorizedAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+        if (currentUser) {
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists() && (userDoc.data().currentUserLevel || 0) >= ADMIN_LEVEL) {
+                setIsAuthorizedAdmin(true);
+            } else {
+                setIsAuthorizedAdmin(false);
+            }
+        } else {
+            setIsAuthorizedAdmin(false);
+        }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
 
   return (
     <>
@@ -45,7 +64,7 @@ export default function DevDropdown({ onTestCreateTribe, onSendTestEmail, onSend
         <DropdownMenuContent>
           <DropdownMenuLabel>Dev Den</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {isDeveloper && (
+          {isAuthorizedAdmin && (
             <DropdownMenuItem onClick={() => router.push('/admin')}>
               Admin Dashboard
             </DropdownMenuItem>

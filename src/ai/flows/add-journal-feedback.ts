@@ -18,6 +18,7 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
 
 const addJournalFeedbackFlow = ai.defineFlow(
   {
@@ -28,12 +29,14 @@ const addJournalFeedbackFlow = ai.defineFlow(
   async ({ idToken, entryId, feedbackContent }) => {
     let decodedToken;
     try {
-      // Verify the user is authenticated. Since this is an admin-only feature,
-      // simply being authenticated is sufficient privilege.
       decodedToken = await adminAuth.verifyIdToken(idToken);
-    } catch (error) {
+      const adminUserDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (!adminUserDoc.exists() || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+        throw new Error('Permission denied. User is not an admin.');
+      }
+    } catch (error: any) {
       console.error('Error verifying admin token:', error);
-      throw new Error('User not authenticated.');
+      throw new Error('User not authorized.');
     }
     
     const mentorName = decodedToken.name || 'An Admin';

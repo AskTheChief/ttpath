@@ -15,6 +15,7 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
 
 export async function updateUserLevel(input: UpdateUserLevelInput): Promise<UpdateUserLevelOutput> {
   return updateUserLevelFlow(input);
@@ -28,12 +29,15 @@ const updateUserLevelFlow = ai.defineFlow(
   },
   async ({ idToken, targetUserId, newLevel }) => {
     
-    // For now, we'll allow this flow to be called without strict admin role checks,
-    // assuming it's only exposed in the admin UI.
-    // In a production app, you would verify the caller's custom claims here.
+    let decodedToken;
     try {
-      await adminAuth.verifyIdToken(idToken);
-    } catch (error) {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+      const adminUserDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (!adminUserDoc.exists() || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+        throw new Error('Permission denied. User is not an admin.');
+      }
+    } catch (error: any) {
+      console.error('Admin authentication failed:', error.message);
       return { success: false, message: 'Admin authentication failed.' };
     }
 
