@@ -53,14 +53,14 @@ export const emailTemplates: EmailTemplate[] = [
       <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">These issues can appear in any area of life—from trading and professional challenges to personal relationships and finding a graceful livelihood.</p>
       <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">To learn more and to apply to join the Tribe, you might like to visit the new website.</p>
       <div style="text-align: center; margin-bottom: 30px;">
-        <a href="https://ttpath.net" style="background-color: #38985c; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Visit TTPath.net</a>
+        <a href="https://ttpath.net" style="background-color: #38985C; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Visit TTPath.net</a>
       </div>
       <p style="margin-bottom: 10px; font-size: 16px;">Yours truly,</p>
       <p style="font-family: 'Georgia', serif; font-size: 28px; color: #222; margin-top: 0; margin-bottom: 30px;">Ed</p>
     </div>
     <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
       <p style="margin: 0; font-weight: bold; color: #444;">Ed Seykota</p>
-      <p style="margin: 0;"><a href="mailto:tt_95@yahoo.com" style="color: #38985c; text-decoration: none;">tt_95@yahoo.com</a> | 775-813-8895</p>
+      <p style="margin: 0;"><a href="mailto:tt_95@yahoo.com" style="color: #38985C; text-decoration: none;">tt_95@yahoo.com</a> | 775-813-8895</p>
     </div>
   </div>
 </div>
@@ -101,6 +101,87 @@ export const emailTemplates: EmailTemplate[] = [
   <br>
   <p>Sincerely,</p>
   <p>The Trading Tribe Team</p>
+</div>
+    `.trim(),
+  },
+  {
+    id: 'general-announcement',
+    name: 'General Announcement',
+    subject: 'A Message from The Trading Tribe',
+    body: `
+<div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
+  <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <div style="text-align: center; padding: 40px 20px 20px 20px; border-bottom: 1px solid #eeeeee;">
+      <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 120px; height: 120px; margin: 0 auto;"/>
+    </div>
+    <div style="padding: 30px 40px;">
+      <h2 style="color: #222; font-size: 24px; margin-bottom: 20px;">[Your Title Here]</h2>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">Hello [Name],</p>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">[Your main message content here. You can write a few paragraphs.]</p>
+      <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">[Optional: Add a closing sentence or call to action.]</p>
+    </div>
+    <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
+      <p style="margin: 0; font-weight: bold; color: #444;">The Trading Tribe Team</p>
+    </div>
+  </div>
+</div>
+    `.trim(),
+  },
+  {
+    id: 'gentle-reminder',
+    name: 'Gentle Reminder / Follow-Up',
+    subject: 'Following Up on Your Journey',
+    body: `
+<div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
+  <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <div style="text-align: center; padding: 40px 20px 20px 20px;">
+      <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 90px; height: 90px; margin: 0 auto;"/>
+    </div>
+    <div style="padding: 30px 40px;">
+      <h2 style="color: #222; font-size: 24px; margin-bottom: 20px;">Following Up on Your Journey</h2>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">Hello [Name],</p>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">We notice you've taken the first steps on the Trading Tribe Path. The journey of self-discovery and community is a powerful one, and we are here to support you.</p>
+      <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">If you have any questions or wish to continue, you might like to visit the site to pick up where you left off.</p>
+      <div style="text-align: center; margin-bottom: 30px;">
+        <a href="https://ttpath.net" style="background-color: #38985C; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Continue Your Path</a>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
+      <p style="margin: 0; font-weight: bold; color: #444;">The Trading Tribe Team</p>
+    </div>
+  </div>
+</div>
+    `.trim(),
+  },
+  {
+    id: 'event-invitation',
+    name: 'Event Invitation',
+    subject: `You're Invited: [Event Name]`,
+    body: `
+<div style="background-color: #f9f9f9; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
+  <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <div style="text-align: center; padding: 40px 20px 20px 20px; background-color: #2a433a; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+      <img src="${logoUrl}" alt="Trading Tribe Logo" style="width: 100px; height: 100px; margin: 0 auto;"/>
+      <h1 style="color: #ffffff; font-size: 28px; margin-top: 20px;">You're Invited!</h1>
+    </div>
+    <div style="padding: 30px 40px;">
+      <h2 style="color: #222; font-size: 24px; margin-bottom: 20px; text-align: center;">[Event Name]</h2>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">Hello [Name],</p>
+      <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.7;">We would be delighted if you would join us for [Event Name]. [Add a brief description of the event here, what it's about, and why they should attend.]</p>
+      <div style="background-color: #f2f2f2; border-left: 4px solid #38985C; padding: 20px; margin: 30px 0; font-size: 16px;">
+        <p style="margin: 0 0 10px 0;"><strong>Date:</strong> [Event Date, e.g., Saturday, October 26, 2024]</p>
+        <p style="margin: 0 0 10px 0;"><strong>Time:</strong> [Event Time, e.g., 7:00 PM - 9:00 PM EST]</p>
+        <p style="margin: 0;"><strong>Location:</strong> [Event Location or "Online via Zoom"]</p>
+      </div>
+      <p style="margin-bottom: 30px; font-size: 16px; line-height: 1.7;">[Add any additional details, like how to prepare or what to bring.]</p>
+      <div style="text-align: center; margin-bottom: 30px;">
+        <a href="[Link to RSVP or More Info]" style="background-color: #38985C; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">RSVP Here</a>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #eeeeee; padding: 25px 40px; font-size: 12px; color: #888888; text-align: left;">
+      <p style="margin: 0; font-weight: bold; color: #444;">The Trading Tribe Team</p>
+    </div>
+  </div>
 </div>
     `.trim(),
   },
