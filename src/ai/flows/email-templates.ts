@@ -23,21 +23,19 @@ const templatesCollection = db.collection('email_templates');
 
 async function seedDefaultTemplates() {
     const batch = db.batch();
-    let templatesToAdd = 0;
 
+    // Always overwrite default templates to ensure they are up-to-date with the code.
+    // This allows developers to modify default templates in the codebase and have
+    // those changes reflected in the application without manual database changes.
     for (const template of defaultTemplates) {
         const docRef = templatesCollection.doc(template.id);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) {
-            batch.set(docRef, template);
-            templatesToAdd++;
-        }
+        batch.set(docRef, template);
     }
-
-    if (templatesToAdd > 0) {
-        console.log(`Seeding ${templatesToAdd} new default email template(s)...`);
+    
+    if (defaultTemplates.length > 0) {
+        console.log(`Syncing ${defaultTemplates.length} default email template(s)...`);
         await batch.commit();
-        console.log('Default templates seeded successfully.');
+        console.log('Default templates synced successfully.');
     }
 }
 
@@ -69,7 +67,8 @@ const saveEmailTemplateFlow = ai.defineFlow(
   },
   async ({ name, subject, body }) => {
     try {
-        const docRef = templatesCollection.doc();
+        // Creates a new doc with a unique ID for custom templates
+        const docRef = templatesCollection.doc(); 
         await docRef.set({ name, subject, body });
         return { success: true, templateId: docRef.id, message: 'Template saved successfully.' };
     } catch (error: any) {
