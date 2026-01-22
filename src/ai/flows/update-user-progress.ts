@@ -1,12 +1,10 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, setDoc, doc } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { db } from '@/lib/firebase';
 
 if (!getApps().length) {
   initializeApp({
@@ -14,6 +12,7 @@ if (!getApps().length) {
   });
 }
 const adminAuth = getAuth();
+const db = getFirestore();
 
 const UpdateUserProgressInputSchema = z.object({
   currentUserLevel: z.number(),
@@ -58,10 +57,10 @@ const updateUserProgressFlow = ai.defineFlow(
     }
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = db.collection('users').doc(user.uid);
       const { idToken, ...progressData } = input;
       
-      await setDoc(userDocRef, progressData, { merge: true });
+      await userDocRef.set(progressData, { merge: true });
 
       return { success: true };
     } catch (error) {
