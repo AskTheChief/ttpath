@@ -129,13 +129,18 @@ export default function EmailComposerModal({
       for (let i = 0; i < recipientEmails.length; i++) {
         const recipientEmail = recipientEmails[i].trim();
         const recipientName = recipientNames[i].trim();
+        const firstName = recipientName.split(' ')[0] || '';
+
+        // Personalize the body for each recipient
+        const personalizedBody = body.replace(/\[Name\]/g, firstName);
 
         const result = await sendDirectEmail({
           recipientEmail,
           recipientName,
           subject,
-          body,
+          body: personalizedBody,
         });
+
         if (!result.success) {
           console.error(
             `Failed to send email to ${recipientEmail}: ${result.message}`
