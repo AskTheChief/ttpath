@@ -39,7 +39,8 @@ type SortConfig = {
 
 
 export default function CrmPage() {
-  const [users, setUsers] = useState<LegacyUser[]>([]);
+  const [users, setUsers] = useState<LegacyUser[]>([]); // For map markers
+  const [allUsers, setAllUsers] = useState<LegacyUser[]>([]); // For table and filtering
   const [filteredUsers, setFilteredUsers] = useState<LegacyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,9 +77,10 @@ export default function CrmPage() {
       try {
         const result = await getLegacyUsers();
         if (result.success && result.users) {
-          const validUsers = result.users.filter(u => u.lat && u.lng);
-          setUsers(validUsers);
-          setFilteredUsers(validUsers);
+          setAllUsers(result.users);
+          setFilteredUsers(result.users);
+          const usersForMap = result.users.filter(u => u.lat && u.lng);
+          setUsers(usersForMap);
         } else {
           throw new Error(result.message || 'Failed to load user data.');
         }
@@ -108,7 +110,7 @@ export default function CrmPage() {
 
   useEffect(() => {
     if (selectionMode && selectionBounds) {
-      const selected = users.filter(user => {
+      const selected = allUsers.filter(user => {
         if (user.lat && user.lng) {
           return selectionBounds.contains({ lat: user.lat, lng: user.lng });
         }
@@ -117,9 +119,9 @@ export default function CrmPage() {
       setFilteredUsers(selected);
       setSelectedRows({}); // Clear selection when map filter changes
     } else {
-      setFilteredUsers(users);
+      setFilteredUsers(allUsers);
     }
-  }, [selectionBounds, selectionMode, users]);
+  }, [selectionBounds, selectionMode, allUsers]);
 
   const toggleSelectionMode = () => {
     const newMode = !selectionMode;
@@ -133,7 +135,7 @@ export default function CrmPage() {
       handleBoundsChanged(newMode);
     } else {
       setSelectionBounds(null);
-      setFilteredUsers(users);
+      setFilteredUsers(allUsers);
       if(map) {
         map.setZoom(2);
         map.setCenter(center);
@@ -230,7 +232,7 @@ export default function CrmPage() {
   };
 
   const numSelectedRows = Object.values(selectedRows).filter(Boolean).length;
-  const totalInView = selectionMode ? filteredUsers.length : users.length;
+  const totalInView = selectionMode ? filteredUsers.length : allUsers.length;
   
   return (
     <>

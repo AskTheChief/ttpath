@@ -94,6 +94,24 @@ const getLegacyUsersFlow = ai.defineFlow(
   async () => {
     try {
       const users = await getParsedUsers();
+
+      // Manually add Jon Barry as a temporary measure
+      const jonBarry: LegacyUser = {
+          id: "manual_jon_barry_123",
+          first: "Jon",
+          last: "Barry",
+          email: "jonathan@futurehouse.ai",
+          phone: "8082143284",
+          address: "1300 3rd Ave",
+          reachouts: "0",
+          firstName: "Jon",
+          lastName: "Barry",
+          location: "1300 3rd Ave",
+      };
+      
+      if (!users.find(u => u.email === jonBarry.email)) {
+          users.unshift(jonBarry);
+      }
       
       if (!users || users.length === 0) {
         return { success: false, message: "No users found in the data file or the file is empty." };
