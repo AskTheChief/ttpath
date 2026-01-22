@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, X, Mail, Move, MousePointerClick, ArrowUpDown, Eye, Inbox, Send, Search, Check } from 'lucide-react';
 import { getLegacyUsers, type LegacyUser } from '@/ai/flows/get-legacy-users';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GoogleMap, useLoadScript, MarkerF, Libraries, InfoWindowF, MarkerClustererF } from '@react-google-maps/api';
@@ -379,6 +379,7 @@ export default function CrmPage() {
                             </TableHead>
                             <SortableHeader title="First Name" sortKey="firstName" />
                             <SortableHeader title="Last Name" sortKey="lastName" />
+                            <TableHead>Reached Out</TableHead>
                             <SortableHeader title="City" sortKey="city" />
                             <SortableHeader title="State" sortKey="state" />
                             <TableHead className="text-right">Actions</TableHead>
@@ -396,6 +397,11 @@ export default function CrmPage() {
                                 </TableCell>
                                 <TableCell>{user.firstName}</TableCell>
                                 <TableCell>{user.lastName}</TableCell>
+                                <TableCell>
+                                    {user.reachouts === '1' && (
+                                        <Check className="h-5 w-5 text-green-500" />
+                                    )}
+                                </TableCell>
                                 <TableCell>{user.city}</TableCell>
                                 <TableCell>{user.state}</TableCell>
                                 <TableCell className="text-right space-x-2">
@@ -412,7 +418,7 @@ export default function CrmPage() {
                         ))}
                         {sortedUsers.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
                                     {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                                 </TableCell>
                             </TableRow>
