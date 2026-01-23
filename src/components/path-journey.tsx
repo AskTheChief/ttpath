@@ -583,8 +583,14 @@ export default function PathJourney() {
     }
     
     if (action.action === 'navigate-my-tribe') {
-        const targetRole = action.next || (currentUserLevel === 5 ? 'chief' : (currentUserLevel === 4 ? 'member' : 'mentor'));
-        router.push(`/my-tribe?view=${targetRole}`);
+        if (action.targetView) {
+            router.push(`/my-tribe?view=${action.targetView}`);
+        } else {
+            // Fallback logic
+            const defaultView = currentUserLevel < 4 ? 'find-or-start-tribe' : 'my-profile';
+            router.push(`/my-tribe?view=${defaultView}`);
+        }
+        return;
     }
 
     if (action.id === 'sign-up' && !isGuest) {

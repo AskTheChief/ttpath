@@ -6,6 +6,7 @@ export type PathAction = {
   next?: string;
   requires?: string;
   dependsOn?: string;
+  targetView?: string;
 };
 
 export type PathNodeData = {
@@ -54,7 +55,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As an Explorer, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
-      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe" }
+      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe", targetView: "find-or-start-tribe" }
     ],
     panelPos: "right"
   },
@@ -66,7 +67,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a member of a Tribe, you now have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
     actions: [
-      { id: "go-to-my-account-member", label: "Go to My Account", action: "navigate-my-tribe", next: "member" }
+      { id: "go-to-my-account-member", label: "Go to My Account", action: "navigate-my-tribe", targetView: "my-tribe" }
     ],
     panelPos: "left"
   },
@@ -78,8 +79,8 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Tribe Chief, you are in charge of your Tribe. You can also apply to become a Mentor to help other new Chiefs.",
     actions: [
-      { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe" },
-      { id: "apply-for-mentor", label: "Apply to be a Mentor", action: "navigate-my-tribe" }
+      { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe", targetView: "chief-dashboard" },
+      { id: "apply-for-mentor", label: "Apply to be a Mentor", action: "navigate-my-tribe", targetView: "my-profile" }
     ],
     panelPos: "right"
   },
@@ -91,7 +92,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Mentor, you help new Chiefs learn to run their Tribes.",
     actions: [
-      { id: "go-to-my-account-mentor", label: "Go to My Account", action: "navigate-my-tribe", next: "mentor" }
+      { id: "go-to-my-account-mentor", label: "Go to My Account", action: "navigate-my-tribe", targetView: "mentor-dashboard" }
     ],
     panelPos: "left"
   }
