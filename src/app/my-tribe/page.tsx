@@ -78,7 +78,7 @@ const defaultCenter = {
     lng: -30,
 };
 
-function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication }) {
+function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }) {
   const tribeAppliedTo = tribes.find(t => t.id === pendingApplication?.tribeId);
 
   return (
@@ -139,6 +139,21 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                     </GoogleMap>
                 </div>
                 </div>
+
+                <div className="border-t pt-4 mt-4 space-y-2">
+                    <h4 className="font-semibold">Comprehension Test Requirement</h4>
+                    <p className="text-sm text-muted-foreground">
+                        Mentors review your test answers. The answers show your understanding of Tribe methods. This process helps you prepare for Tribe. You access the test on your 'My Profile & Test' tab. You write your answers and then you receive feedback from The Chief.
+                    </p>
+                    <Button
+                        variant="link"
+                        className="p-0 h-auto"
+                        onClick={() => handleTabChange('my-profile')}
+                    >
+                        Go to My Profile & Test
+                    </Button>
+                </div>
+                
                 <Button onClick={handleCreateTribe} className="w-full" disabled={isLoading || !!pendingApplication}>{isLoading ? 'Submitting Application...' : 'Apply to Create Tribe'}</Button>
             </CardContent>
         </Card>
@@ -1353,6 +1368,7 @@ function MyTribePageContent() {
               setSelectedTribe={setSelectedTribe}
               pendingApplication={pendingApplication}
               handleWithdrawApplication={handleWithdrawApplication}
+              handleTabChange={handleTabChange}
             />
         </TabsContent>
         <TabsContent value="my-profile" className="m-0 space-y-8">
