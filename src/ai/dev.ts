@@ -1,3 +1,4 @@
+'use server';
 
 import { config } from 'dotenv';
 config();
@@ -43,3 +44,6 @@ import '@/ai/flows/add-journal-feedback.ts';
 import '@/ai/flows/email-templates.ts';
 import '@/ai/flows/normalize-phone-numbers.ts';
 import '@/ai/flows/add-user.ts';
+import '@/ai/flows/send-new-member-email.ts';
+import '@/ai/flows/send-new-chief-email.ts';
+import '@/ai/flows/send-new-mentor-email.ts';

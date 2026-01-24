@@ -7,6 +7,9 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { ManageApplicationInputSchema, ManageApplicationOutputSchema, type ManageApplicationInput, type ManageApplicationOutput, ApplicationSchema } from '@/lib/types';
 import { z } from 'zod';
+import { sendNewMemberEmail } from './send-new-member-email';
+import { sendNewChiefEmail } from './send-new-chief-email';
+import { sendNewMentorEmail } from './send-new-mentor-email';
 
 if (!getApps().length) {
   initializeApp();
@@ -58,7 +61,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
             if (data.applicantId) {
                 const userDoc = await db.collection('users').doc(data.applicantId).get();
                 if (userDoc.exists) {
-                    const userData = userDoc.data();
+                    const userData = userDoc.data()!;
                     applicantProfile = {
                         name: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim(),
                         email: userData?.email,
@@ -144,27 +147,44 @@ const manageApplicationFlow = ai.defineFlow(
         return { success: false, message: 'Missing applicantId for this action.' };
     }
     const applicantUserRef = db.collection('users').doc(applicantId);
+    const applicantUserDoc = await applicantUserRef.get();
+    if (!applicantUserDoc.exists) {
+        return { success: false, message: 'Applicant user profile not found.'};
+    }
+    const applicantData = applicantUserDoc.data()!;
 
 
-    if (type === 'join_tribe') {
-        if (!tribeId) return { success: false, message: 'Tribe ID is required for joining a tribe.' };
-        const tribeRef = db.collection('tribes').doc(tribeId);
-        const tribeDoc = await tribeRef.get();
-        if (!tribeDoc.exists || tribeDoc.data()?.chief !== user.uid) {
-            return { success: false, message: 'You do not have permission to manage this application.' };
+    if (action === 'approve') {
+        if (!applicantData.email) {
+            console.error(`Applicant ${applicantId} is missing an email address.`);
+            // Continue without sending email, but log the error
         }
-        
-        if (action === 'approve') {
+        const applicantName = `${applicantData.firstName || ''} ${applicantData.lastName || ''}`.trim() || 'New Member';
+
+        if (type === 'join_tribe') {
+            if (!tribeId) return { success: false, message: 'Tribe ID is required for joining a tribe.' };
+            const tribeRef = db.collection('tribes').doc(tribeId);
+            const tribeDoc = await tribeRef.get();
+            if (!tribeDoc.exists || tribeDoc.data()?.chief !== user.uid) {
+                return { success: false, message: 'You do not have permission to manage this application.' };
+            }
+            
             await db.runTransaction(async (transaction) => {
                 transaction.update(tribeRef, { members: FieldValue.arrayUnion(applicantId) });
                 transaction.update(applicantUserRef, { currentUserLevel: 4 }); // Member
                 transaction.delete(applicationRef);
             });
+            
+            if (applicantData.email) {
+                await sendNewMemberEmail({
+                    recipientEmail: applicantData.email,
+                    recipientName: applicantName,
+                    tribeName: tribeDoc.data()?.name || 'your new tribe',
+                });
+            }
             return { success: true };
-        }
 
-    } else if (type === 'new_tribe') {
-        if (action === 'approve') {
+        } else if (type === 'new_tribe') {
             const newTribeRef = db.collection('tribes').doc();
             await db.runTransaction(async (transaction) => {
                 transaction.set(newTribeRef, {
@@ -179,14 +199,28 @@ const manageApplicationFlow = ai.defineFlow(
                 transaction.update(applicantUserRef, { currentUserLevel: 5 });
                 transaction.delete(applicationRef);
             });
+            
+            if (applicantData.email) {
+                await sendNewChiefEmail({
+                    recipientEmail: applicantData.email,
+                    recipientName: applicantName,
+                    tribeName: appData.tribeName,
+                });
+            }
             return { success: true };
-        }
-    } else if (type === 'new_mentor') {
-         if (action === 'approve') {
-            await db.runTransaction(async (transaction) => {
+
+        } else if (type === 'new_mentor') {
+             await db.runTransaction(async (transaction) => {
                 transaction.update(applicantUserRef, { currentUserLevel: 6 }); // Promote to Mentor
                 transaction.delete(applicationRef);
             });
+
+            if (applicantData.email) {
+                await sendNewMentorEmail({
+                    recipientEmail: applicantData.email,
+                    recipientName: applicantName,
+                });
+            }
             return { success: true };
         }
     }
