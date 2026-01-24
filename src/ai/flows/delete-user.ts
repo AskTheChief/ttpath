@@ -29,7 +29,7 @@ const deleteUserFlow = ai.defineFlow(
     try {
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const adminUserDoc = await db.collection('users').doc(decodedToken.uid).get();
-      if (!adminUserDoc.exists() || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+      if (!adminUserDoc.exists || (adminUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
         throw new Error('Permission denied. User is not an admin.');
       }
     } catch (error: any) {
