@@ -259,16 +259,6 @@ function MyTribePageContent() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeTabFromUrl = searchParams.get('view');
-  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'find-or-start-tribe' : 'my-profile');
-
-  const { toast } = useToast();
-  
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
-
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
     const now = new Date();
@@ -280,6 +270,16 @@ function MyTribePageContent() {
       .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
     return { upcomingMeetings: upcoming, pastMeetings: past };
   }, [userTribe?.meetings]);
+
+  const activeTabFromUrl = searchParams.get('view');
+  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'find-or-start-tribe' : 'my-profile');
+
+  const { toast } = useToast();
+  
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const isChief = userTribe && userTribe.chief === user?.uid;
   const isMentor = userLevel >= 6;
@@ -796,6 +796,15 @@ function MyTribePageContent() {
     }
   };
   
+  const openComposerForApplicant = (app: Application) => {
+    if (app.applicantEmail) {
+      setEmailRecipients([{ email: app.applicantEmail, name: app.applicantName || app.applicantEmail }]);
+      setIsEmailModalOpen(true);
+    } else {
+      toast({ title: "Applicant's email not found", variant: "destructive" });
+    }
+  };
+
   const handleSaveJournalEntry = async () => {
     if (!newEntryContent.trim()) {
       toast({ title: 'Entry is empty', variant: 'destructive' });
@@ -1343,7 +1352,11 @@ function MyTribePageContent() {
                                     {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                 </div>
                                 </div>
-                                <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                  <Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button>
+                                  <Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button>
+                                  <Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button>
+                                </div>
                             </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -1572,3 +1585,4 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
