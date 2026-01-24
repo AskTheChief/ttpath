@@ -10,9 +10,7 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();

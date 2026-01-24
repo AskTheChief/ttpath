@@ -14,9 +14,7 @@ import {
 import { emailTemplates as defaultTemplates } from '@/lib/email-templates';
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 const templatesCollection = db.collection('email_templates');

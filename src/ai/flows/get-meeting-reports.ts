@@ -8,9 +8,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { GetMeetingReportsInputSchema, GetMeetingReportsOutputSchema, type GetMeetingReportsInput, type GetMeetingReportsOutput } from '@/lib/types';
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();

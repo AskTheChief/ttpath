@@ -12,9 +12,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { AddJournalFeedbackInputSchema, AddJournalFeedbackOutputSchema, type AddJournalFeedbackInput, type AddJournalFeedbackOutput } from '@/lib/types';
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 const adminAuth = getAuth();

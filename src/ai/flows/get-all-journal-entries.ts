@@ -12,9 +12,7 @@ import { GetAllJournalEntriesOutputSchema, type GetAllJournalEntriesOutput } fro
 
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 

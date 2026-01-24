@@ -13,9 +13,7 @@ import { sendDiplomaEmail, SendDiplomaEmailInput } from './send-diploma-email';
 import { User, getUsers } from './get-users';
 
 if (!getApps().length) {
-  initializeApp({
-    projectId: 'studio-7790315517-f3fe6',
-  });
+  initializeApp();
 }
 const db = getFirestore();
 
