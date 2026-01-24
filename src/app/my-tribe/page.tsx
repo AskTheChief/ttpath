@@ -225,6 +225,7 @@ function MyTribePageContent() {
   const [comprehensionTestData, setComprehensionTestData] = useState<GetComprehensionTestOutput>({ answers: {} });
   const [joinApplications, setJoinApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
+  const [mentorApplications, setMentorApplications] = useState<Application[]>([]);
   const [pendingApplication, setPendingApplication] = useState<Application | null>(null);
   const [pendingMentorApp, setPendingMentorApp] = useState<Application | null>(null);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
@@ -357,9 +358,15 @@ function MyTribePageContent() {
       
       // Fetch role-specific data
       if (progress.currentUserLevel >= 6) { // Mentor
-          const newTribeAppsResult = await manageApplication({ action: 'get', type: 'new_tribe', idToken });
+          const [newTribeAppsResult, newMentorAppsResult] = await Promise.all([
+            manageApplication({ action: 'get', type: 'new_tribe', idToken }),
+            manageApplication({ action: 'get', type: 'new_mentor', idToken })
+          ]);
           if (newTribeAppsResult.success && newTribeAppsResult.applications) {
               setTribeCreationApps(newTribeAppsResult.applications);
+          }
+          if (newMentorAppsResult.success && newMentorAppsResult.applications) {
+              setMentorApplications(newMentorAppsResult.applications);
           }
       }
       if (progress.currentUserLevel >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
@@ -1351,10 +1358,10 @@ function MyTribePageContent() {
         )}
 
         {isMentor && (
-            <TabsContent value="mentor-dashboard" className="m-0">
+            <TabsContent value="mentor-dashboard" className="m-0 space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Mentor Dashboard</CardTitle>
+                        <CardTitle>New Tribe Applications</CardTitle>
                         <CardDescription>Review applications from members who want to start their own tribe.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1384,6 +1391,41 @@ function MyTribePageContent() {
                           </Accordion>
                         ) : (
                             <p className="text-muted-foreground">There are currently no pending applications to create a new tribe.</p>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>New Mentor Applications</CardTitle>
+                        <CardDescription>Review applications from Chiefs who want to become Mentors.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {mentorApplications.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full">
+                            {mentorApplications.map(app => (
+                                <AccordionItem key={app.id} value={app.id}>
+                                <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="space-y-4">
+                                        <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                        <div>
+                                            <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                            <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
+                                            <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
+                                                {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
+                                    </div>
+                                </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                            </Accordion>
+                        ) : (
+                            <p className="text-muted-foreground">There are currently no pending applications for mentorship.</p>
                         )}
                     </CardContent>
                 </Card>
