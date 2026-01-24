@@ -35,7 +35,7 @@ const applyForMentorFlow = ai.defineFlow(
 
     // Check if user is a chief
     const userDoc = await db.collection('users').doc(applicantId).get();
-    if (!userDoc.exists() || (userDoc.data()?.currentUserLevel || 0) < 5) {
+    if (!userDoc.exists || (userDoc.data()?.currentUserLevel || 0) < 5) {
         return { success: false, message: 'Only Tribe Chiefs can apply to be a mentor.' };
     }
 
