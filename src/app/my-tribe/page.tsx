@@ -57,6 +57,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { saveJournalEntry, getJournalEntries, deleteJournalEntry } from '@/ai/flows/journal';
+import { applyForMentor } from '@/ai/flows/apply-for-mentor';
 
 
 const libraries: Libraries = ['places'];
@@ -87,9 +88,9 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
             <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
                 <Info className="h-4 w-4 !text-blue-600" />
                 <AlertTitle className="text-blue-800 dark:text-blue-300">Application Pending</AlertTitle>
-                <AlertDescription className="text-blue-700 dark:text-blue-400">
-                    Your application to join "{tribeAppliedTo?.name || 'a tribe'}" is awaiting review by the chief.
-                    <Button onClick={() => handleWithdrawApplication(pendingApplication.id)} variant="destructive" size="sm" className="ml-4">Withdraw Application</Button>
+                <AlertDescription className="text-blue-700 dark:text-blue-400 flex justify-between items-center">
+                    <span>Your application to join "{tribeAppliedTo?.name || 'a tribe'}" is awaiting review by the chief.</span>
+                    <Button onClick={() => handleWithdrawApplication(pendingApplication.id, pendingApplication.type as 'join_tribe' | 'new_tribe')} variant="destructive" size="sm" className="ml-4">Withdraw Application</Button>
                 </AlertDescription>
             </Alert>
         ) : (
@@ -225,6 +226,7 @@ function MyTribePageContent() {
   const [joinApplications, setJoinApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
   const [pendingApplication, setPendingApplication] = useState<Application | null>(null);
+  const [pendingMentorApp, setPendingMentorApp] = useState<Application | null>(null);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
@@ -334,10 +336,12 @@ function MyTribePageContent() {
       setUserLevel(progress.currentUserLevel);
       setUserProfile(profile);
       
-      if (myPendingAppsResult.success && myPendingAppsResult.applications && myPendingAppsResult.applications.length > 0) {
-        setPendingApplication(myPendingAppsResult.applications[0]);
+      if (myPendingAppsResult.success && myPendingAppsResult.applications) {
+        setPendingApplication(myPendingAppsResult.applications.find(app => app.type === 'join_tribe' || app.type === 'new_tribe') || null);
+        setPendingMentorApp(myPendingAppsResult.applications.find(app => app.type === 'new_mentor') || null);
       } else {
         setPendingApplication(null);
+        setPendingMentorApp(null);
       }
 
 
@@ -473,7 +477,7 @@ function MyTribePageContent() {
     }
   };
 
-  const handleWithdrawApplication = async (applicationId: string) => {
+  const handleWithdrawApplication = async (applicationId: string, appType: 'join_tribe' | 'new_tribe' | 'new_mentor') => {
     if (!user) return;
     setIsLoading(true);
     try {
@@ -481,7 +485,7 @@ function MyTribePageContent() {
         const result = await manageApplication({
             action: 'withdraw',
             applicationId,
-            type: 'join_tribe', // Assuming only join_tribe can be withdrawn by user for now
+            type: appType,
             idToken
         });
         if (result.success) {
@@ -813,6 +817,25 @@ function MyTribePageContent() {
         setIsJournalLoading(false);
     }
   };
+  
+  const handleApplyForMentor = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        const result = await applyForMentor({ idToken });
+        if (result.success) {
+            toast({ title: 'Application Submitted', description: result.message });
+            fetchTribesAndUserData(user); // Refresh data
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   if (isLoading || !isLoaded || !currentTime || !user) {
     return (
@@ -992,6 +1015,32 @@ function MyTribePageContent() {
                     <CardFooter><Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Profile'}</Button></CardFooter>
                 </form>
             </Card>
+            
+            {userLevel >= 5 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Apply for Mentorship</CardTitle>
+                  <CardDescription>
+                    As a Tribe Chief, you can apply to become a Mentor to help guide new Chiefs. Mentors review new tribe applications.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pendingMentorApp ? (
+                    <Alert>
+                      <AlertTitle>Application Pending</AlertTitle>
+                      <AlertDescription className="flex justify-between items-center">
+                        <span>Your application to become a mentor is currently under review.</span>
+                        <Button onClick={() => handleWithdrawApplication(pendingMentorApp.id, 'new_mentor')} variant="destructive" size="sm">Withdraw</Button>
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Button onClick={handleApplyForMentor} disabled={isLoading}>
+                      {isLoading ? 'Submitting...' : 'Submit Mentor Application'}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             
             <Card>
                 <CardHeader>
@@ -1483,5 +1532,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-    

@@ -80,7 +80,7 @@ export const pathNodesData: PathNodeData[] = [
     description: "As a Tribe Chief, you are in charge of your Tribe. You can also apply to become a Mentor to help other new Chiefs.",
     actions: [
       { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe", targetView: "chief-dashboard" },
-      { id: "apply-for-mentor", label: "Apply to be a Mentor", action: "navigate-my-tribe", targetView: "my-profile" }
+      { id: "apply-for-mentor", label: "Apply for Mentorship", action: "navigate-my-tribe", targetView: "my-profile" }
     ],
     panelPos: "right"
   },

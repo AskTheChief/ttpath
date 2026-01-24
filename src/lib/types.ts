@@ -136,6 +136,19 @@ export const ManageApplicationOutputSchema = z.object({
 });
 export type ManageApplicationOutput = z.infer<typeof ManageApplicationOutputSchema>;
 
+// src/ai/flows/apply-for-mentor.ts
+export const ApplyForMentorInputSchema = z.object({
+  idToken: z.string(),
+});
+export type ApplyForMentorInput = z.infer<typeof ApplyForMentorInputSchema>;
+
+export const ApplyForMentorOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type ApplyForMentorOutput = z.infer<typeof ApplyForMentorOutputSchema>;
+
+
 // src/ai/flows/user-profile.ts
 export const UserProfileSchema = z.object({
   firstName: z.string().optional(),
