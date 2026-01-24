@@ -269,6 +269,18 @@ function MyTribePageContent() {
     libraries,
   });
 
+  const { upcomingMeetings, pastMeetings } = useMemo(() => {
+    if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
+    const now = new Date();
+    const upcoming = userTribe.meetings
+      .filter(m => new Date(m.date as string) >= now)
+      .sort((a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime());
+    const past = userTribe.meetings
+      .filter(m => new Date(m.date as string) < now)
+      .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
+    return { upcomingMeetings: upcoming, pastMeetings: past };
+  }, [userTribe?.meetings]);
+
   const isChief = userTribe && userTribe.chief === user?.uid;
   const isMentor = userLevel >= 6;
 
@@ -852,18 +864,6 @@ function MyTribePageContent() {
   if (loadError) {
     return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
   }
-
-  const { upcomingMeetings, pastMeetings } = useMemo(() => {
-    if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
-    const now = new Date();
-    const upcoming = userTribe.meetings
-      .filter(m => new Date(m.date as string) >= now)
-      .sort((a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime());
-    const past = userTribe.meetings
-      .filter(m => new Date(m.date as string) < now)
-      .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
-    return { upcomingMeetings: upcoming, pastMeetings: past };
-  }, [userTribe?.meetings]);
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date as string)) || [];
   
