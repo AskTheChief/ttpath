@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -233,6 +233,7 @@ function MyTribePageContent() {
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [isClient, setIsClient] = useState(false);
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [hour, setHour] = useState('12');
@@ -251,14 +252,11 @@ function MyTribePageContent() {
   const [newEntryContent, setNewEntryContent] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
 
-
   useEffect(() => {
-    // This effect runs only on the client
+    setIsClient(true);
     setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, []);
 
   const activeTabFromUrl = searchParams.get('view');
@@ -349,7 +347,7 @@ function MyTribePageContent() {
       const tribesWithMembers = allTribes.map(t => ({
         ...t,
         members: t.members || [],
-        meetings: t.meetings?.map(m => ({ ...m, date: new Date(m.date) })) || []
+        meetings: t.meetings || []
       }));
 
       setTribes(tribesWithMembers as Tribe[]);
@@ -372,10 +370,7 @@ function MyTribePageContent() {
       if (progress.currentUserLevel >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
           const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
           if (joinAppsResult.success && joinAppsResult.applications) {
-              const sortedApps = joinAppsResult.applications.map(app => ({
-                  ...app,
-                  createdAt: new Date(app.createdAt),
-              })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+              const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
               setJoinApplications(sortedApps);
           }
       }
@@ -608,7 +603,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: m.date.toISOString() })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: (m.date as Date).toISOString() })),
         idToken,
       });
   
@@ -632,7 +627,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: m.date.toISOString() })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: (m.date as Date).toISOString() })),
         idToken,
       });
   
@@ -858,16 +853,19 @@ function MyTribePageContent() {
     return <div className="flex items-center justify-center min-h-screen">Error loading maps. Please check your API key setup.</div>
   }
 
-  const now = new Date();
-  const upcomingMeetings = (userTribe?.meetings || [])
-    .filter(m => new Date(m.date) >= now)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
-  const pastMeetings = (userTribe?.meetings || [])
-    .filter(m => new Date(m.date) < now)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const { upcomingMeetings, pastMeetings } = useMemo(() => {
+    if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
+    const now = new Date();
+    const upcoming = userTribe.meetings
+      .filter(m => new Date(m.date as string) >= now)
+      .sort((a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime());
+    const past = userTribe.meetings
+      .filter(m => new Date(m.date as string) < now)
+      .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
+    return { upcomingMeetings: upcoming, pastMeetings: past };
+  }, [userTribe?.meetings]);
 
-  const meetingDates = userTribe?.meetings?.map(m => new Date(m.date)) || [];
+  const meetingDates = userTribe?.meetings?.map(m => new Date(m.date as string)) || [];
   
   const renderLockedTabTrigger = (value: string, title: string, requiredLevel: number) => {
     const isUnlocked = userLevel >= requiredLevel;
@@ -942,7 +940,7 @@ function MyTribePageContent() {
                                 <div className="flex items-center w-full p-4">
                                     <AccordionTrigger className="flex-grow p-0">
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="font-semibold">Entry from {format(new Date(entry.createdAt), 'PPP p')}</span>
+                                            <span className="font-semibold">Entry from {isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
                                             <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
                                         </div>
                                     </AccordionTrigger>
@@ -975,7 +973,7 @@ function MyTribePageContent() {
                                                   <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                   <AlertDescription>
                                                       <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
-                                                      <p className="text-xs text-muted-foreground mt-2">{format(new Date(fb.createdAt), 'PPP p')}</p>
+                                                      <p className="text-xs text-muted-foreground mt-2">{isClient ? format(new Date(fb.createdAt), 'PPP p') : '...'}</p>
                                                   </AlertDescription>
                                               </Alert>
                                           ))}
@@ -1074,7 +1072,7 @@ function MyTribePageContent() {
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString()}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
                     </AlertTitle>
                     <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
@@ -1171,7 +1169,7 @@ function MyTribePageContent() {
                     <ul className="space-y-3">
                         {upcomingMeetings.map(meeting => (
                         <li key={meeting.id} className="flex flex-col p-2 border rounded-md">
-                            <span className="font-semibold">{format(new Date(meeting.date), 'PPP p')}</span>
+                            <span className="font-semibold">{isClient ? format(new Date(meeting.date), 'PPP p') : '...'}</span>
                         </li>
                         ))}
                     </ul>
@@ -1193,7 +1191,7 @@ function MyTribePageContent() {
                             <AccordionItem key={meeting.id} value={meeting.id}>
                               <div className="flex items-center w-full p-4">
                                 <AccordionTrigger className="flex-grow p-0">
-                                    <span className="font-semibold">{format(new Date(meeting.date), 'PPP')}</span>
+                                    <span className="font-semibold">{isClient ? format(new Date(meeting.date), 'PPP') : '...'}</span>
                                 </AccordionTrigger>
                                 <Button variant="secondary" size="sm" className="ml-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
                                   {userReport ? 'View My Report' : 'Submit My Report'}
@@ -1242,7 +1240,7 @@ function MyTribePageContent() {
                  <Card>
                     <CardHeader>
                     <CardTitle>Manage Meetings</CardTitle><CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                    <p className="text-sm font-semibold pt-2">Current Time: {currentTime?.toLocaleTimeString()}</p>
+                    <p className="text-sm font-semibold pt-2">Current Time: {isClient ? currentTime?.toLocaleTimeString() : '...'}</p>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -1273,7 +1271,7 @@ function MyTribePageContent() {
                     <div>
                         <h3 className="font-semibold mb-2">Upcoming Meetings</h3>
                         {upcomingMeetings.length > 0 ? (
-                        <ul className="space-y-2 max-h-80 overflow-y-auto">{upcomingMeetings.map(meeting => (<li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md"><div className="flex-1"><p className="font-medium">{format(new Date(meeting.date), 'PPP p')}</p></div><Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}><Trash2 className="h-4 w-4" /></Button></li>))}</ul>
+                        <ul className="space-y-2 max-h-80 overflow-y-auto">{upcomingMeetings.map(meeting => (<li key={meeting.id} className="flex items-center justify-between p-2 border rounded-md"><div className="flex-1"><p className="font-medium">{isClient ? format(new Date(meeting.date), 'PPP p') : '...'}</p></div><Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id)}><Trash2 className="h-4 w-4" /></Button></li>))}</ul>
                         ) : (<p className="text-sm text-center text-muted-foreground bg-gray-50 p-4 rounded-md">No upcoming meetings.</p>)}
                     </div>
                     </CardContent>
@@ -1331,7 +1329,7 @@ function MyTribePageContent() {
                     <Accordion type="single" collapsible className="w-full">
                         {joinApplications.map(app => (
                         <AccordionItem key={app.id} value={app.id}>
-                            <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                            <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                             <AccordionContent>
                             <div className="space-y-4">
                                 <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
@@ -1369,7 +1367,7 @@ function MyTribePageContent() {
                               <Accordion type="single" collapsible className="w-full">
                               {tribeCreationApps.map(app => (
                               <AccordionItem key={app.id} value={app.id}>
-                                  <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                                  <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                   <AccordionContent>
                                   <div className="space-y-4">
                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
@@ -1404,7 +1402,7 @@ function MyTribePageContent() {
                             <Accordion type="single" collapsible className="w-full">
                             {mentorApplications.map(app => (
                                 <AccordionItem key={app.id} value={app.id}>
-                                <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleString()}</span></div></AccordionTrigger>
+                                <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                 <AccordionContent>
                                     <div className="space-y-4">
                                         <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
@@ -1508,7 +1506,7 @@ function MyTribePageContent() {
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString()}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
                     </AlertTitle>
                     <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
