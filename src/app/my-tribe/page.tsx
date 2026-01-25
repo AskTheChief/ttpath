@@ -8,9 +8,9 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, updateDoc, increment, setDoc } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
-import { getComprehensionTest } from '@/ai/flows/get-comprehension-test';
+import { getAlignmentTest } from '@/ai/flows/get-alignment-test';
 import { comprehensionQuestions } from '@/lib/data';
-import { saveComprehensionTest } from '@/ai/flows/save-comprehension-test';
+import { saveAlignmentTest } from '@/ai/flows/save-alignment-test';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetComprehensionTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetAlignmentTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -37,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTribeMembers } from '@/ai/flows/get-tribe-members';
 import { getMeetingReports } from '@/ai/flows/get-meeting-reports';
 import ReportModal from '@/components/modals/report-modal';
-import { evaluateComprehensionTest } from '@/ai/flows/evaluate-comprehension-test';
+import { evaluateAlignmentTest } from '@/ai/flows/evaluate-alignment-test';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
@@ -143,7 +143,7 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                 </div>
 
                 <div className="border-t pt-4 mt-4 space-y-2">
-                    <h4 className="font-semibold">Comprehension Test Requirement</h4>
+                    <h4 className="font-semibold">Alignment Test Requirement</h4>
                     <p className="text-sm text-muted-foreground">
                         Mentors review your test answers. The answers show your understanding of Tribe methods. This process helps you prepare for Tribe. You access the test on your 'My Profile & Test' tab. You write your answers and then you receive feedback from The Chief.
                     </p>
@@ -222,7 +222,7 @@ function MyTribePageContent() {
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
   const [userTribe, setUserTribe] = useState<Tribe | null>(null);
   const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
-  const [comprehensionTestData, setComprehensionTestData] = useState<GetComprehensionTestOutput>({ answers: {} });
+  const [alignmentTestData, setAlignmentTestData] = useState<GetAlignmentTestOutput>({ answers: {} });
   const [joinApplications, setJoinApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
   const [mentorApplications, setMentorApplications] = useState<Application[]>([]);
@@ -401,7 +401,7 @@ function MyTribePageContent() {
 
     } catch (error: any) {
         console.error("Error fetching page data: ", error);
-        toast({ title: 'Error', description: error.message || 'Could not load your tribe and comprehension test data.', variant: 'destructive' });
+        toast({ title: 'Error', description: error.message || 'Could not load your tribe and alignment test data.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -415,8 +415,8 @@ function MyTribePageContent() {
         setIsFetchingAnswers(true);
         try {
             const idToken = await currentUser.getIdToken();
-            const data = await getComprehensionTest({ idToken });
-            setComprehensionTestData(data);
+            const data = await getAlignmentTest({ idToken });
+            setAlignmentTestData(data);
         } catch (error) {
             console.error("Failed to fetch answers:", error);
             toast({ title: 'Error fetching answers', variant: 'destructive' });
@@ -440,6 +440,17 @@ function MyTribePageContent() {
     }
     if (!user) {
         toast({ title: 'Authentication Error', description: 'You must be logged in to create a tribe.', variant: 'destructive' });
+        return;
+    }
+    
+    // Check for alignment test completion
+    if (Object.keys(alignmentTestData.answers).length === 0) {
+        toast({
+            title: 'Alignment Test Required',
+            description: 'You must complete the alignment test before creating a tribe. You are now on the test page.',
+            duration: 5000,
+        });
+        handleTabChange('my-profile');
         return;
     }
 
@@ -472,10 +483,22 @@ function MyTribePageContent() {
 
   const handleJoinTribe = async (tribeId: string) => {
     if (!user) return;
+
+    if (Object.keys(alignmentTestData.answers).length === 0) {
+        toast({
+            title: 'Alignment Test Required',
+            description: 'You must complete the alignment test before joining a tribe. You are now on the test page.',
+            duration: 5000,
+        });
+        handleTabChange('my-profile');
+        setSelectedTribe(null);
+        return;
+    }
+
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      const userAnswersData = await getComprehensionTest({ idToken });
+      const userAnswersData = await getAlignmentTest({ idToken });
       const result = await joinTribe({ tribeId, idToken, answers: userAnswersData.answers });
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
@@ -558,7 +581,7 @@ function MyTribePageContent() {
   };
 
   const handleAnswerChange = (question: string, value: string) => {
-    setComprehensionTestData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
+    setAlignmentTestData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
   };
 
   const handleSaveAnswers = async () => {
@@ -566,10 +589,10 @@ function MyTribePageContent() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await saveComprehensionTest({ answers: comprehensionTestData.answers, idToken });
-      toast({ title: 'Success', description: 'Your comprehension test answers have been saved.' });
+      await saveAlignmentTest({ answers: alignmentTestData.answers, idToken });
+      toast({ title: 'Success', description: 'Your alignment test answers have been saved.' });
     } catch (error) {
-      console.error("Error saving comprehension test answers: ", error);
+      console.error("Error saving alignment test answers: ", error);
       toast({ title: 'Error', description: 'Failed to save your answers.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
@@ -716,9 +739,9 @@ function MyTribePageContent() {
     setIsEvaluating(true);
     try {
         const idToken = await user.getIdToken();
-        const evaluation = await evaluateComprehensionTest({ answers: comprehensionTestData.answers, idToken });
+        const evaluation = await evaluateAlignmentTest({ answers: alignmentTestData.answers, idToken });
         
-        setComprehensionTestData(prev => ({
+        setAlignmentTestData(prev => ({
             ...prev,
             latestFeedback: {
                 feedback: evaluation.feedback,
@@ -1109,7 +1132,7 @@ function MyTribePageContent() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Comprehension Test</CardTitle>
+                    <CardTitle>Alignment Test</CardTitle>
                     <CardDescription>Review or update your answers.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -1117,24 +1140,35 @@ function MyTribePageContent() {
                 comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={comprehensionTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={alignmentTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
                 </CardContent>
                 <CardFooter className="flex flex-wrap gap-2 justify-end">
                 <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>
+                                {isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>You can check your answers at any time.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 </CardFooter>
-                {comprehensionTestData.latestFeedback && (
+                {alignmentTestData.latestFeedback && (
                 <CardContent>
                 <Alert>
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(alignmentTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
                     </AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
+                    <AlertDescription className="whitespace-pre-wrap">{alignmentTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
                 </CardContent>
                 )}
@@ -1414,7 +1448,7 @@ function MyTribePageContent() {
                             </div>
                             {member.answers && (
                                 <div>
-                                <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
+                                <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
                                 <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
                                     {comprehensionQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
                                     {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
@@ -1444,7 +1478,7 @@ function MyTribePageContent() {
                                 <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                 </div>
                                 <div>
-                                <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
+                                <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
                                 <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
                                     {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                 </div>
@@ -1486,7 +1520,7 @@ function MyTribePageContent() {
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
-                                      <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
+                                      <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
                                       <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
                                           {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                       </div>
@@ -1521,7 +1555,7 @@ function MyTribePageContent() {
                                             <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold mb-2">Comprehension Test Answers</h4>
+                                            <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
                                             <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
                                                 {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                             </div>
@@ -1593,7 +1627,7 @@ function MyTribePageContent() {
             </Card>
              <Card>
                 <CardHeader>
-                    <CardTitle>Comprehension Test</CardTitle>
+                    <CardTitle>Alignment Test</CardTitle>
                     <CardDescription>Review or update your answers.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -1601,24 +1635,35 @@ function MyTribePageContent() {
                 comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={comprehensionTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={alignmentTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
                 </CardContent>
                 <CardFooter className="flex flex-wrap gap-2 justify-end">
                 <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>{isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback'}</Button>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>
+                                {isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>You can check your answers at any time.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 </CardFooter>
-                {comprehensionTestData.latestFeedback && (
+                {alignmentTestData.latestFeedback && (
                 <CardContent>
                 <Alert>
                     <Sparkles className="h-4 w-4" />
                     <AlertTitle className="flex justify-between">
                     <span>You Receive Guidance</span>
-                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(comprehensionTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{isClient ? new Date(alignmentTestData.latestFeedback.createdAt).toLocaleString() : '...'}</span>
                     </AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap">{comprehensionTestData.latestFeedback.feedback}</AlertDescription>
+                    <AlertDescription className="whitespace-pre-wrap">{alignmentTestData.latestFeedback.feedback}</AlertDescription>
                 </Alert>
                 </CardContent>
                 )}
@@ -1682,6 +1727,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
 
 
