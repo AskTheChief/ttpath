@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { saveJournalEntry, getJournalEntries, deleteJournalEntry } from '@/ai/flows/journal';
 import { applyForMentor } from '@/ai/flows/apply-for-mentor';
+import { sendMeetingReportReminder } from '@/ai/flows/send-meeting-report-reminder';
 
 
 const libraries: Libraries = ['places'];
@@ -212,7 +213,6 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
 function MyTribePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(1);
   const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
@@ -232,8 +232,8 @@ function MyTribePageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [hour, setHour] = useState('12');
@@ -251,13 +251,7 @@ function MyTribePageContent() {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [newEntryContent, setNewEntryContent] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
-    return () => clearInterval(timer);
-  }, []);
+  const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -270,6 +264,13 @@ function MyTribePageContent() {
       .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
     return { upcomingMeetings: upcoming, pastMeetings: past };
   }, [userTribe?.meetings]);
+
+  useEffect(() => {
+    setIsClient(true);
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const activeTabFromUrl = searchParams.get('view');
   const activeTab = activeTabFromUrl || (userLevel < 4 ? 'find-or-start-tribe' : 'my-profile');
@@ -883,8 +884,34 @@ function MyTribePageContent() {
       level: 'gentle'
     };
   }, [isClient, currentTime]);
+  
+  const handleSendReminder = async (member: TribeMember, meeting: Meeting, nagLevel: 'gentle' | 'medium' | 'nagging') => {
+    if (!userTribe) return;
+    const reminderId = `${member.uid}-${meeting.id}`;
+    setIsSendingReminder(reminderId);
+    try {
+        const result = await sendMeetingReportReminder({
+            recipientEmail: member.email,
+            recipientName: `${member.firstName} ${member.lastName}`,
+            tribeName: userTribe.name,
+            meetingDate: (meeting.date as Date).toISOString(),
+            nagLevel: nagLevel,
+        });
 
-  if (isLoading || !isLoaded || !currentTime || !user) {
+        if (result.success) {
+            toast({ title: "Reminder Sent", description: `A ${nagLevel} reminder has been sent to ${member.firstName}.` });
+        } else {
+            throw new Error(result.message);
+        }
+
+    } catch (error: any) {
+        toast({ title: "Error Sending Reminder", description: error.message, variant: "destructive" });
+    } finally {
+        setIsSendingReminder(null);
+    }
+  };
+
+  if (isLoading || !isLoaded || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -1285,7 +1312,7 @@ function MyTribePageContent() {
                  <Card>
                     <CardHeader>
                     <CardTitle>Manage Meetings</CardTitle><CardDescription>Schedule and view meetings for your tribe.</CardDescription>
-                    <p className="text-sm font-semibold pt-2">Current Time: {isClient ? currentTime?.toLocaleTimeString() : '...'}</p>
+                    <p className="text-sm font-semibold pt-2">Current Time: {isClient && currentTime ? currentTime.toLocaleTimeString() : '...'}</p>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -1350,6 +1377,40 @@ function MyTribePageContent() {
                             <div>
                               <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
                               <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold mb-2">Meeting Report Status</h4>
+                                <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
+                                    {pastMeetings.length > 0 ? pastMeetings.map(meeting => {
+                                        const memberReport = meetingReports.find(r => r.meetingId === meeting.id && r.userId === member.uid);
+                                        const nag = !memberReport ? getNagMessage(new Date(meeting.date)) : null;
+
+                                        return (
+                                            <div key={meeting.id} className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-medium">Meeting: {isClient ? format(new Date(meeting.date), 'PPP') : '...'}</p>
+                                                    {memberReport ? (
+                                                        <p className="text-green-600 dark:text-green-400 text-xs">Report Submitted</p>
+                                                    ) : nag ? (
+                                                        <p className={cn("text-xs", {
+                                                            'text-yellow-600 dark:text-yellow-400': nag.level === 'medium',
+                                                            'text-red-600 dark:text-red-400 font-bold': nag.level === 'nagging',
+                                                            'text-muted-foreground': nag.level === 'gentle',
+                                                        })}>{nag.message}</p>
+                                                    ) : (
+                                                         <p className="text-xs text-muted-foreground">Report not yet due.</p>
+                                                    )}
+                                                </div>
+                                                {!memberReport && nag && (
+                                                    <Button size="sm" variant="secondary" onClick={() => handleSendReminder(member, meeting, nag.level)} disabled={isSendingReminder === `${member.uid}-${meeting.id}`}>
+                                                        {isSendingReminder === `${member.uid}-${meeting.id}` ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                                        Send Reminder
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )
+                                    }) : <p className="text-xs text-muted-foreground">No past meetings to report on.</p>}
+                                </div>
                             </div>
                             {member.answers && (
                                 <div>
@@ -1621,5 +1682,6 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
 

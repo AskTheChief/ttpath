@@ -47,3 +47,4 @@ import '@/ai/flows/add-user.ts';
 import '@/ai/flows/send-new-member-email.ts';
 import '@/ai/flows/send-new-chief-email.ts';
 import '@/ai/flows/send-new-mentor-email.ts';
+import '@/ai/flows/send-meeting-report-reminder.ts';

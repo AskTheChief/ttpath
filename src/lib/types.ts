@@ -394,3 +394,19 @@ export const AddUserOutputSchema = z.object({
   userId: z.string().optional(),
 });
 export type AddUserOutput = z.infer<typeof AddUserOutputSchema>;
+
+// src/ai/flows/send-meeting-report-reminder.ts
+export const SendMeetingReportReminderInputSchema = z.object({
+  recipientEmail: z.string().email(),
+  recipientName: z.string(),
+  tribeName: z.string(),
+  meetingDate: z.string(),
+  nagLevel: z.enum(['gentle', 'medium', 'nagging']),
+});
+export type SendMeetingReportReminderInput = z.infer<typeof SendMeetingReportReminderInputSchema>;
+
+export const SendMeetingReportReminderOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type SendMeetingReportReminderOutput = z.infer<typeof SendMeetingReportReminderOutputSchema>;
