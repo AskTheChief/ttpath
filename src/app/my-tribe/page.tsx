@@ -255,7 +255,7 @@ function MyTribePageContent() {
   useEffect(() => {
     setIsClient(true);
     setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
     return () => clearInterval(timer);
   }, []);
 
@@ -859,6 +859,30 @@ function MyTribePageContent() {
         setIsLoading(false);
     }
   };
+  
+  const getNagMessage = useCallback((meetingDate: Date): { message: string, level: 'gentle' | 'medium' | 'nagging' } | null => {
+    if (!isClient || !currentTime) return null;
+    const daysPast = (currentTime.getTime() - new Date(meetingDate).getTime()) / (1000 * 3600 * 24);
+
+    if (daysPast <= 0) return null;
+
+    if (daysPast > 7) {
+      return {
+        message: "Your report for this meeting is overdue. Submitting reports is a key part of tribe accountability.",
+        level: 'nagging'
+      };
+    }
+    if (daysPast > 3) {
+      return {
+        message: "Your report for this meeting is pending.",
+        level: 'medium'
+      };
+    }
+    return {
+      message: "You might consider submitting your report for this meeting.",
+      level: 'gentle'
+    };
+  }, [isClient, currentTime]);
 
   if (isLoading || !isLoaded || !currentTime || !user) {
     return (
@@ -1195,17 +1219,29 @@ function MyTribePageContent() {
                         {pastMeetings.map(meeting => {
                           const reportsForMeeting = meetingReports.filter(r => r.meetingId === meeting.id);
                           const userReport = reportsForMeeting.find(r => r.userId === user?.uid);
+                          const nag = !userReport ? getNagMessage(new Date(meeting.date)) : null;
 
                           return (
                             <AccordionItem key={meeting.id} value={meeting.id}>
-                              <div className="flex items-center w-full p-4">
-                                <AccordionTrigger className="flex-grow p-0">
-                                    <span className="font-semibold">{isClient ? format(new Date(meeting.date), 'PPP') : '...'}</span>
-                                </AccordionTrigger>
-                                <Button variant="secondary" size="sm" className="ml-4" onClick={() => handleMeetingReportAction(meeting, userReport)}>
-                                  {userReport ? 'View My Report' : 'Submit My Report'}
-                                </Button>
-                              </div>
+                                <div className="flex items-center w-full p-4">
+                                    <AccordionTrigger className="flex-grow p-0 text-left">
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold">{isClient ? format(new Date(meeting.date), 'PPP') : '...'}</span>
+                                            {nag && (
+                                            <span className={cn("text-xs mt-1", {
+                                                'text-yellow-600 dark:text-yellow-400': nag.level === 'medium',
+                                                'text-red-600 dark:text-red-400 font-bold': nag.level === 'nagging',
+                                                'text-muted-foreground': nag.level === 'gentle',
+                                            })}>
+                                                {nag.message}
+                                            </span>
+                                            )}
+                                        </div>
+                                    </AccordionTrigger>
+                                    <Button variant="secondary" size="sm" className="ml-4 shrink-0" onClick={() => handleMeetingReportAction(meeting, userReport)}>
+                                      {userReport ? 'View My Report' : 'Submit My Report'}
+                                    </Button>
+                                </div>
                               <AccordionContent>
                                 <div className="space-y-2 pl-4">
                                   <h4 className="font-semibold text-sm">Submitted Reports:</h4>
@@ -1585,4 +1621,5 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
