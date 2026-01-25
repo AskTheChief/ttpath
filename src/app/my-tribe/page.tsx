@@ -1053,7 +1053,7 @@ function MyTribePageContent() {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
-            {renderLockedTabTrigger("my-tribe", "My Tribe", 4)}
+            {renderLockedTabTrigger("my-tribe", "My Tribe Reports", 4)}
             {renderLockedTabTrigger("journal", "My Journal", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
@@ -1682,6 +1682,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
 
 
