@@ -252,6 +252,7 @@ function MyTribePageContent() {
   const [newEntryContent, setNewEntryContent] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
+  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -433,6 +434,31 @@ function MyTribePageContent() {
     };
   }, [fetchTribesAndUserData, toast, router]);
 
+  useEffect(() => {
+    if (isFetchingAnswers || !user) {
+      return;
+    }
+  
+    const handler = setTimeout(async () => {
+      if (Object.keys(alignmentTestData.answers).length > 0) {
+        setIsSavingAnswers(true);
+        try {
+          const idToken = await user.getIdToken();
+          await saveAlignmentTest({ answers: alignmentTestData.answers, idToken });
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+          toast({ title: 'Auto-save failed', variant: 'destructive'});
+        } finally {
+          setIsSavingAnswers(false);
+        }
+      }
+    }, 1500);
+  
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [alignmentTestData.answers, user, isFetchingAnswers, toast]);
+
   const handleCreateTribe = async () => {
     if (!newTribeName.trim() || !newTribeLocation.trim() || !newTribeCoords) {
         toast({ title: 'Error', description: 'Please provide a valid name and select a location from the dropdown.', variant: 'destructive' });
@@ -582,21 +608,6 @@ function MyTribePageContent() {
 
   const handleAnswerChange = (question: string, value: string) => {
     setAlignmentTestData(prev => ({...prev, answers: { ...prev.answers, [question]: value }}));
-  };
-
-  const handleSaveAnswers = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const idToken = await user.getIdToken();
-      await saveAlignmentTest({ answers: alignmentTestData.answers, idToken });
-      toast({ title: 'Success', description: 'Your alignment test answers have been saved.' });
-    } catch (error) {
-      console.error("Error saving alignment test answers: ", error);
-      toast({ title: 'Error', description: 'Failed to save your answers.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
@@ -1075,7 +1086,7 @@ function MyTribePageContent() {
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
-            <TabsTrigger value="my-profile" className="text-base">My Profile</TabsTrigger>
+            <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe Reports", 4)}
             {renderLockedTabTrigger("journal", "My Journal", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
@@ -1133,7 +1144,7 @@ function MyTribePageContent() {
             <Card>
                 <CardHeader>
                     <CardTitle>Alignment Test</CardTitle>
-                    <CardDescription>Review or update your answers.</CardDescription>
+                    <CardDescription>Review or update your answers. Your answers save automatically.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                 {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
@@ -1145,20 +1156,22 @@ function MyTribePageContent() {
                 ))
                 )}
                 </CardContent>
-                <CardFooter className="flex flex-wrap gap-2 justify-end">
-                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>
-                                {isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>You can check your answers at any time.</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <CardFooter className="flex flex-wrap gap-2 justify-between items-center">
+                  <div>
+                    {isSavingAnswers && <span className="text-sm text-muted-foreground flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</span>}
+                  </div>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button onClick={handleReceiveFeedback} disabled={isLoading || isEvaluating}>
+                                  {isEvaluating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Evaluating...</> : 'Receive Feedback from The Chief'}
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                              <p>You can check your answers at any time.</p>
+                          </TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
                 </CardFooter>
                 {alignmentTestData.latestFeedback && (
                 <CardContent>
@@ -1628,7 +1641,7 @@ function MyTribePageContent() {
              <Card>
                 <CardHeader>
                     <CardTitle>Alignment Test</CardTitle>
-                    <CardDescription>Review or update your answers.</CardDescription>
+                    <CardDescription>Review or update your answers. Your answers save automatically.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                 {isFetchingAnswers ? (<p>Loading your answers...</p>) : (
@@ -1640,8 +1653,10 @@ function MyTribePageContent() {
                 ))
                 )}
                 </CardContent>
-                <CardFooter className="flex flex-wrap gap-2 justify-end">
-                <Button onClick={handleSaveAnswers} variant="secondary" disabled={isLoading || isEvaluating}>{isLoading ? 'Saving...' : 'Save Answers'}</Button>
+                <CardFooter className="flex flex-wrap gap-2 justify-between items-center">
+                  <div>
+                    {isSavingAnswers && <span className="text-sm text-muted-foreground flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</span>}
+                  </div>
                  <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -1727,6 +1742,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
 
 
