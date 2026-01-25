@@ -6,22 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { ArrowLeft, FileQuestion, Sparkles } from 'lucide-react';
-import { getAllComprehensionTestAnswers, type UserAnswers } from '@/ai/flows/get-all-comprehension-test-answers';
+import { getAllAlignmentTestAnswers, type UserAnswers } from '@/ai/flows/get-all-alignment-test-answers';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { comprehensionQuestions } from '@/lib/data';
 
-export default function ComprehensionTestAnswersPage() {
+export default function AlignmentTestAnswersPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAnswers() {
       try {
-        const answers = await getAllComprehensionTestAnswers();
+        const answers = await getAllAlignmentTestAnswers();
         setUserAnswers(answers);
       } catch (error) {
-        console.error('Error fetching comprehension test answers:', error);
+        console.error('Error fetching alignment test answers:', error);
       } finally {
         setLoading(false);
       }
@@ -33,7 +33,7 @@ export default function ComprehensionTestAnswersPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Comprehension Test Answers</h1>
+        <h1 className="text-3xl font-bold">Alignment Test Answers</h1>
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -46,15 +46,15 @@ export default function ComprehensionTestAnswersPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileQuestion />
-            Comprehension Test Submissions
+            Alignment Test Submissions
           </CardTitle>
-          <CardDescription>Review all user submissions for the comprehension test.</CardDescription>
+          <CardDescription>Review all user submissions for the alignment test.</CardDescription>
         </CardHeader>
         <CardContent>
             {loading ? (
                 <p>Loading answers...</p>
             ) : userAnswers.length === 0 ? (
-                <p>No comprehension test answers found.</p>
+                <p>No alignment test answers found.</p>
             ) : (
                 <Accordion type="single" collapsible className="w-full">
                 {userAnswers.map((user) => (

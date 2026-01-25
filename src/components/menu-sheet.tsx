@@ -89,10 +89,10 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
 
   /**
    * Handles clicks within the "Library" dropdown.
-   * Opens documentation in a new tab or opens the comprehension test modal.
-   * @param {'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test'} doc - The document identifier.
+   * Opens documentation in a new tab or opens the alignment test modal.
+   * @param {'pamphlet' | 'methods' | 'philosophy' | 'alignment-test'} doc - The document identifier.
    */
-  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'comprehension-test') => {
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'alignment-test') => {
     onClose();
     const urls = {
         pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
@@ -100,8 +100,8 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
         philosophy: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
     };
 
-    if (doc === 'comprehension-test') {
-        openModal('open-comprehension-test');
+    if (doc === 'alignment-test') {
+        openModal('open-alignment-test');
     } else {
         window.open(urls[doc], '_blank');
     }
@@ -197,9 +197,9 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Philosophy</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('comprehension-test')}>
+                <DropdownMenuItem onClick={() => handleLibraryClick('alignment-test')}>
                   <GraduationCap className="mr-2 h-4 w-4" />
-                  <span>Comprehension Test</span>
+                  <span>Alignment Test</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

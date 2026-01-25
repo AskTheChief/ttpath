@@ -14,26 +14,26 @@ const db = getFirestore();
 const adminAuth = getAuth();
 
 
-const SaveComprehensionTestInputSchema = z.object({
+const SaveAlignmentTestInputSchema = z.object({
   answers: z.record(z.string()),
   idToken: z.string().optional(),
 });
-export type SaveComprehensionTestInput = z.infer<typeof SaveComprehensionTestInputSchema>;
+export type SaveAlignmentTestInput = z.infer<typeof SaveAlignmentTestInputSchema>;
 
-const SaveComprehensionTestOutputSchema = z.object({
+const SaveAlignmentTestOutputSchema = z.object({
   success: z.boolean(),
 });
-export type SaveComprehensionTestOutput = z.infer<typeof SaveComprehensionTestOutputSchema>;
+export type SaveAlignmentTestOutput = z.infer<typeof SaveAlignmentTestOutputSchema>;
 
-export async function saveComprehensionTest(input: SaveComprehensionTestInput): Promise<SaveComprehensionTestOutput> {
-  return saveComprehensionTestFlow(input);
+export async function saveAlignmentTest(input: SaveAlignmentTestInput): Promise<SaveAlignmentTestOutput> {
+  return saveAlignmentTestFlow(input);
 }
 
-const saveComprehensionTestFlow = ai.defineFlow(
+const saveAlignmentTestFlow = ai.defineFlow(
   {
-    name: 'saveComprehensionTestFlow',
-    inputSchema: SaveComprehensionTestInputSchema,
-    outputSchema: SaveComprehensionTestOutputSchema,
+    name: 'saveAlignmentTestFlow',
+    inputSchema: SaveAlignmentTestInputSchema,
+    outputSchema: SaveAlignmentTestOutputSchema,
   },
   async (input) => {
     if (!input.idToken) {
@@ -56,7 +56,7 @@ const saveComprehensionTestFlow = ai.defineFlow(
       await docRef.set({ answers: input.answers }, { merge: true });
       return { success: true };
     } catch (error) {
-      console.error('Error saving comprehension test answers:', error);
+      console.error('Error saving alignment test answers:', error);
       return { success: false };
     }
   }

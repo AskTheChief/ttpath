@@ -15,29 +15,29 @@ if (!getApps().length) {
 const db = getFirestore();
 const adminAuth = getAuth();
 
-const EvaluateComprehensionTestInputSchema = z.object({
+const EvaluateAlignmentTestInputSchema = z.object({
   answers: z.record(z.string()).describe("A dictionary of questions and the user's answers."),
   idToken: z.string().describe("The user's Firebase ID token for authentication."),
 });
-export type EvaluateComprehensionTestInput = z.infer<typeof EvaluateComprehensionTestInputSchema>;
+export type EvaluateAlignmentTestInput = z.infer<typeof EvaluateAlignmentTestInputSchema>;
 
-const EvaluateComprehensionTestOutputSchema = z.object({
+const EvaluateAlignmentTestOutputSchema = z.object({
   feedback: z.string().describe('Guidance for the user from The Chief based on their answers.'),
 });
-export type EvaluateComprehensionTestOutput = z.infer<typeof EvaluateComprehensionTestOutputSchema>;
+export type EvaluateAlignmentTestOutput = z.infer<typeof EvaluateAlignmentTestOutputSchema>;
 
-export async function evaluateComprehensionTest(input: EvaluateComprehensionTestInput): Promise<EvaluateComprehensionTestOutput> {
-  return evaluateComprehensionTestFlow(input);
+export async function evaluateAlignmentTest(input: EvaluateAlignmentTestInput): Promise<EvaluateAlignmentTestOutput> {
+  return evaluateAlignmentTestFlow(input);
 }
 
 const bookPath = path.join(process.cwd(), 'public', 'the book', 'book.txt');
 const bookContent = fs.readFileSync(bookPath, 'utf-8');
 
 const prompt = ai.definePrompt({
-  name: 'evaluateComprehensionTestPrompt',
-  input: { schema: z.object({ answers: EvaluateComprehensionTestInputSchema.shape.answers }) },
-  output: { schema: EvaluateComprehensionTestOutputSchema },
-  prompt: `You are The Chief from the Trading Tribe, and you are reviewing a potential new member's answers to the comprehension test questions. Your role is to guide them toward deeper comprehension through supportive feedback. You do not judge or grade them; you only provide guidance to help them learn. The user determines for themselves when they are ready to proceed.
+  name: 'evaluateAlignmentTestPrompt',
+  input: { schema: z.object({ answers: EvaluateAlignmentTestInputSchema.shape.answers }) },
+  output: { schema: EvaluateAlignmentTestOutputSchema },
+  prompt: `You are The Chief from the Trading Tribe, and you are reviewing a potential new member's answers to the alignment test questions. Your role is to guide them toward deeper comprehension through supportive feedback. You do not judge or grade them; you only provide guidance to help them learn. The user determines for themselves when they are ready to proceed.
 
 IMPORTANT: Structure all responses using SVOP-B sentence structure (Subject-Verb-Object, present tense only). Eliminate all "to be" verbs (is, are, was, were, being, been) and replace with action verbs. You may rephrase sentences like "John is smart" to "John scores higher than anyone else...". Suggest actions with "You might consider..." instead of direct commands.
 
@@ -61,11 +61,11 @@ Respond with only the 'feedback' field in the specified format.
 `,
 });
 
-const evaluateComprehensionTestFlow = ai.defineFlow(
+const evaluateAlignmentTestFlow = ai.defineFlow(
   {
-    name: 'evaluateComprehensionTestFlow',
-    inputSchema: EvaluateComprehensionTestInputSchema,
-    outputSchema: EvaluateComprehensionTestOutputSchema,
+    name: 'evaluateAlignmentTestFlow',
+    inputSchema: EvaluateAlignmentTestInputSchema,
+    outputSchema: EvaluateAlignmentTestOutputSchema,
   },
   async (input) => {
     let decodedToken;
@@ -78,7 +78,7 @@ const evaluateComprehensionTestFlow = ai.defineFlow(
     const user = { uid: decodedToken.uid };
     
     let retries = 3;
-    let result: EvaluateComprehensionTestOutput | null = null;
+    let result: EvaluateAlignmentTestOutput | null = null;
 
     while (retries > 0) {
       try {
@@ -112,7 +112,7 @@ const evaluateComprehensionTestFlow = ai.defineFlow(
       }, { merge: true });
     } catch (error) {
       // Log the error, but don't block the user from getting their feedback.
-      console.error('Error saving comprehension test feedback to user document:', error);
+      console.error('Error saving alignment test feedback to user document:', error);
     }
 
     return finalResult;

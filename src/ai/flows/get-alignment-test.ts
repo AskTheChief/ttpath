@@ -13,31 +13,31 @@ if (!getApps().length) {
 const db = getFirestore();
 const adminAuth = getAuth();
 
-const GetComprehensionTestInputSchema = z.object({
+const GetAlignmentTestInputSchema = z.object({
   idToken: z.string().optional().describe("The user's Firebase ID token for authentication."),
 });
-export type GetComprehensionTestInput = z.infer<typeof GetComprehensionTestInputSchema>;
+export type GetAlignmentTestInput = z.infer<typeof GetAlignmentTestInputSchema>;
 
 const LatestFeedbackSchema = z.object({
     feedback: z.string(),
     createdAt: z.string(),
 });
 
-const GetComprehensionTestOutputSchema = z.object({
+const GetAlignmentTestOutputSchema = z.object({
     answers: z.record(z.string()),
     latestFeedback: LatestFeedbackSchema.optional(),
 });
-export type GetComprehensionTestOutput = z.infer<typeof GetComprehensionTestOutputSchema>;
+export type GetAlignmentTestOutput = z.infer<typeof GetAlignmentTestOutputSchema>;
 
-export async function getComprehensionTest(input: GetComprehensionTestInput): Promise<GetComprehensionTestOutput> {
-  return getComprehensionTestFlow(input);
+export async function getAlignmentTest(input: GetAlignmentTestInput): Promise<GetAlignmentTestOutput> {
+  return getAlignmentTestFlow(input);
 }
 
-const getComprehensionTestFlow = ai.defineFlow(
+const getAlignmentTestFlow = ai.defineFlow(
   {
-    name: 'getComprehensionTestFlow',
-    inputSchema: GetComprehensionTestInputSchema,
-    outputSchema: GetComprehensionTestOutputSchema,
+    name: 'getAlignmentTestFlow',
+    inputSchema: GetAlignmentTestInputSchema,
+    outputSchema: GetAlignmentTestOutputSchema,
   },
   async (input) => {
     if (!input.idToken) {
@@ -75,7 +75,7 @@ const getComprehensionTestFlow = ai.defineFlow(
         return { answers: {} };
       }
     } catch (error) {
-      console.error('Error getting comprehension test answers:', error);
+      console.error('Error getting alignment test answers:', error);
       return { answers: {} };
     }
   }

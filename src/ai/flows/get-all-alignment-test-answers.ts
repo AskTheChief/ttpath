@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for fetching all users' comprehension test answers.
+ * @fileOverview A Genkit flow for fetching all users' alignment test answers.
  *
- * - getAllComprehensionTestAnswers - A function that returns a list of all users and their saved answers.
+ * - getAllAlignmentTestAnswers - A function that returns a list of all users and their saved answers.
  */
 
 import { ai } from '@/ai/genkit';
@@ -32,17 +32,17 @@ const UserAnswersSchema = z.object({
 });
 export type UserAnswers = z.infer<typeof UserAnswersSchema>;
 
-const GetAllComprehensionTestAnswersOutputSchema = z.array(UserAnswersSchema);
-export type GetAllComprehensionTestAnswersOutput = z.infer<typeof GetAllComprehensionTestAnswersOutputSchema>;
+const GetAllAlignmentTestAnswersOutputSchema = z.array(UserAnswersSchema);
+export type GetAllAlignmentTestAnswersOutput = z.infer<typeof GetAllAlignmentTestAnswersOutputSchema>;
 
-export async function getAllComprehensionTestAnswers(): Promise<GetAllComprehensionTestAnswersOutput> {
-  return getAllComprehensionTestAnswersFlow();
+export async function getAllAlignmentTestAnswers(): Promise<GetAllAlignmentTestAnswersOutput> {
+  return getAllAlignmentTestAnswersFlow();
 }
 
-const getAllComprehensionTestAnswersFlow = ai.defineFlow(
+const getAllAlignmentTestAnswersFlow = ai.defineFlow(
   {
-    name: 'getAllComprehensionTestAnswersFlow',
-    outputSchema: GetAllComprehensionTestAnswersOutputSchema,
+    name: 'getAllAlignmentTestAnswersFlow',
+    outputSchema: GetAllAlignmentTestAnswersOutputSchema,
   },
   async () => {
     try {
@@ -89,7 +89,7 @@ const getAllComprehensionTestAnswersFlow = ai.defineFlow(
       return allAnswers;
 
     } catch (error) {
-      console.error('Error getting all comprehension test answers:', error);
+      console.error('Error getting all alignment test answers:', error);
       return [];
     }
   }

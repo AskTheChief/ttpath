@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
-import ComprehensionTestModal from './modals/comprehension-test-modal';
+import AlignmentTestModal from './modals/alignment-test-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
 import VideoModal from './modals/video-modal';
@@ -49,7 +49,7 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 };
 
 const actionIcons: { [key: string]: React.FC<any> } = {
-  'complete-comprehension-test': GraduationCap,
+  'open-alignment-test': GraduationCap,
   'watch-video': Video,
 };
 
@@ -87,7 +87,7 @@ export default function PathJourney() {
     signup: false,
     login: false,
     chatbot: false,
-    comprehensionTest: false,
+    alignmentTest: false,
     feedback: false,
     link: false,
     video: false,
@@ -308,7 +308,7 @@ export default function PathJourney() {
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
-    if (action?.id !== 'complete-comprehension-test') {
+    if (action?.id !== 'open-alignment-test') {
         playSound('complete');
     }
     
@@ -542,7 +542,7 @@ export default function PathJourney() {
 
     playSound('action', 'C4', '8n');
 
-    const requiresAuth = action.id === 'open-comprehension-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form';
+    const requiresAuth = action.id === 'open-alignment-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -572,8 +572,8 @@ export default function PathJourney() {
     }
 
 
-    if (action.action === 'open-comprehension-test') {
-      setModalState(s => ({ ...s, comprehensionTest: true }));
+    if (action.action === 'open-alignment-test') {
+      setModalState(s => ({ ...s, alignmentTest: true }));
       return;
     }
 
@@ -712,8 +712,8 @@ export default function PathJourney() {
             requirementId: null,
         });
         setModalState(s => ({ ...s, link: true }));
-    } else if (modalName === 'open-comprehension-test') {
-        setModalState(s => ({ ...s, comprehensionTest: true }));
+    } else if (modalName === 'open-alignment-test') {
+        setModalState(s => ({ ...s, alignmentTest: true }));
     } else if (modalName as keyof typeof modalState) {
         setModalState(s => ({ ...s, [modalName]: true }));
     }
@@ -1101,10 +1101,10 @@ export default function PathJourney() {
         isOpen={modalState.chatbot}
         onClose={() => setModalState(s => ({ ...s, chatbot: false }))}
       />
-      <ComprehensionTestModal
-        isOpen={modalState.comprehensionTest}
+      <AlignmentTestModal
+        isOpen={modalState.alignmentTest}
         user={currentUser}
-        onClose={() => setModalState(s => ({ ...s, comprehensionTest: false }))}
+        onClose={() => setModalState(s => ({ ...s, alignmentTest: false }))}
         onComplete={completeRequirement}
       />
       <FeedbackModal

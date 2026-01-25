@@ -75,17 +75,17 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileQuestion className="h-6 w-6" />
-              Comprehension Test Answers
+              Alignment Test Answers
             </CardTitle>
             <CardDescription>
-              Review all user submissions for the comprehension test.
+              Review all user submissions for the alignment test.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow flex items-end">
             <Button tabIndex={-1}>View Answers</Button>
           </CardContent>
-          <Link href="/admin/tutorial-answers" className="absolute inset-0 z-10" aria-label="View Comprehension Test Answers">
-            <span className="sr-only">Comprehension Test Answers</span>
+          <Link href="/admin/tutorial-answers" className="absolute inset-0 z-10" aria-label="View Alignment Test Answers">
+            <span className="sr-only">Alignment Test Answers</span>
           </Link>
         </Card>
         

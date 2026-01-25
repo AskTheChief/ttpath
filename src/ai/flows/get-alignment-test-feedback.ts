@@ -12,24 +12,24 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
-const ComprehensionTestFeedbackSchema = z.object({
+const AlignmentTestFeedbackSchema = z.object({
   id: z.string(),
   feedback: z.string(),
   createdAt: z.string(),
 });
-export type ComprehensionTestFeedback = z.infer<typeof ComprehensionTestFeedbackSchema>;
+export type AlignmentTestFeedback = z.infer<typeof AlignmentTestFeedbackSchema>;
 
-const GetComprehensionTestFeedbackOutputSchema = z.array(ComprehensionTestFeedbackSchema);
-export type GetComprehensionTestFeedbackOutput = z.infer<typeof GetComprehensionTestFeedbackOutputSchema>;
+const GetAlignmentTestFeedbackOutputSchema = z.array(AlignmentTestFeedbackSchema);
+export type GetAlignmentTestFeedbackOutput = z.infer<typeof GetAlignmentTestFeedbackOutputSchema>;
 
-export async function getComprehensionTestFeedback(): Promise<GetComprehensionTestFeedbackOutput> {
-  return getComprehensionTestFeedbackFlow();
+export async function getAlignmentTestFeedback(): Promise<GetAlignmentTestFeedbackOutput> {
+  return getAlignmentTestFeedbackFlow();
 }
 
-const getComprehensionTestFeedbackFlow = ai.defineFlow(
+const getAlignmentTestFeedbackFlow = ai.defineFlow(
   {
-    name: 'getComprehensionTestFeedbackFlow',
-    outputSchema: GetComprehensionTestFeedbackOutputSchema,
+    name: 'getAlignmentTestFeedbackFlow',
+    outputSchema: GetAlignmentTestFeedbackOutputSchema,
   },
   async (_, __, context) => {
     const user = context?.auth;
@@ -53,7 +53,7 @@ const getComprehensionTestFeedbackFlow = ai.defineFlow(
       });
       return feedback;
     } catch (error) {
-      console.error('Error getting comprehension test feedback:', error);
+      console.error('Error getting alignment test feedback:', error);
       return [];
     }
   }

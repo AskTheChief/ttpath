@@ -8,23 +8,23 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { evaluateComprehensionTest } from "@/ai/flows/evaluate-comprehension-test";
-import { saveComprehensionTest } from "@/ai/flows/save-comprehension-test";
-import { getComprehensionTest } from "@/ai/flows/get-comprehension-test";
+import { evaluateAlignmentTest } from "@/ai/flows/evaluate-alignment-test";
+import { saveAlignmentTest } from "@/ai/flows/save-alignment-test";
+import { getAlignmentTest } from "@/ai/flows/get-alignment-test";
 import { comprehensionQuestions } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Loader2 } from "lucide-react";
 import { User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
-type ComprehensionTestModalProps = {
+type AlignmentTestModalProps = {
   isOpen: boolean;
   user: User | null;
   onClose: () => void;
   onComplete: (reqId: string) => void;
 };
 
-export default function ComprehensionTestModal({ isOpen, user, onClose, onComplete }: ComprehensionTestModalProps) {
+export default function AlignmentTestModal({ isOpen, user, onClose, onComplete }: AlignmentTestModalProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -40,7 +40,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setIsFetching(true);
         try {
           const idToken = await user.getIdToken();
-          const existingData = await getComprehensionTest({ idToken });
+          const existingData = await getAlignmentTest({ idToken });
           setAnswers(existingData.answers);
           if (existingData.latestFeedback) {
             setFeedback({
@@ -79,7 +79,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         setIsSaving(true);
         try {
           const idToken = await user.getIdToken();
-          await saveComprehensionTest({ answers, idToken });
+          await saveAlignmentTest({ answers, idToken });
         } catch (error) {
           console.error("Auto-save failed:", error);
         } finally {
@@ -113,7 +113,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
         description: "Please wait for feedback.",
       });
 
-      const evaluation = await evaluateComprehensionTest({ answers, idToken });
+      const evaluation = await evaluateAlignmentTest({ answers, idToken });
       
       const newFeedback = { message: evaluation.feedback, createdAt: new Date().toISOString() };
       setFeedback(newFeedback);
@@ -140,7 +140,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
   };
 
   const handleProceed = () => {
-    onComplete("open-comprehension-test");
+    onComplete("open-alignment-test");
     onClose();
   };
   
@@ -148,7 +148,7 @@ export default function ComprehensionTestModal({ isOpen, user, onClose, onComple
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 border-b">
-          <DialogTitle className="text-2xl font-bold">Comprehension Test</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Alignment Test</DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-1 text-muted-foreground">
                 <p>1. Fill in the answers below to the best of your ability.</p>
