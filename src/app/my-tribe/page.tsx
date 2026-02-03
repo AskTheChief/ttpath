@@ -269,6 +269,11 @@ function MyTribePageContent() {
     return { upcomingMeetings: upcoming, pastMeetings: past };
   }, [userTribe?.meetings]);
 
+  const outstandingReportsCount = useMemo(() => {
+    if (!user || !pastMeetings) return 0;
+    return pastMeetings.filter(m => !meetingReports.find(r => r.meetingId === m.id && r.userId === user.uid)).length;
+  }, [user, pastMeetings, meetingReports]);
+
   useEffect(() => {
     setIsClient(true);
     setCurrentTime(new Date());
@@ -1015,14 +1020,19 @@ function MyTribePageContent() {
 
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date as string)) || [];
   
-  const renderLockedTabTrigger = (value: string, title: string, requiredLevel: number) => {
+  const renderLockedTabTrigger = (value: string, title: string, requiredLevel: number, badgeCount?: number) => {
     const isUnlocked = userLevel >= requiredLevel;
     const tooltipContent = `Requires Level ${requiredLevel} (${{4: 'Member', 5: 'Chief', 6: 'Mentor'}[requiredLevel]}).`;
     
     const Trigger = (
-        <TabsTrigger value={value} disabled={!isUnlocked} className={cn("text-base", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
+        <TabsTrigger value={value} disabled={!isUnlocked} className={cn("text-base relative flex items-center gap-2", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
             {title}
-            {!isUnlocked && <Lock className="h-3 w-3 ml-2" />}
+            {isUnlocked && badgeCount && badgeCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                {badgeCount}
+              </span>
+            )}
+            {!isUnlocked && <Lock className="h-3 w-3" />}
         </TabsTrigger>
     );
 
@@ -1141,7 +1151,7 @@ function MyTribePageContent() {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
-            {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4)}
+            {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4, outstandingReportsCount)}
             {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
@@ -1402,7 +1412,7 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile" tab to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile & Test" tab to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
