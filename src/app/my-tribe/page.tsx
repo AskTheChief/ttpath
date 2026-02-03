@@ -311,7 +311,7 @@ function MyTribePageContent() {
         const entries = await getJournalEntries({ idToken });
         setJournalEntries(entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (e: any) {
-        toast({ title: "Error fetching journal", description: e.message, variant: "destructive" });
+        toast({ title: "Error fetching questions", description: e.message, variant: "destructive" });
     } finally {
         setIsJournalLoading(false);
     }
@@ -839,10 +839,10 @@ function MyTribePageContent() {
       toast({ title: "Applicant's email not found", variant: "destructive" });
     }
   };
-
+  
   const handleSaveJournalEntry = async () => {
     if (!newEntryContent.trim()) {
-      toast({ title: 'Entry is empty', variant: 'destructive' });
+      toast({ title: 'Question is empty', variant: 'destructive' });
       return;
     }
     if (!user) return;
@@ -852,10 +852,10 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       await saveJournalEntry({ entryContent: newEntryContent, idToken });
       setNewEntryContent('');
-      toast({ title: 'Journal Entry Saved' });
+      toast({ title: 'Question Submitted' });
       fetchJournal(); // Refresh journal entries
     } catch(e: any) {
-      toast({ title: "Error Saving Entry", description: e.message, variant: 'destructive' });
+      toast({ title: "Error Submitting Question", description: e.message, variant: 'destructive' });
     } finally {
       setIsJournalLoading(false);
     }
@@ -867,10 +867,10 @@ function MyTribePageContent() {
     try {
         const idToken = await user.getIdToken();
         await deleteJournalEntry({ entryId, idToken });
-        toast({ title: 'Entry Deleted' });
+        toast({ title: 'Question Deleted' });
         fetchJournal();
     } catch (e: any) {
-        toast({ title: 'Error Deleting Entry', description: e.message, variant: 'destructive' });
+        toast({ title: 'Error Deleting Question', description: e.message, variant: 'destructive' });
     } finally {
         setIsJournalLoading(false);
     }
@@ -995,14 +995,14 @@ function MyTribePageContent() {
      <div className="m-0 space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>New Journal Entry</CardTitle>
+                <CardTitle>New FAQ2.0 Question</CardTitle>
                 <CardDescription>
-                  This tool supports your personal growth. You record your thoughts and feelings. A mentor may offer feedback.
+                  Ask a question and receive feedback from a mentor. This replaces the old email-based FAQ system.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Textarea 
-                    placeholder="Start writing..."
+                    placeholder="Ask your question here..."
                     rows={8}
                     value={newEntryContent}
                     onChange={(e) => setNewEntryContent(e.target.value)}
@@ -1012,21 +1012,21 @@ function MyTribePageContent() {
             <CardFooter>
                 <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
                     {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                    Save Entry
+                    Submit Question
                 </Button>
             </CardFooter>
         </Card>
 
         <Card>
             <CardHeader>
-                <CardTitle>Your Past Entries</CardTitle>
-                <CardDescription>Review and reflect on your journey.</CardDescription>
+                <CardTitle>Your Past Questions</CardTitle>
+                <CardDescription>Review your past questions and the feedback you've received.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isJournalLoading && journalEntries.length === 0 ? (
                     <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
                 ) : journalEntries.length === 0 ? (
-                    <p className="text-center text-muted-foreground p-8">You have no journal entries yet.</p>
+                    <p className="text-center text-muted-foreground p-8">You have no questions yet.</p>
                 ) : (
                     <Accordion type="single" collapsible className="w-full">
                         {journalEntries.map(entry => (
@@ -1034,7 +1034,7 @@ function MyTribePageContent() {
                                 <div className="flex items-center w-full p-4">
                                     <AccordionTrigger className="flex-grow p-0">
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="font-semibold">Entry from {isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
+                                            <span className="font-semibold">Question from {isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
                                             <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
                                         </div>
                                     </AccordionTrigger>
@@ -1046,7 +1046,7 @@ function MyTribePageContent() {
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                <AlertDialogTitle>Delete this question?</AlertDialogTitle>
                                                 <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
@@ -1088,7 +1088,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "My Tribe Reports", 4)}
-            {renderLockedTabTrigger("journal", "My Journal", 2)}
+            {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
         </TabsList>
@@ -1594,7 +1594,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("journal", "My Journal", 2)}
+            {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -1742,10 +1742,3 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
-
-
-
-
-
-
-

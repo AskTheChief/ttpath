@@ -96,7 +96,7 @@ export default function AllJournalEntriesPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">All Journal Entries</h1>
+        <h1 className="text-3xl font-bold">All FAQ2.0 Entries</h1>
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -107,8 +107,8 @@ export default function AllJournalEntriesPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>User Journals</CardTitle>
-          <CardDescription>A chronological log of all journal entries submitted by users.</CardDescription>
+          <CardTitle>User Questions (FAQ2.0)</CardTitle>
+          <CardDescription>A chronological log of all questions submitted by users via the FAQ2.0 system.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -116,7 +116,7 @@ export default function AllJournalEntriesPage() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : entries.length === 0 ? (
-             <p className="text-center text-muted-foreground p-8">No journal entries have been submitted yet.</p>
+             <p className="text-center text-muted-foreground p-8">No questions have been submitted yet.</p>
           ) : (
             <Accordion type="single" collapsible className="w-full">
               {entries.map(entry => (

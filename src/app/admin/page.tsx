@@ -165,17 +165,17 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookHeart className="h-6 w-6" />
-              Journal Entries
+              FAQ2.0
             </CardTitle>
             <CardDescription>
-              Review and provide feedback on user journal entries.
+              Review and provide feedback on user questions.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow flex items-end">
-            <Button tabIndex={-1}>Review Entries</Button>
+            <Button tabIndex={-1}>Review Questions</Button>
           </CardContent>
-          <Link href="/admin/journal-entries" className="absolute inset-0 z-10" aria-label="Review Journal Entries">
-            <span className="sr-only">Journal Entries</span>
+          <Link href="/admin/journal-entries" className="absolute inset-0 z-10" aria-label="Review FAQ2.0 Entries">
+            <span className="sr-only">FAQ2.0</span>
           </Link>
         </Card>
         
