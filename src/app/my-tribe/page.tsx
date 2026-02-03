@@ -650,7 +650,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: (m.date as Date).toISOString() })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : (m.date as string) })),
         idToken,
       });
   
@@ -1742,6 +1742,7 @@ export default function MyTribePage() {
     </Suspense>
   );
 }
+
 
 
 
