@@ -49,7 +49,12 @@ const saveJournalEntryFlow = ai.defineFlow(
       throw new Error('User not authenticated.');
     }
     const userId = decodedToken.uid;
-    const userName = decodedToken.name || 'Anonymous';
+    
+    // Fetch user's name from their Firestore profile
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    const userName = userData?.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : 'Anonymous';
+
     
     const docRef = entryId ? db.collection('journal_entries').doc(entryId) : db.collection('journal_entries').doc();
     
