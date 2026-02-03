@@ -1141,13 +1141,67 @@ function MyTribePageContent() {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
-            {renderLockedTabTrigger("my-tribe", "My Tribe Reports", 4)}
+            {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4)}
             {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
         </TabsList>
 
         <TabsContent value="my-profile" className="m-0 space-y-8">
+            {userTribe && (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Your Tribe: <span className="text-primary">{userTribe.name}</span></CardTitle>
+                            <CardDescription>You are a {isChief ? 'Chief' : 'Member'} of this tribe.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
+                            <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
+                        </CardContent>
+                        <CardFooter className="flex flex-col sm:flex-row gap-2">
+                            {isChief ? null : (
+                                 <Button onClick={openComposerForChief} className="w-full sm:w-auto"><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="outline" className="w-full sm:w-auto sm:ml-auto">Leave Tribe</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure you want to leave this tribe?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This action will remove you from the tribe. You will need to re-apply if you wish to join again.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleLeaveTribe(userTribe.id)}>Yes, Leave Tribe</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </CardFooter>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All Existing Tribes</CardTitle>
+                            <CardDescription>A global map of all active tribes.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <AllTribesMap
+                                tribes={tribes}
+                                selectedTribe={selectedTribe}
+                                setSelectedTribe={setSelectedTribe}
+                                userTribe={userTribe}
+                                isLoading={isLoading}
+                                pendingApplication={pendingApplication}
+                            />
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
             <Card>
                 <CardHeader>
                   <CardTitle>My Profile</CardTitle>
@@ -1274,56 +1328,6 @@ function MyTribePageContent() {
             {userTribe ? (
             <>
                 <Card>
-                <CardHeader>
-                    <CardTitle>Your Tribe: <span className="text-primary">{userTribe.name}</span></CardTitle>
-                    <CardDescription>You are a {isChief ? 'Chief' : 'Member'} of this tribe.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p><span className="font-semibold">Location:</span> {userTribe.location}</p>
-                    <p><span className="font-semibold">Members:</span> {userTribe.members.length}</p>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                    {isChief ? null : (
-                         <Button onClick={openComposerForChief} className="w-full sm:w-auto"><Mail className="mr-2 h-4 w-4" />Email Your Chief</Button>
-                    )}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                          <Button variant="outline" className="w-full sm:w-auto sm:ml-auto">Leave Tribe</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure you want to leave this tribe?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  This action will remove you from the tribe. You will need to re-apply if you wish to join again.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleLeaveTribe(userTribe.id)}>Yes, Leave Tribe</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </CardFooter>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All Existing Tribes</CardTitle>
-                        <CardDescription>A global map of all active tribes.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <AllTribesMap
-                            tribes={tribes}
-                            selectedTribe={selectedTribe}
-                            setSelectedTribe={setSelectedTribe}
-                            userTribe={userTribe}
-                            isLoading={isLoading}
-                            pendingApplication={pendingApplication}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
                 <CardHeader><CardTitle>Upcoming Meetings</CardTitle></CardHeader>
                 <CardContent>
                     {upcomingMeetings.length > 0 ? (
@@ -1398,12 +1402,12 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Go to the explorer page to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile" tab to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
         </TabsContent>
-        
+
         <TabsContent value="journal" className="m-0">
           {renderJournalView()}
         </TabsContent>
