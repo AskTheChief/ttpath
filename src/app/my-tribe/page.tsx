@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -59,6 +59,8 @@ import {
 import { saveJournalEntry, getJournalEntries, deleteJournalEntry } from '@/ai/flows/journal';
 import { applyForMentor } from '@/ai/flows/apply-for-mentor';
 import { sendMeetingReportReminder } from '@/ai/flows/send-meeting-report-reminder';
+import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
+import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 
 
 const libraries: Libraries = ['places'];
@@ -253,6 +255,7 @@ function MyTribePageContent() {
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [isSavingAnswers, setIsSavingAnswers] = useState(false);
+  const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -327,7 +330,6 @@ function MyTribePageContent() {
       }
   }, [activeTab, user, fetchOutbox, fetchJournal]);
 
-
   const fetchTribesAndUserData = useCallback(async (currentUser: User) => {
     try {
       setIsLoading(true);
@@ -370,16 +372,18 @@ function MyTribePageContent() {
       
       // Fetch role-specific data
       if (progress.currentUserLevel >= 6) { // Mentor
-          const [newTribeAppsResult, newMentorAppsResult] = await Promise.all([
-            manageApplication({ action: 'get', type: 'new_tribe', idToken }),
-            manageApplication({ action: 'get', type: 'new_mentor', idToken })
-          ]);
-          if (newTribeAppsResult.success && newTribeAppsResult.applications) {
-              setTribeCreationApps(newTribeAppsResult.applications);
-          }
-          if (newMentorAppsResult.success && newMentorAppsResult.applications) {
-              setMentorApplications(newMentorAppsResult.applications);
-          }
+        const [newTribeAppsResult, newMentorAppsResult, allJournalEntriesResult] = await Promise.all([
+          manageApplication({ action: 'get', type: 'new_tribe', idToken }),
+          manageApplication({ action: 'get', type: 'new_mentor', idToken }),
+          getAllJournalEntries()
+        ]);
+        if (newTribeAppsResult.success && newTribeAppsResult.applications) {
+            setTribeCreationApps(newTribeAppsResult.applications);
+        }
+        if (newMentorAppsResult.success && newMentorAppsResult.applications) {
+            setMentorApplications(newMentorAppsResult.applications);
+        }
+        setAllJournalEntries(allJournalEntriesResult);
       }
       if (progress.currentUserLevel >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
           const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
@@ -944,6 +948,56 @@ function MyTribePageContent() {
         setIsSendingReminder(null);
     }
   };
+
+  function FeedbackForm({ entryId, onFeedbackAdded }: { entryId: string, onFeedbackAdded: () => void }) {
+    const [feedbackContent, setFeedbackContent] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const handleSubmit = async () => {
+        if (!feedbackContent.trim() || !user) {
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const idToken = await user.getIdToken();
+            const result = await addJournalFeedback({
+                idToken,
+                entryId,
+                feedbackContent,
+            });
+            if (result.success) {
+                toast({ title: 'Feedback Added' });
+                setFeedbackContent('');
+                onFeedbackAdded();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!user) {
+        return <p className="text-sm text-muted-foreground">You must be logged in to provide feedback.</p>;
+    }
+
+    return (
+        <div className="mt-4 space-y-2">
+            <Textarea
+                placeholder="Write your feedback..."
+                value={feedbackContent}
+                onChange={(e) => setFeedbackContent(e.target.value)}
+                rows={3}
+            />
+            <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Submit Feedback
+            </Button>
+        </div>
+    );
+  }
 
   if (isLoading || !isLoaded || !user) {
     return (
@@ -1581,6 +1635,56 @@ function MyTribePageContent() {
                             </Accordion>
                         ) : (
                             <p className="text-muted-foreground">There are currently no pending applications for mentorship.</p>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ2.0 Questions</CardTitle>
+                        <CardDescription>Review and respond to questions from users.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        ) : allJournalEntries.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full">
+                            {allJournalEntries.map(entry => (
+                                <AccordionItem key={entry.id} value={entry.id}>
+                                <AccordionTrigger>
+                                    <div className="flex flex-col items-start text-left w-full pr-4">
+                                      <span className="font-semibold">{entry.userName}</span>
+                                      <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                                      <p className="text-sm text-muted-foreground text-left truncate pt-1">{entry.entryContent}</p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <p className="whitespace-pre-wrap font-semibold">{entry.entryContent}</p>
+                                    <div className="mt-6 space-y-4">
+                                    <h4 className="font-semibold text-md">Feedback</h4>
+                                    {entry.feedback && entry.feedback.length > 0 ? (
+                                        <div className="space-y-4">
+                                        {entry.feedback.map((fb, index) => (
+                                            <Alert key={index} className="bg-muted/50">
+                                            <UserIcon className="h-4 w-4" />
+                                            <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
+                                            <AlertDescription>
+                                                <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
+                                                <p className="text-xs text-muted-foreground mt-2">{isClient ? new Date(fb.createdAt).toLocaleString() : '...'}</p>
+                                            </AlertDescription>
+                                            </Alert>
+                                        ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                                    )}
+                                    <FeedbackForm entryId={entry.id} onFeedbackAdded={() => { if(user) fetchTribesAndUserData(user) }} />
+                                    </div>
+                                </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                            </Accordion>
+                        ) : (
+                            <p className="text-muted-foreground text-center p-8">There are currently no pending questions.</p>
                         )}
                     </CardContent>
                 </Card>
