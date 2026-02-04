@@ -339,7 +339,7 @@ function MyTribePageContent() {
       if (activeTab === 'email' && user) {
           fetchOutbox();
       }
-      if (activeTab === 'journal' && user) {
+      if (activeTab === 'faq2-0' && user) {
         fetchJournal();
       }
   }, [activeTab, user, fetchOutbox, fetchJournal]);
@@ -1160,10 +1160,10 @@ function MyTribePageContent() {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
-            {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4, outstandingReportsCount)}
-            {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
-            {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount)}
-            {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount)}
+            {renderLockedTabTrigger("meeting-reports", "Meeting Reports", 4, outstandingReportsCount)}
+            {renderLockedTabTrigger("faq2-0", "FAQ2.0", 2)}
+            {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount > 0 ? chiefBadgeCount : undefined)}
+            {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount > 0 ? mentorBadgeCount : undefined)}
         </TabsList>
 
         <TabsContent value="my-profile" className="m-0 space-y-8">
@@ -1343,7 +1343,7 @@ function MyTribePageContent() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="my-tribe" className="m-0 space-y-8">
+        <TabsContent value="meeting-reports" className="m-0 space-y-8">
             {userTribe ? (
             <>
                 <Card>
@@ -1427,7 +1427,7 @@ function MyTribePageContent() {
             )}
         </TabsContent>
 
-        <TabsContent value="journal" className="m-0">
+        <TabsContent value="faq2-0" className="m-0">
           {renderJournalView()}
         </TabsContent>
         
@@ -1721,7 +1721,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
+            {renderLockedTabTrigger("faq2-0", "FAQ2.0", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -1811,7 +1811,7 @@ function MyTribePageContent() {
                 )}
             </Card>
         </TabsContent>
-        <TabsContent value="journal" className="m-0">
+        <TabsContent value="faq2-0" className="m-0">
           {renderJournalView()}
         </TabsContent>
     </Tabs>
