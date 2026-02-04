@@ -122,14 +122,14 @@ export default function AllJournalEntriesPage() {
               {entries.map(entry => (
                 <AccordionItem key={entry.id} value={entry.id}>
                   <AccordionTrigger>
-                    <div className="flex flex-col text-left gap-1 w-full pr-4">
-                       <span className="font-semibold">{entry.userName}</span>
-                       <span className="text-xs text-muted-foreground">
-                         {format(new Date(entry.createdAt), 'PPP p')}
-                       </span>
-                        <p className="text-sm text-muted-foreground text-left truncate pt-1">
-                          {entry.entryContent}
-                        </p>
+                    <div className="grid w-full gap-1 text-left">
+                      <div className="flex w-full justify-between">
+                        <span className="font-semibold">{entry.userName}</span>
+                        <span className="text-xs text-muted-foreground">{format(new Date(entry.createdAt), 'PPP p')}</span>
+                      </div>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {entry.entryContent}
+                      </p>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>

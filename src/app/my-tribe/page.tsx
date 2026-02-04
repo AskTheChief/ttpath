@@ -1422,7 +1422,7 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile & Test" tab to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile" tab to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
@@ -1675,11 +1675,15 @@ function MyTribePageContent() {
                             {allJournalEntries.map(entry => (
                                 <AccordionItem key={entry.id} value={entry.id}>
                                 <AccordionTrigger>
-                                    <div className="flex flex-col items-start text-left w-full pr-4">
+                                  <div className="grid w-full gap-1 text-left">
+                                    <div className="flex w-full justify-between">
                                       <span className="font-semibold">{entry.userName}</span>
                                       <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
-                                      <p className="text-sm text-muted-foreground text-left truncate pt-1">{entry.entryContent}</p>
                                     </div>
+                                    <p className="truncate text-sm text-muted-foreground">
+                                      {entry.entryContent}
+                                    </p>
+                                  </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
