@@ -133,7 +133,7 @@ export default function AllJournalEntriesPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className="whitespace-pre-wrap">{entry.entryContent}</p>
+                    <p className="whitespace-pre-wrap break-words">{entry.entryContent}</p>
                     <div className="mt-6 space-y-4">
                         <h4 className="font-semibold text-md">Feedback</h4>
                         {entry.feedback && entry.feedback.length > 0 ? (
@@ -143,7 +143,7 @@ export default function AllJournalEntriesPage() {
                                         <MessageSquare className="h-4 w-4" />
                                         <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                         <AlertDescription>
-                                            <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
+                                            <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
                                             <p className="text-xs text-muted-foreground mt-2">{format(new Date(fb.createdAt), 'PPP p')}</p>
                                         </AlertDescription>
                                     </Alert>

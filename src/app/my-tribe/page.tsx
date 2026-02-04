@@ -1682,7 +1682,7 @@ function MyTribePageContent() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    <p className="whitespace-pre-wrap font-semibold">{entry.entryContent}</p>
+                                    <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
                                     <div className="mt-6 space-y-4">
                                     <h4 className="font-semibold text-md">Feedback</h4>
                                     {entry.feedback && entry.feedback.length > 0 ? (
@@ -1692,7 +1692,7 @@ function MyTribePageContent() {
                                             <UserIcon className="h-4 w-4" />
                                             <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                             <AlertDescription>
-                                                <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
+                                                <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
                                                 <p className="text-xs text-muted-foreground mt-2">{isClient ? new Date(fb.createdAt).toLocaleString() : '...'}</p>
                                             </AlertDescription>
                                             </Alert>
