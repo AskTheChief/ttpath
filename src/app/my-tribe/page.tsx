@@ -20,13 +20,13 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetAlignmentTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, GetAlignmentTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry, JournalFeedback } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -61,6 +61,8 @@ import { applyForMentor } from '@/ai/flows/apply-for-mentor';
 import { sendMeetingReportReminder } from '@/ai/flows/send-meeting-report-reminder';
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
+import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
+import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 
 
 const libraries: Libraries = ['places'];
@@ -82,10 +84,27 @@ const defaultCenter = {
     lng: -30,
 };
 
-function FeedbackForm({ entryId, user, onFeedbackAdded }: { entryId: string; user: User | null; onFeedbackAdded: () => void; }) {
-  const [feedbackContent, setFeedbackContent] = useState('');
+function FeedbackForm({
+  entryId,
+  onActionComplete,
+  user,
+  editingFeedback,
+  onCancelEdit,
+}: {
+  entryId: string;
+  onActionComplete: () => void;
+  user: User | null;
+  editingFeedback?: JournalFeedback | null;
+  onCancelEdit?: () => void;
+}) {
+  const [feedbackContent, setFeedbackContent] = useState(editingFeedback ? editingFeedback.feedbackContent : '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const isEditMode = !!editingFeedback;
+
+  useEffect(() => {
+    setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
+  }, [editingFeedback]);
 
   const handleSubmit = async () => {
     if (!feedbackContent.trim() || !user) {
@@ -94,18 +113,32 @@ function FeedbackForm({ entryId, user, onFeedbackAdded }: { entryId: string; use
     setIsSubmitting(true);
     try {
       const idToken = await user.getIdToken();
-      const result = await addJournalFeedback({
-        idToken,
-        entryId,
-        feedbackContent,
-      });
-      if (result.success) {
-        toast({ title: 'Feedback Added' });
-        setFeedbackContent('');
-        onFeedbackAdded();
+      if (isEditMode && editingFeedback) {
+        const result = await editJournalFeedback({
+          idToken,
+          entryId,
+          feedbackId: editingFeedback.id,
+          newFeedbackContent: feedbackContent,
+        });
+        if (result.success) {
+          toast({ title: 'Feedback Updated' });
+        } else {
+          throw new Error(result.message);
+        }
       } else {
-        throw new Error(result.message);
+        const result = await addJournalFeedback({
+          idToken,
+          entryId,
+          feedbackContent,
+        });
+        if (result.success) {
+          toast({ title: 'Feedback Added' });
+          setFeedbackContent('');
+        } else {
+          throw new Error(result.message);
+        }
       }
+      onActionComplete();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -118,18 +151,26 @@ function FeedbackForm({ entryId, user, onFeedbackAdded }: { entryId: string; use
   }
 
   return (
-      <div className="mt-4 space-y-2">
-          <Textarea
-              placeholder="Write your feedback..."
-              value={feedbackContent}
-              onChange={(e) => setFeedbackContent(e.target.value)}
-              rows={3}
-          />
-          <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Submit Feedback
+    <div className="mt-4 space-y-2 p-4 border rounded-lg bg-background">
+      <h4 className="font-semibold">{isEditMode ? 'Edit Your Feedback' : 'Add Feedback'}</h4>
+      <Textarea
+        placeholder="Write your feedback..."
+        value={feedbackContent}
+        onChange={(e) => setFeedbackContent(e.target.value)}
+        rows={3}
+      />
+      <div className="flex gap-2">
+        <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEditMode ? null : <Send className="mr-2 h-4 w-4" />}
+          {isEditMode ? 'Update Feedback' : 'Submit Feedback'}
+        </Button>
+        {isEditMode && (
+          <Button variant="ghost" onClick={onCancelEdit}>
+            Cancel
           </Button>
+        )}
       </div>
+    </div>
   );
 }
 
@@ -307,6 +348,7 @@ function MyTribePageContent() {
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [isSavingAnswers, setIsSavingAnswers] = useState(false);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -390,7 +432,7 @@ function MyTribePageContent() {
       if (activeTab === 'email' && user) {
           fetchOutbox();
       }
-      if (activeTab === 'faq-2-1' && user) {
+      if (activeTab === 'faq-2.1' && user) {
         fetchJournal();
       }
   }, [activeTab, user, fetchOutbox, fetchJournal]);
@@ -1014,6 +1056,22 @@ function MyTribePageContent() {
     }
   };
 
+  const handleDeleteFeedback = async (entryId: string, feedbackId: string) => {
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      const result = await deleteJournalFeedback({ idToken, entryId, feedbackId });
+      if (result.success) {
+        toast({ title: 'Feedback Deleted' });
+        if (user) fetchTribesAndUserData(user); // Refresh data
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
   if (isLoading || !isLoaded || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -1162,7 +1220,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
             {renderLockedTabTrigger("meeting-reports", "Meeting Reports", 4, outstandingReportsCount)}
-            {renderLockedTabTrigger("faq-2-1", "FAQ 2.1", 2)}
+            {renderLockedTabTrigger("faq-2.1", "FAQ 2.1", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount > 0 ? chiefBadgeCount : undefined)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount > 0 ? mentorBadgeCount : undefined)}
         </TabsList>
@@ -1428,7 +1486,7 @@ function MyTribePageContent() {
             )}
         </TabsContent>
 
-        <TabsContent value="faq-2-1" className="m-0">
+        <TabsContent value="faq-2.1" className="m-0">
           {renderJournalView()}
         </TabsContent>
         
@@ -1674,38 +1732,85 @@ function MyTribePageContent() {
                             <Accordion type="single" collapsible className="w-full">
                             {allJournalEntries.map(entry => (
                                 <AccordionItem key={entry.id} value={entry.id}>
-                                <AccordionTrigger>
-                                  <div className="grid w-full gap-1 text-left">
-                                    <div className="flex w-full justify-between">
-                                      <span className="font-semibold">{entry.userName}</span>
-                                      <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
-                                    </div>
-                                    <p className="truncate text-sm text-muted-foreground break-words">
-                                      {entry.entryContent}
-                                    </p>
-                                  </div>
-                                </AccordionTrigger>
+                                    <AccordionTrigger>
+                                        <div className="grid w-full gap-1 text-left">
+                                            <div className="flex w-full justify-between">
+                                                <span className="font-semibold">{entry.userName}</span>
+                                                <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                                            </div>
+                                            <p className="truncate text-sm text-muted-foreground break-words pr-4">
+                                                {entry.entryContent}
+                                            </p>
+                                        </div>
+                                    </AccordionTrigger>
                                 <AccordionContent>
                                     <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
                                     <div className="mt-6 space-y-4">
                                     <h4 className="font-semibold text-md">Feedback</h4>
                                     {entry.feedback && entry.feedback.length > 0 ? (
                                         <div className="space-y-4">
-                                        {entry.feedback.map((fb, index) => (
-                                            <Alert key={index} className="bg-muted/50">
-                                            <UserIcon className="h-4 w-4" />
-                                            <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
-                                            <AlertDescription>
-                                                <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
-                                                <p className="text-xs text-muted-foreground mt-2">{isClient ? new Date(fb.createdAt).toLocaleString() : '...'}</p>
-                                            </AlertDescription>
-                                            </Alert>
+                                        {entry.feedback.map((fb) => (
+                                            editingFeedbackId === fb.id ? (
+                                                <FeedbackForm
+                                                key={fb.id}
+                                                entryId={entry.id}
+                                                user={user}
+                                                editingFeedback={fb}
+                                                onActionComplete={() => {
+                                                    setEditingFeedbackId(null);
+                                                    if (user) fetchTribesAndUserData(user);
+                                                }}
+                                                onCancelEdit={() => setEditingFeedbackId(null)}
+                                                />
+                                            ) : (
+                                                <Alert key={fb.id} className="bg-muted/50 relative group">
+                                                    <UserIcon className="h-4 w-4" />
+                                                    <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
+                                                    <AlertDescription>
+                                                        <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">
+                                                            {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
+                                                            {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
+                                                        </p>
+                                                    </AlertDescription>
+                                                    {isMentor && (
+                                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                    )}
+                                                </Alert>
+                                            )
                                         ))}
                                         </div>
                                     ) : (
                                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
                                     )}
-                                    <FeedbackForm entryId={entry.id} user={user} onFeedbackAdded={() => { if(user) fetchTribesAndUserData(user) }} />
+                                    {editingFeedbackId === null && (
+                                        <FeedbackForm
+                                            entryId={entry.id}
+                                            user={user}
+                                            onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
+                                        />
+                                    )}
                                     </div>
                                 </AccordionContent>
                                 </AccordionItem>
@@ -1726,7 +1831,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("faq-2-1", "FAQ 2.1", 2)}
+            {renderLockedTabTrigger("faq-2.1", "FAQ 2.1", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -1816,7 +1921,7 @@ function MyTribePageContent() {
                 )}
             </Card>
         </TabsContent>
-        <TabsContent value="faq-2-1" className="m-0">
+        <TabsContent value="faq-2.1" className="m-0">
           {renderJournalView()}
         </TabsContent>
     </Tabs>
