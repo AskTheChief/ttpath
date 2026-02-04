@@ -82,6 +82,57 @@ const defaultCenter = {
     lng: -30,
 };
 
+function FeedbackForm({ entryId, user, onFeedbackAdded }: { entryId: string; user: User | null; onFeedbackAdded: () => void; }) {
+  const [feedbackContent, setFeedbackContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async () => {
+    if (!feedbackContent.trim() || !user) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const idToken = await user.getIdToken();
+      const result = await addJournalFeedback({
+        idToken,
+        entryId,
+        feedbackContent,
+      });
+      if (result.success) {
+        toast({ title: 'Feedback Added' });
+        setFeedbackContent('');
+        onFeedbackAdded();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!user) {
+    return <p className="text-sm text-muted-foreground">You must be logged in to provide feedback.</p>;
+  }
+
+  return (
+      <div className="mt-4 space-y-2">
+          <Textarea
+              placeholder="Write your feedback..."
+              value={feedbackContent}
+              onChange={(e) => setFeedbackContent(e.target.value)}
+              rows={3}
+          />
+          <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              Submit Feedback
+          </Button>
+      </div>
+  );
+}
+
 function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }) {
   const tribeAppliedTo = tribes.find(t => t.id === pendingApplication?.tribeId);
 
@@ -963,56 +1014,6 @@ function MyTribePageContent() {
     }
   };
 
-  function FeedbackForm({ entryId, onFeedbackAdded }: { entryId: string, onFeedbackAdded: () => void }) {
-    const [feedbackContent, setFeedbackContent] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    const handleSubmit = async () => {
-        if (!feedbackContent.trim() || !user) {
-            return;
-        }
-        setIsSubmitting(true);
-        try {
-            const idToken = await user.getIdToken();
-            const result = await addJournalFeedback({
-                idToken,
-                entryId,
-                feedbackContent,
-            });
-            if (result.success) {
-                toast({ title: 'Feedback Added' });
-                setFeedbackContent('');
-                onFeedbackAdded();
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    if (!user) {
-        return <p className="text-sm text-muted-foreground">You must be logged in to provide feedback.</p>;
-    }
-
-    return (
-        <div className="mt-4 space-y-2">
-            <Textarea
-                placeholder="Write your feedback..."
-                value={feedbackContent}
-                onChange={(e) => setFeedbackContent(e.target.value)}
-                rows={3}
-            />
-            <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Submit Feedback
-            </Button>
-        </div>
-    );
-  }
-
   if (isLoading || !isLoaded || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -1421,7 +1422,7 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile" tab to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile & Test" tab to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
@@ -1700,7 +1701,7 @@ function MyTribePageContent() {
                                     ) : (
                                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
                                     )}
-                                    <FeedbackForm entryId={entry.id} onFeedbackAdded={() => { if(user) fetchTribesAndUserData(user) }} />
+                                    <FeedbackForm entryId={entry.id} user={user} onFeedbackAdded={() => { if(user) fetchTribesAndUserData(user) }} />
                                     </div>
                                 </AccordionContent>
                                 </AccordionItem>
