@@ -113,6 +113,7 @@ const getJournalEntriesFlow = ai.defineFlow(
       const feedback = (data.feedback || []).map((f: any) => ({
           ...f,
           createdAt: (f.createdAt as Timestamp).toDate().toISOString(),
+          updatedAt: f.updatedAt ? (f.updatedAt as Timestamp).toDate().toISOString() : undefined,
       }));
 
       return {

@@ -40,14 +40,19 @@ const addJournalFeedbackFlow = ai.defineFlow(
     const mentorName = decodedToken.name || 'An Admin';
 
     const entryRef = db.collection('journal_entries').doc(entryId);
+    
+    const feedbackId = db.collection('journal_entries').doc().id;
+
+    const newFeedback = {
+      id: feedbackId,
+      mentorId: decodedToken.uid,
+      mentorName: mentorName,
+      feedbackContent: feedbackContent,
+      createdAt: Timestamp.now(),
+    };
 
     await entryRef.update({
-      feedback: FieldValue.arrayUnion({
-        mentorId: decodedToken.uid,
-        mentorName: mentorName,
-        feedbackContent: feedbackContent,
-        createdAt: Timestamp.now(),
-      })
+      feedback: FieldValue.arrayUnion(newFeedback)
     });
     
     return { success: true, message: 'Feedback added successfully.' };

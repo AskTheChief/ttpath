@@ -314,10 +314,12 @@ export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutputSchema>;
 
 // src/ai/flows/journal.ts
 export const JournalFeedbackSchema = z.object({
+    id: z.string(),
     mentorId: z.string(),
     mentorName: z.string(),
     feedbackContent: z.string(),
     createdAt: z.string(),
+    updatedAt: z.string().optional(),
 });
 export type JournalFeedback = z.infer<typeof JournalFeedbackSchema>;
 
@@ -345,6 +347,36 @@ export const AddJournalFeedbackOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type AddJournalFeedbackOutput = z.infer<typeof AddJournalFeedbackOutputSchema>;
+
+// src/ai/flows/edit-journal-feedback.ts
+export const EditJournalFeedbackInputSchema = z.object({
+  idToken: z.string(),
+  entryId: z.string(),
+  feedbackId: z.string(),
+  newFeedbackContent: z.string(),
+});
+export type EditJournalFeedbackInput = z.infer<typeof EditJournalFeedbackInputSchema>;
+
+export const EditJournalFeedbackOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type EditJournalFeedbackOutput = z.infer<typeof EditJournalFeedbackOutputSchema>;
+
+// src/ai/flows/delete-journal-feedback.ts
+export const DeleteJournalFeedbackInputSchema = z.object({
+  idToken: z.string(),
+  entryId: z.string(),
+  feedbackId: z.string(),
+});
+export type DeleteJournalFeedbackInput = z.infer<typeof DeleteJournalFeedbackInputSchema>;
+
+export const DeleteJournalFeedbackOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type DeleteJournalFeedbackOutput = z.infer<typeof DeleteJournalFeedbackOutputSchema>;
+
 
 // src/ai/flows/get-all-journal-entries.ts
 export const GetAllJournalEntriesOutputSchema = z.array(JournalEntrySchema);
