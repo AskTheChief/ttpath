@@ -58,8 +58,9 @@ const getAllJournalEntriesFlow = ai.defineFlow(
         entryContent: data.entryContent,
         createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
-        feedback: (data.feedback || []).map((f: any) => ({
+        feedback: (data.feedback || []).map((f: any, index: number) => ({
           ...f,
+          id: f.id || `${doc.id}-${index}`, // Fallback ID
           createdAt: (f.createdAt as Timestamp).toDate().toISOString(),
           updatedAt: f.updatedAt ? (f.updatedAt as Timestamp).toDate().toISOString() : undefined,
         }))

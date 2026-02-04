@@ -110,8 +110,9 @@ const getJournalEntriesFlow = ai.defineFlow(
     
     const entries = snapshot.docs.map(doc => {
       const data = doc.data();
-      const feedback = (data.feedback || []).map((f: any) => ({
+      const feedback = (data.feedback || []).map((f: any, index: number) => ({
           ...f,
+          id: f.id || `${doc.id}-${index}`, // Fallback ID
           createdAt: (f.createdAt as Timestamp).toDate().toISOString(),
           updatedAt: f.updatedAt ? (f.updatedAt as Timestamp).toDate().toISOString() : undefined,
       }));
