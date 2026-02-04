@@ -390,7 +390,7 @@ function MyTribePageContent() {
       if (activeTab === 'email' && user) {
           fetchOutbox();
       }
-      if (activeTab === 'faq2-0' && user) {
+      if (activeTab === 'faq-2-1' && user) {
         fetchJournal();
       }
   }, [activeTab, user, fetchOutbox, fetchJournal]);
@@ -1069,7 +1069,7 @@ function MyTribePageContent() {
      <div className="m-0 space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>New FAQ2.0 Question</CardTitle>
+                <CardTitle>New FAQ 2.1 Question</CardTitle>
                 <CardDescription>
                   Ask a question and receive feedback from a mentor. This replaces the old email-based FAQ system.
                 </CardDescription>
@@ -1162,7 +1162,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
             {renderLockedTabTrigger("meeting-reports", "Meeting Reports", 4, outstandingReportsCount)}
-            {renderLockedTabTrigger("faq2-0", "FAQ2.0", 2)}
+            {renderLockedTabTrigger("faq-2-1", "FAQ 2.1", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount > 0 ? chiefBadgeCount : undefined)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount > 0 ? mentorBadgeCount : undefined)}
         </TabsList>
@@ -1428,7 +1428,7 @@ function MyTribePageContent() {
             )}
         </TabsContent>
 
-        <TabsContent value="faq2-0" className="m-0">
+        <TabsContent value="faq-2-1" className="m-0">
           {renderJournalView()}
         </TabsContent>
         
@@ -1664,7 +1664,7 @@ function MyTribePageContent() {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ2.0 Questions</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ 2.1 Questions</CardTitle>
                         <CardDescription>Review and respond to questions from users.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1680,7 +1680,7 @@ function MyTribePageContent() {
                                       <span className="font-semibold">{entry.userName}</span>
                                       <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
                                     </div>
-                                    <p className="truncate text-sm text-muted-foreground">
+                                    <p className="truncate text-sm text-muted-foreground break-words">
                                       {entry.entryContent}
                                     </p>
                                   </div>
@@ -1726,7 +1726,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("faq2-0", "FAQ2.0", 2)}
+            {renderLockedTabTrigger("faq-2-1", "FAQ 2.1", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -1816,7 +1816,7 @@ function MyTribePageContent() {
                 )}
             </Card>
         </TabsContent>
-        <TabsContent value="faq2-0" className="m-0">
+        <TabsContent value="faq-2-1" className="m-0">
           {renderJournalView()}
         </TabsContent>
     </Tabs>

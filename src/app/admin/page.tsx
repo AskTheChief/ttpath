@@ -165,7 +165,7 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookHeart className="h-6 w-6" />
-              FAQ2.0
+              FAQ 2.1
             </CardTitle>
             <CardDescription>
               Review and provide feedback on user questions.
@@ -174,8 +174,8 @@ export default function AdminPage() {
           <CardContent className="flex-grow flex items-end">
             <Button tabIndex={-1}>Review Questions</Button>
           </CardContent>
-          <Link href="/admin/journal-entries" className="absolute inset-0 z-10" aria-label="Review FAQ2.0 Entries">
-            <span className="sr-only">FAQ2.0</span>
+          <Link href="/admin/journal-entries" className="absolute inset-0 z-10" aria-label="Review FAQ 2.1 Entries">
+            <span className="sr-only">FAQ 2.1</span>
           </Link>
         </Card>
         

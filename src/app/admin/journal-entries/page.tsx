@@ -96,7 +96,7 @@ export default function AllJournalEntriesPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">All FAQ2.0 Entries</h1>
+        <h1 className="text-3xl font-bold">All FAQ 2.1 Entries</h1>
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -107,8 +107,8 @@ export default function AllJournalEntriesPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>User Questions (FAQ2.0)</CardTitle>
-          <CardDescription>A chronological log of all questions submitted by users via the FAQ2.0 system.</CardDescription>
+          <CardTitle>User Questions (FAQ 2.1)</CardTitle>
+          <CardDescription>A chronological log of all questions submitted by users via the FAQ 2.1 system.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -127,7 +127,7 @@ export default function AllJournalEntriesPage() {
                         <span className="font-semibold">{entry.userName}</span>
                         <span className="text-xs text-muted-foreground">{format(new Date(entry.createdAt), 'PPP p')}</span>
                       </div>
-                      <p className="truncate text-sm text-muted-foreground">
+                      <p className="truncate text-sm text-muted-foreground break-words">
                         {entry.entryContent}
                       </p>
                     </div>
