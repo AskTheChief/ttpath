@@ -47,8 +47,8 @@ const deleteJournalFeedbackFlow = ai.defineFlow(
     // Check permissions
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
     const userLevel = userDoc.data()?.currentUserLevel || 0;
-    if (feedbackToDelete.mentorId !== decodedToken.uid && userLevel < ADMIN_LEVEL) {
-        throw new Error('Permission denied. You can only delete your own feedback.');
+    if (userLevel < ADMIN_LEVEL && feedbackToDelete.mentorId !== decodedToken.uid) {
+        throw new Error('Permission denied. Only the author or a mentor can delete this feedback.');
     }
 
     await entryRef.update({

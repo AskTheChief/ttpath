@@ -224,7 +224,7 @@ export default function AllJournalEntriesPage() {
                                             {fb.updatedAt && ` (edited ${format(new Date(fb.updatedAt), 'PPP p')})`}
                                           </p>
                                       </AlertDescription>
-                                      {user?.uid === fb.mentorId && (
+                                      {user && (
                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
                                             <Edit className="h-4 w-4" />

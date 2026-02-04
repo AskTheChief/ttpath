@@ -39,7 +39,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
     const entryData = entryDoc.data()!;
     const feedbackArray = entryData.feedback || [];
 
-    let feedbackToEdit = null;
+    let feedbackToEdit: any = null;
     const newFeedbackArray = feedbackArray.map((fb: any) => {
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
@@ -60,8 +60,8 @@ const editJournalFeedbackFlow = ai.defineFlow(
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
     const userLevel = userDoc.data()?.currentUserLevel || 0;
     
-    if (feedbackToEdit.mentorId !== decodedToken.uid && userLevel < ADMIN_LEVEL) {
-      throw new Error('Permission denied. You can only edit your own feedback.');
+    if (userLevel < ADMIN_LEVEL && feedbackToEdit.mentorId !== decodedToken.uid) {
+      throw new Error('Permission denied. Only the author or a mentor can edit this feedback.');
     }
 
     await entryRef.update({
