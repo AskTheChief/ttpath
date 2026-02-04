@@ -273,6 +273,15 @@ function MyTribePageContent() {
     if (!user || !pastMeetings) return 0;
     return pastMeetings.filter(m => !meetingReports.find(r => r.meetingId === m.id && r.userId === user.uid)).length;
   }, [user, pastMeetings, meetingReports]);
+  
+  const chiefBadgeCount = useMemo(() => {
+    return joinApplications.length;
+  }, [joinApplications]);
+
+  const mentorBadgeCount = useMemo(() => {
+    const pendingFAQs = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
+    return tribeCreationApps.length + mentorApplications.length + pendingFAQs;
+  }, [tribeCreationApps, mentorApplications, allJournalEntries]);
 
   useEffect(() => {
     setIsClient(true);
@@ -1153,8 +1162,8 @@ function MyTribePageContent() {
             <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
             {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4, outstandingReportsCount)}
             {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
-            {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5)}
-            {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6)}
+            {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount)}
+            {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount)}
         </TabsList>
 
         <TabsContent value="my-profile" className="m-0 space-y-8">
