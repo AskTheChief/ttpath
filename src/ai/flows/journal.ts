@@ -108,27 +108,42 @@ const getJournalEntriesFlow = ai.defineFlow(
       return [];
     }
     
-    const entries = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const feedback = (data.feedback || []).map((f: any, index: number) => {
-        const createdAt = f.createdAt;
-        const updatedAt = f.updatedAt;
-        return {
-          ...f,
-          id: f.id || `${doc.id}_${index}`,
-          createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
-          updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
-        };
-      });
+    const entries = await Promise.all(snapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        let needsUpdate = false;
+        
+        const feedbackWithIds = (data.feedback || []).map((f: any) => {
+            if (f.id) {
+                return f;
+            }
+            needsUpdate = true;
+            return {
+                ...f,
+                id: db.collection('journal_entries').doc().id,
+            };
+        });
 
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-        updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
-        feedback: feedback,
-      } as JournalEntry;
-    });
+        if (needsUpdate) {
+            await doc.ref.update({ feedback: feedbackWithIds });
+        }
+
+        const finalFeedback = (needsUpdate ? feedbackWithIds : (data.feedback || [])).map((f: any) => ({
+            id: f.id,
+            mentorId: f.mentorId,
+            mentorName: f.mentorName,
+            feedbackContent: f.feedbackContent,
+            createdAt: f.createdAt?.toDate ? f.createdAt.toDate().toISOString() : (f.createdAt || new Date().toISOString()),
+            updatedAt: f.updatedAt?.toDate ? f.updatedAt.toDate().toISOString() : undefined,
+        }));
+
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+            feedback: finalFeedback,
+        } as JournalEntry;
+    }));
 
     // Sort in memory to avoid needing a composite index
     return entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

@@ -46,30 +46,58 @@ const getAllJournalEntriesFlow = ai.defineFlow(
       });
     }
     
-    // 3. Map entries and enrich with correct user name
-    return entriesSnapshot.docs.map(doc => {
-      const data = doc.data();
-      const userName = usersMap.get(data.userId) || data.userName || 'Anonymous';
-      
-      return {
-        id: doc.id,
-        userId: data.userId,
-        userName: userName, // Use the fetched name
-        entryContent: data.entryContent,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-        updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
-        feedback: (data.feedback || []).map((f: any, index: number) => {
-          const createdAt = f.createdAt;
-          const updatedAt = f.updatedAt;
-          return {
-            ...f,
-            id: f.id || `${doc.id}_${index}`,
-            createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
-            updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
-          };
-        })
-      };
-    }) as GetAllJournalEntriesOutput;
+    // 3. Map entries and enrich with user name, and repair data if needed.
+    const allEntries = await Promise.all(entriesSnapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        let needsUpdate = false;
+        
+        // This is the read-repair logic for feedback without IDs
+        const feedbackWithIds = (data.feedback || []).map((f: any) => {
+            if (f.id) {
+                return f;
+            }
+            needsUpdate = true;
+            return {
+                ...f,
+                id: db.collection('journal_entries').doc().id, // Give it a real, unique ID
+            };
+        });
+
+        if (needsUpdate) {
+            try {
+                await doc.ref.update({ feedback: feedbackWithIds });
+            } catch (e) {
+                console.error(`Failed to repair feedback IDs for entry ${doc.id}`, e);
+                // Continue even if repair fails for some reason
+            }
+        }
+        
+        const finalFeedback = (needsUpdate ? feedbackWithIds : (data.feedback || [])).map((f: any) => {
+            const createdAt = f.createdAt;
+            const updatedAt = f.updatedAt;
+            return {
+                id: f.id, // This is now guaranteed to exist
+                mentorId: f.mentorId,
+                mentorName: f.mentorName,
+                feedbackContent: f.feedbackContent,
+                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
+                updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
+            };
+        });
+
+        const userName = usersMap.get(data.userId) || data.userName || 'Anonymous';
+        return {
+            id: doc.id,
+            userId: data.userId,
+            userName: userName,
+            entryContent: data.entryContent,
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+            feedback: finalFeedback,
+        };
+    }));
+
+    return allEntries as GetAllJournalEntriesOutput;
   }
 );
 export async function getAllJournalEntries(): Promise<GetAllJournalEntriesOutput> {
