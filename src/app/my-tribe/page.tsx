@@ -1036,7 +1036,7 @@ function MyTribePageContent() {
     const Trigger = (
         <TabsTrigger value={value} disabled={!isUnlocked} className={cn("text-base relative flex items-center gap-2", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
             {title}
-            {isUnlocked && badgeCount && badgeCount > 0 && (
+            {isUnlocked && badgeCount > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
                 {badgeCount}
               </span>
@@ -1159,7 +1159,7 @@ function MyTribePageContent() {
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
-            <TabsTrigger value="my-profile" className="text-base">My Profile & Test</TabsTrigger>
+            {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
             {renderLockedTabTrigger("my-tribe", "Meeting Reports", 4, outstandingReportsCount)}
             {renderLockedTabTrigger("journal", "FAQ2.0", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount)}
@@ -1421,7 +1421,7 @@ function MyTribePageContent() {
             <Card>
               <CardHeader>
                   <CardTitle>You Are Not in a Tribe</CardTitle>
-                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile & Test" tab to find and apply for a tribe or start your own.</CardDescription>
+                  <CardDescription>Once you join a tribe, your meeting reports will appear here. Go to the "My Profile" tab to find and apply for a tribe or start your own.</CardDescription>
               </CardHeader>
             </Card>
             )}
