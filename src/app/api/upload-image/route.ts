@@ -7,19 +7,13 @@ import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 import { randomUUID } from 'crypto';
 
-// This function ensures Firebase is initialized only once per request.
+// This function ensures Firebase is initialized only once.
 function initializeFirebaseAdmin(): App {
   const apps = getApps();
   if (apps.length > 0) {
-    // If an app is already initialized, return it.
     return apps[0];
   }
-  
-  // Explicitly provide the storage bucket name as requested by the error message.
-  // This is the most direct way to solve the "Bucket name not specified" error.
-  return initializeApp({
-    storageBucket: 'studio-7790315517-f3fe6.appspot.com'
-  });
+  return initializeApp();
 }
 
 export async function POST(req: NextRequest) {
@@ -29,8 +23,8 @@ export async function POST(req: NextRequest) {
     const adminApp = initializeFirebaseAdmin();
     console.log('---[/api/upload-image] DEBUG: Firebase Admin initialized. ---');
 
-    // By initializing with the storageBucket, getStorage().bucket() should now work.
-    const bucket = getStorage(adminApp).bucket();
+    // Explicitly specify the bucket name after initialization.
+    const bucket = getStorage(adminApp).bucket("studio-7790315517-f3fe6.appspot.com");
     console.log(`---[/api/upload-image] DEBUG: Storage bucket obtained: ${bucket.name} ---`);
     
     const token = req.headers.get('Authorization')?.split('Bearer ')[1];
