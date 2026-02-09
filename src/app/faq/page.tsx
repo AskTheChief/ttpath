@@ -131,7 +131,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent, imageUrl: questionImageUrl });
+            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent, imageUrl: questionImageUrl || undefined });
             toast({ title: 'Question updated' });
             setEditingQuestion(false);
             onUpdate();
