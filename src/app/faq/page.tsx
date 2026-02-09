@@ -346,15 +346,15 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 </div>
                                             )}
                                         </div>
+                                        <p className="text-xs text-muted-foreground mt-2">Replied by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                         {fb.imageUrl && (
-                                            <>
-                                                <div className="mt-4 relative aspect-video">
+                                            <div className="mt-4">
+                                                <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
                                                 {fb.imageCredit && <p className="text-xs text-muted-foreground text-center mt-2">Credit: {fb.imageCredit}</p>}
-                                            </>
+                                            </div>
                                         )}
-                                        <p className="text-xs text-muted-foreground mt-2">by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 )}
                             </div>

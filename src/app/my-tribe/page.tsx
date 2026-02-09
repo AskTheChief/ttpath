@@ -1913,18 +1913,18 @@ function MyTribePageContent() {
                                                         <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                         <AlertDescription>
                                                             <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
+                                                            <p className="text-xs text-muted-foreground mt-2">
+                                                                Replied: {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
+                                                                {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
+                                                            </p>
                                                             {fb.imageUrl && (
-                                                                <>
-                                                                    <div className="mt-4 relative aspect-video">
+                                                                <div className="mt-4">
+                                                                    <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
                                                                     </div>
                                                                     {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
-                                                                </>
+                                                                </div>
                                                             )}
-                                                            <p className="text-xs text-muted-foreground mt-2">
-                                                                {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
-                                                                {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
-                                                            </p>
                                                         </AlertDescription>
                                                         {isMentor && (
                                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
