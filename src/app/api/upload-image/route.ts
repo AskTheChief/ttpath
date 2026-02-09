@@ -1,39 +1,36 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-// --- firebase-admin setup ---
-// This needs to be done once per server instance.
-console.log('---[/api/upload-image] ROUTE LOADED ---');
-if (!getApps().length) {
-  try {
-    console.log('---[/api/upload-image] Initializing Firebase Admin SDK...');
-    initializeApp({
-      credential: applicationDefault(),
-      // Explicitly specify the storage bucket as per the error message.
-      storageBucket: 'studio-7790315517-f3fe6.appspot.com',
-    });
-    console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
-  } catch (error: any) {
-    console.error('---[/api/upload-image] CRITICAL: Firebase Admin Init Error:', error.message);
-    // If initialization fails, we can't proceed.
-  }
-} else {
-    console.log('---[/api/upload-image] Firebase Admin SDK already initialized.');
+// This function ensures Firebase is initialized only once per instance.
+function initializeFirebaseAdmin(): App {
+    if (getApps().length > 0) {
+        console.log('---[/api/upload-image] Firebase Admin SDK already initialized.');
+        return getApps()[0];
+    }
+    try {
+        console.log('---[/api/upload-image] Initializing Firebase Admin SDK with default credentials...');
+        // Initialize without arguments to use Application Default Credentials from the environment.
+        const app = initializeApp();
+        console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
+        return app;
+    } catch (error: any) {
+        console.error('---[/api/upload-image] CRITICAL: Firebase Admin Init Error:', error.message);
+        // Re-throw the error to be caught by the POST handler's catch block.
+        throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+    }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
     console.log('---[/api/upload-image] POST request received.');
     
-    // Check if the app was initialized.
-    if (!getApps().length) {
-        console.error('---[/api/upload-image] FATAL: Firebase not initialized. Cannot process request.');
-        return NextResponse.json({ error: 'Server configuration error: Firebase not initialized.' }, { status: 500 });
-    }
+    // Lazily initialize Firebase Admin SDK within the request handler.
+    initializeFirebaseAdmin();
 
     const adminAuth = getAuth();
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
@@ -59,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
     console.log(`---[/api/upload-image] File received: ${file.name}, Size: ${file.size}`);
 
-    // Since we initialized the app with the storageBucket, getStorage().bucket() will use it.
+    // Get the default bucket from the initialized app.
     const bucket = getStorage().bucket();
     console.log(`---[/api/upload-image] Using storage bucket: ${bucket.name}`);
     
@@ -97,8 +94,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ imageUrl: publicUrl }, { status: 200 });
 
   } catch (error: any) {
-    console.error(`---[/api/upload-image] CATCH BLOCK ERROR: ${error.message}`);
+    // This will catch errors from both initialization and the main logic.
     const message = error.message || 'An unexpected error occurred processing the request.';
+    console.error(`---[/api/upload-image] CATCH BLOCK ERROR: ${message}`);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
