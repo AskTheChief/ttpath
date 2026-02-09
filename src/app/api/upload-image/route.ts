@@ -11,9 +11,10 @@ if (!getApps().length) {
   console.log('Initializing Firebase Admin SDK for image upload...');
   initializeApp({
     credential: applicationDefault(),
+    // Explicitly set the storage bucket to avoid environment ambiguity.
     storageBucket: 'studio-7790315517-f3fe6.appspot.com',
   });
-  console.log('Firebase Admin SDK initialized.');
+  console.log('Firebase Admin SDK initialized for bucket: studio-7790315517-f3fe6.appspot.com');
 }
 
 export async function POST(req: NextRequest) {
@@ -46,7 +47,8 @@ export async function POST(req: NextRequest) {
     console.log(`File found: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
     console.log('Connecting to default Firebase Storage bucket...');
-    const bucket = getStorage().bucket();
+    // Now that initializeApp has the bucket, this should work reliably.
+    const bucket = getStorage().bucket(); 
     console.log(`Successfully connected to bucket: ${bucket.name}.`);
     
     const userId = decodedToken.uid;
@@ -92,4 +94,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
