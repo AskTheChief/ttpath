@@ -4,9 +4,11 @@ import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-// Initialize the app cleanly, consistent with other server-side flows.
+// Initialize Firebase Admin SDK, ensuring the storage bucket is specified.
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    storageBucket: 'studio-7790315517-f3fe6.appspot.com',
+  });
 }
 
 export async function POST(req: NextRequest) {
