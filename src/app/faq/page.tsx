@@ -20,6 +20,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { ImageUploader } from '@/components/image-uploader';
 
 const levelMap: Record<number, string> = {
   1: "Visitor",
@@ -157,11 +158,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                         </div>
                     )}
                     {editingQuestion ? (
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={6} />
-                            <Input placeholder="Image URL (optional)" value={questionImageUrl} onChange={e => setQuestionImageUrl(e.target.value)} />
-                            <div className="flex gap-2">
-                                <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>Save</Button>
+                            <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
+                            <div className="flex gap-2 pt-2">
+                                <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                                 <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
                             </div>
                         </div>
@@ -181,11 +182,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-4">
                                         <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
-                                        <Input placeholder="Image URL (optional)" value={answerImageUrl} onChange={e => setAnswerImageUrl(e.target.value)} />
-                                        <div className="flex gap-2">
-                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
+                                        <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={setAnswerImageUrl} userId={user?.uid} label="Answer Image" />
+                                        <div className="flex gap-2 pt-2">
+                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                                             <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
                                         </div>
                                     </div>

@@ -65,6 +65,7 @@ import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { addManualFaq } from '@/ai/flows/add-manual-faq';
 import Image from 'next/image';
+import { ImageUploader } from '@/components/image-uploader';
 
 
 const libraries: Libraries = ['places'];
@@ -100,12 +101,14 @@ function FeedbackForm({
   onCancelEdit?: () => void;
 }) {
   const [feedbackContent, setFeedbackContent] = useState(editingFeedback ? editingFeedback.feedbackContent : '');
+  const [imageUrl, setImageUrl] = useState(editingFeedback?.imageUrl || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
 
   useEffect(() => {
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
+    setImageUrl(editingFeedback?.imageUrl || '');
   }, [editingFeedback]);
 
   const handleSubmit = async () => {
@@ -121,6 +124,7 @@ function FeedbackForm({
           entryId,
           feedbackId: editingFeedback.id,
           newFeedbackContent: feedbackContent,
+          imageUrl,
         });
         if (result.success) {
           toast({ title: 'Feedback Updated' });
@@ -128,6 +132,8 @@ function FeedbackForm({
           throw new Error(result.message);
         }
       } else {
+        // Adding new feedback does not currently support images this way.
+        // This form is only used for editing in the mentor dashboard.
         const result = await addJournalFeedback({
           idToken,
           entryId,
@@ -136,6 +142,7 @@ function FeedbackForm({
         if (result.success) {
           toast({ title: 'Feedback Added' });
           setFeedbackContent('');
+          setImageUrl('');
         } else {
           throw new Error(result.message);
         }
@@ -153,7 +160,7 @@ function FeedbackForm({
   }
 
   return (
-    <div className="mt-4 space-y-2 p-4 border rounded-lg bg-background">
+    <div className="mt-4 space-y-4 p-4 border rounded-lg bg-background">
       <h4 className="font-semibold">{isEditMode ? 'Edit Your Feedback' : 'Add Feedback'}</h4>
       <Textarea
         placeholder="Write your feedback..."
@@ -161,7 +168,10 @@ function FeedbackForm({
         onChange={(e) => setFeedbackContent(e.target.value)}
         rows={3}
       />
-      <div className="flex gap-2">
+       {isEditMode && (
+         <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
+      )}
+      <div className="flex gap-2 pt-2">
         <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEditMode ? null : <Send className="mr-2 h-4 w-4" />}
           {isEditMode ? 'Update Feedback' : 'Submit Feedback'}
@@ -1086,6 +1096,14 @@ function MyTribePageContent() {
     const { id, value } = e.target;
     setManualFaqData(prev => ({ ...prev, [id]: value }));
   };
+  
+  const handleManualFaqImageUrlChange = (url: string, type: 'question' | 'answer') => {
+    if (type === 'question') {
+      setManualFaqData(prev => ({ ...prev, imageUrl: url }));
+    } else {
+      setManualFaqData(prev => ({ ...prev, answerImageUrl: url }));
+    }
+  };
 
   const handleAddManualFaq = async () => {
       if (!user) {
@@ -1890,18 +1908,13 @@ function MyTribePageContent() {
                             <Label htmlFor="question">Question</Label>
                             <Textarea id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="imageUrl">Question Image URL (Optional)</Label>
-                            <Input id="imageUrl" placeholder="https://example.com/image.png" value={manualFaqData.imageUrl} onChange={handleManualFaqChange} />
-                        </div>
+                         <ImageUploader imageUrl={manualFaqData.imageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'question')} userId={user?.uid} label="Question Image (Optional)" />
+
                         <div className="space-y-2">
                             <Label htmlFor="answer">Answer (Your Feedback)</Label>
                             <Textarea id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="answerImageUrl">Answer Image URL (Optional)</Label>
-                            <Input id="answerImageUrl" placeholder="https://example.com/image.png" value={manualFaqData.answerImageUrl} onChange={handleManualFaqChange} />
-                        </div>
+                        <ImageUploader imageUrl={manualFaqData.answerImageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'answer')} userId={user?.uid} label="Answer Image (Optional)" />
                     </CardContent>
                     <CardFooter>
                         <Button onClick={handleAddManualFaq} disabled={isAddingManualFaq}>
