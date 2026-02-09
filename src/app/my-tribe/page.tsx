@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -86,6 +86,50 @@ const defaultCenter = {
     lat: 20,
     lng: -30,
 };
+
+function FormattingToolbar({
+  textareaRef,
+  onValueChange,
+  value,
+}: {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  onValueChange: (newValue: string) => void;
+  value: string;
+}) {
+  const formatText = (tag: 'b' | 'i' | 'u') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    if (selectedText) {
+      const newText = `${value.substring(0, start)}<${tag}>${selectedText}</${tag}>${value.substring(end)}`;
+      onValueChange(newText);
+      
+      // Re-focus and select the text after update
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + tag.length + 2, end + tag.length + 2);
+      }, 0);
+    }
+  };
+
+  return (
+    <div className="flex gap-1 mb-2 p-1 border rounded-md bg-muted">
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('b')} title="Bold">
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('i')} title="Italic">
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('u')} title="Underline">
+        <Underline className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 function FeedbackForm({
   entryId,
@@ -370,6 +414,8 @@ function MyTribePageContent() {
     answerImageCredit: '',
   });
   const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
+  const manualFaqQuestionRef = useRef<HTMLTextAreaElement>(null);
+  const manualFaqAnswerRef = useRef<HTMLTextAreaElement>(null);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -453,7 +499,7 @@ function MyTribePageContent() {
       if (activeTab === 'email' && user) {
           fetchOutbox();
       }
-      if (activeTab === 'faq-2.1' && user) {
+      if (activeTab === 'faq' && user) {
         fetchJournal();
       }
   }, [activeTab, user, fetchOutbox, fetchJournal]);
@@ -1199,7 +1245,7 @@ function MyTribePageContent() {
      <div className="m-0 space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>New FAQ 2.1 Question</CardTitle>
+                <CardTitle>New FAQ Question</CardTitle>
                 <CardDescription>
                   Ask a question and receive feedback from a mentor. This replaces the old email-based FAQ system.
                 </CardDescription>
@@ -1292,7 +1338,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
             {renderLockedTabTrigger("meeting-reports", "Meeting Reports", 4, outstandingReportsCount)}
-            {renderLockedTabTrigger("faq-2.1", "FAQ 2.1", 2)}
+            {renderLockedTabTrigger("faq", "FAQ", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount > 0 ? chiefBadgeCount : undefined)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount > 0 ? mentorBadgeCount : undefined)}
         </TabsList>
@@ -1558,7 +1604,7 @@ function MyTribePageContent() {
             )}
         </TabsContent>
 
-        <TabsContent value="faq-2.1" className="m-0">
+        <TabsContent value="faq" className="m-0">
           {renderJournalView()}
         </TabsContent>
         
@@ -1796,7 +1842,7 @@ function MyTribePageContent() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ 2.1 Questions</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ</CardTitle>
                                 <CardDescription>Review and respond to questions from users.</CardDescription>
                             </div>
                             <Button asChild>
@@ -1922,13 +1968,15 @@ function MyTribePageContent() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="question">Question</Label>
-                            <Textarea id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
+                            <FormattingToolbar textareaRef={manualFaqQuestionRef} value={manualFaqData.question} onValueChange={(val) => setManualFaqData(prev => ({...prev, question: val}))} />
+                            <Textarea ref={manualFaqQuestionRef} id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
                         </div>
                          <ImageUploader imageUrl={manualFaqData.imageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'question')} userId={user?.uid} label="Question Image (Optional)" />
 
                         <div className="space-y-2">
                             <Label htmlFor="answer">Answer (Your Feedback)</Label>
-                            <Textarea id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
+                            <FormattingToolbar textareaRef={manualFaqAnswerRef} value={manualFaqData.answer} onValueChange={(val) => setManualFaqData(prev => ({...prev, answer: val}))} />
+                            <Textarea ref={manualFaqAnswerRef} id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
                         </div>
                         <ImageUploader imageUrl={manualFaqData.answerImageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'answer')} userId={user?.uid} label="Answer Image (Optional)" />
                          <div className="space-y-2">
@@ -1953,7 +2001,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("faq-2.1", "FAQ 2.1", 2)}
+            {renderLockedTabTrigger("faq", "FAQ", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 
@@ -2043,7 +2091,7 @@ function MyTribePageContent() {
                 )}
             </Card>
         </TabsContent>
-        <TabsContent value="faq-2.1" className="m-0">
+        <TabsContent value="faq" className="m-0">
           {renderJournalView()}
         </TabsContent>
     </Tabs>
