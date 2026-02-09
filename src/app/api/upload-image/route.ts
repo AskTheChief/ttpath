@@ -6,14 +6,12 @@ import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
-
 // Initialize Firebase Admin SDK, ensuring the storage bucket is specified.
 if (!getApps().length) {
-  console.log('Initializing Firebase Admin SDK...');
+  console.log('Initializing Firebase Admin SDK for image upload...');
   initializeApp({
     credential: applicationDefault(),
-    storageBucket: BUCKET_NAME,
+    storageBucket: 'studio-7790315517-f3fe6.appspot.com',
   });
   console.log('Firebase Admin SDK initialized.');
 }
@@ -47,14 +45,13 @@ export async function POST(req: NextRequest) {
     }
     console.log(`File found: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
-    console.log('Connecting to Firebase Storage...');
-    // Explicitly specify the bucket name to avoid any ambiguity.
-    const bucket = getStorage().bucket(BUCKET_NAME);
-    console.log(`Connected to bucket: ${bucket.name}`);
+    console.log('Connecting to default Firebase Storage bucket...');
+    const bucket = getStorage().bucket();
+    console.log(`Successfully connected to bucket: ${bucket.name}.`);
     
     const userId = decodedToken.uid;
     const fileName = `faq_images/${userId}/${Date.now()}_${file.name}`;
-    console.log(`Attempting to upload: ${fileName}`);
+    console.log(`Attempting to upload to file: ${fileName}`);
 
     const blob = bucket.file(fileName);
     const blobStream = blob.createWriteStream({
@@ -95,3 +92,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
