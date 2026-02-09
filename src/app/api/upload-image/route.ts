@@ -1,32 +1,41 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-if (!getApps().length) {
-  initializeApp({
-    storageBucket: "studio-7790315517-f3fe6.appspot.com",
-  });
+// This function ensures firebase-admin is initialized only once.
+function getFirebaseAdminApp(): App {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+    
+    // When running in a Google Cloud environment, the SDK will automatically
+    // discover service account credentials and the storage bucket.
+    return initializeApp();
 }
-const adminAuth = getAuth();
-const bucket = getStorage().bucket(); 
 
 export async function POST(req: NextRequest) {
-  const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  let decodedToken;
   try {
-    decodedToken = await adminAuth.verifyIdToken(authToken);
-  } catch (error) {
-    console.error('Error verifying token', error);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    const app = getFirebaseAdminApp();
+    const adminAuth = getAuth(app);
+    // By default, getStorage().bucket() will use the default bucket from the initialized app.
+    // Explicitly naming it is safer in some environments.
+    const bucket = getStorage(app).bucket("studio-7790315517-f3fe6.appspot.com");
 
-  try {
+    const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(authToken);
+    } catch (error) {
+      console.error('Error verifying token', error);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) {
@@ -46,10 +55,10 @@ export async function POST(req: NextRequest) {
     
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    return await new Promise<NextResponse>((resolve, reject) => {
+    return await new Promise<NextResponse>((resolve) => {
         blobStream.on('error', (err) => {
             console.error('Error uploading to GCS:', err);
-            reject(new Error('Something went wrong during upload.'));
+            resolve(NextResponse.json({ error: 'Something went wrong during upload.' }, { status: 500 }));
         });
 
         blobStream.on('finish', async () => {
@@ -59,7 +68,7 @@ export async function POST(req: NextRequest) {
                 resolve(NextResponse.json({ imageUrl: publicUrl }, { status: 200 }));
             } catch(e) {
                 console.error("Error making file public:", e)
-                reject(new Error('Failed to make image public.'));
+                resolve(NextResponse.json({ error: 'Failed to make image public.' }, { status: 500 }));
             }
         });
 
