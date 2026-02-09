@@ -2,19 +2,24 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 import { randomUUID } from 'crypto';
 
-// This function ensures Firebase is initialized only once.
+// This function ensures Firebase is initialized only once per request.
 function initializeFirebaseAdmin(): App {
   const apps = getApps();
   if (apps.length > 0) {
+    // If an app is already initialized, return it.
     return apps[0];
   }
-  // Initialize without arguments to use default credentials in the cloud environment
-  return initializeApp();
+  
+  // Explicitly provide the storage bucket name as requested by the error message.
+  // This is the most direct way to solve the "Bucket name not specified" error.
+  return initializeApp({
+    storageBucket: 'studio-7790315517-f3fe6.appspot.com'
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -24,6 +29,7 @@ export async function POST(req: NextRequest) {
     const adminApp = initializeFirebaseAdmin();
     console.log('---[/api/upload-image] DEBUG: Firebase Admin initialized. ---');
 
+    // By initializing with the storageBucket, getStorage().bucket() should now work.
     const bucket = getStorage(adminApp).bucket();
     console.log(`---[/api/upload-image] DEBUG: Storage bucket obtained: ${bucket.name} ---`);
     
