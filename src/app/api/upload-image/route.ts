@@ -12,8 +12,8 @@ if (!getApps().length) {
 export async function POST(req: NextRequest) {
   try {
     const adminAuth = getAuth();
-    // Explicitly get the bucket by name to ensure the correct one is used.
-    const bucket = getStorage().bucket("studio-7790315517-f3fe6.appspot.com");
+    // Get the default bucket associated with the Firebase project.
+    const bucket = getStorage().bucket();
 
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!authToken) {
