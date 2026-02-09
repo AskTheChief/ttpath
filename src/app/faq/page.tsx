@@ -77,6 +77,13 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         }
     };
 
+    const handleAnswerImageUrlChange = (url: string) => {
+        setAnswerImageUrl(url);
+        if (!url) {
+            setAnswerImageCredit('');
+        }
+    };
+
     const handleSaveAnswer = async (feedbackId: string) => {
         if (!user) return;
         setIsSaving(true);
@@ -187,7 +194,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                 {editingAnswerId === fb.id ? (
                                     <div className="space-y-4">
                                         <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
-                                        <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={setAnswerImageUrl} userId={user?.uid} label="Answer Image" />
+                                        <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
                                             <div>
                                                 <Label htmlFor="answer-credit" className="text-xs">Image Credit</Label>

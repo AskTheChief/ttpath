@@ -44,24 +44,25 @@ const editJournalFeedbackFlow = ai.defineFlow(
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
         
-        // Start with a copy of the existing feedback
         const updatedFeedback: any = {
           ...fb,
           feedbackContent: newFeedbackContent,
           updatedAt: Timestamp.now(),
         };
         
-        // Handle imageUrl: update if present, remove if not.
+        // Handle imageUrl and imageCredit together to prevent orphaned data
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
+            // Only save credit if there is an image
+            if (imageCredit) {
+                updatedFeedback.imageCredit = imageCredit;
+            } else {
+                // If there's an image but no credit provided, remove any old credit
+                delete updatedFeedback.imageCredit;
+            }
         } else {
+            // If no image URL is provided, remove both fields
             delete updatedFeedback.imageUrl;
-        }
-        
-        // Handle imageCredit: update if present, remove if not.
-        if (imageCredit) {
-            updatedFeedback.imageCredit = imageCredit;
-        } else {
             delete updatedFeedback.imageCredit;
         }
         
