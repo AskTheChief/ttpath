@@ -124,7 +124,7 @@ function FeedbackForm({
           entryId,
           feedbackId: editingFeedback.id,
           newFeedbackContent: feedbackContent,
-          imageUrl,
+          imageUrl: imageUrl || undefined,
         });
         if (result.success) {
           toast({ title: 'Feedback Updated' });
@@ -367,6 +367,7 @@ function MyTribePageContent() {
     answer: '',
     imageUrl: '',
     answerImageUrl: '',
+    answerImageCredit: '',
   });
   const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
 
@@ -1120,12 +1121,17 @@ function MyTribePageContent() {
           const idToken = await user.getIdToken();
           const result = await addManualFaq({
               idToken,
-              ...manualFaqData,
+              contributorName: manualFaqData.contributorName,
+              question: manualFaqData.question,
+              answer: manualFaqData.answer,
+              imageUrl: manualFaqData.imageUrl || undefined,
+              answerImageUrl: manualFaqData.answerImageUrl || undefined,
+              answerImageCredit: manualFaqData.answerImageCredit || undefined,
           });
 
           if (result.success) {
               toast({ title: "Success", description: result.message });
-              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '', answerImageUrl: '' });
+              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '', answerImageUrl: '', answerImageCredit: '' });
               fetchTribesAndUserData(user);
           } else {
               throw new Error(result.message);
@@ -1836,7 +1842,7 @@ function MyTribePageContent() {
                                                         <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
                                                         {fb.imageUrl && (
                                                             <div className="mt-4 relative aspect-video">
-                                                                <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
+                                                                <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
                                                             </div>
                                                         )}
                                                         <p className="text-xs text-muted-foreground mt-2">
@@ -1915,6 +1921,10 @@ function MyTribePageContent() {
                             <Textarea id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
                         </div>
                         <ImageUploader imageUrl={manualFaqData.answerImageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'answer')} userId={user?.uid} label="Answer Image (Optional)" />
+                         <div className="space-y-2">
+                            <Label htmlFor="answerImageCredit">Answer Image Credit</Label>
+                            <Input id="answerImageCredit" placeholder="e.g., Photo by Jane Doe" value={manualFaqData.answerImageCredit} onChange={handleManualFaqChange} />
+                        </div>
                     </CardContent>
                     <CardFooter>
                         <Button onClick={handleAddManualFaq} disabled={isAddingManualFaq}>

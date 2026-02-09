@@ -44,23 +44,21 @@ const editJournalFeedbackFlow = ai.defineFlow(
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
 
-        // Build the updated object from scratch to guarantee structure
         const updatedFeedback: any = {
           id: fb.id,
           mentorId: fb.mentorId,
           mentorName: fb.mentorName,
           mentorLevel: fb.mentorLevel,
           feedbackContent: newFeedbackContent,
-          createdAt: fb.createdAt, // Preserve original creation date
+          createdAt: fb.createdAt,
           updatedAt: Timestamp.now(),
         };
 
-        // Conditionally add image properties only if they have a non-empty value
         if (imageUrl) {
-            updatedFeedback.imageUrl = imageUrl;
-            if (imageCredit) {
-                updatedFeedback.imageCredit = imageCredit;
-            }
+          updatedFeedback.imageUrl = imageUrl;
+          if (imageCredit) {
+            updatedFeedback.imageCredit = imageCredit;
+          }
         }
         
         return updatedFeedback;
@@ -73,7 +71,6 @@ const editJournalFeedbackFlow = ai.defineFlow(
       throw new Error('Feedback not found.');
     }
 
-    // Check permissions: either be the author or a higher-level admin
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
     const userLevel = userDoc.data()?.currentUserLevel || 0;
     

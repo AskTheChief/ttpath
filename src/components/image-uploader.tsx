@@ -21,6 +21,7 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Image" }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +78,7 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
   const handleRemoveImage = async () => {
     if (!imageUrl) return;
 
+    setIsDeleting(true);
     // Only try to delete if it's a Firebase Storage URL
      if (imageUrl.includes('firebasestorage.googleapis.com')) {
         try {
@@ -95,6 +97,7 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
      }
     onImageUrlChange('');
     toast({ title: 'Image Removed' });
+    setIsDeleting(false);
   };
 
   return (
@@ -102,21 +105,21 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
       <Label>{label}</Label>
       <Input placeholder="Image URL (or upload)" value={imageUrl} onChange={(e) => onImageUrlChange(e.target.value)} />
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading || !userId}>
+        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading || isDeleting || !userId}>
           {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
           Upload Image
         </Button>
         <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} accept="image/*" />
         {imageUrl && (
-            <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive">
-                <X className="mr-2 h-4 w-4" />
+            <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive" disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
                 Remove
             </Button>
         )}
       </div>
       {imageUrl && (
         <div className="mt-2 relative w-full aspect-video rounded-md overflow-hidden border bg-muted">
-            <Image src={imageUrl} alt="Image preview" fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
+            <Image src={imageUrl} alt="Image preview" fill sizes="(max-width: 640px) 90vw, 50vw" style={{ objectFit: 'cover' }} />
         </div>
       )}
     </div>

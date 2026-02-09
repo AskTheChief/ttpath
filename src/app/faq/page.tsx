@@ -89,7 +89,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent, imageUrl: answerImageUrl, imageCredit: answerImageCredit });
+            await editJournalFeedback({
+                idToken,
+                entryId: faq.id,
+                feedbackId: feedbackId,
+                newFeedbackContent: answerContent,
+                imageUrl: answerImageUrl || undefined,
+                imageCredit: answerImageCredit || undefined
+            });
             toast({ title: 'Answer updated' });
             setEditingAnswerId(null);
             onUpdate();
@@ -164,7 +171,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                 <CardContent>
                     {faq.imageUrl && !editingQuestion && (
                         <div className="mb-4 relative aspect-video">
-                            <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1024px) 100vw, 50vw" style={{ objectFit: 'cover' }} className="rounded-md" />
+                            <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                         </div>
                     )}
                     {editingQuestion ? (
@@ -235,7 +242,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                         {fb.imageUrl && (
                                             <>
                                                 <div className="mt-4 relative aspect-video">
-                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1024px) 100vw, 50vw" style={{ objectFit: 'cover' }} className="rounded-md" />
+                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
                                                 {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
                                             </>
