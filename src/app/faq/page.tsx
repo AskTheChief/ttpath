@@ -609,6 +609,7 @@ export default function FaqPage() {
     return results;
   }, [faqs, searchTerm, selectedTopic, faqsByTopic]);
 
+  const isMentor = userLevel >= 6;
 
   if (loading) {
     return (
@@ -626,11 +627,20 @@ export default function FaqPage() {
           <h1 className="text-4xl font-bold">FAQ</h1>
           <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers from past experiences.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          {isMentor && (
+            <Button asChild>
+              <Link href="/my-tribe?view=mentor-dashboard#manual-faq-entry">
+                <Edit className="mr-2 h-4 w-4" /> Manual FAQ Entry
+              </Link>
+            </Button>
+          )}
+          <Button asChild variant="outline">
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <Accordion type="single" collapsible defaultValue="how-to-use" className="w-full mb-8">

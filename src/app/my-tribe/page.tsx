@@ -1867,7 +1867,7 @@ function MyTribePageContent() {
                         )}
                     </CardContent>
                 </Card>
-                <Card>
+                <Card id="manual-faq-entry">
                     <CardHeader>
                         <CardTitle>Manual FAQ Entry</CardTitle>
                         <CardDescription>
