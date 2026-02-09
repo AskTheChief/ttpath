@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 
 
 type FaqItem = {
@@ -410,11 +411,26 @@ export default function TheIndexPage() {
   const [viewMode, setViewMode] = useState<'list' | 'bubble'>('bubble');
 
   useEffect(() => {
-    // Disconnected data fetching to start with a clean slate for the FAQ section.
-    // This allows focusing on the process of adding new entries.
-    // The data source can be reconnected later.
-    setFaqs([]);
-    setLoading(false);
+    async function fetchFaqs() {
+      setLoading(true);
+      try {
+        const journalEntries = await getAllJournalEntries();
+        const mappedFaqs: FaqItem[] = journalEntries.map(entry => ({
+          date: entry.createdAt,
+          url: '', // No direct mapping for URL from journal entries
+          contributor: entry.entryContent,
+          contributorName: entry.userName,
+          ed: entry.feedback?.[0]?.feedbackContent || 'No feedback yet.',
+        }));
+        setFaqs(mappedFaqs);
+      } catch (error) {
+        console.error('Failed to fetch FAQ data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFaqs();
   }, []);
 
   const faqsByTopic = useMemo(() => {
