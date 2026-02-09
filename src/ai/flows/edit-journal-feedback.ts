@@ -43,27 +43,25 @@ const editJournalFeedbackFlow = ai.defineFlow(
     const newFeedbackArray = feedbackArray.map((fb: any) => {
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
+        
+        // Start with a copy of the existing feedback
         const updatedFeedback: any = {
           ...fb,
           feedbackContent: newFeedbackContent,
           updatedAt: Timestamp.now(),
         };
         
+        // Handle imageUrl: update if present, remove if not.
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
-        } else if (imageUrl === '') {
-            updatedFeedback.imageUrl = FieldValue.delete();
-        }
-        if (updatedFeedback.imageUrl === undefined) {
-          delete updatedFeedback.imageUrl;
+        } else {
+            delete updatedFeedback.imageUrl;
         }
         
+        // Handle imageCredit: update if present, remove if not.
         if (imageCredit) {
             updatedFeedback.imageCredit = imageCredit;
-        } else if (imageCredit === '') {
-            updatedFeedback.imageCredit = FieldValue.delete();
-        }
-        if (updatedFeedback.imageCredit === undefined) {
+        } else {
             delete updatedFeedback.imageCredit;
         }
         
