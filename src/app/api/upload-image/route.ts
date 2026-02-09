@@ -1,68 +1,78 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-// This function ensures Firebase is initialized only once per instance.
+// This is the full bucket name for the Admin SDK
+const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
+
 function initializeFirebaseAdmin(): App {
+    // Check if the app is already initialized
     if (getApps().length > 0) {
-        console.log('---[/api/upload-image] Firebase Admin SDK already initialized.');
+        console.log('---[/api/upload-image] Using existing Firebase Admin SDK instance.');
         return getApps()[0];
     }
+    
+    console.log('---[/api/upload-image] Initializing new Firebase Admin SDK instance...');
     try {
-        console.log('---[/api/upload-image] Initializing Firebase Admin SDK with default credentials...');
-        // Initialize without arguments to use Application Default Credentials from the environment.
-        const app = initializeApp();
+        // In a managed environment like Cloud Run, Application Default Credentials should be used.
+        // We explicitly provide the bucket name to avoid any ambiguity.
+        const app = initializeApp({
+            storageBucket: BUCKET_NAME,
+        });
         console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
         return app;
     } catch (error: any) {
-        console.error('---[/api/upload-image] CRITICAL: Firebase Admin Init Error:', error.message);
-        // Re-throw the error to be caught by the POST handler's catch block.
-        throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+        console.error('---[/api/upload-image] CRITICAL: Firebase Admin SDK initialization failed.', error);
+        // We re-throw the error so it can be caught by the main handler and returned as a 500 response.
+        throw error;
     }
 }
 
-
 export async function POST(req: NextRequest) {
+  console.log('---[/api/upload-image] Received POST request.');
   try {
-    console.log('---[/api/upload-image] POST request received.');
-    
-    // Lazily initialize Firebase Admin SDK within the request handler.
+    // Step 1: Initialize Firebase Admin
     initializeFirebaseAdmin();
+    console.log('---[/api/upload-image] Firebase Admin SDK is ready.');
 
+    // Step 2: Authenticate the user
     const adminAuth = getAuth();
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!authToken) {
-      console.error('---[/api/upload-image] Error: Missing auth token.');
+      console.error('---[/api/upload-image] Unauthorized: Missing auth token.');
       return NextResponse.json({ error: 'Unauthorized: Missing token.' }, { status: 401 });
     }
-
+    
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(authToken);
       console.log(`---[/api/upload-image] Token verified for UID: ${decodedToken.uid}`);
     } catch (error: any) {
-      console.error('---[/api/upload-image] API Error: Error verifying token', error.message);
+      console.error(`---[/api/upload-image] Token verification failed: ${error.message}`);
       return NextResponse.json({ error: 'Unauthorized: Invalid token.' }, { status: 401 });
     }
 
+    // Step 3: Process the uploaded file from FormData
+    console.log('---[/api/upload-image] Processing form data...');
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) {
-      console.error('---[/api/upload-image] Error: No file provided.');
+      console.error('---[/api/upload-image] Bad Request: No file provided.');
       return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
     }
-    console.log(`---[/api/upload-image] File received: ${file.name}, Size: ${file.size}`);
+    console.log(`---[/api/upload-image] File found: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
 
-    // Get the default bucket from the initialized app.
-    const bucket = getStorage().bucket();
-    console.log(`---[/api/upload-image] Using storage bucket: ${bucket.name}`);
-    
+    // Step 4: Upload to Firebase Storage
+    const storage = getStorage();
+    const bucket = storage.bucket(BUCKET_NAME);
+    console.log(`---[/api/upload-image] Acquired storage bucket: ${bucket.name}`);
+
     const userId = decodedToken.uid;
     const fileName = `faq_images/${userId}/${Date.now()}_${file.name}`;
-    console.log(`---[/api/upload-image] Uploading to path: ${fileName}`);
+    console.log(`---[/api/upload-image] Preparing to upload to path: ${fileName}`);
     
     const blob = bucket.file(fileName);
     const blobStream = blob.createWriteStream({
@@ -74,29 +84,30 @@ export async function POST(req: NextRequest) {
     
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    console.log('---[/api/upload-image] Starting upload stream...');
     await new Promise<void>((resolve, reject) => {
         blobStream.on('error', (err) => {
-            console.error('---[/api/upload-image] STREAM ERROR:', err);
+            console.error('---[/api/upload-image] BLOB STREAM ERROR:', err);
             reject(new Error(`Failed to upload file to storage. GCS Error: ${err.message}`));
         });
         blobStream.on('finish', () => {
-            console.log('---[/api/upload-image] Stream finished successfully.');
+            console.log('---[/api/upload-image] BLOB STREAM FINISH: Upload completed successfully.');
             resolve();
         });
         blobStream.end(buffer);
     });
 
-    // Make the file public so it can be viewed in the browser
+    // Step 5: Make file public and get URL
     await blob.makePublic();
     const publicUrl = blob.publicUrl();
     console.log(`---[/api/upload-image] File is public. URL: ${publicUrl}`);
     
+    // Step 6: Send success response
     return NextResponse.json({ imageUrl: publicUrl }, { status: 200 });
 
   } catch (error: any) {
-    // This will catch errors from both initialization and the main logic.
-    const message = error.message || 'An unexpected error occurred processing the request.';
-    console.error(`---[/api/upload-image] CATCH BLOCK ERROR: ${message}`);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorMessage = error.message || 'An unexpected error occurred.';
+    console.error(`---[/api/upload-image] CATCH-ALL ERROR: ${errorMessage}`, error);
+    return NextResponse.json({ error: `Server-side exception: ${errorMessage}` }, { status: 500 });
   }
 }
