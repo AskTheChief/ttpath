@@ -132,9 +132,12 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         }
     };
 
-    const handleSaveAnswer = async (feedbackId: string) => {
+    const handleSaveAnswer = async (feedbackId: string, { notify = false }: { notify?: boolean } = {}) => {
         if (!user) return;
-        setIsSaving(true);
+
+        const setLoading = notify ? setIsNotifying : setIsSaving;
+        setLoading(true);
+        
         try {
             const idToken = await user.getIdToken();
             await editJournalFeedback({
@@ -146,12 +149,19 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                 imageCredit: answerImageCredit || undefined
             });
             toast({ title: 'Answer updated' });
+
+            if (notify) {
+                const result = await notifyFaqAuthor({ idToken, entryId: faq.id });
+                if (!result.success) throw new Error(result.message);
+                toast({ title: 'Notification Sent', description: result.message });
+            }
+
             setEditingAnswerId(null);
             onUpdate();
         } catch (e: any) {
-            toast({ title: 'Error updating answer', description: e.message, variant: 'destructive' });
+            toast({ title: 'An error occurred', description: (e as Error).message, variant: 'destructive' });
         } finally {
-            setIsSaving(false);
+            setLoading(false);
         }
     };
 
@@ -182,24 +192,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
             toast({ title: 'Error deleting feedback', description: e.message, variant: 'destructive' });
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const handleNotifyWriter = async () => {
-        if (!user) return;
-        setIsNotifying(true);
-        try {
-            const idToken = await user.getIdToken();
-            const result = await notifyFaqAuthor({ idToken, entryId: faq.id });
-            if (result.success) {
-                toast({ title: "Notification Sent", description: result.message });
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (e: any) {
-            toast({ title: 'Error sending notification', description: e.message, variant: 'destructive' });
-        } finally {
-            setIsNotifying(false);
         }
     };
     
@@ -294,9 +286,16 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                                 <Input id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" />
                                             </div>
                                         )}
-                                        <div className="flex gap-2 pt-2">
-                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
-                                            <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)} disabled={isSaving || isNotifying}>Cancel</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => handleSaveAnswer(fb.id, { notify: false })} disabled={isSaving || isNotifying}>
+                                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                                Save
+                                            </Button>
+                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id, { notify: true })} disabled={isSaving || isNotifying}>
+                                                {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
+                                                Save & Notify
+                                            </Button>
                                         </div>
                                     </div>
                                 ) : (
@@ -343,14 +342,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
                     )}
                 </CardContent>
-                 {isMentor && faq.userId && (
-                    <CardFooter>
-                        <Button onClick={handleNotifyWriter} disabled={isNotifying || !faq.feedback || faq.feedback.length === 0}>
-                            {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
-                            Notify Writer
-                        </Button>
-                    </CardFooter>
-                )}
             </Card>
         </div>
     );
@@ -472,3 +463,5 @@ export default function FaqPage() {
     </div>
   );
 }
+
+    
