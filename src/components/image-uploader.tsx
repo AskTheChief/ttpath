@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, storage } from '@/lib/firebase';
 import Image from 'next/image';
+import { randomUUID } from 'crypto';
 
 interface ImageUploaderProps {
   imageUrl: string;
@@ -35,54 +36,35 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
 
     setIsUploading(true);
     try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error("You must be logged in to upload images.");
-        }
-        const idToken = await user.getIdToken();
-
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch('/api/upload-image', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-            },
-            body: formData,
-        });
-
-        if (!response.ok) {
-            let errorMsg = `Upload failed with status: ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.error || errorMsg;
-            } catch (jsonError) {
-                console.error("Could not parse error response as JSON.");
-                errorMsg = 'An unexpected server error occurred during upload.';
-            }
-            throw new Error(errorMsg);
-        }
-        
-        const data = await response.json();
-        const downloadURL = data.imageUrl;
-
-        // Delete old image if one existed
-        if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
-          try {
-            const oldImageRef = ref(storage, imageUrl);
-            await deleteObject(oldImageRef);
-          } catch (error: any) {
-              if (error.code !== 'storage/object-not-found') {
-                  console.warn("Could not delete old image, it might not exist:", error);
-              }
+      // 1. Delete old image if it exists in Firebase Storage
+      if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
+        try {
+          const oldImageRef = ref(storage, imageUrl);
+          await deleteObject(oldImageRef);
+        } catch (error: any) {
+          if (error.code !== 'storage/object-not-found') {
+            console.warn("Could not delete old image, it might not exist:", error);
           }
         }
-        
-        onImageUrlChange(downloadURL);
-        toast({ title: 'Image Uploaded' });
+      }
+
+      // 2. Create a unique filename for the new image
+      const fileExtension = file.name.split('.').pop();
+      const uniqueFilename = `${userId}/${Date.now()}.${fileExtension}`;
+      const newImageRef = ref(storage, `images/${uniqueFilename}`);
+      
+      // 3. Upload the file using the client-side SDK
+      const snapshot = await uploadBytes(newImageRef, file);
+
+      // 4. Get the public URL for the uploaded file
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // 5. Update the parent component's state with the new URL
+      onImageUrlChange(downloadURL);
+      toast({ title: 'Image Uploaded' });
 
     } catch (error: any) {
+      console.error("Upload Failed:", error);
       toast({ title: 'Upload Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsUploading(false);
@@ -94,6 +76,8 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
 
   const handleRemoveImage = async () => {
     if (!imageUrl) return;
+
+    // Only try to delete if it's a Firebase Storage URL
      if (imageUrl.includes('firebasestorage.googleapis.com')) {
         try {
           const imageRef = ref(storage, imageUrl);
@@ -101,7 +85,11 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
         } catch (error: any) {
             if (error.code !== 'storage/object-not-found') {
                 console.warn("Could not delete image, it might not exist:", error);
-                // Don't toast an error if delete fails, just clear the UI
+                 toast({
+                    variant: "destructive",
+                    title: "Could not delete old image",
+                    description: "The image may have already been removed. Proceeding to clear the reference.",
+                });
             }
         }
      }
