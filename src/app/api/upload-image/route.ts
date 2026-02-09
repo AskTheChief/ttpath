@@ -2,42 +2,20 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
-// This is the full bucket name for the Admin SDK
-const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
-
-function initializeFirebaseAdmin(): App {
-    // Check if the app is already initialized
-    if (getApps().length > 0) {
-        console.log('---[/api/upload-image] Using existing Firebase Admin SDK instance.');
-        return getApps()[0];
-    }
-    
-    console.log('---[/api/upload-image] Initializing new Firebase Admin SDK instance...');
-    try {
-        // In a managed environment like Cloud Run, Application Default Credentials should be used.
-        // We explicitly provide the bucket name to avoid any ambiguity.
-        const app = initializeApp({
-            storageBucket: BUCKET_NAME,
-        });
-        console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
-        return app;
-    } catch (error: any) {
-        console.error('---[/api/upload-image] CRITICAL: Firebase Admin SDK initialization failed.', error);
-        // We re-throw the error so it can be caught by the main handler and returned as a 500 response.
-        throw error;
-    }
-}
-
 export async function POST(req: NextRequest) {
-  console.log('---[/api/upload-image] Received POST request.');
   try {
-    // Step 1: Initialize Firebase Admin
-    initializeFirebaseAdmin();
-    console.log('---[/api/upload-image] Firebase Admin SDK is ready.');
+    // Step 1: Initialize Firebase Admin (only if not already done)
+    if (getApps().length === 0) {
+        console.log('---[/api/upload-image] Initializing new Firebase Admin SDK instance...');
+        initializeApp();
+        console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
+    } else {
+        console.log('---[/api/upload-image] Using existing Firebase Admin SDK instance.');
+    }
 
     // Step 2: Authenticate the user
     const adminAuth = getAuth();
@@ -68,8 +46,8 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Upload to Firebase Storage
     const storage = getStorage();
-    const bucket = storage.bucket(BUCKET_NAME);
-    console.log(`---[/api/upload-image] Acquired storage bucket: ${bucket.name}`);
+    const bucket = storage.bucket(); // Use the default bucket
+    console.log(`---[/api/upload-image] Acquired default storage bucket: ${bucket.name}`);
 
     const userId = decodedToken.uid;
     const fileName = `faq_images/${userId}/${Date.now()}_${file.name}`;
