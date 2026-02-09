@@ -21,6 +21,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploader } from '@/components/image-uploader';
+import { Label } from '@/components/ui/label';
 
 const levelMap: Record<number, string> = {
   1: "Visitor",
