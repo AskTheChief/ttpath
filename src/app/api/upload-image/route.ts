@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
     const adminApp = initializeFirebaseAdmin();
     console.log('---[/api/upload-image] DEBUG: Firebase Admin initialized. ---');
 
-    // Explicitly specify the bucket name after initialization.
-    const bucket = getStorage(adminApp).bucket("studio-7790315517-f3fe6.appspot.com");
-    console.log(`---[/api/upload-image] DEBUG: Storage bucket obtained: ${bucket.name} ---`);
+    // Rely on the default bucket from the environment.
+    const bucket = getStorage(adminApp).bucket();
+    console.log(`---[/api/upload-image] DEBUG: Default storage bucket obtained: ${bucket.name} ---`);
     
     const token = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!token) {
