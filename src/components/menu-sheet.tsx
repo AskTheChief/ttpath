@@ -171,7 +171,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <BookCopy className="mr-4 w-10 h-10" />
-                  Knowledge Base
+                  FAQ
               </Button>
             </Link>
             <DropdownMenu>

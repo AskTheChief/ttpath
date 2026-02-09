@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -461,7 +462,7 @@ export default function TheIndexPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading the Knowledge Base...</p>
+        <p className="mt-4 text-muted-foreground">Loading the FAQ...</p>
       </div>
     );
   }
@@ -470,7 +471,7 @@ export default function TheIndexPage() {
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-4xl font-bold">The Knowledge Base</h1>
+          <h1 className="text-4xl font-bold">FAQ</h1>
           <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers from past experiences.</p>
         </div>
         <Button asChild variant="outline">
@@ -482,10 +483,10 @@ export default function TheIndexPage() {
 
       <Accordion type="single" collapsible defaultValue="how-to-use" className="w-full mb-8">
         <AccordionItem value="how-to-use">
-          <AccordionTrigger>How to Use the Knowledge Base</AccordionTrigger>
+          <AccordionTrigger>How to Use the FAQ</AccordionTrigger>
           <AccordionContent>
             <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground space-y-2">
-              <p>This Knowledge Base is a collection of community questions and answers. You can explore it in two ways:</p>
+              <p>This FAQ is a collection of community questions and answers. You can explore it in two ways:</p>
               <ul className="list-disc pl-5">
                 <li>
                   <strong>Bubble View (Default):</strong> An interactive way to explore topics. Click the "All Topics" bubble to see categories. Click a category bubble (like "Trading" or "Feelings") to see a list of related questions.
