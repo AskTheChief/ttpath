@@ -185,13 +185,15 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     };
     
     const contributorRole = getRoleName(faq.userLevel);
+    const questionDate = new Date(faq.createdAt).toLocaleDateString();
     
     return (
         <div className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">{contributorRole} Says:</CardTitle>
+                        <CardTitle className="text-lg">Question from {faq.userName}</CardTitle>
+                        <CardDescription>{contributorRole} on {questionDate}</CardDescription>
                     </div>
                     {isMentor && (
                         <div className="flex gap-2">
@@ -432,30 +434,11 @@ export default function FaqPage() {
         </div>
         
         {filteredFaqs.length > 0 ? (
-           <Accordion type="single" collapsible className="w-full space-y-4">
+           <div className="space-y-12">
             {filteredFaqs.map(faq => (
-                <AccordionItem value={faq.id} key={faq.id} className="border-b-0 rounded-lg">
-                    <Card>
-                        <AccordionTrigger className="p-6 hover:no-underline w-full">
-                            <div className="grid w-full gap-1 text-left">
-                                <div className="flex w-full justify-between">
-                                    <span className="font-semibold">{getRoleName(faq.userLevel)}</span>
-                                    <span className="text-xs text-muted-foreground">{new Date(faq.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                <p className="truncate text-sm text-muted-foreground break-words pr-4">{faq.entryContent}</p>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <div className="px-6 pb-6">
-                                <div className="pt-6 border-t">
-                                    <FaqItemCard faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} />
-                                </div>
-                            </div>
-                        </AccordionContent>
-                    </Card>
-                </AccordionItem>
+                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} />
             ))}
-        </Accordion>
+        </div>
         ) : (
             <div className="text-center py-16 text-muted-foreground">
                 <p>No results found for your query.</p>
