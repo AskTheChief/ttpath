@@ -1807,102 +1807,105 @@ function MyTribePageContent() {
                     <CardContent>
                         {isLoading ? (
                             <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                        ) : allJournalEntries.length > 0 ? (
-                            <Accordion type="single" collapsible className="w-full">
-                            {allJournalEntries.map(entry => (
-                                <AccordionItem key={entry.id} value={entry.id}>
-                                    <AccordionTrigger>
-                                        <div className="grid w-full gap-1 text-left">
-                                            <div className="flex w-full justify-between">
-                                                <span className="font-semibold">{entry.userName}</span>
-                                                <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                        ) : (() => {
+                            const pendingEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0);
+                            return pendingEntries.length > 0 ? (
+                                <Accordion type="single" collapsible className="w-full">
+                                {pendingEntries.map(entry => (
+                                    <AccordionItem key={entry.id} value={entry.id}>
+                                        <AccordionTrigger>
+                                            <div className="grid w-full gap-1 text-left">
+                                                <div className="flex w-full justify-between">
+                                                    <span className="font-semibold">{entry.userName}</span>
+                                                    <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                                                </div>
+                                                <p className="truncate text-sm text-muted-foreground break-words pr-4">
+                                                    {entry.entryContent}
+                                                </p>
                                             </div>
-                                            <p className="truncate text-sm text-muted-foreground break-words pr-4">
-                                                {entry.entryContent}
-                                            </p>
-                                        </div>
-                                    </AccordionTrigger>
-                                <AccordionContent>
-                                    <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
-                                    <div className="mt-6 space-y-4">
-                                    <h4 className="font-semibold text-md">Feedback</h4>
-                                    {entry.feedback && entry.feedback.length > 0 ? (
-                                        <div className="space-y-4">
-                                        {entry.feedback.map((fb) => (
-                                            editingFeedbackId === fb.id ? (
-                                                <FeedbackForm
-                                                key={fb.id}
+                                        </AccordionTrigger>
+                                    <AccordionContent>
+                                        <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
+                                        <div className="mt-6 space-y-4">
+                                        <h4 className="font-semibold text-md">Feedback</h4>
+                                        {entry.feedback && entry.feedback.length > 0 ? (
+                                            <div className="space-y-4">
+                                            {entry.feedback.map((fb) => (
+                                                editingFeedbackId === fb.id ? (
+                                                    <FeedbackForm
+                                                    key={fb.id}
+                                                    entryId={entry.id}
+                                                    user={user}
+                                                    editingFeedback={fb}
+                                                    onActionComplete={() => {
+                                                        setEditingFeedbackId(null);
+                                                        if (user) fetchTribesAndUserData(user);
+                                                    }}
+                                                    onCancelEdit={() => setEditingFeedbackId(null)}
+                                                    />
+                                                ) : (
+                                                    <Alert key={fb.id} className="bg-muted/50 relative group">
+                                                        <UserIcon className="h-4 w-4" />
+                                                        <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
+                                                        <AlertDescription>
+                                                            <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
+                                                            {fb.imageUrl && (
+                                                                <div className="mt-4 relative aspect-video">
+                                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
+                                                                </div>
+                                                            )}
+                                                            <p className="text-xs text-muted-foreground mt-2">
+                                                                {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
+                                                                {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
+                                                            </p>
+                                                        </AlertDescription>
+                                                        {isMentor && (
+                                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                        )}
+                                                    </Alert>
+                                                )
+                                            ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                                        )}
+                                        {editingFeedbackId === null && (
+                                            <FeedbackForm
                                                 entryId={entry.id}
                                                 user={user}
-                                                editingFeedback={fb}
-                                                onActionComplete={() => {
-                                                    setEditingFeedbackId(null);
-                                                    if (user) fetchTribesAndUserData(user);
-                                                }}
-                                                onCancelEdit={() => setEditingFeedbackId(null)}
-                                                />
-                                            ) : (
-                                                <Alert key={fb.id} className="bg-muted/50 relative group">
-                                                    <UserIcon className="h-4 w-4" />
-                                                    <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
-                                                    <AlertDescription>
-                                                        <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
-                                                        {fb.imageUrl && (
-                                                            <div className="mt-4 relative aspect-video">
-                                                                <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
-                                                            </div>
-                                                        )}
-                                                        <p className="text-xs text-muted-foreground mt-2">
-                                                            {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
-                                                            {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
-                                                        </p>
-                                                    </AlertDescription>
-                                                    {isMentor && (
-                                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                    )}
-                                                </Alert>
-                                            )
-                                        ))}
+                                                onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
+                                            />
+                                        )}
                                         </div>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                                    )}
-                                    {editingFeedbackId === null && (
-                                        <FeedbackForm
-                                            entryId={entry.id}
-                                            user={user}
-                                            onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
-                                        />
-                                    )}
-                                    </div>
-                                </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                            </Accordion>
-                        ) : (
-                            <p className="text-muted-foreground text-center p-8">There are currently no pending questions.</p>
-                        )}
+                                    </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                                </Accordion>
+                            ) : (
+                               <p className="text-muted-foreground text-center p-8">There are currently no pending questions.</p>
+                            );
+                        })()}
                     </CardContent>
                 </Card>
                 <Card id="manual-faq-entry">
