@@ -16,8 +16,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
-import type { JournalEntry } from '@/lib/types';
 
 
 type FaqItem = {
@@ -412,24 +410,11 @@ export default function TheIndexPage() {
   const [viewMode, setViewMode] = useState<'list' | 'bubble'>('bubble');
 
   useEffect(() => {
-    async function fetchFaqs() {
-      try {
-        const journalEntries = await getAllJournalEntries();
-        const mappedFaqs: FaqItem[] = journalEntries.map((entry: JournalEntry) => ({
-            date: entry.createdAt,
-            url: '', // No URL for now
-            contributor: entry.entryContent,
-            contributorName: entry.userName,
-            ed: entry.feedback?.map(f => `Feedback from ${f.mentorName}:\n${f.feedbackContent}`).join('\n\n---\n\n') || '',
-        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setFaqs(mappedFaqs);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchFaqs();
+    // Disconnected data fetching to start with a clean slate for the FAQ section.
+    // This allows focusing on the process of adding new entries.
+    // The data source can be reconnected later.
+    setFaqs([]);
+    setLoading(false);
   }, []);
 
   const faqsByTopic = useMemo(() => {
