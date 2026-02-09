@@ -1268,9 +1268,17 @@ function MyTribePageContent() {
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle>Your Past Questions</CardTitle>
-                <CardDescription>Review your past questions and the feedback you've received.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Your Past Questions</CardTitle>
+                  <CardDescription>Review your past questions and the feedback you've received.</CardDescription>
+                </div>
+                <Button asChild>
+                    <Link href="/faq">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Go to Full FAQ Page
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                 {isJournalLoading && journalEntries.length === 0 ? (
