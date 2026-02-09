@@ -5,7 +5,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    storageBucket: "studio-7790315517-f3fe6.appspot.com",
+  });
 }
 const adminAuth = getAuth();
 const bucket = getStorage().bucket(); 
@@ -44,10 +46,10 @@ export async function POST(req: NextRequest) {
     
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    return await new Promise((resolve, reject) => {
+    return await new Promise<NextResponse>((resolve, reject) => {
         blobStream.on('error', (err) => {
             console.error('Error uploading to GCS:', err);
-            reject(NextResponse.json({ error: 'Something went wrong during upload.' }, { status: 500 }));
+            reject(new Error('Something went wrong during upload.'));
         });
 
         blobStream.on('finish', async () => {
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
                 resolve(NextResponse.json({ imageUrl: publicUrl }, { status: 200 }));
             } catch(e) {
                 console.error("Error making file public:", e)
-                reject(NextResponse.json({ error: 'Failed to make image public.' }, { status: 500 }));
+                reject(new Error('Failed to make image public.'));
             }
         });
 
@@ -66,6 +68,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error processing upload request:', error);
-    return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message || 'Something went wrong.' }, { status: 500 });
   }
 }

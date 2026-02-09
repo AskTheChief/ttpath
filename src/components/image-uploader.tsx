@@ -53,8 +53,15 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Upload failed.');
+            let errorMsg = `Upload failed with status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.error || errorMsg;
+            } catch (jsonError) {
+                console.error("Could not parse error response as JSON.");
+                errorMsg = 'An unexpected server error occurred during upload.';
+            }
+            throw new Error(errorMsg);
         }
         
         const data = await response.json();
