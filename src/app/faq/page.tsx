@@ -221,6 +221,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                         </div>
                                     )}
                                 </div>
+                                {fb.imageUrl && (
+                                    <div className="mt-4 relative aspect-video">
+                                        <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
+                                    </div>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-2">by {fb.mentorName} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                             </div>
                         )}

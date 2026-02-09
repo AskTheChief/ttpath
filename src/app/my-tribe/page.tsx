@@ -64,6 +64,7 @@ import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { addManualFaq } from '@/ai/flows/add-manual-faq';
+import Image from 'next/image';
 
 
 const libraries: Libraries = ['places'];
@@ -354,7 +355,8 @@ function MyTribePageContent() {
     contributorName: '',
     question: '',
     answer: '',
-    imageUrl: ''
+    imageUrl: '',
+    answerImageUrl: '',
   });
   const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
 
@@ -1105,7 +1107,7 @@ function MyTribePageContent() {
 
           if (result.success) {
               toast({ title: "Success", description: result.message });
-              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '' });
+              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '', answerImageUrl: '' });
               fetchTribesAndUserData(user);
           } else {
               throw new Error(result.message);
@@ -1814,6 +1816,11 @@ function MyTribePageContent() {
                                                     <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                     <AlertDescription>
                                                         <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
+                                                        {fb.imageUrl && (
+                                                            <div className="mt-4 relative aspect-video">
+                                                                <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
+                                                            </div>
+                                                        )}
                                                         <p className="text-xs text-muted-foreground mt-2">
                                                             {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
                                                             {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
@@ -1884,12 +1891,16 @@ function MyTribePageContent() {
                             <Textarea id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
                         </div>
                         <div className="space-y-2">
+                            <Label htmlFor="imageUrl">Question Image URL (Optional)</Label>
+                            <Input id="imageUrl" placeholder="https://example.com/image.png" value={manualFaqData.imageUrl} onChange={handleManualFaqChange} />
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="answer">Answer (Your Feedback)</Label>
                             <Textarea id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">Image URL (Optional)</Label>
-                            <Input id="imageUrl" placeholder="https://example.com/image.png" value={manualFaqData.imageUrl} onChange={handleManualFaqChange} />
+                            <Label htmlFor="answerImageUrl">Answer Image URL (Optional)</Label>
+                            <Input id="answerImageUrl" placeholder="https://example.com/image.png" value={manualFaqData.answerImageUrl} onChange={handleManualFaqChange} />
                         </div>
                     </CardContent>
                     <CardFooter>
