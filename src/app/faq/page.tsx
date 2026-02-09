@@ -19,7 +19,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
-import { editJournalFeedback, deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
+import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
+import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import Image from 'next/image';
 import type { JournalEntry, JournalFeedback } from '@/lib/types';
 import { onAuthStateChanged, User } from 'firebase/auth';
