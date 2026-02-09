@@ -55,6 +55,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
           updatedAt: Timestamp.now(),
         };
 
+        // Conditionally add image properties only if they have a non-empty value
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
             if (imageCredit) {

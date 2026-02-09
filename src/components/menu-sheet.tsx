@@ -149,7 +149,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
       <SheetContent side="left" className="w-80 p-0">
         <SheetHeader className="p-6 border-b">
           <SheetTitle className="text-2xl">Resources</SheetTitle>
-          <SheetDescription className="sr-only">A list of available resources and actions.</SheetDescription>
+          <SheetDescription>A list of available resources and actions.</SheetDescription>
         </SheetHeader>
         <div className="p-4">
           {/* Render menu items for logged-in users */}
