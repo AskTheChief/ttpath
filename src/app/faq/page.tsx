@@ -144,107 +144,112 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     };
     
     return (
-        <Card className="h-full">
-            <CardHeader className="flex flex-row justify-between items-start">
-                <div>
-                    <CardTitle className="text-lg">Contributor Says:</CardTitle>
-                    <CardDescription>{faq.userName}</CardDescription>
-                </div>
-                {isMentor && (
-                    <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isSaving}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
+            <Card>
+                <CardHeader className="flex flex-row justify-between items-start">
+                    <div>
+                        <CardTitle className="text-lg">Contributor Says:</CardTitle>
+                        <CardDescription>{faq.userName}</CardDescription>
                     </div>
-                )}
-            </CardHeader>
-            <CardContent>
-                {faq.imageUrl && !editingQuestion && (
-                    <div className="mb-4 relative aspect-video">
-                        <Image src={faq.imageUrl} alt="FAQ Image" fill className="rounded-md object-cover" />
-                    </div>
-                )}
-                {editingQuestion ? (
-                    <div className="space-y-2">
-                        <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={6} />
+                    {isMentor && (
                         <div className="flex gap-2">
-                            <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>Save</Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isSaving}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
-                    </div>
-                ) : (
-                    <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.entryContent}</blockquote>
-                )}
-            </CardContent>
-             <CardHeader>
-                <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {(faq.feedback || []).map(fb => (
-                    <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
-                        {editingAnswerId === fb.id ? (
-                            <div className="space-y-2">
-                                <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
-                                <div className="flex gap-2">
-                                    <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
-                                </div>
+                    )}
+                </CardHeader>
+                <CardContent>
+                    {faq.imageUrl && !editingQuestion && (
+                        <div className="mb-4 relative aspect-video">
+                            <Image src={faq.imageUrl} alt="FAQ Image" fill className="rounded-md object-cover" />
+                        </div>
+                    )}
+                    {editingQuestion ? (
+                        <div className="space-y-2">
+                            <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={6} />
+                            <div className="flex gap-2">
+                                <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>Save</Button>
+                                <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
                             </div>
-                        ) : (
-                            <div>
-                                <div className="flex justify-between items-start">
-                                    <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
-                                    {isMentor && (
-                                        <div className="flex gap-1 shrink-0 ml-2">
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent);}} disabled={isSaving}>
-                                                <Edit className="h-3 w-3" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" disabled={isSaving}>
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Delete this answer?</AlertDialogTitle></AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteFeedbackItem(fb.id)}>Delete</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                        </div>
+                    ) : (
+                        <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.entryContent}</blockquote>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">Ed Says:</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {(faq.feedback || []).map(fb => (
+                        <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
+                            {editingAnswerId === fb.id ? (
+                                <div className="space-y-2">
+                                    <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
+                                    <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="flex justify-between items-start">
+                                        <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
+                                        {isMentor && (
+                                            <div className="flex gap-1 shrink-0 ml-2">
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent);}} disabled={isSaving}>
+                                                    <Edit className="h-3 w-3" />
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" disabled={isSaving}>
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Delete this answer?</AlertDialogTitle></AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteFeedbackItem(fb.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {fb.imageUrl && (
+                                        <div className="mt-4 relative aspect-video">
+                                            <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
                                         </div>
                                     )}
+                                    <p className="text-xs text-muted-foreground mt-2">by {fb.mentorName} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                 </div>
-                                {fb.imageUrl && (
-                                    <div className="mt-4 relative aspect-video">
-                                        <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
-                                    </div>
-                                )}
-                                <p className="text-xs text-muted-foreground mt-2">by {fb.mentorName} on {new Date(fb.createdAt).toLocaleDateString()}</p>
-                            </div>
-                        )}
-                    </div>
-                ))}
-                {(!faq.feedback || faq.feedback.length === 0) && (
-                    <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                )}
-            </CardContent>
-        </Card>
+                            )}
+                        </div>
+                    ))}
+                    {(!faq.feedback || faq.feedback.length === 0) && (
+                        <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
 
