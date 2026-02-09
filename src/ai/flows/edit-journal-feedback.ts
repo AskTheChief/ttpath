@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -20,7 +19,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
     inputSchema: EditJournalFeedbackInputSchema,
     outputSchema: EditJournalFeedbackOutputSchema,
   },
-  async ({ idToken, entryId, feedbackId, newFeedbackContent }) => {
+  async ({ idToken, entryId, feedbackId, newFeedbackContent, imageUrl }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -43,11 +42,18 @@ const editJournalFeedbackFlow = ai.defineFlow(
     const newFeedbackArray = feedbackArray.map((fb: any) => {
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
-        return {
+        const updatedFeedback: any = {
           ...fb,
           feedbackContent: newFeedbackContent,
           updatedAt: Timestamp.now(),
         };
+        
+        if (imageUrl) {
+            updatedFeedback.imageUrl = imageUrl;
+        } else {
+            delete updatedFeedback.imageUrl;
+        }
+        return updatedFeedback;
       }
       return fb;
     });

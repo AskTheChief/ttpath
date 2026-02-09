@@ -26,7 +26,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
     const [questionContent, setQuestionContent] = useState(faq.entryContent);
+    const [questionImageUrl, setQuestionImageUrl] = useState(faq.imageUrl || '');
     const [answerContent, setAnswerContent] = useState('');
+    const [answerImageUrl, setAnswerImageUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     const isMentor = userLevel >= 6;
@@ -35,7 +37,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setEditingQuestion(false);
         setEditingAnswerId(null);
         setQuestionContent(faq.entryContent);
+        setQuestionImageUrl(faq.imageUrl || '');
         setAnswerContent('');
+        setAnswerImageUrl('');
     }, [faq]);
 
     const handleSaveQuestion = async () => {
@@ -43,7 +47,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent });
+            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent, imageUrl: questionImageUrl });
             toast({ title: 'Question updated' });
             setEditingQuestion(false);
             onUpdate();
@@ -59,7 +63,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent });
+            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent, imageUrl: answerImageUrl });
             toast({ title: 'Answer updated' });
             setEditingAnswerId(null);
             onUpdate();
@@ -139,6 +143,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                     {editingQuestion ? (
                         <div className="space-y-2">
                             <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={6} />
+                            <Input placeholder="Image URL (optional)" value={questionImageUrl} onChange={e => setQuestionImageUrl(e.target.value)} />
                             <div className="flex gap-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>Save</Button>
                                 <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
@@ -160,6 +165,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                             {editingAnswerId === fb.id ? (
                                 <div className="space-y-2">
                                     <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
+                                    <Input placeholder="Image URL (optional)" value={answerImageUrl} onChange={e => setAnswerImageUrl(e.target.value)} />
                                     <div className="flex gap-2">
                                         <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
                                         <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
@@ -171,7 +177,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                         <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
                                         {isMentor && (
                                             <div className="flex gap-1 shrink-0 ml-2">
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent);}} disabled={isSaving}>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || '');}} disabled={isSaving}>
                                                     <Edit className="h-3 w-3" />
                                                 </Button>
                                                 <AlertDialog>
@@ -331,10 +337,13 @@ export default function FaqPage() {
                 <AccordionItem value={faq.id} key={faq.id} className="border-b-0 rounded-lg">
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline w-full">
-                           <div className="text-left flex-1">
-                             <CardTitle className="text-xl">{faq.entryContent}</CardTitle>
-                             <CardDescription className="pt-1">by {faq.userName} on {new Date(faq.createdAt).toLocaleDateString()}</CardDescription>
-                           </div>
+                            <div className="grid w-full gap-1 text-left">
+                                <div className="flex w-full justify-between">
+                                    <span className="font-semibold">{faq.userName}</span>
+                                    <span className="text-xs text-muted-foreground">{new Date(faq.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p className="truncate text-sm text-muted-foreground break-words pr-4">{faq.entryContent}</p>
+                            </div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <div className="px-6 pb-6">

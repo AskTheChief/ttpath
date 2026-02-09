@@ -27,6 +27,7 @@ const SaveJournalEntryInputSchema = z.object({
   idToken: z.string(),
   entryContent: z.string(),
   entryId: z.string().optional(), // Optional: for updating existing entries
+  imageUrl: z.string().url().optional(),
 });
 export type SaveJournalEntryInput = z.infer<typeof SaveJournalEntryInputSchema>;
 
@@ -42,7 +43,7 @@ const saveJournalEntryFlow = ai.defineFlow(
     inputSchema: SaveJournalEntryInputSchema,
     outputSchema: SaveJournalEntryOutputSchema,
   },
-  async ({ idToken, entryContent, entryId }) => {
+  async ({ idToken, entryContent, entryId, imageUrl }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -59,13 +60,24 @@ const saveJournalEntryFlow = ai.defineFlow(
     
     const docRef = entryId ? db.collection('journal_entries').doc(entryId) : db.collection('journal_entries').doc();
     
-    await docRef.set({
+    const dataToSave: any = {
         userId,
         userName,
         entryContent,
-        createdAt: entryId ? FieldValue.serverTimestamp() : Timestamp.now(), // Update timestamp only on create
         updatedAt: Timestamp.now(),
-    }, { merge: true });
+    };
+
+    if (imageUrl) {
+        dataToSave.imageUrl = imageUrl;
+    } else {
+        dataToSave.imageUrl = FieldValue.delete();
+    }
+
+    if (!entryId) {
+        dataToSave.createdAt = Timestamp.now();
+    }
+
+    await docRef.set(dataToSave, { merge: true });
     
     return { success: true, entryId: docRef.id };
   }
