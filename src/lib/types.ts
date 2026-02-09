@@ -467,3 +467,16 @@ export const AddManualFaqOutputSchema = z.object({
   message: z.string(),
 });
 export type AddManualFaqOutput = z.infer<typeof AddManualFaqOutputSchema>;
+
+// src/ai/flows/notify-faq-author.ts
+export const NotifyFaqAuthorInputSchema = z.object({
+  idToken: z.string(),
+  entryId: z.string(),
+});
+export type NotifyFaqAuthorInput = z.infer<typeof NotifyFaqAuthorInputSchema>;
+
+export const NotifyFaqAuthorOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type NotifyFaqAuthorOutput = z.infer<typeof NotifyFaqAuthorOutputSchema>;

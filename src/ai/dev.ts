@@ -51,3 +51,4 @@ import '@/ai/flows/send-new-chief-email.ts';
 import '@/ai/flows/send-new-mentor-email.ts';
 import '@/ai/flows/send-meeting-report-reminder.ts';
 import '@/ai/flows/add-manual-faq.ts';
+import '@/ai/flows/notify-faq-author.ts';

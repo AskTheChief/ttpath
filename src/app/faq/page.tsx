@@ -5,13 +5,14 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
+import { notifyFaqAuthor } from '@/ai/flows/notify-faq-author';
 import Image from 'next/image';
 import type { JournalEntry, JournalFeedback } from '@/lib/types';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -91,6 +92,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     const [answerImageUrl, setAnswerImageUrl] = useState('');
     const [answerImageCredit, setAnswerImageCredit] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isNotifying, setIsNotifying] = useState(false);
 
     const questionTextareaRef = useRef<HTMLTextAreaElement>(null);
     const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -182,6 +184,24 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
             setIsSaving(false);
         }
     };
+
+    const handleNotifyWriter = async () => {
+        if (!user) return;
+        setIsNotifying(true);
+        try {
+            const idToken = await user.getIdToken();
+            const result = await notifyFaqAuthor({ idToken, entryId: faq.id });
+            if (result.success) {
+                toast({ title: "Notification Sent", description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (e: any) {
+            toast({ title: 'Error sending notification', description: e.message, variant: 'destructive' });
+        } finally {
+            setIsNotifying(false);
+        }
+    };
     
     const roleName = getRoleName(faq.userLevel);
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
@@ -198,7 +218,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     };
     
     return (
-        <div className="grid lg:grid-cols-2 gap-6 items-start">
+        <div id={`faq-${faq.id}`} className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
@@ -254,11 +274,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="flex flex-col">
                 <CardHeader>
                     <CardTitle className="text-lg">{getAnswerTitle()}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-grow">
                     {(faq.feedback || []).map(fb => {
                          const feedbackAuthor = fb.mentorName?.toLowerCase().includes('ed') ? 'Ed' : getRoleName(fb.mentorLevel);
                          return (
@@ -323,6 +343,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
                     )}
                 </CardContent>
+                 {isMentor && faq.userId && (
+                    <CardFooter>
+                        <Button onClick={handleNotifyWriter} disabled={isNotifying || !faq.feedback || faq.feedback.length === 0}>
+                            {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
+                            Notify Writer
+                        </Button>
+                    </CardFooter>
+                )}
             </Card>
         </div>
     );
