@@ -183,8 +183,19 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         }
     };
     
-    const questionDate = new Date(faq.createdAt).toLocaleDateString();
     const roleName = getRoleName(faq.userLevel);
+    const questionDate = new Date(faq.createdAt).toLocaleDateString();
+
+    const getAnswerTitle = () => {
+        if (!faq.feedback || faq.feedback.length === 0) {
+            return 'Answer';
+        }
+        const hasEdAnswer = faq.feedback.some(fb => fb.mentorName?.toLowerCase().includes('ed'));
+        if (hasEdAnswer) {
+            return 'Ed Says:';
+        }
+        return 'Mentor Says:';
+    };
     
     return (
         <div className="grid lg:grid-cols-2 gap-6 items-start">
@@ -230,7 +241,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                     {editingQuestion ? (
                         <div className="space-y-2">
                             <FormattingToolbar textareaRef={questionTextareaRef} value={questionContent} onValueChange={setQuestionContent} />
-                            <Textarea ref={questionTextareaRef} value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={18} />
+                            <Textarea ref={questionTextareaRef} value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={22} />
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
                             <div className="flex gap-2 pt-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
@@ -245,7 +256,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-lg">Ed Says:</CardTitle>
+                    <CardTitle className="text-lg">{getAnswerTitle()}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {(faq.feedback || []).map(fb => {
@@ -255,7 +266,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                 {editingAnswerId === fb.id ? (
                                     <div className="space-y-2">
                                         <FormattingToolbar textareaRef={answerTextareaRef} value={answerContent} onValueChange={setAnswerContent} />
-                                        <Textarea ref={answerTextareaRef} value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
+                                        <Textarea ref={answerTextareaRef} value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={22} />
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
                                             <div>
@@ -297,7 +308,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                         {fb.imageUrl && (
                                             <>
                                                 <div className="mt-4 relative aspect-video">
-                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
+                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
                                                 {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
                                             </>
