@@ -321,6 +321,7 @@ export const JournalFeedbackSchema = z.object({
     createdAt: z.string(),
     updatedAt: z.string().optional(),
     imageUrl: z.string().url().optional(),
+    imageCredit: z.string().optional(),
 });
 export type JournalFeedback = z.infer<typeof JournalFeedbackSchema>;
 
@@ -359,6 +360,7 @@ export const EditJournalFeedbackInputSchema = z.object({
   feedbackId: z.string(),
   newFeedbackContent: z.string(),
   imageUrl: z.string().url().optional(),
+  imageCredit: z.string().optional(),
 });
 export type EditJournalFeedbackInput = z.infer<typeof EditJournalFeedbackInputSchema>;
 
@@ -456,6 +458,7 @@ export const AddManualFaqInputSchema = z.object({
   answer: z.string(),
   imageUrl: z.string().url().optional(),
   answerImageUrl: z.string().url().optional(),
+  answerImageCredit: z.string().optional(),
 });
 export type AddManualFaqInput = z.infer<typeof AddManualFaqInputSchema>;
 

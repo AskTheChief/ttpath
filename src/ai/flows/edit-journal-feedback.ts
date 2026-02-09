@@ -20,7 +20,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
     inputSchema: EditJournalFeedbackInputSchema,
     outputSchema: EditJournalFeedbackOutputSchema,
   },
-  async ({ idToken, entryId, feedbackId, newFeedbackContent, imageUrl }) => {
+  async ({ idToken, entryId, feedbackId, newFeedbackContent, imageUrl, imageCredit }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -52,13 +52,19 @@ const editJournalFeedbackFlow = ai.defineFlow(
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
         } else if (imageUrl === '') {
-            // Explicitly handle empty string to delete the field
             updatedFeedback.imageUrl = FieldValue.delete();
         }
-        
-        // If imageUrl is undefined, the field remains untouched.
         if (updatedFeedback.imageUrl === undefined) {
           delete updatedFeedback.imageUrl;
+        }
+        
+        if (imageCredit) {
+            updatedFeedback.imageCredit = imageCredit;
+        } else if (imageCredit === '') {
+            updatedFeedback.imageCredit = FieldValue.delete();
+        }
+        if (updatedFeedback.imageCredit === undefined) {
+            delete updatedFeedback.imageCredit;
         }
         
         return updatedFeedback;

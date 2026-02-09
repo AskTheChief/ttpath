@@ -45,6 +45,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     const [questionImageUrl, setQuestionImageUrl] = useState(faq.imageUrl || '');
     const [answerContent, setAnswerContent] = useState('');
     const [answerImageUrl, setAnswerImageUrl] = useState('');
+    const [answerImageCredit, setAnswerImageCredit] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     const isMentor = userLevel >= 6;
@@ -56,6 +57,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setQuestionImageUrl(faq.imageUrl || '');
         setAnswerContent('');
         setAnswerImageUrl('');
+        setAnswerImageCredit('');
     }, [faq]);
 
     const handleSaveQuestion = async () => {
@@ -79,7 +81,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent, imageUrl: answerImageUrl });
+            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent, imageUrl: answerImageUrl, imageCredit: answerImageCredit });
             toast({ title: 'Answer updated' });
             setEditingAnswerId(null);
             onUpdate();
@@ -185,6 +187,12 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                     <div className="space-y-4">
                                         <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={setAnswerImageUrl} userId={user?.uid} label="Answer Image" />
+                                        {answerImageUrl && (
+                                            <div>
+                                                <Label htmlFor="answer-credit" className="text-xs">Image Credit</Label>
+                                                <Input id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" />
+                                            </div>
+                                        )}
                                         <div className="flex gap-2 pt-2">
                                             <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                                             <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
@@ -196,7 +204,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                             <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
                                             {isMentor && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || '');}} disabled={isSaving}>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); }} disabled={isSaving}>
                                                         <Edit className="h-3 w-3" />
                                                     </Button>
                                                     <AlertDialog>
@@ -217,9 +225,12 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                             )}
                                         </div>
                                         {fb.imageUrl && (
-                                            <div className="mt-4 relative aspect-video">
-                                                <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
-                                            </div>
+                                            <>
+                                                <div className="mt-4 relative aspect-video">
+                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
+                                                </div>
+                                                {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
+                                            </>
                                         )}
                                         <p className="text-xs text-muted-foreground mt-2">by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                     </div>

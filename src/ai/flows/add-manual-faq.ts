@@ -19,7 +19,7 @@ const addManualFaqFlow = ai.defineFlow(
     inputSchema: AddManualFaqInputSchema,
     outputSchema: AddManualFaqOutputSchema,
   },
-  async ({ idToken, contributorName, question, answer, imageUrl, answerImageUrl }) => {
+  async ({ idToken, contributorName, question, answer, imageUrl, answerImageUrl, answerImageCredit }) => {
     let mentorToken;
     let mentorData;
     try {
@@ -67,6 +67,9 @@ const addManualFaqFlow = ai.defineFlow(
 
       if (answerImageUrl) {
         newFeedback.imageUrl = answerImageUrl;
+      }
+      if (answerImageCredit) {
+        newFeedback.imageCredit = answerImageCredit;
       }
 
       await entryRef.update({
