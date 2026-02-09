@@ -205,7 +205,12 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle></AlertDialogHeader>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete the question and all associated answers. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                                         <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
