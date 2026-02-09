@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,18 +16,17 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
+import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
+import { editJournalFeedback, deleteJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import Image from 'next/image';
-
-
-type FaqItem = {
-  date: string;
-  url: string;
-  contributor: string;
-  contributorName: string;
-  ed: string;
-  imageUrl?: string;
-};
+import type { JournalEntry, JournalFeedback } from '@/lib/types';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 const commonTopics = [
   "All", "Trading", "Feelings", "Family", "Relationships", "Process", "TTP", "Rocks", "Health", "Accountability", "Beliefs", "Intention"
@@ -36,7 +35,6 @@ const commonTopics = [
 // Helper function to format text by handling newlines
 const formatText = (text: string) => {
     if (!text) return '';
-    // Replace single newlines that are not preceded or followed by another newline with a space
     return text.replace(/(?<!\n)\n(?!\n)/g, ' ').replace(/\n\s*\n/g, '\n\n');
 };
 
@@ -44,7 +42,7 @@ const Highlight = ({ text, highlight }: { text: string; highlight: string }) => 
     if (!highlight.trim()) {
       return <span className="whitespace-pre-wrap">{formatText(text)}</span>;
     }
-    const searchWords = highlight.split(/\s+/).filter(Boolean); // Split by whitespace and remove empty strings
+    const searchWords = highlight.split(/\s+/).filter(Boolean);
     const regex = new RegExp(`(${searchWords.join('|')})`, 'gi');
     const parts = formatText(text).split(regex);
     
@@ -63,8 +61,180 @@ const Highlight = ({ text, highlight }: { text: string; highlight: string }) => 
     );
 };
 
+function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string }) {
+    const { toast } = useToast();
+    const [editingQuestion, setEditingQuestion] = useState(false);
+    const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
+    const [questionContent, setQuestionContent] = useState(faq.entryContent);
+    const [answerContent, setAnswerContent] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string }) {
+    const isMentor = userLevel >= 6;
+
+    const handleSaveQuestion = async () => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            const idToken = await user.getIdToken();
+            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent });
+            toast({ title: 'Question updated' });
+            setEditingQuestion(false);
+            onUpdate();
+        } catch (e: any) {
+            toast({ title: 'Error updating question', description: e.message, variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveAnswer = async (feedbackId: string) => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            const idToken = await user.getIdToken();
+            await editJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId, newFeedbackContent: answerContent });
+            toast({ title: 'Answer updated' });
+            setEditingAnswerId(null);
+            onUpdate();
+        } catch (e: any) {
+            toast({ title: 'Error updating answer', description: e.message, variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteEntry = async () => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            const idToken = await user.getIdToken();
+            await deleteJournalEntry({ idToken, entryId: faq.id });
+            toast({ title: 'FAQ entry deleted' });
+            onUpdate();
+        } catch (e: any) {
+            toast({ title: 'Error deleting entry', description: e.message, variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteFeedbackItem = async (feedbackId: string) => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            const idToken = await user.getIdToken();
+            await deleteJournalFeedback({ idToken, entryId: faq.id, feedbackId: feedbackId });
+            toast({ title: 'Feedback deleted' });
+            onUpdate();
+        } catch (e: any) {
+            toast({ title: 'Error deleting feedback', description: e.message, variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    return (
+        <Card className="h-full">
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="text-lg">Contributor Says:</CardTitle>
+                    <CardDescription>{faq.userName}</CardDescription>
+                </div>
+                {isMentor && (
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isSaving}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader><AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle></AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
+            </CardHeader>
+            <CardContent>
+                {faq.imageUrl && !editingQuestion && (
+                    <div className="mb-4 relative aspect-video">
+                        <Image src={faq.imageUrl} alt="FAQ Image" fill className="rounded-md object-cover" />
+                    </div>
+                )}
+                {editingQuestion ? (
+                    <div className="space-y-2">
+                        <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={6} />
+                        <div className="flex gap-2">
+                            <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>Save</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
+                        </div>
+                    </div>
+                ) : (
+                    <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.entryContent}</blockquote>
+                )}
+            </CardContent>
+             <CardHeader>
+                <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {(faq.feedback || []).map(fb => (
+                    <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
+                        {editingAnswerId === fb.id ? (
+                            <div className="space-y-2">
+                                <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
+                                <div className="flex gap-2">
+                                    <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div className="flex justify-between items-start">
+                                    <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
+                                    {isMentor && (
+                                        <div className="flex gap-1 shrink-0 ml-2">
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent);}} disabled={isSaving}>
+                                                <Edit className="h-3 w-3" />
+                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" disabled={isSaving}>
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete this answer?</AlertDialogTitle></AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteFeedbackItem(fb.id)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">by {fb.mentorName} on {new Date(fb.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {(!faq.feedback || faq.feedback.length === 0) && (
+                    <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+
+function ListView({ faqs, searchTerm, user, userLevel, onFaqUpdate }: { faqs: JournalEntry[], searchTerm: string, user: User | null, userLevel: number, onFaqUpdate: () => void }) {
     if (faqs.length === 0) {
         return <p className="text-center text-muted-foreground mt-8">No results found for your query.</p>;
     }
@@ -72,43 +242,8 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
     return (
         <div className="space-y-6">
             <p className="text-sm text-muted-foreground">Showing {faqs.length > 100 ? 'the first 100 of' : ''} {faqs.length} results.</p>
-            {faqs.slice(0, 100).map((faq, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    <Card className="h-full">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Contributor Says:</CardTitle>
-                            <CardDescription>{faq.contributorName}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {faq.imageUrl && (
-                                <div className="mb-4 relative aspect-video">
-                                    <Image src={faq.imageUrl} alt="FAQ Image" fill className="rounded-md object-cover" />
-                                </div>
-                            )}
-                            <blockquote className="text-muted-foreground">
-                                <Highlight text={faq.contributor} highlight={searchTerm} />
-                            </blockquote>
-                        </CardContent>
-                    </Card>
-                    <Card className="h-full bg-secondary/50">
-                        <CardHeader>
-                            <div className="text-sm text-muted-foreground flex justify-between items-center">
-                               {faq.date && <span>Date: {new Date(faq.date).toLocaleDateString()}</span>}
-                                {faq.url && (
-                                    <a href={faq.url} target="_blank" rel="noopener noreferrer">
-                                        <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
-                                    </a>
-                                )}
-                            </div>
-                            <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="whitespace-pre-wrap">
-                               <Highlight text={faq.ed} highlight={searchTerm} />
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+            {faqs.slice(0, 100).map((faq) => (
+                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={onFaqUpdate} searchTerm={searchTerm} />
             ))}
             {faqs.length > 100 && (
                 <p className="text-center text-muted-foreground mt-4">More than 100 results found. Refine your search to see more.</p>
@@ -119,7 +254,7 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
 
 const ITEMS_PER_PAGE = 12;
 
-function QuestionList({ faqs, onSelectFaq }: { faqs: FaqItem[], onSelectFaq: (faq: FaqItem) => void }) {
+function QuestionList({ faqs, onSelectFaq }: { faqs: JournalEntry[], onSelectFaq: (faq: JournalEntry) => void }) {
     return (
       <div className="space-y-3 p-4">
         {faqs.map((faq, index) => (
@@ -128,8 +263,8 @@ function QuestionList({ faqs, onSelectFaq }: { faqs: FaqItem[], onSelectFaq: (fa
             onClick={() => onSelectFaq(faq)}
             className="w-full text-left p-3 rounded-lg bg-background hover:bg-secondary transition-colors border"
           >
-            <p className="font-medium truncate">{faq.contributor}</p>
-            <p className="text-sm text-muted-foreground truncate">Ed: {faq.ed}</p>
+            <p className="font-medium truncate">{faq.entryContent}</p>
+            <p className="text-sm text-muted-foreground truncate">Ed: {faq.feedback?.[0]?.feedbackContent || "No feedback yet."}</p>
           </button>
         ))}
       </div>
@@ -151,10 +286,10 @@ const topicColors = [
 ];
 
 
-const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> }) => {
+const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, JournalEntry[]> }) => {
     const [viewState, setViewState] = useState<'root' | 'topics' | 'faqs'>('root');
     const [activeTopic, setActiveTopic] = useState<string | null>(null);
-    const [selectedFaq, setSelectedFaq] = useState<FaqItem | null>(null);
+    const [selectedFaq, setSelectedFaq] = useState<JournalEntry | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
   
@@ -396,11 +531,11 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Contributor Says:</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.contributor) : ''}</DialogDescription>
+              <DialogDescription className="whitespace-pre-wrap pt-2">{selectedFaq ? formatText(selectedFaq.entryContent) : ''}</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="font-semibold mb-2">Ed Says:</h3>
-              <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq ? formatText(selectedFaq.ed) : ''}</p>
+              <p className="whitespace-pre-wrap text-muted-foreground">{selectedFaq ? formatText(selectedFaq.feedback?.[0]?.feedbackContent || 'No feedback yet.') : ''}</p>
             </div>
           </DialogContent>
         </Dialog>
@@ -408,45 +543,53 @@ const BubbleView = ({ faqsByTopic }: { faqsByTopic: Record<string, FaqItem[]> })
     );
   };
   
-
-
-export default function TheIndexPage() {
-  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+export default function FaqPage() {
+  const [faqs, setFaqs] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('All');
-  const [viewMode, setViewMode] = useState<'list' | 'bubble'>('bubble');
+  const [viewMode, setViewMode] = useState<'list' | 'bubble'>('list');
+  const [user, setUser] = useState<User | null>(null);
+  const [userLevel, setUserLevel] = useState(0);
+
+  const fetchFaqs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const journalEntries = await getAllJournalEntries();
+      setFaqs(journalEntries);
+    } catch (error) {
+      console.error('Failed to fetch FAQ data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchFaqs() {
-      setLoading(true);
-      try {
-        const journalEntries = await getAllJournalEntries();
-        const mappedFaqs: FaqItem[] = journalEntries.map(entry => ({
-          date: entry.createdAt,
-          url: '', // No direct mapping for URL from journal entries
-          contributor: entry.entryContent,
-          contributorName: entry.userName,
-          ed: entry.feedback?.[0]?.feedbackContent || 'No feedback yet.',
-          imageUrl: entry.imageUrl,
-        }));
-        setFaqs(mappedFaqs);
-      } catch (error) {
-        console.error('Failed to fetch FAQ data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchFaqs();
+  }, [fetchFaqs]);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        setUser(currentUser);
+        if (currentUser) {
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                setUserLevel(userDoc.data().currentUserLevel || 0);
+            }
+        } else {
+            setUserLevel(0);
+        }
+    });
+    return () => unsubscribe();
   }, []);
 
   const faqsByTopic = useMemo(() => {
-    const topicsMap: Record<string, FaqItem[]> = { "All": faqs };
+    const topicsMap: Record<string, JournalEntry[]> = { "All": faqs };
     commonTopics.slice(1).forEach(topic => {
       const lowercasedTopic = topic.toLowerCase();
       topicsMap[topic] = faqs.filter(faq => 
-        faq.contributor.toLowerCase().includes(lowercasedTopic)
+        faq.entryContent.toLowerCase().includes(lowercasedTopic)
       );
     });
     return topicsMap;
@@ -458,7 +601,7 @@ export default function TheIndexPage() {
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
-            const questionText = faq.contributor.toLowerCase();
+            const questionText = faq.entryContent.toLowerCase();
             return searchWords.every(word => questionText.includes(word));
         });
     }
@@ -498,10 +641,10 @@ export default function TheIndexPage() {
               <p>This FAQ is a collection of community questions and answers. You can explore it in two ways:</p>
               <ul className="list-disc pl-5">
                 <li>
-                  <strong>Bubble View (Default):</strong> An interactive way to explore topics. Click the "All Topics" bubble to see categories. Click a category bubble (like "Trading" or "Feelings") to see a list of related questions.
+                  <strong>List View (Default):</strong> A traditional, searchable list of all entries. Mentors can edit and delete content directly in this view.
                 </li>
                 <li>
-                  <strong>List View:</strong> A traditional, searchable list of all entries. Use the toggle to switch to this view.
+                  <strong>Bubble View:</strong> An interactive way to explore topics visually. Click bubbles to navigate through categories and questions.
                 </li>
               </ul>
               <p>
@@ -535,18 +678,18 @@ export default function TheIndexPage() {
             />
           </div>
            <div className="flex items-center space-x-2">
-            <Label htmlFor="view-switch">List</Label>
+            <Label htmlFor="view-switch">Bubbles</Label>
             <Switch
                 id="view-switch"
-                checked={viewMode === 'bubble'}
-                onCheckedChange={(checked) => setViewMode(checked ? 'bubble' : 'list')}
+                checked={viewMode === 'list'}
+                onCheckedChange={(checked) => setViewMode(checked ? 'list' : 'bubble')}
             />
-            <Label htmlFor="view-switch">Bubbles</Label>
+            <Label htmlFor="view-switch">List</Label>
         </div>
         </div>
 
         {viewMode === 'list' ? (
-            <ListView faqs={filteredFaqs} searchTerm={searchTerm} />
+            <ListView faqs={filteredFaqs} searchTerm={searchTerm} user={user} userLevel={userLevel} onFaqUpdate={fetchFaqs} />
         ) : (
             <BubbleView faqsByTopic={faqsByTopic} />
         )}

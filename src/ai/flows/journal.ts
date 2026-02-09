@@ -18,6 +18,7 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
 
 
 // --- SAVE JOURNAL ENTRY ---
@@ -183,8 +184,15 @@ const deleteJournalEntryFlow = ai.defineFlow(
     const docRef = db.collection('journal_entries').doc(entryId);
     const docSnap = await docRef.get();
     
-    if (!docSnap.exists || docSnap.data()?.userId !== userId) {
-        throw new Error('Permission denied or entry not found.');
+    if (!docSnap.exists) {
+        throw new Error('Entry not found.');
+    }
+    
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userLevel = userDoc.data()?.currentUserLevel || 0;
+    
+    if (docSnap.data()?.userId !== userId && userLevel < ADMIN_LEVEL) {
+        throw new Error('Permission denied. You are not the author or a mentor.');
     }
 
     await docRef.delete();

@@ -164,7 +164,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               <MessageSquare className="mr-4 w-10 h-10" />
               Ask the Chief
             </Button>
-            <Link href="/the-index" passHref>
+            <Link href="/faq" passHref>
               <Button
                 variant="ghost"
                 className="w-full justify-start text-xl p-4 h-auto"
