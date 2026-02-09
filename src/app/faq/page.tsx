@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
@@ -184,7 +183,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         }
     };
     
-    const contributorRole = getRoleName(faq.userLevel);
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
     
     return (
@@ -192,8 +190,8 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">Question from {faq.userName}</CardTitle>
-                        <CardDescription>{contributorRole} on {questionDate}</CardDescription>
+                        <CardTitle className="text-lg">Question</CardTitle>
+                        <CardDescription>{questionDate}</CardDescription>
                     </div>
                     {isMentor && (
                         <div className="flex gap-2">
@@ -406,20 +404,6 @@ export default function FaqPage() {
           </Button>
         </div>
       </header>
-
-      <Accordion type="single" collapsible defaultValue="how-to-use" className="w-full mb-8">
-        <AccordionItem value="how-to-use">
-          <AccordionTrigger>How to Use the FAQ</AccordionTrigger>
-          <AccordionContent>
-            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground space-y-2">
-              <p>This FAQ is a collection of community questions and answers. Mentors can edit and delete content directly in this view.</p>
-              <p>
-                Use the search bar to find specific keywords within the questions.
-              </p>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
 
       <div className="space-y-8">
         <div className="relative flex-grow w-full">
