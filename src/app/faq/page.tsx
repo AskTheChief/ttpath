@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
+import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
@@ -22,6 +23,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploader } from '@/components/image-uploader';
 import { Label } from '@/components/ui/label';
+
+// Augment JournalEntry type for this component to include chatbot entries
+type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
 
 const levelMap: Record<number, string> = {
   1: "Visitor",
@@ -93,7 +97,7 @@ function FormattingToolbar({
   );
 }
 
-function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
+function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
@@ -109,6 +113,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
     const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const isMentor = userLevel >= 6;
+    const canEditEntry = isMentor && !faq.isChatbotEntry;
     
     useEffect(() => {
         setEditingQuestion(false);
@@ -161,7 +166,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
             });
             toast({ title: 'Answer updated' });
 
-            if (notify) {
+            if (notify && !faq.isManualEntry) {
                 const result = await notifyFaqAuthor({ idToken, entryId: faq.id });
                 if (!result.success) throw new Error(result.message);
                 toast({ title: 'Notification Sent', description: result.message });
@@ -213,6 +218,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
         if (!faq.feedback || faq.feedback.length === 0) {
             return 'Answer';
         }
+        if (faq.isChatbotEntry) {
+            return 'The Chief Says:';
+        }
         const hasEdAnswer = faq.feedback.some(fb => fb.mentorName?.toLowerCase().includes('ed'));
         if (hasEdAnswer) {
             return 'Ed Says:';
@@ -228,7 +236,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
                         <CardTitle className="text-lg">Question</CardTitle>
                         <CardDescription>{roleName} on {questionDate}</CardDescription>
                     </div>
-                    {isMentor && (
+                    {canEditEntry && (
                         <div className="flex gap-2">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
                                 <Edit className="h-4 w-4" />
@@ -284,6 +292,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
                 <CardContent className="space-y-4 flex-grow">
                     {(faq.feedback || []).map(fb => {
                          const feedbackAuthor = fb.mentorName?.toLowerCase().includes('ed') ? 'Ed' : getRoleName(fb.mentorLevel);
+                         const canEditFeedback = isMentor && fb.mentorId !== 'chatbot-chief';
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
@@ -303,17 +312,19 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
                                                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                                 Save
                                             </Button>
-                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id, { notify: true })} disabled={isSaving || isNotifying}>
-                                                {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
-                                                Save & Notify
-                                            </Button>
+                                            {!faq.isManualEntry && (
+                                                <Button size="sm" onClick={() => handleSaveAnswer(fb.id, { notify: true })} disabled={isSaving || isNotifying}>
+                                                    {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
+                                                    Save & Notify
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
                                     <div>
                                         <div className="flex justify-between items-start">
                                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
-                                            {isMentor && (
+                                            {canEditFeedback && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
                                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); }} disabled={isSaving}>
                                                         <Edit className="h-3 w-3" />
@@ -359,7 +370,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Jour
 }
 
 export default function FaqPage() {
-  const [faqs, setFaqs] = useState<JournalEntry[]>([]);
+  const [faqs, setFaqs] = useState<FaqEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState<User | null>(null);
@@ -368,8 +379,34 @@ export default function FaqPage() {
   const fetchFaqs = useCallback(async () => {
     setLoading(true);
     try {
-      const journalEntries = await getAllJournalEntries();
-      setFaqs(journalEntries);
+      const [journalEntries, chatSessions] = await Promise.all([
+        getAllJournalEntries(),
+        getChatSessions()
+      ]);
+
+      const chatbotFaqs: FaqEntry[] = chatSessions.map(session => ({
+        id: `chatbot-${session.id}`,
+        userId: session.userId || 'anonymous-chatbot-user',
+        userName: session.userName || 'Anonymous',
+        userLevel: 1, // Treat as Guest
+        entryContent: session.question,
+        createdAt: session.createdAt,
+        feedback: [
+          {
+            id: `feedback-chatbot-${session.id}`,
+            mentorId: 'chatbot-chief',
+            mentorName: 'The Chief',
+            mentorLevel: 7, // Special level for the chief
+            feedbackContent: session.answer,
+            createdAt: session.createdAt
+          }
+        ],
+        isChatbotEntry: true,
+      }));
+
+      const allFaqs = [...journalEntries, ...chatbotFaqs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      setFaqs(allFaqs);
     } catch (error) {
       console.error('Failed to fetch FAQ data:', error);
     } finally {
