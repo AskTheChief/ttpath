@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from "firebase/auth";
@@ -7,7 +8,7 @@ const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "ttpath.com",
   projectId: "studio-7790315517-f3fe6",
-  storageBucket: "studio-7790315517-f3fe6.appspot.com",
+  storageBucket: "studio-7790315517-f3fe6.firebasestorage.app",
   messagingSenderId: "193775147768",
   appId: "1:193775147768:web:fd098f2c97c495de1ff90d",
 };
