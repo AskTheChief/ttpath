@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -16,11 +15,15 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
+import type { JournalEntry } from '@/lib/types';
+
 
 type FaqItem = {
   date: string;
   url: string;
   contributor: string;
+  contributorName: string;
   ed: string;
 };
 
@@ -72,6 +75,7 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                     <Card className="h-full">
                         <CardHeader>
                             <CardTitle className="text-lg">Contributor Says:</CardTitle>
+                            <CardDescription>{faq.contributorName}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <blockquote className="text-muted-foreground">
@@ -82,10 +86,12 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                     <Card className="h-full bg-secondary/50">
                         <CardHeader>
                             <div className="text-sm text-muted-foreground flex justify-between items-center">
-                               {faq.date !== 'Unknown Date' && <span>Date: {faq.date}</span>}
-                                <a href={faq.url} target="_blank" rel="noopener noreferrer">
-                                    <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
-                                </a>
+                               {faq.date && <span>Date: {new Date(faq.date).toLocaleDateString()}</span>}
+                                {faq.url && (
+                                    <a href={faq.url} target="_blank" rel="noopener noreferrer">
+                                        <Badge variant="secondary" className="hover:bg-accent">View Source</Badge>
+                                    </a>
+                                )}
                             </div>
                             <CardTitle className="text-lg pt-2">Ed Says:</CardTitle>
                         </CardHeader>
@@ -407,12 +413,15 @@ export default function TheIndexPage() {
   useEffect(() => {
     async function fetchFaqs() {
       try {
-        const response = await fetch('/Faq/faq-database.json');
-        if (!response.ok) {
-          throw new Error('Failed to load FAQ database.');
-        }
-        const data = await response.json();
-        setFaqs(data);
+        const journalEntries = await getAllJournalEntries();
+        const mappedFaqs: FaqItem[] = journalEntries.map((entry: JournalEntry) => ({
+            date: entry.createdAt,
+            url: '', // No URL for now
+            contributor: entry.entryContent,
+            contributorName: entry.userName,
+            ed: entry.feedback?.map(f => `Feedback from ${f.mentorName}:\n${f.feedbackContent}`).join('\n\n---\n\n') || '',
+        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setFaqs(mappedFaqs);
       } catch (error) {
         console.error(error);
       } finally {
