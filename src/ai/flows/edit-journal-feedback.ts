@@ -43,27 +43,23 @@ const editJournalFeedbackFlow = ai.defineFlow(
     const newFeedbackArray = feedbackArray.map((fb: any) => {
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
+
+        // Destructure to safely remove old image-related fields from the base object.
+        const { imageUrl: _oldImageUrl, imageCredit: _oldImageCredit, ...restOfFb } = fb;
         
         const updatedFeedback: any = {
-          ...fb,
+          ...restOfFb,
           feedbackContent: newFeedbackContent,
           updatedAt: Timestamp.now(),
         };
         
-        // Handle imageUrl and imageCredit together to prevent orphaned data
+        // Conditionally add back image fields only if a new URL is provided.
+        // This avoids using `delete` which can cause issues in array updates.
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
-            // Only save credit if there is an image
             if (imageCredit) {
                 updatedFeedback.imageCredit = imageCredit;
-            } else {
-                // If there's an image but no credit provided, remove any old credit
-                delete updatedFeedback.imageCredit;
             }
-        } else {
-            // If no image URL is provided, remove both fields
-            delete updatedFeedback.imageUrl;
-            delete updatedFeedback.imageCredit;
         }
         
         return updatedFeedback;
