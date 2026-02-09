@@ -44,25 +44,28 @@ const editJournalFeedbackFlow = ai.defineFlow(
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
 
-        const updatedFeedback: any = {
-          id: fb.id,
-          mentorId: fb.mentorId,
-          mentorName: fb.mentorName,
-          feedbackContent: newFeedbackContent,
-          createdAt: fb.createdAt,
-          updatedAt: Timestamp.now(),
-          mentorLevel: fb.mentorLevel ?? 0,
+        const finalUpdatedFeedback: any = {
+            ...fb, // Start with existing data
+            feedbackContent: newFeedbackContent,
+            updatedAt: Timestamp.now(),
         };
-
-        if (imageUrl) {
-          updatedFeedback.imageUrl = imageUrl;
-          // Explicitly handle imageCredit, allowing an empty string to be saved to clear it.
-          if (typeof imageCredit === 'string') {
-            updatedFeedback.imageCredit = imageCredit;
-          }
+      
+        // If imageUrl is provided (can be an empty string to clear)
+        if (imageUrl !== undefined) {
+            finalUpdatedFeedback.imageUrl = imageUrl;
         }
         
-        return updatedFeedback;
+        // If imageCredit is provided (can be an empty string to clear)
+        if (imageCredit !== undefined) {
+            finalUpdatedFeedback.imageCredit = imageCredit;
+        }
+        
+        // If the image URL is being cleared, also clear the credit.
+        if (imageUrl === '') {
+            finalUpdatedFeedback.imageCredit = '';
+        }
+
+        return finalUpdatedFeedback;
       }
       return fb;
     });

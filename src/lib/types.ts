@@ -359,7 +359,7 @@ export const EditJournalFeedbackInputSchema = z.object({
   entryId: z.string(),
   feedbackId: z.string(),
   newFeedbackContent: z.string(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
   imageCredit: z.string().optional(),
 });
 export type EditJournalFeedbackInput = z.infer<typeof EditJournalFeedbackInputSchema>;

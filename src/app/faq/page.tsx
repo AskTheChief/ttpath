@@ -161,7 +161,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl || undefined,
+                imageUrl: answerImageUrl,
                 imageCredit: answerImageCredit
             });
             toast({ title: 'Answer updated' });

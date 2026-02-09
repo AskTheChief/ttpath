@@ -170,7 +170,7 @@ function FeedbackForm({
           entryId,
           feedbackId: editingFeedback.id,
           newFeedbackContent: feedbackContent,
-          imageUrl: imageUrl || undefined,
+          imageUrl: imageUrl,
           imageCredit: imageCredit,
         });
         if (result.success) {
