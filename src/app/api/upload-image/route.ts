@@ -10,22 +10,23 @@ function getFirebaseAdminApp(): App {
         return getApps()[0];
     }
     
-    // When running in a Google Cloud environment, the SDK will automatically
-    // discover service account credentials and the storage bucket.
-    return initializeApp();
+    // Explicitly define the storage bucket on initialization
+    // This is more robust in some cloud environments.
+    return initializeApp({
+        storageBucket: "studio-7790315517-f3fe6.appspot.com",
+    });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const app = getFirebaseAdminApp();
     const adminAuth = getAuth(app);
-    // By default, getStorage().bucket() will use the default bucket from the initialized app.
-    // Explicitly naming it is safer in some environments.
-    const bucket = getStorage(app).bucket("studio-7790315517-f3fe6.appspot.com");
+    // Get the default bucket that was configured during initialization
+    const bucket = getStorage(app).bucket();
 
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!authToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Missing token.' }, { status: 401 });
     }
 
     let decodedToken;
@@ -33,13 +34,13 @@ export async function POST(req: NextRequest) {
       decodedToken = await adminAuth.verifyIdToken(authToken);
     } catch (error) {
       console.error('Error verifying token', error);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Invalid token.' }, { status: 401 });
     }
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
     }
     
     const userId = decodedToken.uid;
@@ -55,28 +56,31 @@ export async function POST(req: NextRequest) {
     
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    return await new Promise<NextResponse>((resolve) => {
-        blobStream.on('error', (err) => {
-            console.error('Error uploading to GCS:', err);
-            resolve(NextResponse.json({ error: 'Something went wrong during upload.' }, { status: 500 }));
+    // Use a separate try/catch for the upload stream itself for clearer error handling
+    try {
+        await new Promise<void>((resolve, reject) => {
+            blobStream.on('error', (err) => {
+                console.error('Stream Error: Error uploading to GCS:', err);
+                reject(new Error('Failed to upload file to storage.'));
+            });
+            blobStream.on('finish', () => {
+                resolve();
+            });
+            blobStream.end(buffer);
         });
 
-        blobStream.on('finish', async () => {
-            try {
-                await blob.makePublic();
-                const publicUrl = blob.publicUrl();
-                resolve(NextResponse.json({ imageUrl: publicUrl }, { status: 200 }));
-            } catch(e) {
-                console.error("Error making file public:", e)
-                resolve(NextResponse.json({ error: 'Failed to make image public.' }, { status: 500 }));
-            }
-        });
+        // If the upload promise resolves, make the file public
+        await blob.makePublic();
+        const publicUrl = blob.publicUrl();
+        return NextResponse.json({ imageUrl: publicUrl }, { status: 200 });
 
-        blobStream.end(buffer);
-    });
+    } catch (uploadError: any) {
+        console.error('File Upload Process Error:', uploadError);
+        return NextResponse.json({ error: uploadError.message || 'File upload process failed.' }, { status: 500 });
+    }
 
-  } catch (error) {
-    console.error('Error processing upload request:', error);
-    return NextResponse.json({ error: (error as Error).message || 'Something went wrong.' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Overall API Error:', error);
+    return NextResponse.json({ error: error.message || 'An unexpected error occurred processing the request.' }, { status: 500 });
   }
 }
