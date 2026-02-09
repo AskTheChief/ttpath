@@ -49,7 +49,8 @@ const highlightText = (text: string, highlight: string): string => {
   }
   const escapedWords = searchWords.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const regex = new RegExp(`(${escapedWords.join('|')})`, 'gi');
-  return text.replace(regex, `<mark class="bg-yellow-200 dark:bg-yellow-800 text-foreground rounded-sm px-0.5 py-0.5">$1</mark>`);
+  const sanitizedText = text.replace(/<[^>]*>/g, '');
+  return sanitizedText.replace(regex, `<mark class="bg-yellow-200 dark:bg-yellow-800 text-foreground rounded-sm px-0.5 py-0.5">$1</mark>`);
 };
 
 
@@ -161,8 +162,8 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl,
-                imageCredit: answerImageCredit
+                imageUrl: answerImageUrl || undefined,
+                imageCredit: answerImageCredit || undefined,
             });
             toast({ title: 'Answer updated' });
 
@@ -458,6 +459,31 @@ export default function FaqPage() {
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">Loading the FAQ...</p>
       </div>
+    );
+  }
+
+  if (!isMentor) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+            <Card className="max-w-md">
+                <CardHeader>
+                    <CardTitle>Access Restricted</CardTitle>
+                    <CardDescription>
+                        This page is currently under review and is only available to Mentors.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>We are working on anonymizing all entries before making them public. Thank you for your patience.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
     );
   }
 
