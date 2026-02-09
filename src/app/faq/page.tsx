@@ -38,6 +38,17 @@ const getRoleName = (level?: number) => {
     return levelMap[level];
 };
 
+const highlightText = (text: string, highlight: string): string => {
+  const searchWords = highlight.trim().split(/\s+/).filter(Boolean);
+  if (!text || searchWords.length === 0) {
+    return text;
+  }
+  const escapedWords = searchWords.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedWords.join('|')})`, 'gi');
+  return text.replace(regex, `<mark class="bg-yellow-200 dark:bg-yellow-800 text-foreground rounded-sm px-0.5 py-0.5">$1</mark>`);
+};
+
+
 function FormattingToolbar({
   textareaRef,
   onValueChange,
@@ -82,7 +93,7 @@ function FormattingToolbar({
   );
 }
 
-function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; }) {
+function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
@@ -261,7 +272,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                             </div>
                         </div>
                     ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: faq.entryContent.replace(/\n/g, '<br />') }} />
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
                     )}
                 </CardContent>
             </Card>
@@ -301,7 +312,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                 ) : (
                                     <div>
                                         <div className="flex justify-between items-start">
-                                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
+                                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
                                             {isMentor && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
                                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); }} disabled={isSaving}>
@@ -451,7 +462,7 @@ export default function FaqPage() {
         {filteredFaqs.length > 0 ? (
            <div className="space-y-12">
             {filteredFaqs.map(faq => (
-                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} />
+                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
             ))}
         </div>
         ) : (
@@ -463,5 +474,3 @@ export default function FaqPage() {
     </div>
   );
 }
-
-    
