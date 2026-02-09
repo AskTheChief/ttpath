@@ -184,7 +184,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                             </div>
                         </div>
                     ) : (
-                        <blockquote className="text-muted-foreground whitespace-pre-wrap">{faq.entryContent}</blockquote>
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: faq.entryContent.replace(/\n/g, '<br />') }} />
                     )}
                 </CardContent>
             </Card>
@@ -216,7 +216,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                                 ) : (
                                     <div>
                                         <div className="flex justify-between items-start">
-                                            <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
+                                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
                                             {isMentor && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
                                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); }} disabled={isSaving}>
