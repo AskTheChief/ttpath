@@ -162,7 +162,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
                 imageUrl: answerImageUrl || undefined,
-                imageCredit: answerImageCredit || undefined
+                imageCredit: answerImageCredit
             });
             toast({ title: 'Answer updated' });
 
@@ -351,7 +351,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="mt-4 relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
+                                                {fb.imageCredit && <p className="text-xs text-muted-foreground text-center mt-2">Credit: {fb.imageCredit}</p>}
                                             </>
                                         )}
                                         <p className="text-xs text-muted-foreground mt-2">by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
@@ -389,7 +389,7 @@ export default function FaqPage() {
         userId: session.userId || 'anonymous-chatbot-user',
         userName: session.userName || 'Anonymous',
         userLevel: 1, // Treat as Guest
-        entryContent: session.question,
+        entryContent: session.question.replace(/<[^>]*>/g, ''),
         createdAt: session.createdAt,
         feedback: [
           {

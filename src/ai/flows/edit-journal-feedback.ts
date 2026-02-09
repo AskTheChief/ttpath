@@ -44,21 +44,20 @@ const editJournalFeedbackFlow = ai.defineFlow(
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
 
-        // Start with a clean base object to avoid sending undefined fields
         const updatedFeedback: any = {
           id: fb.id,
           mentorId: fb.mentorId,
           mentorName: fb.mentorName,
           feedbackContent: newFeedbackContent,
-          createdAt: fb.createdAt, // Preserve original creation timestamp
+          createdAt: fb.createdAt,
           updatedAt: Timestamp.now(),
-          mentorLevel: fb.mentorLevel ?? 0, // Fix: Default to 0 if mentorLevel is null or undefined
+          mentorLevel: fb.mentorLevel ?? 0,
         };
 
-        // Conditionally add image-related fields only if they have a value
         if (imageUrl) {
           updatedFeedback.imageUrl = imageUrl;
-          if (imageCredit) {
+          // Explicitly handle imageCredit, allowing an empty string to be saved to clear it.
+          if (typeof imageCredit === 'string') {
             updatedFeedback.imageCredit = imageCredit;
           }
         }

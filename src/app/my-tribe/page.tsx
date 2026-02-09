@@ -146,6 +146,7 @@ function FeedbackForm({
 }) {
   const [feedbackContent, setFeedbackContent] = useState(editingFeedback ? editingFeedback.feedbackContent : '');
   const [imageUrl, setImageUrl] = useState(editingFeedback?.imageUrl || '');
+  const [imageCredit, setImageCredit] = useState(editingFeedback?.imageCredit || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
@@ -153,6 +154,7 @@ function FeedbackForm({
   useEffect(() => {
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
     setImageUrl(editingFeedback?.imageUrl || '');
+    setImageCredit(editingFeedback?.imageCredit || '');
   }, [editingFeedback]);
 
   const handleSubmit = async () => {
@@ -169,6 +171,7 @@ function FeedbackForm({
           feedbackId: editingFeedback.id,
           newFeedbackContent: feedbackContent,
           imageUrl: imageUrl || undefined,
+          imageCredit: imageCredit,
         });
         if (result.success) {
           toast({ title: 'Feedback Updated' });
@@ -176,8 +179,6 @@ function FeedbackForm({
           throw new Error(result.message);
         }
       } else {
-        // Adding new feedback does not currently support images this way.
-        // This form is only used for editing in the mentor dashboard.
         const result = await addJournalFeedback({
           idToken,
           entryId,
@@ -187,6 +188,7 @@ function FeedbackForm({
           toast({ title: 'Feedback Added' });
           setFeedbackContent('');
           setImageUrl('');
+          setImageCredit('');
         } else {
           throw new Error(result.message);
         }
@@ -213,7 +215,15 @@ function FeedbackForm({
         rows={3}
       />
        {isEditMode && (
-         <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
+         <>
+            <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
+            {imageUrl && (
+              <div className="space-y-2">
+                  <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
+                  <Input id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" />
+              </div>
+            )}
+         </>
       )}
       <div className="flex gap-2 pt-2">
         <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
@@ -1904,9 +1914,12 @@ function MyTribePageContent() {
                                                         <AlertDescription>
                                                             <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
                                                             {fb.imageUrl && (
-                                                                <div className="mt-4 relative aspect-video">
-                                                                    <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
-                                                                </div>
+                                                                <>
+                                                                    <div className="mt-4 relative aspect-video">
+                                                                        <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
+                                                                    </div>
+                                                                    {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
+                                                                </>
                                                             )}
                                                             <p className="text-xs text-muted-foreground mt-2">
                                                                 {isClient ? new Date(fb.createdAt).toLocaleString() : '...'}
