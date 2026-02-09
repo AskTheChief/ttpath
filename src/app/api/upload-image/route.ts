@@ -4,18 +4,20 @@ import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
+const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
+
 // Initialize Firebase Admin SDK, ensuring the storage bucket is specified.
 if (!getApps().length) {
   initializeApp({
-    storageBucket: 'studio-7790315517-f3fe6.appspot.com',
+    storageBucket: BUCKET_NAME,
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const adminAuth = getAuth();
-    // Get the default bucket associated with the Firebase project.
-    const bucket = getStorage().bucket();
+    // Explicitly get the bucket by name as suggested by the error message.
+    const bucket = getStorage().bucket(BUCKET_NAME);
 
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!authToken) {
