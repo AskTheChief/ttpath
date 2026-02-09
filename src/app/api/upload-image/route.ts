@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     console.log(`File found: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
     console.log('Connecting to Firebase Storage...');
+    // Explicitly specify the bucket name to avoid any ambiguity.
     const bucket = getStorage().bucket(BUCKET_NAME);
     console.log(`Connected to bucket: ${bucket.name}`);
     
