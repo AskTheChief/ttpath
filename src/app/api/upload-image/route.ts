@@ -2,23 +2,24 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, applicationDefault, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
+// This is the correct format for the Admin SDK
 const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
 
-// Initialize Firebase Admin SDK, ensuring the storage bucket is specified.
+// Ensure Firebase is initialized only once.
 if (!getApps().length) {
   try {
     initializeApp({
       credential: applicationDefault(),
+      // Explicitly provide the storageBucket as per the error message's suggestion.
       storageBucket: BUCKET_NAME,
     });
-    console.log('Firebase Admin SDK initialized successfully for image upload.');
+    console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
   } catch (error: any) {
-    console.error('---[API/UPLOAD-IMAGE] Firebase Admin Init Error:', error.message);
-    // If it fails to initialize, we cannot proceed. This is a critical server configuration error.
+    console.error('---[/api/upload-image] CRITICAL: Firebase Admin Init Error:', error.message);
   }
 }
 
@@ -50,9 +51,8 @@ export async function POST(req: NextRequest) {
     }
     console.log(`---[/api/upload-image] File received: ${file.name}, Size: ${file.size}`);
 
-    // Get the default bucket from the initialized app.
-    // DO NOT pass a bucket name here. It uses the one from initializeApp.
-    const bucket = getStorage().bucket();
+    // Explicitly get the bucket by name, as per the error message's second suggestion.
+    const bucket = getStorage().bucket(BUCKET_NAME);
     console.log(`---[/api/upload-image] Using storage bucket: ${bucket.name}`);
     
     const userId = decodedToken.uid;
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
     await new Promise<void>((resolve, reject) => {
         blobStream.on('error', (err) => {
             console.error('---[/api/upload-image] STREAM ERROR:', err);
+            // This is likely where the "Bucket not specified" error originates from the GCS client library.
             reject(new Error(`Failed to upload file to storage. GCS Error: ${err.message}`));
         });
         blobStream.on('finish', () => {
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ imageUrl: publicUrl }, { status: 200 });
 
   } catch (error: any) {
+    // Catch any other errors in the process.
     console.error(`---[/api/upload-image] CATCH BLOCK ERROR: ${error.message}`);
     const message = error.message || 'An unexpected error occurred processing the request.';
     return NextResponse.json({ error: message }, { status: 500 });
