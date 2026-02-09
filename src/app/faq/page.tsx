@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
@@ -38,6 +38,50 @@ const getRoleName = (level?: number) => {
     return levelMap[level];
 };
 
+function FormattingToolbar({
+  textareaRef,
+  onValueChange,
+  value,
+}: {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  onValueChange: (newValue: string) => void;
+  value: string;
+}) {
+  const formatText = (tag: 'b' | 'i' | 'u') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    if (selectedText) {
+      const newText = `${value.substring(0, start)}<${tag}>${selectedText}</${tag}>${value.substring(end)}`;
+      onValueChange(newText);
+      
+      // Re-focus and select the text after update
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + tag.length + 2, end + tag.length + 2);
+      }, 0);
+    }
+  };
+
+  return (
+    <div className="flex gap-1 mb-2 p-1 border rounded-md bg-muted">
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('b')} title="Bold">
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('i')} title="Italic">
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('u')} title="Underline">
+        <Underline className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
@@ -48,6 +92,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     const [answerImageUrl, setAnswerImageUrl] = useState('');
     const [answerImageCredit, setAnswerImageCredit] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    const questionTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const isMentor = userLevel >= 6;
     
@@ -175,8 +222,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                         </div>
                     )}
                     {editingQuestion ? (
-                        <div className="space-y-4">
-                            <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={18} />
+                        <div className="space-y-2">
+                            <FormattingToolbar textareaRef={questionTextareaRef} value={questionContent} onValueChange={setQuestionContent} />
+                            <Textarea ref={questionTextareaRef} value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={18} />
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
                             <div className="flex gap-2 pt-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
@@ -199,8 +247,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
-                                    <div className="space-y-4">
-                                        <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
+                                    <div className="space-y-2">
+                                        <FormattingToolbar textareaRef={answerTextareaRef} value={answerContent} onValueChange={setAnswerContent} />
+                                        <Textarea ref={answerTextareaRef} value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
                                             <div>
