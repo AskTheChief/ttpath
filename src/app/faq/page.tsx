@@ -184,6 +184,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     };
     
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
+    const roleName = getRoleName(faq.userLevel);
     
     return (
         <div className="grid lg:grid-cols-2 gap-6 items-start">
@@ -191,7 +192,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
                         <CardTitle className="text-lg">Question</CardTitle>
-                        <CardDescription>{questionDate}</CardDescription>
+                        <CardDescription>{roleName} on {questionDate}</CardDescription>
                     </div>
                     {isMentor && (
                         <div className="flex gap-2">
