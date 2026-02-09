@@ -1,7 +1,8 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { EditJournalFeedbackInputSchema, EditJournalFeedbackOutputSchema, type EditJournalFeedbackInput, type EditJournalFeedbackOutput } from '@/lib/types';
@@ -50,9 +51,16 @@ const editJournalFeedbackFlow = ai.defineFlow(
         
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
-        } else {
-            delete updatedFeedback.imageUrl;
+        } else if (imageUrl === '') {
+            // Explicitly handle empty string to delete the field
+            updatedFeedback.imageUrl = FieldValue.delete();
         }
+        
+        // If imageUrl is undefined, the field remains untouched.
+        if (updatedFeedback.imageUrl === undefined) {
+          delete updatedFeedback.imageUrl;
+        }
+        
         return updatedFeedback;
       }
       return fb;

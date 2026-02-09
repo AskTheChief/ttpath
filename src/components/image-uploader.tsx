@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+import { auth, storage } from '@/lib/firebase';
 import Image from 'next/image';
 
 interface ImageUploaderProps {
@@ -25,34 +25,56 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) {
-        if (!userId) {
-            toast({ title: 'You must be logged in to upload images.', variant: 'destructive' });
-        }
+    if (!file) {
+        return;
+    }
+    if (!userId) {
+        toast({ title: 'You must be logged in to upload images.', variant: 'destructive' });
         return;
     }
 
     setIsUploading(true);
     try {
-      if (imageUrl) {
-        // Delete old image if it exists and is a Firebase Storage URL
-        if (imageUrl.includes('firebasestorage.googleapis.com')) {
-            try {
-              const oldImageRef = ref(storage, imageUrl);
-              await deleteObject(oldImageRef);
-            } catch (error: any) {
-                if (error.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete old image, it might not exist:", error);
-                }
-            }
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error("You must be logged in to upload images.");
         }
-      }
+        const idToken = await user.getIdToken();
 
-      const storageRef = ref(storage, `faq_images/${userId}/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      onImageUrlChange(downloadURL);
-      toast({ title: 'Image Uploaded' });
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Upload failed.');
+        }
+        
+        const data = await response.json();
+        const downloadURL = data.imageUrl;
+
+        // Delete old image if one existed
+        if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
+          try {
+            const oldImageRef = ref(storage, imageUrl);
+            await deleteObject(oldImageRef);
+          } catch (error: any) {
+              if (error.code !== 'storage/object-not-found') {
+                  console.warn("Could not delete old image, it might not exist:", error);
+              }
+          }
+        }
+        
+        onImageUrlChange(downloadURL);
+        toast({ title: 'Image Uploaded' });
+
     } catch (error: any) {
       toast({ title: 'Upload Failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -72,7 +94,7 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
         } catch (error: any) {
             if (error.code !== 'storage/object-not-found') {
                 console.warn("Could not delete image, it might not exist:", error);
-                return; // Don't clear URL if delete fails for other reasons
+                // Don't toast an error if delete fails, just clear the UI
             }
         }
      }
