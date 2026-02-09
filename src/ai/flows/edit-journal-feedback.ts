@@ -2,7 +2,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { EditJournalFeedbackInputSchema, EditJournalFeedbackOutputSchema, type EditJournalFeedbackInput, type EditJournalFeedbackOutput } from '@/lib/types';
@@ -44,17 +44,17 @@ const editJournalFeedbackFlow = ai.defineFlow(
       if (fb.id === feedbackId) {
         feedbackToEdit = fb;
 
-        // Destructure to safely remove old image-related fields from the base object.
-        const { imageUrl: _oldImageUrl, imageCredit: _oldImageCredit, ...restOfFb } = fb;
-        
+        // Build the updated object from scratch to guarantee structure
         const updatedFeedback: any = {
-          ...restOfFb,
+          id: fb.id,
+          mentorId: fb.mentorId,
+          mentorName: fb.mentorName,
+          mentorLevel: fb.mentorLevel,
           feedbackContent: newFeedbackContent,
+          createdAt: fb.createdAt, // Preserve original creation date
           updatedAt: Timestamp.now(),
         };
-        
-        // Conditionally add back image fields only if a new URL is provided.
-        // This avoids using `delete` which can cause issues in array updates.
+
         if (imageUrl) {
             updatedFeedback.imageUrl = imageUrl;
             if (imageCredit) {
@@ -66,6 +66,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
       }
       return fb;
     });
+
 
     if (!feedbackToEdit) {
       throw new Error('Feedback not found.');

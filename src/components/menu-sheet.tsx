@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
 import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare, BookCopy } from "lucide-react";
@@ -149,6 +149,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
       <SheetContent side="left" className="w-80 p-0">
         <SheetHeader className="p-6 border-b">
           <SheetTitle className="text-2xl">Resources</SheetTitle>
+          <SheetDescription className="sr-only">A list of available resources and actions.</SheetDescription>
         </SheetHeader>
         <div className="p-4">
           {/* Render menu items for logged-in users */}

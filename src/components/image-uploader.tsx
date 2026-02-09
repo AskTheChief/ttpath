@@ -116,7 +116,7 @@ export function ImageUploader({ imageUrl, onImageUrlChange, userId, label = "Ima
       </div>
       {imageUrl && (
         <div className="mt-2 relative w-full aspect-video rounded-md overflow-hidden border bg-muted">
-            <Image src={imageUrl} alt="Image preview" layout="fill" objectFit="cover" />
+            <Image src={imageUrl} alt="Image preview" fill sizes="100vw" style={{ objectFit: 'cover' }} />
         </div>
       )}
     </div>
