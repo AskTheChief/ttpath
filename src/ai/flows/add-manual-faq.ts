@@ -21,12 +21,14 @@ const addManualFaqFlow = ai.defineFlow(
   },
   async ({ idToken, contributorName, question, answer, imageUrl, answerImageUrl }) => {
     let mentorToken;
+    let mentorData;
     try {
       mentorToken = await adminAuth.verifyIdToken(idToken);
       const mentorUserDoc = await db.collection('users').doc(mentorToken.uid).get();
       if (!mentorUserDoc.exists || (mentorUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
         throw new Error('Permission denied. User is not a mentor.');
       }
+      mentorData = mentorUserDoc.data();
     } catch (error: any) {
       console.error('Error verifying mentor token:', error);
       return { success: false, message: 'User not authorized.' };
@@ -39,6 +41,7 @@ const addManualFaqFlow = ai.defineFlow(
         // We'll associate this with the mentor who created it, but display the contributor's name
         userId: mentorToken.uid,
         userName: contributorName,
+        userLevel: 0, // Level 0 signifies a non-user contributor
         entryContent: question,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -57,6 +60,7 @@ const addManualFaqFlow = ai.defineFlow(
         id: feedbackId,
         mentorId: mentorToken.uid,
         mentorName: mentorToken.name || 'A Mentor',
+        mentorLevel: mentorData?.currentUserLevel || 0,
         feedbackContent: answer,
         createdAt: Timestamp.now(),
       };

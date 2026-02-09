@@ -21,6 +21,21 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 
+const levelMap: Record<number, string> = {
+  1: "Visitor",
+  2: "Guest",
+  3: "Explorer",
+  4: "Member",
+  5: "Chief",
+  6: "Mentor",
+};
+
+const getRoleName = (level?: number) => {
+    if (level === 0) return 'Contributor';
+    if (!level || level < 1 || level > 6) return 'Contributor';
+    return levelMap[level];
+};
+
 function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; user: User | null; userLevel: number, onUpdate: () => void; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
@@ -104,13 +119,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
         }
     };
     
+    const contributorRole = getRoleName(faq.userLevel);
+    
     return (
         <div className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">Contributor Says:</CardTitle>
-                        <CardDescription>{faq.userName}</CardDescription>
+                        <CardTitle className="text-lg">{contributorRole} Says:</CardTitle>
                     </div>
                     {isMentor && (
                         <div className="flex gap-2">
@@ -160,53 +176,56 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                     <CardTitle className="text-lg">Ed Says:</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {(faq.feedback || []).map(fb => (
-                        <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
-                            {editingAnswerId === fb.id ? (
-                                <div className="space-y-2">
-                                    <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
-                                    <Input placeholder="Image URL (optional)" value={answerImageUrl} onChange={e => setAnswerImageUrl(e.target.value)} />
-                                    <div className="flex gap-2">
-                                        <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
-                                        <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
+                    {(faq.feedback || []).map(fb => {
+                         const feedbackAuthor = fb.mentorName?.toLowerCase().includes('ed') ? 'Ed' : getRoleName(fb.mentorLevel);
+                         return (
+                            <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
+                                {editingAnswerId === fb.id ? (
+                                    <div className="space-y-2">
+                                        <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={4} />
+                                        <Input placeholder="Image URL (optional)" value={answerImageUrl} onChange={e => setAnswerImageUrl(e.target.value)} />
+                                        <div className="flex gap-2">
+                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id)} disabled={isSaving}>Save</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)}>Cancel</Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div>
-                                    <div className="flex justify-between items-start">
-                                        <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
-                                        {isMentor && (
-                                            <div className="flex gap-1 shrink-0 ml-2">
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || '');}} disabled={isSaving}>
-                                                    <Edit className="h-3 w-3" />
-                                                </Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" disabled={isSaving}>
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>Delete this answer?</AlertDialogTitle></AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteFeedbackItem(fb.id)}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                ) : (
+                                    <div>
+                                        <div className="flex justify-between items-start">
+                                            <p className="whitespace-pre-wrap text-sm">{fb.feedbackContent}</p>
+                                            {isMentor && (
+                                                <div className="flex gap-1 shrink-0 ml-2">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || '');}} disabled={isSaving}>
+                                                        <Edit className="h-3 w-3" />
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" disabled={isSaving}>
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Delete this answer?</AlertDialogTitle></AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteFeedbackItem(fb.id)}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {fb.imageUrl && (
+                                            <div className="mt-4 relative aspect-video">
+                                                <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
                                             </div>
                                         )}
+                                        <p className="text-xs text-muted-foreground mt-2">by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    {fb.imageUrl && (
-                                        <div className="mt-4 relative aspect-video">
-                                            <Image src={fb.imageUrl} alt="Feedback Image" fill className="rounded-md object-cover" />
-                                        </div>
-                                    )}
-                                    <p className="text-xs text-muted-foreground mt-2">by {fb.mentorName} on {new Date(fb.createdAt).toLocaleDateString()}</p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                )}
+                            </div>
+                        )
+                    })}
                     {(!faq.feedback || faq.feedback.length === 0) && (
                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
                     )}
@@ -339,7 +358,7 @@ export default function FaqPage() {
                         <AccordionTrigger className="p-6 hover:no-underline w-full">
                             <div className="grid w-full gap-1 text-left">
                                 <div className="flex w-full justify-between">
-                                    <span className="font-semibold">{faq.userName}</span>
+                                    <span className="font-semibold">{getRoleName(faq.userLevel)}</span>
                                     <span className="text-xs text-muted-foreground">{new Date(faq.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <p className="truncate text-sm text-muted-foreground break-words pr-4">{faq.entryContent}</p>

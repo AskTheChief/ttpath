@@ -34,7 +34,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
     const userIds = [...new Set(entriesSnapshot.docs.map(doc => doc.data().userId))].filter(Boolean);
 
     // 2. Fetch all corresponding users in one go
-    const usersMap = new Map<string, string>();
+    const usersMap = new Map<string, { name: string, level: number }>();
     if (userIds.length > 0) {
       // Note: Firestore 'in' queries are limited to 30 items. 
       // For a larger scale app, this would need to be chunked into multiple queries.
@@ -42,7 +42,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
       usersSnapshot.forEach(doc => {
         const userData = doc.data();
         const name = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
-        usersMap.set(doc.id, name || 'Unknown User');
+        usersMap.set(doc.id, { name: name || 'Unknown User', level: userData.currentUserLevel || 1 });
       });
     }
     
@@ -79,17 +79,25 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 id: f.id, // This is now guaranteed to exist
                 mentorId: f.mentorId,
                 mentorName: f.mentorName,
+                mentorLevel: f.mentorLevel,
                 feedbackContent: f.feedbackContent,
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
                 updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
+                imageUrl: f.imageUrl,
             };
         });
+        
+        const isManual = data.isManualEntry === true;
+        const userData = usersMap.get(data.userId);
 
-        const userName = usersMap.get(data.userId) || data.userName || 'Anonymous';
+        const userName = isManual ? data.userName : (userData?.name || data.userName || 'Anonymous');
+        const userLevel = isManual ? 0 : (userData?.level || data.userLevel || 1);
+
         return {
             id: doc.id,
             userId: data.userId,
             userName: userName,
+            userLevel: userLevel,
             entryContent: data.entryContent,
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
