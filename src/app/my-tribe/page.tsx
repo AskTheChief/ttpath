@@ -1794,8 +1794,15 @@ function MyTribePageContent() {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ 2.1 Questions</CardTitle>
-                        <CardDescription>Review and respond to questions from users.</CardDescription>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ 2.1 Questions</CardTitle>
+                                <CardDescription>Review and respond to questions from users.</CardDescription>
+                            </div>
+                            <Button asChild>
+                                <Link href="/faq">Go to FAQ Page</Link>
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
