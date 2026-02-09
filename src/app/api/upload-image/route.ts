@@ -6,18 +6,24 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
+// Explicitly define the bucket name based on user's input
+const BUCKET_NAME = 'studio-7790315517-f3fe6.appspot.com';
+
 export async function POST(req: NextRequest) {
   try {
+    console.log('---[/api/upload-image] Received new upload request...');
+
     // Step 1: Initialize Firebase Admin (only if not already done)
     if (getApps().length === 0) {
         console.log('---[/api/upload-image] Initializing new Firebase Admin SDK instance...');
+        // Relying on default application credentials in the environment
         initializeApp();
         console.log('---[/api/upload-image] Firebase Admin SDK initialized successfully.');
     } else {
         console.log('---[/api/upload-image] Using existing Firebase Admin SDK instance.');
     }
 
-    // Step 2: Authenticate the user
+    // Step 2: Authenticate the user (optional with open rules, but good practice)
     const adminAuth = getAuth();
     const authToken = req.headers.get('Authorization')?.split('Bearer ')[1];
     if (!authToken) {
@@ -44,10 +50,10 @@ export async function POST(req: NextRequest) {
     }
     console.log(`---[/api/upload-image] File found: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
 
-    // Step 4: Upload to Firebase Storage
+    // Step 4: Upload to Firebase Storage, explicitly using the provided bucket name
     const storage = getStorage();
-    const bucket = storage.bucket(); // Use the default bucket
-    console.log(`---[/api/upload-image] Acquired default storage bucket: ${bucket.name}`);
+    const bucket = storage.bucket(BUCKET_NAME); // <<< EXPLICIT BUCKET NAME
+    console.log(`---[/api/upload-image] Acquired explicit storage bucket: ${bucket.name}`);
 
     const userId = decodedToken.uid;
     const fileName = `faq_images/${userId}/${Date.now()}_${file.name}`;
