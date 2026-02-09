@@ -176,7 +176,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                     )}
                     {editingQuestion ? (
                         <div className="space-y-4">
-                            <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={10} />
+                            <Textarea value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={18} />
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
                             <div className="flex gap-2 pt-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
@@ -200,7 +200,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
                                     <div className="space-y-4">
-                                        <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={8} />
+                                        <Textarea value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
                                             <div>
