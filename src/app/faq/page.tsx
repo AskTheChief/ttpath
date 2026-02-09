@@ -19,8 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
-import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
-import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
+import { editJournalFeedback, deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import Image from 'next/image';
 import type { JournalEntry, JournalFeedback } from '@/lib/types';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -28,6 +27,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const commonTopics = [
   "All", "Trading", "Feelings", "Family", "Relationships", "Process", "TTP", "Rocks", "Health", "Accountability", "Beliefs", "Intention"
@@ -71,6 +71,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
     const [isSaving, setIsSaving] = useState(false);
 
     const isMentor = userLevel >= 6;
+    
+    useEffect(() => {
+        // Reset state when the faq prop changes
+        setEditingQuestion(false);
+        setEditingAnswerId(null);
+        setQuestionContent(faq.entryContent);
+        setAnswerContent('');
+    }, [faq]);
 
     const handleSaveQuestion = async () => {
         if (!user) return;
@@ -241,19 +249,59 @@ function FaqItemCard({ faq, user, userLevel, onUpdate }: { faq: JournalEntry; us
 
 
 function ListView({ faqs, searchTerm, user, userLevel, onFaqUpdate }: { faqs: JournalEntry[], searchTerm: string, user: User | null, userLevel: number, onFaqUpdate: () => void }) {
+    const [selectedFaq, setSelectedFaq] = useState<JournalEntry | null>(null);
+
+    useEffect(() => {
+        // If there are FAQs, and either nothing is selected or the selected one is no longer in the list, select the first one.
+        if (faqs.length > 0 && (!selectedFaq || !faqs.find(f => f.id === selectedFaq.id))) {
+            setSelectedFaq(faqs[0]);
+        } else if (faqs.length === 0) {
+            setSelectedFaq(null);
+        }
+    }, [faqs, selectedFaq]);
+
     if (faqs.length === 0) {
         return <p className="text-center text-muted-foreground mt-8">No results found for your query.</p>;
     }
     
+    const displayedFaqs = faqs.slice(0, 100);
+
     return (
-        <div className="space-y-6">
-            <p className="text-sm text-muted-foreground">Showing {faqs.length > 100 ? 'the first 100 of' : ''} {faqs.length} results.</p>
-            {faqs.slice(0, 100).map((faq) => (
-                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={onFaqUpdate} searchTerm={searchTerm} />
-            ))}
-            {faqs.length > 100 && (
-                <p className="text-center text-muted-foreground mt-4">More than 100 results found. Refine your search to see more.</p>
-            )}
+        <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+                <h2 className="text-lg font-semibold mb-4">Questions ({faqs.length > 100 ? 'Showing 100 of ' : ''}{faqs.length})</h2>
+                <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
+                    <div className="p-2 space-y-2">
+                        {displayedFaqs.map(faq => (
+                            <button
+                                key={faq.id}
+                                onClick={() => setSelectedFaq(faq)}
+                                className={cn(
+                                    "w-full text-left p-3 rounded-md border transition-colors",
+                                    selectedFaq?.id === faq.id ? "bg-secondary border-primary shadow-sm" : "bg-background hover:bg-secondary"
+                                )}
+                            >
+                                <p className="font-medium truncate">{faq.entryContent}</p>
+                                <p className="text-sm text-muted-foreground truncate">by {faq.userName}</p>
+                            </button>
+                        ))}
+                    </div>
+                </ScrollArea>
+                {faqs.length > 100 && (
+                    <p className="text-center text-xs text-muted-foreground mt-2">More than 100 results. Refine search.</p>
+                )}
+            </div>
+            <div className="md:col-span-2">
+                {selectedFaq ? (
+                     <ScrollArea className="h-[75vh] pr-4">
+                        <FaqItemCard faq={selectedFaq} user={user} userLevel={userLevel} onUpdate={onFaqUpdate} searchTerm={searchTerm} />
+                    </ScrollArea>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground rounded-lg border border-dashed">
+                        <p>Select a question to view details.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -608,7 +656,9 @@ export default function FaqPage() {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
             const questionText = faq.entryContent.toLowerCase();
-            return searchWords.every(word => questionText.includes(word));
+            const answerText = (faq.feedback || []).map(fb => fb.feedbackContent).join(' ').toLowerCase();
+            const combinedText = `${questionText} ${answerText}`;
+            return searchWords.every(word => combinedText.includes(word));
         });
     }
 
