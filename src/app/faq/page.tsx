@@ -392,8 +392,8 @@ export default function FaqPage() {
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
-            const questionText = faq.entryContent.toLowerCase();
-            const answerText = (faq.feedback || []).map(fb => fb.feedbackContent).join(' ').toLowerCase();
+            const questionText = faq.entryContent.replace(/<[^>]*>/g, '').toLowerCase();
+            const answerText = (faq.feedback || []).map(fb => fb.feedbackContent.replace(/<[^>]*>/g, '')).join(' ').toLowerCase();
             const combinedText = `${questionText} ${answerText}`;
             return searchWords.every(word => combinedText.includes(word));
         });
