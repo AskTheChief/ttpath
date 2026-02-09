@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useDrag } from '@use-gesture/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
+import Image from 'next/image';
 
 
 type FaqItem = {
@@ -25,6 +26,7 @@ type FaqItem = {
   contributor: string;
   contributorName: string;
   ed: string;
+  imageUrl?: string;
 };
 
 const commonTopics = [
@@ -78,6 +80,11 @@ function ListView({ faqs, searchTerm }: { faqs: FaqItem[], searchTerm: string })
                             <CardDescription>{faq.contributorName}</CardDescription>
                         </CardHeader>
                         <CardContent>
+                            {faq.imageUrl && (
+                                <div className="mb-4 relative aspect-video">
+                                    <Image src={faq.imageUrl} alt="FAQ Image" fill className="rounded-md object-cover" />
+                                </div>
+                            )}
                             <blockquote className="text-muted-foreground">
                                 <Highlight text={faq.contributor} highlight={searchTerm} />
                             </blockquote>
@@ -421,6 +428,7 @@ export default function TheIndexPage() {
           contributor: entry.entryContent,
           contributorName: entry.userName,
           ed: entry.feedback?.[0]?.feedbackContent || 'No feedback yet.',
+          imageUrl: entry.imageUrl,
         }));
         setFaqs(mappedFaqs);
       } catch (error) {

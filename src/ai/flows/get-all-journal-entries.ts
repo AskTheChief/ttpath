@@ -94,6 +94,8 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
             feedback: finalFeedback,
+            imageUrl: data.imageUrl,
+            isManualEntry: data.isManualEntry,
         };
     }));
 

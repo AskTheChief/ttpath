@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // Base Meeting Schema
@@ -331,6 +330,8 @@ export const JournalEntrySchema = z.object({
     createdAt: z.string(),
     updatedAt: z.string().optional(),
     feedback: z.array(JournalFeedbackSchema).optional(),
+    imageUrl: z.string().url().optional(),
+    isManualEntry: z.boolean().optional(),
 });
 export type JournalEntry = z.infer<typeof JournalEntrySchema>;
 
@@ -442,3 +443,19 @@ export const SendMeetingReportReminderOutputSchema = z.object({
   message: z.string(),
 });
 export type SendMeetingReportReminderOutput = z.infer<typeof SendMeetingReportReminderOutputSchema>;
+
+// src/ai/flows/add-manual-faq.ts
+export const AddManualFaqInputSchema = z.object({
+  idToken: z.string(),
+  contributorName: z.string(),
+  question: z.string(),
+  answer: z.string(),
+  imageUrl: z.string().url().optional(),
+});
+export type AddManualFaqInput = z.infer<typeof AddManualFaqInputSchema>;
+
+export const AddManualFaqOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type AddManualFaqOutput = z.infer<typeof AddManualFaqOutputSchema>;

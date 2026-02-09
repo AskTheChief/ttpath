@@ -63,6 +63,7 @@ import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
+import { addManualFaq } from '@/ai/flows/add-manual-faq';
 
 
 const libraries: Libraries = ['places'];
@@ -349,6 +350,13 @@ function MyTribePageContent() {
   const [isSavingAnswers, setIsSavingAnswers] = useState(false);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
   const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
+  const [manualFaqData, setManualFaqData] = useState({
+    contributorName: '',
+    question: '',
+    answer: '',
+    imageUrl: ''
+  });
+  const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -1070,6 +1078,44 @@ function MyTribePageContent() {
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
+  };
+
+  const handleManualFaqChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setManualFaqData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleAddManualFaq = async () => {
+      if (!user) {
+          toast({ title: "Authentication Error", variant: "destructive" });
+          return;
+      }
+      if (!manualFaqData.contributorName || !manualFaqData.question || !manualFaqData.answer) {
+          toast({ title: "All fields except Image URL are required.", variant: "destructive" });
+          return;
+      }
+
+      setIsAddingManualFaq(true);
+      try {
+          const idToken = await user.getIdToken();
+          const result = await addManualFaq({
+              idToken,
+              ...manualFaqData,
+          });
+
+          if (result.success) {
+              toast({ title: "Success", description: result.message });
+              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '' });
+              fetchTribesAndUserData(user);
+          } else {
+              throw new Error(result.message);
+          }
+
+      } catch (error: any) {
+          toast({ title: "Error", description: error.message, variant: "destructive" });
+      } finally {
+          setIsAddingManualFaq(false);
+      }
   };
 
   if (isLoading || !isLoaded || !user) {
@@ -1820,6 +1866,38 @@ function MyTribePageContent() {
                             <p className="text-muted-foreground text-center p-8">There are currently no pending questions.</p>
                         )}
                     </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manual FAQ Entry</CardTitle>
+                        <CardDescription>
+                            Add an FAQ entry from an external source, like an email.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="contributorName">Contributor's Name</Label>
+                            <Input id="contributorName" placeholder="e.g., John Doe" value={manualFaqData.contributorName} onChange={handleManualFaqChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="question">Question</Label>
+                            <Textarea id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="answer">Answer (Your Feedback)</Label>
+                            <Textarea id="answer" placeholder="Write your answer/feedback here." rows={5} value={manualFaqData.answer} onChange={handleManualFaqChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="imageUrl">Image URL (Optional)</Label>
+                            <Input id="imageUrl" placeholder="https://example.com/image.png" value={manualFaqData.imageUrl} onChange={handleManualFaqChange} />
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleAddManualFaq} disabled={isAddingManualFaq}>
+                            {isAddingManualFaq ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            Add FAQ Entry
+                        </Button>
+                    </CardFooter>
                 </Card>
             </TabsContent>
         )}

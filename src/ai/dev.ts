@@ -1,4 +1,3 @@
-
 'use server';
 
 import { config } from 'dotenv';
@@ -51,3 +50,4 @@ import '@/ai/flows/send-new-member-email.ts';
 import '@/ai/flows/send-new-chief-email.ts';
 import '@/ai/flows/send-new-mentor-email.ts';
 import '@/ai/flows/send-meeting-report-reminder.ts';
+import '@/ai/flows/add-manual-faq.ts';
