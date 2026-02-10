@@ -112,6 +112,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
 
     const questionTextareaRef = useRef<HTMLTextAreaElement>(null);
     const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const answerImageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const isMentor = userLevel >= 6;
     const canEditEntry = isMentor && !faq.isChatbotEntry;
@@ -302,9 +303,10 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                         <Textarea ref={answerTextareaRef} value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={22} />
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
-                                            <div>
+                                            <div className="space-y-1">
                                                 <Label htmlFor="answer-credit" className="text-xs">Image Credit</Label>
-                                                <Input id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" />
+                                                <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
+                                                <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
                                             </div>
                                         )}
                                         <div className="flex justify-end gap-2 pt-2">
@@ -353,7 +355,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <p className="text-xs text-muted-foreground text-center mt-2">Credit: {fb.imageCredit}</p>}
+                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-2" dangerouslySetInnerHTML={{ __html: `Credit: ${fb.imageCredit}` }} />}
                                             </div>
                                         )}
                                     </div>

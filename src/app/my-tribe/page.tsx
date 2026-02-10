@@ -150,6 +150,7 @@ function FeedbackForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
+  const imageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
@@ -215,15 +216,16 @@ function FeedbackForm({
         rows={3}
       />
        {isEditMode && (
-         <>
+         <div className="space-y-4">
             <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
             {imageUrl && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                   <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
-                  <Input id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" />
+                  <FormattingToolbar textareaRef={imageCreditTextareaRef} value={imageCredit} onValueChange={setImageCredit} />
+                  <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
               </div>
             )}
-         </>
+         </div>
       )}
       <div className="flex gap-2 pt-2">
         <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
@@ -426,6 +428,7 @@ function MyTribePageContent() {
   const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
   const manualFaqQuestionRef = useRef<HTMLTextAreaElement>(null);
   const manualFaqAnswerRef = useRef<HTMLTextAreaElement>(null);
+  const manualFaqAnswerCreditRef = useRef<HTMLTextAreaElement>(null);
 
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
@@ -1768,11 +1771,7 @@ function MyTribePageContent() {
                                     {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
                                 </div>
                                 </div>
-                                <div className="flex justify-end gap-2 pt-2">
-                                  <Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button>
-                                  <Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button>
-                                  <Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button>
-                                </div>
+                                <div className="flex justify-end gap-2 pt-2"><Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
                             </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -1922,7 +1921,7 @@ function MyTribePageContent() {
                                                                     <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
                                                                     </div>
-                                                                    {fb.imageCredit && <p className="text-xs text-muted-foreground text-right mt-1">Credit: {fb.imageCredit}</p>}
+                                                                    {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: `Credit: ${fb.imageCredit}` }} />}
                                                                 </div>
                                                             )}
                                                         </AlertDescription>
@@ -2002,7 +2001,8 @@ function MyTribePageContent() {
                         <ImageUploader imageUrl={manualFaqData.answerImageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'answer')} userId={user?.uid} label="Answer Image (Optional)" />
                          <div className="space-y-2">
                             <Label htmlFor="answerImageCredit">Answer Image Credit</Label>
-                            <Input id="answerImageCredit" placeholder="e.g., Photo by Jane Doe" value={manualFaqData.answerImageCredit} onChange={handleManualFaqChange} />
+                            <FormattingToolbar textareaRef={manualFaqAnswerCreditRef} value={manualFaqData.answerImageCredit} onValueChange={(val) => setManualFaqData(p => ({...p, answerImageCredit: val}))} />
+                            <Textarea ref={manualFaqAnswerCreditRef} id="answerImageCredit" placeholder="e.g., Photo by Jane Doe" value={manualFaqData.answerImageCredit} onChange={handleManualFaqChange} rows={2} />
                         </div>
                     </CardContent>
                     <CardFooter>
