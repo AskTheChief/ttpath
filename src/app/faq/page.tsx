@@ -355,7 +355,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-2" dangerouslySetInnerHTML={{ __html: `Credit: ${fb.imageCredit}` }} />}
+                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit }} />}
                                             </div>
                                         )}
                                     </div>
