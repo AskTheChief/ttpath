@@ -136,7 +136,7 @@ const getPrinciplesFlow = ai.defineFlow(
   async () => {
     const docSnap = await contentRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       const data = docSnap.data();
       if (data && Array.isArray(data.principles)) {
         
@@ -145,7 +145,7 @@ const getPrinciplesFlow = ai.defineFlow(
 
         const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
 
-        // 1. Filter out principles that are no longer in the default list
+        // 1. Filter out principles that are no longer in the default list (e.g. 'The Swarm')
         const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
         if (filteredPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
@@ -166,8 +166,9 @@ const getPrinciplesFlow = ai.defineFlow(
         if (needsUpdate) {
           await contentRef.set({ principles: updatedPrinciples });
         }
-
-        return updatedPrinciples;
+        
+        const finalPrinciples = GetPrinciplesOutputSchema.parse(updatedPrinciples);
+        return finalPrinciples;
       }
     }
 
@@ -193,7 +194,7 @@ const updatePrinciplesFlow = ai.defineFlow(
     try {
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-      if (!userDoc.exists() || (userDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+      if (!userDoc.exists || (userDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
         throw new Error('Permission denied. User is not a mentor.');
       }
       
