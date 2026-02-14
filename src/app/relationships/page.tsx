@@ -123,7 +123,6 @@ const RelationshipsPage = () => {
           </div>
           <div className="hidden md:flex gap-10">
             <a href="#principles" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">Principles</a>
-            <a href="#swarm" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Swarm</a>
             <a href="#the-work" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Work</a>
           </div>
         </div>
@@ -225,32 +224,6 @@ const RelationshipsPage = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="swarm" className="py-24 px-8 bg-gray-50 border-y border-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center gap-20">
-            <div className="md:w-1/2 flex justify-center">
-              <img 
-                src="https://i.ibb.co/WvfKy30P/download.jpg" 
-                alt="A bee on a flower" 
-                className="w-full h-auto max-h-[600px] object-contain rounded-3xl"
-              />
-            </div>
-            <div className="md:w-1/2 space-y-10">
-              <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-[0.9]">The Bee Swarm: <br/><span className="text-blue-600">Swarm Intelligence.</span></h3>
-              <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
-                Bees operate through "Swarm Intelligence"—a system where complex global patterns emerge from individuals following simple, local rules.
-                {"\n\n"}
-                Local communication (the waggle dance) shares data without central command.
-                {"\n\n"}
-                Biological democracy allows scouts to vote on hive direction through their presence.
-                {"\n\n"}
-                Specialization without hierarchy allows every bee to work for the common purpose of the colony.
-              </p>
-            </div>
           </div>
         </div>
       </section>
