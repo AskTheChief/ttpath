@@ -173,16 +173,15 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         
         try {
             const idToken = await user.getIdToken();
-            await editJournalFeedback({
+            const result = await editJournalFeedback({
                 idToken,
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl,
-                imageCredit: answerImageCredit,
-                caption: answerCaption,
-                // Note: Subject is part of the question (entry), not the answer (feedback).
-                // If we want to edit subject from answer card, it needs to be passed here.
+                imageUrl: answerImageUrl || undefined,
+                imageCredit: answerImageCredit || undefined,
+                caption: answerCaption || undefined,
+                subject: questionSubject || undefined,
             });
             toast({ title: 'Answer updated' });
 
@@ -233,32 +232,20 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     
     const roleName = getRoleName(faq.userLevel);
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
-
-    const getAnswerTitle = () => {
-        if (!faq.feedback || faq.feedback.length === 0) {
-            return 'Answer';
-        }
-        if (faq.isChatbotEntry) {
-            return 'The Chief Says:';
-        }
-        const hasEdAnswer = faq.feedback.some(fb => fb.mentorName?.toLowerCase().includes('ed'));
-        if (hasEdAnswer) {
-            return 'Ed Says:';
-        }
-        return 'Mentor Says:';
-    };
     
     return (
         <div id={`faq-${faq.id}`} className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
-                    <div>
-                        <CardTitle className="text-lg">Question</CardTitle>
-                        {faq.subject && <CardDescription className="font-semibold pt-1">Subject: {faq.subject}</CardDescription>}
-                        <CardDescription>{roleName} on {questionDate}</CardDescription>
+                    <div className="flex-grow">
+                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                            <span>{questionDate}</span>
+                            <span>{roleName}</span>
+                        </div>
+                        {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
                     </div>
                     {canEditEntry && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 ml-4">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
                                 <Edit className="h-4 w-4" />
                             </Button>
@@ -321,12 +308,10 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
             </Card>
 
             <Card className="flex flex-col">
-                <CardHeader>
-                    <CardTitle className="text-lg">{getAnswerTitle()}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 flex-grow">
+                <CardContent className="space-y-4 flex-grow pt-6">
                     {(faq.feedback || []).map(fb => {
                          const feedbackAuthor = fb.mentorName?.toLowerCase().includes('ed') ? 'Ed' : getRoleName(fb.mentorLevel);
+                         const feedbackDate = new Date(fb.createdAt).toLocaleDateString();
                          const canEditFeedback = isMentor && fb.mentorId !== 'chatbot-chief';
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
@@ -365,6 +350,10 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     </div>
                                 ) : (
                                     <div>
+                                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
+                                            <span>{feedbackDate}</span>
+                                            <span>{feedbackAuthor}</span>
+                                        </div>
                                         <div className="flex justify-between items-start">
                                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
                                             {canEditFeedback && (
@@ -389,7 +378,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-2">Replied by {feedbackAuthor} on {new Date(fb.createdAt).toLocaleDateString()}</p>
                                         {fb.imageUrl && (
                                             <div className="mt-4">
                                                 <div className="relative aspect-video">
