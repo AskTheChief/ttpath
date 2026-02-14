@@ -250,9 +250,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div className="flex-grow">
-                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-                            <span>{questionDate}</span>
-                            <span>{questionAuthorLabel}</span>
+                        <div className="flex justify-between items-center text-sm mb-2">
+                            <span className="font-semibold text-foreground">{questionAuthorLabel}</span>
+                            <span className="text-muted-foreground">{questionDate}</span>
                         </div>
                         {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
                     </div>
@@ -362,9 +362,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     </div>
                                 ) : (
                                     <div>
-                                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-                                            <span>{feedbackDate}</span>
-                                            <span>{answerAuthorLabel}</span>
+                                        <div className="flex justify-between items-center text-sm mb-2">
+                                            <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                            <span className="text-muted-foreground">{feedbackDate}</span>
                                         </div>
                                         <div className="flex justify-between items-start">
                                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
@@ -395,7 +395,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
+                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
                                             </div>
                                         )}
                                         {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}

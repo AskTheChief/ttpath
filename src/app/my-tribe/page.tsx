@@ -441,6 +441,31 @@ function MyTribePageContent() {
   const manualFaqAnswerRef = useRef<HTMLTextAreaElement>(null);
   const manualFaqAnswerCreditRef = useRef<HTMLTextAreaElement>(null);
 
+  type FaqEntry = JournalEntry;
+  const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
+      if (type === 'question') {
+          const level = entry.userLevel;
+          if (level === 0) return "FAQ Contributor Says";
+          if (level === 1) return "Visitor says";
+          if (level === 2) return "Guest Says";
+          if (level === 3) return "Explorer Says";
+          if (level === 4) return "Tribe Member Says";
+          if (level === 5) return "Chief Says";
+          if (level === 6) return "Mentor Says";
+          return "Contributor Says";
+      } else { // type === 'answer'
+          if (entry.userLevel === 0) return "Ed Says";
+
+          if (!feedback) return '';
+          if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says";
+          
+          const level = feedback.mentorLevel;
+          if (level === 5) return "Tribe Chief Says";
+          if (level >= 6) return "Mentor says";
+          return "Mentor says";
+      }
+  };
+
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
     const now = new Date();
@@ -1349,16 +1374,22 @@ function MyTribePageContent() {
                                     {entry.feedback && entry.feedback.length > 0 && (
                                       <div className="mt-6 space-y-4">
                                           <h4 className="font-semibold text-md">Feedback from Mentors</h4>
-                                          {entry.feedback.map((fb, index) => (
+                                          {entry.feedback.map((fb, index) => {
+                                            const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
+                                            const feedbackDate = isClient ? format(new Date(fb.createdAt), 'PPP p') : '...';
+                                            return (
                                               <Alert key={index} className="bg-muted/50">
                                                   <UserIcon className="h-4 w-4" />
-                                                  <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                   <AlertDescription>
+                                                      <div className="flex justify-between items-center text-sm mb-2">
+                                                          <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                                          <span className="text-muted-foreground">{feedbackDate}</span>
+                                                      </div>
                                                       <p className="whitespace-pre-wrap">{fb.feedbackContent}</p>
-                                                      <p className="text-xs text-muted-foreground mt-2">{isClient ? format(new Date(fb.createdAt), 'PPP p') : '...'}</p>
                                                   </AlertDescription>
                                               </Alert>
-                                          ))}
+                                            )
+                                          })}
                                       </div>
                                     )}
                                 </AccordionContent>
@@ -1916,8 +1947,11 @@ function MyTribePageContent() {
                                         <h4 className="font-semibold text-md">Feedback</h4>
                                         {entry.feedback && entry.feedback.length > 0 ? (
                                             <div className="space-y-4">
-                                            {entry.feedback.map((fb) => (
-                                                editingFeedbackId === fb.id ? (
+                                            {entry.feedback.map((fb) => {
+                                                const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
+                                                const feedbackDate = isClient ? new Date(fb.createdAt).toLocaleDateString() : '...';
+                                                
+                                                return editingFeedbackId === fb.id ? (
                                                     <FeedbackForm
                                                     key={fb.id}
                                                     entryId={entry.id}
@@ -1932,11 +1966,13 @@ function MyTribePageContent() {
                                                 ) : (
                                                     <Alert key={fb.id} className="bg-muted/50 relative group">
                                                         <UserIcon className="h-4 w-4" />
-                                                        <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                         <AlertDescription>
+                                                          <div className="flex justify-between items-center text-sm mb-2">
+                                                              <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                                              <span className="text-muted-foreground">{feedbackDate}</span>
+                                                          </div>
                                                             <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
                                                             <div className="text-xs text-muted-foreground mt-2">
-                                                                Replied by {fb.mentorName} on {isClient ? new Date(fb.createdAt).toLocaleDateString() : '...'}
                                                                 {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
                                                             </div>
                                                             {fb.imageUrl && (
@@ -1975,7 +2011,8 @@ function MyTribePageContent() {
                                                         )}
                                                     </Alert>
                                                 )
-                                            ))}
+                                            }
+                                            )}
                                             </div>
                                         ) : (
                                             <p className="text-sm text-muted-foreground">No feedback yet.</p>
