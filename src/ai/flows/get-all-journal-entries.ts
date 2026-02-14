@@ -84,8 +84,8 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
                 updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
                 imageUrl: f.imageUrl && f.imageUrl.trim() ? f.imageUrl : undefined,
-                imageCredit: f.imageCredit || undefined,
-                caption: f.caption || undefined,
+                imageCredit: f.imageCredit && f.imageCredit.trim() ? f.imageCredit : undefined,
+                caption: f.caption && f.caption.trim() ? f.caption : undefined,
             };
         });
         
