@@ -147,6 +147,7 @@ function FeedbackForm({
   const [feedbackContent, setFeedbackContent] = useState(editingFeedback ? editingFeedback.feedbackContent : '');
   const [imageUrl, setImageUrl] = useState(editingFeedback?.imageUrl || '');
   const [imageCredit, setImageCredit] = useState(editingFeedback?.imageCredit || '');
+  const [caption, setCaption] = useState(editingFeedback?.caption || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
@@ -156,6 +157,7 @@ function FeedbackForm({
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
     setImageUrl(editingFeedback?.imageUrl || '');
     setImageCredit(editingFeedback?.imageCredit || '');
+    setCaption(editingFeedback?.caption || '');
   }, [editingFeedback]);
 
   const handleSubmit = async () => {
@@ -173,6 +175,7 @@ function FeedbackForm({
           newFeedbackContent: feedbackContent,
           imageUrl: imageUrl,
           imageCredit: imageCredit,
+          caption: caption,
         });
         if (result.success) {
           toast({ title: 'Feedback Updated' });
@@ -190,6 +193,7 @@ function FeedbackForm({
           setFeedbackContent('');
           setImageUrl('');
           setImageCredit('');
+          setCaption('');
         } else {
           throw new Error(result.message);
         }
@@ -225,6 +229,10 @@ function FeedbackForm({
                   <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
               </div>
             )}
+            <div className="space-y-1">
+                <Label htmlFor="caption" className="text-xs">Caption</Label>
+                <Textarea id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
+            </div>
          </div>
       )}
       <div className="flex gap-2 pt-2">
@@ -424,6 +432,9 @@ function MyTribePageContent() {
     imageUrl: '',
     answerImageUrl: '',
     answerImageCredit: '',
+    subject: '',
+    questionCaption: '',
+    answerCaption: '',
   });
   const [isAddingManualFaq, setIsAddingManualFaq] = useState(false);
   const manualFaqQuestionRef = useRef<HTMLTextAreaElement>(null);
@@ -1186,11 +1197,14 @@ function MyTribePageContent() {
               imageUrl: manualFaqData.imageUrl || undefined,
               answerImageUrl: manualFaqData.answerImageUrl || undefined,
               answerImageCredit: manualFaqData.answerImageCredit || undefined,
+              subject: manualFaqData.subject || undefined,
+              questionCaption: manualFaqData.questionCaption || undefined,
+              answerCaption: manualFaqData.answerCaption || undefined,
           });
 
           if (result.success) {
               toast({ title: "Success", description: result.message });
-              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '', answerImageUrl: '', answerImageCredit: '' });
+              setManualFaqData({ contributorName: '', question: '', answer: '', imageUrl: '', answerImageUrl: '', answerImageCredit: '', subject: '', questionCaption: '', answerCaption: '' });
               fetchTribesAndUserData(user);
           } else {
               throw new Error(result.message);
@@ -1304,8 +1318,11 @@ function MyTribePageContent() {
                             <AccordionItem key={entry.id} value={entry.id}>
                                 <div className="flex items-center w-full p-4">
                                     <AccordionTrigger className="flex-grow p-0">
-                                        <div className="flex flex-col items-start text-left">
-                                            <span className="font-semibold">Question from {isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
+                                        <div className="grid w-full gap-1 text-left">
+                                            <div className="flex w-full justify-between">
+                                                <span className="font-semibold">Question {entry.subject && <span className="font-normal text-muted-foreground">- Subject: {entry.subject}</span>}</span>
+                                                <span className="text-xs text-muted-foreground">{isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
+                                            </div>
                                             <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
                                         </div>
                                     </AccordionTrigger>
@@ -1879,7 +1896,7 @@ function MyTribePageContent() {
                                         <AccordionTrigger>
                                             <div className="grid w-full gap-1 text-left">
                                                 <div className="flex w-full justify-between">
-                                                    <span className="font-semibold">{entry.userName}</span>
+                                                    <span className="font-semibold">{entry.userName}{entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}</span>
                                                     <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
                                                 </div>
                                                 <p className="truncate text-sm text-muted-foreground break-words pr-4">
@@ -1889,6 +1906,12 @@ function MyTribePageContent() {
                                         </AccordionTrigger>
                                     <AccordionContent>
                                         <p className="whitespace-pre-wrap break-words font-semibold">{entry.entryContent}</p>
+                                        {entry.imageUrl && (
+                                            <div className="my-4 relative aspect-video">
+                                                <Image src={entry.imageUrl} alt="Question image" fill className="rounded-md object-contain" />
+                                            </div>
+                                        )}
+                                        {entry.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{entry.caption}</p>}
                                         <div className="mt-6 space-y-4">
                                         <h4 className="font-semibold text-md">Feedback</h4>
                                         {entry.feedback && entry.feedback.length > 0 ? (
@@ -1922,6 +1945,7 @@ function MyTribePageContent() {
                                                                     {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: fb.imageCredit }} />}
                                                                 </div>
                                                             )}
+                                                            {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}
                                                         </AlertDescription>
                                                         {isMentor && (
                                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1985,11 +2009,19 @@ function MyTribePageContent() {
                             <Input id="contributorName" placeholder="e.g., John Doe" value={manualFaqData.contributorName} onChange={handleManualFaqChange} />
                         </div>
                         <div className="space-y-2">
+                            <Label htmlFor="subject">Subject</Label>
+                            <Input id="subject" placeholder="e.g., Fear" value={manualFaqData.subject} onChange={handleManualFaqChange} />
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="question">Question</Label>
                             <FormattingToolbar textareaRef={manualFaqQuestionRef} value={manualFaqData.question} onValueChange={(val) => setManualFaqData(prev => ({...prev, question: val}))} />
                             <Textarea ref={manualFaqQuestionRef} id="question" placeholder="Paste the question here." rows={5} value={manualFaqData.question} onChange={handleManualFaqChange} />
                         </div>
                          <ImageUploader imageUrl={manualFaqData.imageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'question')} userId={user?.uid} label="Question Image (Optional)" />
+                         <div className="space-y-2">
+                            <Label htmlFor="questionCaption">Question Caption</Label>
+                            <Textarea id="questionCaption" placeholder="Caption for question image or text" value={manualFaqData.questionCaption} onChange={handleManualFaqChange} rows={2}/>
+                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="answer">Answer (Your Feedback)</Label>
@@ -2002,6 +2034,10 @@ function MyTribePageContent() {
                             <FormattingToolbar textareaRef={manualFaqAnswerCreditRef} value={manualFaqData.answerImageCredit} onValueChange={(val) => setManualFaqData(p => ({...p, answerImageCredit: val}))} />
                             <Textarea ref={manualFaqAnswerCreditRef} id="answerImageCredit" placeholder="e.g., Photo by Jane Doe" value={manualFaqData.answerImageCredit} onChange={handleManualFaqChange} rows={2} />
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="answerCaption">Answer Caption</Label>
+                            <Textarea id="answerCaption" placeholder="Caption for answer image or text" value={manualFaqData.answerCaption} onChange={handleManualFaqChange} rows={2}/>
+                         </div>
                     </CardContent>
                     <CardFooter>
                         <Button onClick={handleAddManualFaq} disabled={isAddingManualFaq}>

@@ -103,10 +103,15 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
     const [questionContent, setQuestionContent] = useState(faq.entryContent);
+    const [questionSubject, setQuestionSubject] = useState(faq.subject || '');
+    const [questionCaption, setQuestionCaption] = useState(faq.caption || '');
     const [questionImageUrl, setQuestionImageUrl] = useState(faq.imageUrl || '');
+    
     const [answerContent, setAnswerContent] = useState('');
+    const [answerCaption, setAnswerCaption] = useState('');
     const [answerImageUrl, setAnswerImageUrl] = useState('');
     const [answerImageCredit, setAnswerImageCredit] = useState('');
+
     const [isSaving, setIsSaving] = useState(false);
     const [isNotifying, setIsNotifying] = useState(false);
 
@@ -121,8 +126,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         setEditingQuestion(false);
         setEditingAnswerId(null);
         setQuestionContent(faq.entryContent);
+        setQuestionSubject(faq.subject || '');
+        setQuestionCaption(faq.caption || '');
         setQuestionImageUrl(faq.imageUrl || '');
         setAnswerContent('');
+        setAnswerCaption('');
         setAnswerImageUrl('');
         setAnswerImageCredit('');
     }, [faq]);
@@ -132,7 +140,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         setIsSaving(true);
         try {
             const idToken = await user.getIdToken();
-            await saveJournalEntry({ idToken, entryId: faq.id, entryContent: questionContent, imageUrl: questionImageUrl || undefined });
+            await saveJournalEntry({ 
+                idToken, 
+                entryId: faq.id, 
+                entryContent: questionContent, 
+                subject: questionSubject,
+                caption: questionCaption,
+                imageUrl: questionImageUrl || undefined,
+            });
             toast({ title: 'Question updated' });
             setEditingQuestion(false);
             onUpdate();
@@ -163,8 +178,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl || undefined,
-                imageCredit: answerImageCredit || undefined,
+                imageUrl: answerImageUrl,
+                imageCredit: answerImageCredit,
+                caption: answerCaption,
+                // Note: Subject is part of the question (entry), not the answer (feedback).
+                // If we want to edit subject from answer card, it needs to be passed here.
             });
             toast({ title: 'Answer updated' });
 
@@ -236,6 +254,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div>
                         <CardTitle className="text-lg">Question</CardTitle>
+                        {faq.subject && <CardDescription className="font-semibold pt-1">Subject: {faq.subject}</CardDescription>}
                         <CardDescription>{roleName} on {questionDate}</CardDescription>
                     </div>
                     {canEditEntry && (
@@ -266,23 +285,37 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                     )}
                 </CardHeader>
                 <CardContent>
-                    {faq.imageUrl && !editingQuestion && (
-                        <div className="mb-4 relative aspect-video">
-                            <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
-                        </div>
-                    )}
                     {editingQuestion ? (
-                        <div className="space-y-2">
-                            <FormattingToolbar textareaRef={questionTextareaRef} value={questionContent} onValueChange={setQuestionContent} />
-                            <Textarea ref={questionTextareaRef} value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={22} />
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="question-subject">Subject</Label>
+                                <Input id="question-subject" value={questionSubject} onChange={e => setQuestionSubject(e.target.value)} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="question-content">Question</Label>
+                                <FormattingToolbar textareaRef={questionTextareaRef} value={questionContent} onValueChange={setQuestionContent} />
+                                <Textarea ref={questionTextareaRef} id="question-content" value={questionContent} onChange={e => setQuestionContent(e.target.value)} rows={15} />
+                            </div>
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
+                            <div className="space-y-2">
+                                <Label htmlFor="question-caption">Caption</Label>
+                                <Textarea id="question-caption" value={questionCaption} onChange={e => setQuestionCaption(e.target.value)} placeholder="Caption for the question content or image..." rows={2}/>
+                            </div>
                             <div className="flex gap-2 pt-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                                 <Button size="sm" variant="ghost" onClick={() => setEditingQuestion(false)}>Cancel</Button>
                             </div>
                         </div>
                     ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
+                        <>
+                            {faq.imageUrl && (
+                                <div className="mb-4 relative aspect-video">
+                                    <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
+                                </div>
+                            )}
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
+                             {faq.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{faq.caption}</p>}
+                        </>
                     )}
                 </CardContent>
             </Card>
@@ -298,17 +331,24 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
-                                    <div className="space-y-2">
-                                        <FormattingToolbar textareaRef={answerTextareaRef} value={answerContent} onValueChange={setAnswerContent} />
-                                        <Textarea ref={answerTextareaRef} value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={22} />
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="answer-content">Answer</Label>
+                                            <FormattingToolbar textareaRef={answerTextareaRef} value={answerContent} onValueChange={setAnswerContent} />
+                                            <Textarea ref={answerTextareaRef} id="answer-content" value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
+                                        </div>
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         {answerImageUrl && (
-                                            <div className="space-y-1">
-                                                <Label htmlFor="answer-credit" className="text-xs">Image Credit</Label>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="answer-credit">Image Credit</Label>
                                                 <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
                                                 <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
                                             </div>
                                         )}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="answer-caption">Caption</Label>
+                                            <Textarea id="answer-caption" value={answerCaption} onChange={e => setAnswerCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
+                                        </div>
                                         <div className="flex justify-end gap-2 pt-2">
                                             <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)} disabled={isSaving || isNotifying}>Cancel</Button>
                                             <Button size="sm" variant="secondary" onClick={() => handleSaveAnswer(fb.id, { notify: false })} disabled={isSaving || isNotifying}>
@@ -329,7 +369,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
                                             {canEditFeedback && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); }} disabled={isSaving}>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); setAnswerCaption(fb.caption || ''); }} disabled={isSaving}>
                                                         <Edit className="h-3 w-3" />
                                                     </Button>
                                                     <AlertDialog>
@@ -358,6 +398,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit }} />}
                                             </div>
                                         )}
+                                        {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}
                                     </div>
                                 )}
                             </div>
