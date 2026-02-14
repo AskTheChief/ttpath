@@ -33,7 +33,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships_pics/reality-truth.jpg"
+      img: "/relationships/relationships_pics/reality-truth.png"
     },
     { 
       title: "Listening", 
@@ -43,7 +43,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Owning Feelings", 
       content: "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.", 
-      img: "/relationships/relationships_pics/owning-feelings.jpg"
+      img: "/relationships/relationships_pics/owning feelings.jpg"
     },
     { 
       title: "Now", 
@@ -58,12 +58,12 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Asking Positively", 
       content: "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.", 
-      img: "/relationships/relationships_pics/asking-positively.jpg"
+      img: "/relationships/relationships_pics/asking positively.jpg"
     },
     { 
       title: "Stop Judging Feelings", 
       content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "/relationships/relationships_pics/stop-judging-feelings.jpg"
+      img: "/relationships/relationships_pics/stop-judging-feeling.jpg"
     },
     { 
       title: "Music", 
@@ -73,7 +73,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "System Thinking", 
       content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "/relationships/relationships_pics/system-thinking.jpg"
+      img: "/relationships/relationships_pics/System-Thinking.jpg"
     },
     { 
       title: "Questions", 
@@ -88,7 +88,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Adult-to-Adult", 
       content: "We have our childhood communication patterns and issues behind us. We relate as adults.", 
-      img: "/relationships/relationships_pics/adult-to-adult.jpg"
+      img: "/relationships/relationships_pics/adult to adult.jpg"
     },
     { 
       title: "Outdoors", 
@@ -98,7 +98,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Entertaining", 
       content: "We invite friends and associates to our home and enjoy deepening our connections.", 
-      img: "/relationships/relationships_pics/entertaining.jpg"
+      img: "/relationships/relationships_pics/entertainment.jpg"
     },
     { 
       title: "Family", 
@@ -108,12 +108,12 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reliability", 
       content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
-      img: "/relationships/relationships_pics/reliability.jpg"
+      img: "/relationships/relationships_pics/Reliability.jpg"
     },
     { 
       title: "Health", 
       content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "/relationships/relationships_pics/health.jpg"
+      img: "/relationships/relationships_pics/Health.jpg"
     },
     { 
       title: "Kindness", 
@@ -146,7 +146,7 @@ const getPrinciplesFlow = ai.defineFlow(
 
         const defaultPrinciplesMap = new Map(defaultPrinciples.map(p => [p.title, p]));
 
-        // 1. Filter out principles that are no longer in the default list (like 'The Swarm')
+        // 1. Filter out principles that are no longer in the default list (e.g., 'The Swarm')
         let updatedPrinciples = principlesFromDb.filter(p => defaultPrinciplesMap.has(p.title));
         if (updatedPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
@@ -214,7 +214,7 @@ const updatePrinciplesFlow = ai.defineFlow(
       }
       
       const validatedPrinciples = z.array(PrincipleSchema).parse(principles);
-      await contentRef.set({ principles: validatedPrinciples });
+      await contentRef.set({ principles: validatedPrinciples }, { merge: true });
       return { success: true, message: "Content updated successfully." };
 
     } catch (error: any) {
