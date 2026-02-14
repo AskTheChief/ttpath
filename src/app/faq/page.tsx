@@ -40,7 +40,7 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
         if (entry.isChatbotEntry) return "Visitor says";
         return "Contributor Says";
     } else { // type === 'answer'
-        if (entry.userLevel === 0) return "Ed Says"; // Rule: FAQ Contributor is always answered by Ed.
+        if (entry.userLevel === 0) return "Ed Says";
 
         if (!feedback) return '';
         if (feedback.mentorId === 'chatbot-chief') return "AI Chief says";
@@ -123,6 +123,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     const [answerCaption, setAnswerCaption] = useState('');
     const [answerImageUrl, setAnswerImageUrl] = useState('');
     const [answerImageCredit, setAnswerImageCredit] = useState('');
+    const [contributorEmail, setContributorEmail] = useState('');
 
     const [isSaving, setIsSaving] = useState(false);
     const [isNotifying, setIsNotifying] = useState(false);
@@ -133,6 +134,8 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
 
     const isMentor = userLevel >= 6;
     const canEditEntry = isMentor && !faq.isChatbotEntry;
+    const isManualOrContributor = faq.isManualEntry || faq.userLevel === 0;
+
     
     useEffect(() => {
         setEditingQuestion(false);
@@ -190,17 +193,32 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl || undefined,
-                imageCredit: answerImageCredit || undefined,
-                caption: answerCaption || undefined,
+                imageUrl: answerImageUrl,
+                imageCredit: answerImageCredit,
+                caption: answerCaption,
                 subject: questionSubject,
             });
             toast({ title: 'Answer updated' });
 
-            if (notify && !faq.isManualEntry) {
-                const result = await notifyFaqAuthor({ idToken, entryId: faq.id });
-                if (!result.success) throw new Error(result.message);
-                toast({ title: 'Notification Sent', description: result.message });
+            if (notify) {
+                 if (isManualOrContributor && !contributorEmail.trim()) {
+                    toast({
+                        title: 'Email Required',
+                        description: "Please enter the contributor's email address to send a notification.",
+                        variant: 'destructive',
+                    });
+                } else {
+                    const notifyResult = await notifyFaqAuthor({
+                        idToken,
+                        entryId: faq.id,
+                        recipientEmail: isManualOrContributor ? contributorEmail.trim() : undefined,
+                    });
+                    if (notifyResult.success) {
+                        toast({ title: 'Notification Sent', description: notifyResult.message });
+                    } else {
+                        throw new Error(notifyResult.message);
+                    }
+                }
             }
 
             setEditingAnswerId(null);
@@ -248,40 +266,40 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     return (
         <div id={`faq-${faq.id}`} className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
-                <CardHeader className="flex flex-row justify-between items-start">
-                    <div className="flex-grow">
-                        <div className="flex justify-between items-center text-sm mb-2">
-                            <span className="font-semibold text-foreground">{questionAuthorLabel}</span>
-                            <span className="text-muted-foreground">{questionDate}</span>
-                        </div>
-                        {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
+                <CardHeader>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="font-bold text-foreground">{questionAuthorLabel}</span>
+                        <span className="text-muted-foreground">{questionDate}</span>
                     </div>
-                    {canEditEntry && (
-                        <div className="flex gap-2 ml-4">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isSaving}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will permanently delete the question and all associated answers. This action cannot be undone.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    )}
+                    <div className="flex justify-between items-start">
+                        {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
+                        {canEditEntry && (
+                            <div className="flex gap-2 ml-auto">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingQuestion(p => !p)} disabled={isSaving}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isSaving}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will permanently delete the question and all associated answers. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDeleteEntry}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        )}
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {editingQuestion ? (
@@ -335,35 +353,50 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                             <Textarea ref={answerTextareaRef} id="answer-content" value={answerContent} onChange={e => setAnswerContent(e.target.value)} rows={15} />
                                         </div>
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
-                                        {answerImageUrl && (
-                                            <div className="space-y-2">
-                                                <Label htmlFor="answer-credit">Image Credit</Label>
-                                                <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
-                                                <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
-                                            </div>
-                                        )}
+                                        
+                                        <div className="space-y-2">
+                                            <Label htmlFor="answer-credit">Image Credit</Label>
+                                            <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
+                                            <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
+                                        </div>
+                                        
                                         <div className="space-y-2">
                                             <Label htmlFor="answer-caption">Caption</Label>
                                             <Textarea id="answer-caption" value={answerCaption} onChange={e => setAnswerCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
                                         </div>
+
+                                        {isManualOrContributor && (
+                                            <div className="space-y-2 pt-4 border-t">
+                                                <Label htmlFor={`contributor-email-${faq.id}`}>Notify Contributor by Email</Label>
+                                                <Input
+                                                    id={`contributor-email-${faq.id}`}
+                                                    type="email"
+                                                    value={contributorEmail}
+                                                    onChange={(e) => setContributorEmail(e.target.value)}
+                                                    placeholder="contributor@example.com"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Enter email here to use the "Save & Notify" button.
+                                                </p>
+                                            </div>
+                                        )}
+
                                         <div className="flex justify-end gap-2 pt-2">
                                             <Button size="sm" variant="ghost" onClick={() => setEditingAnswerId(null)} disabled={isSaving || isNotifying}>Cancel</Button>
                                             <Button size="sm" variant="secondary" onClick={() => handleSaveAnswer(fb.id, { notify: false })} disabled={isSaving || isNotifying}>
                                                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                                 Save
                                             </Button>
-                                            {!faq.isManualEntry && (
-                                                <Button size="sm" onClick={() => handleSaveAnswer(fb.id, { notify: true })} disabled={isSaving || isNotifying}>
-                                                    {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
-                                                    Save & Notify
-                                                </Button>
-                                            )}
+                                            <Button size="sm" onClick={() => handleSaveAnswer(fb.id, { notify: true })} disabled={isSaving || isNotifying}>
+                                                {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
+                                                Save & Notify
+                                            </Button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div>
                                         <div className="flex justify-between items-center text-sm mb-2">
-                                            <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                            <span className="font-bold text-foreground">{answerAuthorLabel}</span>
                                             <span className="text-muted-foreground">{feedbackDate}</span>
                                         </div>
                                         <div className="flex justify-between items-start">
@@ -395,7 +428,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
+                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
                                             </div>
                                         )}
                                         {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}

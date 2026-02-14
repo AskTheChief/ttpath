@@ -497,6 +497,7 @@ export type AddManualFaqOutput = z.infer<typeof AddManualFaqOutputSchema>;
 export const NotifyFaqAuthorInputSchema = z.object({
   idToken: z.string(),
   entryId: z.string(),
+  recipientEmail: z.string().email().optional(),
 });
 export type NotifyFaqAuthorInput = z.infer<typeof NotifyFaqAuthorInputSchema>;
 

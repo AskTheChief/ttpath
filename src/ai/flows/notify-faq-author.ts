@@ -25,7 +25,7 @@ const notifyFaqAuthorFlow = ai.defineFlow(
     inputSchema: NotifyFaqAuthorInputSchema,
     outputSchema: NotifyFaqAuthorOutputSchema,
   },
-  async ({ idToken, entryId }) => {
+  async ({ idToken, entryId, recipientEmail: directEmail }) => {
     let mentorToken;
     try {
       mentorToken = await adminAuth.verifyIdToken(idToken);
@@ -54,25 +54,35 @@ const notifyFaqAuthorFlow = ai.defineFlow(
         if (!entryDoc.exists) {
             return { success: false, message: 'FAQ entry not found.' };
         }
-
         const entryData = entryDoc.data()!;
-        const authorId = entryData.userId;
 
-        if (!authorId) {
-            return { success: false, message: 'Author of the question could not be determined.' };
+        let recipientEmail: string | undefined = directEmail;
+        let recipientName = 'Contributor';
+
+        if (recipientEmail) {
+            // If an email is provided directly, we can use the name from the manual entry
+            if (entryData.isManualEntry) {
+                recipientName = entryData.userName || 'Contributor';
+            }
+        } else { // Fallback to existing logic if no direct email is provided
+            const authorId = entryData.userId;
+
+            if (entryData.isManualEntry || !authorId) {
+                return { success: false, message: 'Cannot notify this entry without a specified email address.' };
+            }
+
+            const authorDoc = await db.collection('users').doc(authorId).get();
+            if (!authorDoc.exists) {
+                return { success: false, message: `Author profile (ID: ${authorId}) not found.` };
+            }
+
+            const authorData = authorDoc.data()!;
+            recipientEmail = authorData.email;
+            recipientName = authorData.firstName || 'Member';
         }
-
-        const authorDoc = await db.collection('users').doc(authorId).get();
-        if (!authorDoc.exists) {
-            return { success: false, message: `Author profile (ID: ${authorId}) not found.` };
-        }
-
-        const authorData = authorDoc.data()!;
-        const recipientEmail = authorData.email;
-        const recipientName = authorData.firstName || 'Member';
 
         if (!recipientEmail) {
-            return { success: false, message: `Author ${recipientName} does not have an email address on file.` };
+            return { success: false, message: `A recipient email address could not be found.` };
         }
         
         const mailgun = new Mailgun(formData);
