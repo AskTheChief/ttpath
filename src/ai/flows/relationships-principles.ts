@@ -32,7 +32,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships_pics/reality-truth.png"
+      img: "/relationships/relationships_pics/reality-truth.jpg"
     },
     { 
       title: "Listening", 
