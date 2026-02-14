@@ -33,7 +33,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships_pics/reality-truth.png"
+      img: "/relationships/relationships_pics/reality-truth.jpg"
     },
     { 
       title: "Listening", 
@@ -63,7 +63,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Stop Judging Feelings", 
       content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "/relationships/relationships_pics/stop-judging-feeling.jpg"
+      img: "/relationships/relationships_pics/stop judging feelings.jpg"
     },
     { 
       title: "Music", 
@@ -73,7 +73,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "System Thinking", 
       content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "/relationships/relationships_pics/System-Thinking.jpg"
+      img: "/relationships/relationships_pics/system thinking.jpg"
     },
     { 
       title: "Questions", 
@@ -108,12 +108,12 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reliability", 
       content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
-      img: "/relationships/relationships_pics/Reliability.jpg"
+      img: "/relationships/relationships_pics/reliability.jpg"
     },
     { 
       title: "Health", 
       content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "/relationships/relationships_pics/Health.jpg"
+      img: "/relationships/relationships_pics/health.jpg"
     },
     { 
       title: "Kindness", 
@@ -214,7 +214,7 @@ const updatePrinciplesFlow = ai.defineFlow(
       }
       
       const validatedPrinciples = z.array(PrincipleSchema).parse(principles);
-      await contentRef.set({ principles: validatedPrinciples }, { merge: true });
+      await contentRef.set({ principles: validatedPrinciples });
       return { success: true, message: "Content updated successfully." };
 
     } catch (error: any) {
