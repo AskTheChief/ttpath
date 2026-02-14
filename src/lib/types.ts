@@ -506,3 +506,21 @@ export const NotifyFaqAuthorOutputSchema = z.object({
   message: z.string(),
 });
 export type NotifyFaqAuthorOutput = z.infer<typeof NotifyFaqAuthorOutputSchema>;
+
+// src/ai/flows/relationships-content.ts
+export const GetRelationshipsContentOutputSchema = z.object({
+  content: z.string(),
+});
+export type GetRelationshipsContentOutput = z.infer<typeof GetRelationshipsContentOutputSchema>;
+
+export const UpdateRelationshipsContentInputSchema = z.object({
+  idToken: z.string(),
+  content: z.string(),
+});
+export type UpdateRelationshipsContentInput = z.infer<typeof UpdateRelationshipsContentInputSchema>;
+
+export const UpdateRelationshipsContentOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type UpdateRelationshipsContentOutput = z.infer<typeof UpdateRelationshipsContentOutputSchema>;

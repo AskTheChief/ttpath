@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import DevDropdown from './dev-dropdown';
-import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare, BookCopy } from "lucide-react";
+import { Database, Swords, BookOpen, GraduationCap, Link2, BarChart2, MessageCircleQuestion, MessageSquare, BookCopy, Heart } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import { User } from 'firebase/auth';
 
@@ -173,6 +173,16 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               >
                   <BookCopy className="mr-4 w-10 h-10" />
                   FAQ
+              </Button>
+            </Link>
+            <Link href="/relationships" passHref>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-xl p-4 h-auto"
+                onClick={onClose}
+              >
+                  <Heart className="mr-4 w-10 h-10" />
+                  Relationships
               </Button>
             </Link>
             <DropdownMenu>
