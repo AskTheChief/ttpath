@@ -166,7 +166,7 @@ const RelationshipsPage = () => {
           <div className="flex flex-col md:flex-row items-center gap-20">
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="/relationships/relationships_pics/kindness.jpg"
+                src="/relationships/relationships_pics/embrace.jpg"
                 alt="Embrace Diagram" 
                 className="w-full h-auto max-h-[500px] object-contain rounded-3xl shadow-sm"
               />
