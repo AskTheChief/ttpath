@@ -187,6 +187,9 @@ function FeedbackForm({
           idToken,
           entryId,
           feedbackContent,
+          imageUrl: imageUrl,
+          imageCredit: imageCredit,
+          caption: caption,
         });
         if (result.success) {
           toast({ title: 'Feedback Added' });
@@ -219,22 +222,20 @@ function FeedbackForm({
         onChange={(e) => setFeedbackContent(e.target.value)}
         rows={3}
       />
-       {isEditMode && (
-         <div className="space-y-4">
-            <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
-            {imageUrl && (
-              <div className="space-y-1">
-                  <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
-                  <FormattingToolbar textareaRef={imageCreditTextareaRef} value={imageCredit} onValueChange={setImageCredit} />
-                  <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
-              </div>
-            )}
-            <div className="space-y-1">
-                <Label htmlFor="caption" className="text-xs">Caption</Label>
-                <Textarea id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
-            </div>
-         </div>
-      )}
+      <div className="space-y-4">
+        <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
+        {imageUrl && (
+          <div className="space-y-1">
+              <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
+              <FormattingToolbar textareaRef={imageCreditTextareaRef} value={imageCredit} onValueChange={setImageCredit} />
+              <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
+          </div>
+        )}
+        <div className="space-y-1">
+            <Label htmlFor="caption" className="text-xs">Caption</Label>
+            <Textarea id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
+        </div>
+      </div>
       <div className="flex gap-2 pt-2">
         <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEditMode ? null : <Send className="mr-2 h-4 w-4" />}

@@ -24,7 +24,7 @@ const addJournalFeedbackFlow = ai.defineFlow(
     inputSchema: AddJournalFeedbackInputSchema,
     outputSchema: AddJournalFeedbackOutputSchema,
   },
-  async ({ idToken, entryId, feedbackContent }) => {
+  async ({ idToken, entryId, feedbackContent, imageUrl, imageCredit, caption }) => {
     let decodedToken;
     let mentorDoc;
     try {
@@ -44,7 +44,7 @@ const addJournalFeedbackFlow = ai.defineFlow(
     
     const feedbackId = db.collection('journal_entries').doc().id;
 
-    const newFeedback = {
+    const newFeedback: any = {
       id: feedbackId,
       mentorId: decodedToken.uid,
       mentorName: mentorName,
@@ -52,6 +52,11 @@ const addJournalFeedbackFlow = ai.defineFlow(
       feedbackContent: feedbackContent,
       createdAt: Timestamp.now(),
     };
+
+    if (imageUrl) newFeedback.imageUrl = imageUrl;
+    if (imageCredit) newFeedback.imageCredit = imageCredit;
+    if (caption) newFeedback.caption = caption;
+
 
     await entryRef.update({
       feedback: FieldValue.arrayUnion(newFeedback)
