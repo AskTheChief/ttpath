@@ -76,7 +76,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             const createdAt = f.createdAt;
             const updatedAt = f.updatedAt;
             return {
-                id: f.id, // This is now guaranteed to exist
+                id: f.id,
                 mentorId: f.mentorId,
                 mentorName: f.mentorName,
                 mentorLevel: f.mentorLevel,
@@ -85,6 +85,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
                 imageUrl: f.imageUrl || undefined,
                 imageCredit: f.imageCredit || undefined,
+                caption: f.caption || undefined,
             };
         });
         
@@ -99,12 +100,14 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             userId: data.userId,
             userName: userName,
             userLevel: userLevel,
+            subject: data.subject || undefined,
             entryContent: data.entryContent,
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
             feedback: finalFeedback,
             imageUrl: data.imageUrl || undefined,
             isManualEntry: data.isManualEntry,
+            caption: data.caption || undefined,
         };
     }));
 

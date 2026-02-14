@@ -322,6 +322,7 @@ export const JournalFeedbackSchema = z.object({
     updatedAt: z.string().optional(),
     imageUrl: z.string().url().optional(),
     imageCredit: z.string().optional(),
+    caption: z.string().optional(),
 });
 export type JournalFeedback = z.infer<typeof JournalFeedbackSchema>;
 
@@ -330,14 +331,33 @@ export const JournalEntrySchema = z.object({
     userId: z.string(),
     userName: z.string(),
     userLevel: z.number().optional(),
+    subject: z.string().optional(),
     entryContent: z.string(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
     feedback: z.array(JournalFeedbackSchema).optional(),
     imageUrl: z.string().url().optional(),
     isManualEntry: z.boolean().optional(),
+    caption: z.string().optional(),
 });
 export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+
+export const SaveJournalEntryInputSchema = z.object({
+  idToken: z.string(),
+  entryContent: z.string(),
+  entryId: z.string().optional(),
+  imageUrl: z.string().url().optional(),
+  subject: z.string().optional(),
+  caption: z.string().optional(),
+});
+export type SaveJournalEntryInput = z.infer<typeof SaveJournalEntryInputSchema>;
+
+
+export const SaveJournalEntryOutputSchema = z.object({
+  success: z.boolean(),
+  entryId: z.string(),
+});
+export type SaveJournalEntryOutput = z.infer<typeof SaveJournalEntryOutputSchema>;
 
 // src/ai/flows/add-journal-feedback.ts
 export const AddJournalFeedbackInputSchema = z.object({
@@ -361,6 +381,8 @@ export const EditJournalFeedbackInputSchema = z.object({
   newFeedbackContent: z.string(),
   imageUrl: z.string().url().optional(),
   imageCredit: z.string().optional(),
+  caption: z.string().optional(),
+  subject: z.string().optional(),
 });
 export type EditJournalFeedbackInput = z.infer<typeof EditJournalFeedbackInputSchema>;
 
@@ -459,6 +481,9 @@ export const AddManualFaqInputSchema = z.object({
   imageUrl: z.string().url().optional(),
   answerImageUrl: z.string().url().optional(),
   answerImageCredit: z.string().optional(),
+  subject: z.string().optional(),
+  questionCaption: z.string().optional(),
+  answerCaption: z.string().optional(),
 });
 export type AddManualFaqInput = z.infer<typeof AddManualFaqInputSchema>;
 

@@ -20,7 +20,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
     inputSchema: EditJournalFeedbackInputSchema,
     outputSchema: EditJournalFeedbackOutputSchema,
   },
-  async ({ idToken, entryId, feedbackId, newFeedbackContent, imageUrl, imageCredit }) => {
+  async ({ idToken, entryId, feedbackId, newFeedbackContent, imageUrl, imageCredit, caption, subject }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -65,6 +65,10 @@ const editJournalFeedbackFlow = ai.defineFlow(
             finalUpdatedFeedback.imageCredit = '';
         }
 
+        if (caption !== undefined) {
+            finalUpdatedFeedback.caption = caption;
+        }
+
         return finalUpdatedFeedback;
       }
       return fb;
@@ -82,9 +86,14 @@ const editJournalFeedbackFlow = ai.defineFlow(
       throw new Error('Permission denied. Only the author or a mentor can edit this feedback.');
     }
 
-    await entryRef.update({
-      feedback: newFeedbackArray,
-    });
+    const updateData: any = {
+        feedback: newFeedbackArray,
+    };
+    if (subject !== undefined) {
+        updateData.subject = subject;
+    }
+
+    await entryRef.update(updateData);
     
     return { success: true, message: 'Feedback updated successfully.' };
   }

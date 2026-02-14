@@ -19,7 +19,7 @@ const addManualFaqFlow = ai.defineFlow(
     inputSchema: AddManualFaqInputSchema,
     outputSchema: AddManualFaqOutputSchema,
   },
-  async ({ idToken, contributorName, question, answer, imageUrl, answerImageUrl, answerImageCredit }) => {
+  async ({ idToken, contributorName, question, answer, imageUrl, answerImageUrl, answerImageCredit, subject, questionCaption, answerCaption }) => {
     let mentorToken;
     let mentorData;
     try {
@@ -48,9 +48,10 @@ const addManualFaqFlow = ai.defineFlow(
         isManualEntry: true, // Flag to identify these entries
       };
 
-      if (imageUrl) {
-        entryData.imageUrl = imageUrl;
-      }
+      if (imageUrl) entryData.imageUrl = imageUrl;
+      if (subject) entryData.subject = subject;
+      if (questionCaption) entryData.caption = questionCaption;
+
 
       await entryRef.set(entryData);
 
@@ -65,12 +66,9 @@ const addManualFaqFlow = ai.defineFlow(
         createdAt: Timestamp.now(),
       };
 
-      if (answerImageUrl) {
-        newFeedback.imageUrl = answerImageUrl;
-      }
-      if (answerImageCredit) {
-        newFeedback.imageCredit = answerImageCredit;
-      }
+      if (answerImageUrl) newFeedback.imageUrl = answerImageUrl;
+      if (answerImageCredit) newFeedback.imageCredit = answerImageCredit;
+      if (answerCaption) newFeedback.caption = answerCaption;
 
       await entryRef.update({
         feedback: FieldValue.arrayUnion(newFeedback),

@@ -6,11 +6,18 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { JournalEntrySchema, JournalEntry } from '@/lib/types';
+import { 
+    JournalEntrySchema, 
+    JournalEntry,
+    SaveJournalEntryInputSchema,
+    SaveJournalEntryOutputSchema,
+    type SaveJournalEntryInput,
+    type SaveJournalEntryOutput
+} from '@/lib/types';
+import { z } from 'zod';
 
 
 if (!getApps().length) {
@@ -22,28 +29,13 @@ const ADMIN_LEVEL = 6;
 
 
 // --- SAVE JOURNAL ENTRY ---
-
-const SaveJournalEntryInputSchema = z.object({
-  idToken: z.string(),
-  entryContent: z.string(),
-  entryId: z.string().optional(), // Optional: for updating existing entries
-  imageUrl: z.string().url().optional(),
-});
-export type SaveJournalEntryInput = z.infer<typeof SaveJournalEntryInputSchema>;
-
-const SaveJournalEntryOutputSchema = z.object({
-  success: z.boolean(),
-  entryId: z.string(),
-});
-export type SaveJournalEntryOutput = z.infer<typeof SaveJournalEntryOutputSchema>;
-
 const saveJournalEntryFlow = ai.defineFlow(
   {
     name: 'saveJournalEntryFlow',
     inputSchema: SaveJournalEntryInputSchema,
     outputSchema: SaveJournalEntryOutputSchema,
   },
-  async ({ idToken, entryContent, entryId, imageUrl }) => {
+  async ({ idToken, entryContent, entryId, imageUrl, subject, caption }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -67,9 +59,12 @@ const saveJournalEntryFlow = ai.defineFlow(
         updatedAt: Timestamp.now(),
     };
 
+    if (subject !== undefined) { dataToSave.subject = subject; }
+    if (caption !== undefined) { dataToSave.caption = caption; }
+
     if (imageUrl) {
         dataToSave.imageUrl = imageUrl;
-    } else {
+    } else if (imageUrl === '') {
         dataToSave.imageUrl = FieldValue.delete();
     }
 
@@ -147,11 +142,14 @@ const getJournalEntriesFlow = ai.defineFlow(
             feedbackContent: f.feedbackContent,
             createdAt: f.createdAt?.toDate ? f.createdAt.toDate().toISOString() : (f.createdAt || new Date().toISOString()),
             updatedAt: f.updatedAt?.toDate ? f.updatedAt.toDate().toISOString() : undefined,
+            caption: f.caption || undefined,
         }));
 
         return {
             id: doc.id,
             ...data,
+            subject: data.subject || undefined,
+            caption: data.caption || undefined,
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
             feedback: finalFeedback,
