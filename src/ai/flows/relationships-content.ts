@@ -21,14 +21,26 @@ const adminAuth = getAuth();
 const ADMIN_LEVEL = 6;
 const CONTENT_DOC_PATH = 'site_content/relationships';
 
-const defaultContent = `This is a placeholder for the Relationships page content.
+const defaultContent = `The Trading Tribe Process (TTP) provides a powerful framework for personal growth that extends into all areas of life, including our most intimate relationships. When partners commit to supporting each other through TTP, they create a shared space for deep connection, emotional honesty, and mutual growth.
 
-An administrator can edit this text to provide information about how the Trading Tribe views relationships, personal growth within partnerships, and related topics.
+**Feelings in Relationships**
 
-Some potential themes to explore here:
-- How TTP (Trading Tribe Process) can be applied to relationships.
-- The role of feelings and communication.
-- Supporting your partner's growth journey.`;
+In a relationship, unexpressed feelings can build up and create distance. TTP encourages both partners to take responsibility for their own feelings and to communicate them openly. By creating a safe space to share emotions—both positive and challenging—partners can dissolve judgments and misunderstandings before they take root. Acknowledging each other's feelings, without trying to "fix" them, is a fundamental act of support.
+
+**Supporting Your Partner's Growth**
+
+Supporting your partner means more than just offering encouragement. It means being willing to be a "receiver" for them, holding space for them to experience their feelings fully. It also means committing to your own work, as your personal growth directly impacts the health of the relationship. When both individuals are dedicated to the process, the relationship itself becomes a catalyst for transformation.
+
+**Common Relationship Rocks**
+
+Just like in trading, we can carry "rocks" in our relationships—unresolved issues or patterns of behavior that weigh us down. These might include:
+
+- Blaming your partner for your feelings.
+- Avoiding difficult conversations.
+- Carrying resentments from past events.
+- Trying to control your partner's behavior or feelings.
+
+Through TTP, partners can learn to identify these rocks and work together to dissolve them, lightening the load for both individuals and for the relationship as a whole. The goal is not to have a "perfect" relationship, but an honest and evolving one.`;
 
 // --- Get Flow ---
 const getRelationshipsContentFlow = ai.defineFlow(
