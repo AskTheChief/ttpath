@@ -27,20 +27,29 @@ import { Label } from '@/components/ui/label';
 // Augment JournalEntry type for this component to include chatbot entries
 type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
 
-const levelMap: Record<number, string> = {
-  1: "Visitor",
-  2: "Guest",
-  3: "Explorer",
-  4: "Member",
-  5: "Chief",
-  6: "Mentor",
+const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
+    if (type === 'question') {
+        const level = entry.userLevel;
+        if (level === 0) return "FAQ Contributor Says -";
+        if (level === 1) return "Visitor says -";
+        if (level === 2) return "Guest Says -";
+        if (level === 3) return "Explorer Says -";
+        if (level === 4) return "Tribe Member Says -";
+        if (level === 5) return "Chief Says -";
+        if (level === 6) return "Mentor Says -";
+        if (entry.isChatbotEntry) return "Visitor says -";
+        return "Contributor Says -";
+    } else { // type === 'answer'
+        if (!feedback) return '';
+        if (feedback.mentorId === 'chatbot-chief') return "AI Chief says";
+        if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says";
+        const level = feedback.mentorLevel;
+        if (level === 5) return "Tribe Chief Says";
+        if (level >= 6) return "Mentor says";
+        return "Mentor says";
+    }
 };
 
-const getRoleName = (level?: number) => {
-    if (level === 0) return 'Contributor';
-    if (!level || level < 1 || level > 6) return 'Contributor';
-    return levelMap[level];
-};
 
 const highlightText = (text: string, highlight: string): string => {
   const searchWords = highlight.trim().split(/\s+/).filter(Boolean);
@@ -178,10 +187,10 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl || undefined,
-                imageCredit: answerImageCredit || undefined,
-                caption: answerCaption || undefined,
-                subject: questionSubject || undefined,
+                imageUrl: answerImageUrl,
+                imageCredit: answerImageCredit,
+                caption: answerCaption,
+                subject: questionSubject,
             });
             toast({ title: 'Answer updated' });
 
@@ -230,7 +239,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         }
     };
     
-    const roleName = getRoleName(faq.userLevel);
+    const questionAuthorLabel = getAuthorDisplay('question', faq);
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
     
     return (
@@ -238,9 +247,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
                     <div className="flex-grow">
-                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
                             <span>{questionDate}</span>
-                            <span>{roleName}</span>
+                            <span>{questionAuthorLabel}</span>
                         </div>
                         {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
                     </div>
@@ -295,12 +304,12 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                         </div>
                     ) : (
                         <>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
                             {faq.imageUrl && (
-                                <div className="mb-4 relative aspect-video">
+                                <div className="mt-4 relative aspect-video">
                                     <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                 </div>
                             )}
-                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
                              {faq.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{faq.caption}</p>}
                         </>
                     )}
@@ -310,7 +319,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
             <Card className="flex flex-col">
                 <CardContent className="space-y-4 flex-grow pt-6">
                     {(faq.feedback || []).map(fb => {
-                         const feedbackAuthor = fb.mentorName?.toLowerCase().includes('ed') ? 'Ed' : getRoleName(fb.mentorLevel);
+                         const answerAuthorLabel = getAuthorDisplay('answer', faq, fb);
                          const feedbackDate = new Date(fb.createdAt).toLocaleDateString();
                          const canEditFeedback = isMentor && fb.mentorId !== 'chatbot-chief';
                          return (
@@ -352,7 +361,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     <div>
                                         <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
                                             <span>{feedbackDate}</span>
-                                            <span>{feedbackAuthor}</span>
+                                            <span>{answerAuthorLabel}</span>
                                         </div>
                                         <div className="flex justify-between items-start">
                                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
@@ -383,7 +392,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'cover' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit }} />}
+                                                {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
                                             </div>
                                         )}
                                         {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}

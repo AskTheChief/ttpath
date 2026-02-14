@@ -1935,14 +1935,16 @@ function MyTribePageContent() {
                                                         <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                                         <AlertDescription>
                                                             <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
-                                                            <p className="text-xs text-muted-foreground mt-2">Replied by {fb.mentorName} on {isClient ? new Date(fb.createdAt).toLocaleDateString() : '...'}</p>
-                                                            {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
+                                                            <div className="text-xs text-muted-foreground mt-2">
+                                                                Replied by {fb.mentorName} on {isClient ? new Date(fb.createdAt).toLocaleDateString() : '...'}
+                                                                {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
+                                                            </div>
                                                             {fb.imageUrl && (
                                                                 <div className="mt-4">
                                                                     <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
                                                                     </div>
-                                                                    {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: fb.imageCredit }} />}
+                                                                    {fb.imageCredit && <div className="text-xs text-muted-foreground text-center mt-1" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
                                                                 </div>
                                                             )}
                                                             {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}
