@@ -80,11 +80,6 @@ const defaultPrinciples: Principle[] = [
       img: "/relationships/relationships pics/questions.jpg"
     },
     { 
-      title: "The Swarm", 
-      content: "We view society as a swarm of individuals.\n\n\"Swarm intelligence\" arises from the way we treat each other in small groups or Tribes.\n\nWe notice society evolving and operating more as an intimacy-centric intelligent swarm, and less as a control-centric hierarchy.\n\nWe affirm our connection with something greater than ourselves as individuals.", 
-      img: "/relationships/relationships pics/swarms.jpg"
-    },
-    { 
       title: "Intimacy", 
       content: "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.", 
       img: "/relationships/relationships pics/intimacy.jpg"
