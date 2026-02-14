@@ -182,7 +182,7 @@ const RelationshipsPage = () => {
           <div className="flex flex-col md:flex-row items-center gap-20">
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="/relationships/relationships_pics/embrace.jpg"
+                src="/relationships/relationships_pics/kindness.jpg"
                 alt="Embrace Diagram" 
                 className="w-full h-auto max-h-[500px] object-contain rounded-3xl shadow-sm"
               />
@@ -215,11 +215,13 @@ const RelationshipsPage = () => {
               >
                 <div className="md:w-1/2 flex items-center justify-center p-4">
                   <div className="w-full">
-                    <img 
-                      src={p.img} 
-                      alt={p.title} 
-                      className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
-                    />
+                    {p.img && (
+                      <img 
+                        src={p.img} 
+                        alt={p.title} 
+                        className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
+                      />
+                    )}
                      {isEditing && <Input value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
                   </div>
                 </div>
