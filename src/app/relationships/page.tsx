@@ -1,131 +1,325 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ArrowLeft, Edit, Loader2, Save } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getRelationshipsContent, updateRelationshipsContent } from '@/ai/flows/relationships-content';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useEffect } from 'react';
+import { 
+  Heart, 
+  Quote,
+  Activity,
+  Zap,
+  CheckCircle2
+} from 'lucide-react';
 
-const ADMIN_LEVEL = 6;
-
-export default function RelationshipsPage() {
-  const [content, setContent] = useState('');
-  const [originalContent, setOriginalContent] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [userLevel, setUserLevel] = useState(0);
-  const { toast } = useToast();
+const RelationshipsPage = () => {
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    async function fetchContent() {
-      try {
-        const { content: fetchedContent } = await getRelationshipsContent();
-        setContent(fetchedContent);
-        setOriginalContent(fetchedContent);
-      } catch (error) {
-        console.error("Failed to fetch relationships content:", error);
-        toast({ title: 'Error loading content', variant: 'destructive' });
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchContent();
-  }, [toast]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        setUserLevel(userDoc.data()?.currentUserLevel || 0);
-      } else {
-        setUserLevel(0);
-      }
-    });
-    return () => unsubscribe();
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSave = async () => {
-    if (!user) return;
-    setIsSaving(true);
-    try {
-      const idToken = await user.getIdToken();
-      await updateRelationshipsContent({ idToken, content });
-      setOriginalContent(content);
-      setIsEditing(false);
-      toast({ title: 'Content Saved' });
-    } catch (error: any) {
-      toast({ title: 'Failed to save', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsSaving(false);
+  const principles = [
+    { 
+      title: "Service", 
+      content: "We have a common purpose: namely, serving others.", 
+      img: "https://i.ibb.co/sJqswHCw/service.jpg"
+    },
+    { 
+      title: "Reality / Truth", 
+      content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
+      img: "https://i.ibb.co/SXLtxLdY/reality-truth.png"
+    },
+    { 
+      title: "Listening", 
+      content: "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.", 
+      img: "https://i.ibb.co/dwbYYbnc/listening.jpg"
+    },
+    { 
+      title: "Owning Feelings", 
+      content: "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.", 
+      img: "https://i.ibb.co/844Z6MYF/owning-feelings.jpg"
+    },
+    { 
+      title: "Now", 
+      content: "We keep our concerns and language in the now.", 
+      img: "https://i.ibb.co/NgpZ1c5v/now.jpg"
+    },
+    { 
+      title: "Support", 
+      content: "We support each other in our interests and activities.", 
+      img: "https://i.ibb.co/WpfsgDmq/support.jpg"
+    },
+    { 
+      title: "Asking Positively", 
+      content: "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.", 
+      img: "https://i.ibb.co/CKTV04WZ/asking-positively.jpg"
+    },
+    { 
+      title: "Stop Judging Feelings", 
+      content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
+      img: "https://i.ibb.co/gMTRcHHQ/stop-judging-feeling.jpg"
+    },
+    { 
+      title: "Music", 
+      content: "We like to sing and dance and play instruments.", 
+      img: "https://i.ibb.co/fYHnjd40/music.jpg"
+    },
+    { 
+      title: "System Thinking", 
+      content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
+      img: "https://i.ibb.co/fdRrC5yF/System-Thinking.jpg"
+    },
+    { 
+      title: "Questions", 
+      content: "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.", 
+      img: "https://i.ibb.co/WWkRDhn0/questions.jpg"
+    },
+    { 
+      title: "The Swarm", 
+      content: "We view society as a swarm of individuals.\n\n\"Swarm intelligence\" arises from the way we treat each other in small groups or Tribes.\n\nWe notice society evolving and operating more as an intimacy-centric intelligent swarm, and less as a control-centric hierarchy.\n\nWe affirm our connection with something greater than ourselves as individuals.", 
+      img: "https://i.ibb.co/xKRQ1GzQ/swarms.jpg"
+    },
+    { 
+      title: "Intimacy", 
+      content: "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.", 
+      img: "https://i.ibb.co/MF0zj3s/intimacy.jpg"
+    },
+    { 
+      title: "Adult-to-Adult", 
+      content: "We have our childhood communication patterns and issues behind us. We relate as adults.", 
+      img: "https://i.ibb.co/3YCqFcmc/adult-to-adult.jpg"
+    },
+    { 
+      title: "Outdoors", 
+      content: "We enjoy the great outdoors and we like to watch things grow. We like to hike together, especially in forests and at the beach.", 
+      img: "https://i.ibb.co/7ttNR691/outdoors.jpg"
+    },
+    { 
+      title: "Entertaining", 
+      content: "We invite friends and associates to our home and enjoy deepening our connections.", 
+      img: "https://i.ibb.co/d3fCfKN/entertainment.jpg"
+    },
+    { 
+      title: "Family", 
+      content: "We stay in touch with our families and support each other.", 
+      img: "https://i.ibb.co/mVJFD1qw/family.jpg"
+    },
+    { 
+      title: "Reliability", 
+      content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
+      img: "https://i.ibb.co/VYMpTsk6/realiability.jpg"
+    },
+    { 
+      title: "Health", 
+      content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
+      img: "https://i.ibb.co/b52bds1c/Health.jpg"
+    },
+    { 
+      title: "Kindness", 
+      content: "We practice kindness and compassion as an art form.", 
+      img: "https://i.ibb.co/qLYnFdBJ/kindness.jpg"
+    },
+    { 
+      title: "Imagination", 
+      content: "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.", 
+      img: "https://i.ibb.co/DPS7pcxp/imagination.jpg"
     }
-  };
-
-  const isMentor = userLevel >= ADMIN_LEVEL;
+  ];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Relationships</h1>
-        <div className="flex items-center gap-4">
-          {isMentor && !isEditing && (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="mr-2 h-4 w-4" /> Edit Page
-            </Button>
-          )}
-          <Button asChild variant="outline">
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
-            </Link>
-          </Button>
+    <div className="min-h-screen bg-white text-[#1a1a1a] font-sans selection:bg-blue-100 pb-20">
+      {/* Navigation */}
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md border-b border-gray-100 py-4' : 'bg-transparent py-8'}`}>
+        <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
+          <div className="flex items-center gap-3 font-black tracking-tighter text-2xl">
+            <Activity className="text-blue-600" size={28} />
+            <span>TRADING TRIBE<span className="font-light text-gray-400 ml-2">RELATIONSHIP</span></span>
+          </div>
+          <div className="hidden md:flex gap-10">
+            <a href="#principles" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">Principles</a>
+            <a href="#swarm" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Swarm</a>
+            <a href="#the-work" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Work</a>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <header className="pt-48 pb-20 px-8 text-center bg-gray-50/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
+            <Zap size={14} fill="currentColor" /> February 13, 2026
+          </div>
+          <h1 className="text-7xl md:text-[10rem] font-black mb-10 leading-[0.85] tracking-tighter text-gray-900 text-center">
+            Relationship <br/><span className="text-blue-600 italic font-medium">Principles.</span>
+          </h1>
+          <p className="text-2xl md:text-3xl text-gray-400 font-light max-w-3xl mx-auto leading-relaxed italic">
+            "A guide for serving others through intimacy-centric swarm intelligence."
+          </p>
         </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>The Tribe and Relationships</CardTitle>
-          <CardDescription>Perspectives on relationships within the Trading Tribe context.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : isEditing ? (
-            <div className="space-y-4">
-              <Textarea 
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={20}
-                className="text-base"
+      {/* Embrace Section - Picture Left, Text Right */}
+      <section className="py-24 px-8 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-20">
+            <div className="md:w-1/2 flex justify-center">
+              <img 
+                src="https://i.ibb.co/JR1wGZQZ/embrace.jpg" 
+                alt="Embrace Diagram" 
+                className="w-full h-auto max-h-[500px] object-contain rounded-3xl shadow-sm"
               />
-              <div className="flex gap-2">
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save
-                </Button>
-                <Button variant="ghost" onClick={() => { setIsEditing(false); setContent(originalContent); }}>
-                  Cancel
-                </Button>
+            </div>
+            <div className="md:w-1/2 space-y-10">
+              <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter text-blue-600">Embrace</h2>
+              <div className="space-y-8">
+                <p className="text-2xl md:text-4xl font-light text-gray-500 leading-tight">
+                  Embrace: to accept with willingness and enthusiasm.
+                </p>
+                <div className="pt-10 border-t border-gray-100">
+                  <p className="text-2xl md:text-5xl font-black flex items-center gap-6 text-gray-900 leading-none">
+                    <CheckCircle2 size={48} className="text-blue-600 flex-shrink-0" />
+                    I embrace these principles.
+                  </p>
+                </div>
               </div>
             </div>
-          ) : (
-            <div
-              className="prose dark:prose-invert max-w-none text-lg"
-              dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
-            />
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Principles List - Large Single Column Rows */}
+      <section id="principles" className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="space-y-20">
+            {principles.map((p, i) => (
+              <div 
+                key={i} 
+                className="flex flex-col md:flex-row items-center gap-16 md:gap-24 py-16 border-b border-gray-50 last:border-0 group"
+              >
+                {/* Bigger Image on the Left */}
+                <div className="md:w-1/2 flex items-center justify-center p-4">
+                  <img 
+                    src={p.img} 
+                    alt={p.title} 
+                    className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                
+                {/* Text Content on the Right */}
+                <div className="md:w-1/2 space-y-8">
+                  <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-none">{p.title}</h3>
+                  <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
+                    {p.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Bee Swarm Section - Matching the pattern */}
+      <section id="swarm" className="py-24 px-8 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-20">
+            <div className="md:w-1/2 flex justify-center">
+              <img 
+                src="https://i.ibb.co/WvfKy30P/download.jpg" 
+                alt="A bee on a flower" 
+                className="w-full h-auto max-h-[600px] object-contain rounded-3xl"
+              />
+            </div>
+            <div className="md:w-1/2 space-y-10">
+              <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-[0.9]">The Bee Swarm: <br/><span className="text-blue-600">Swarm Intelligence.</span></h3>
+              <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
+                Bees operate through "Swarm Intelligence"—a system where complex global patterns emerge from individuals following simple, local rules.
+                {"\n\n"}
+                Local communication (the waggle dance) shares data without central command.
+                {"\n\n"}
+                Biological democracy allows scouts to vote on hive direction through their presence.
+                {"\n\n"}
+                Specialization without hierarchy allows every bee to work for the common purpose of the colony.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The Work of Love Section - Large Layout */}
+      <section id="the-work" className="py-32 bg-[#121212] text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-40 opacity-[0.02] pointer-events-none">
+          <Heart size={800} fill="currentColor" />
+        </div>
+        <div className="max-w-7xl mx-auto px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-24">
+            {/* Work of Love Image on the Left */}
+            <div className="lg:w-1/2 flex items-center justify-center p-8 bg-white rounded-[4rem] shadow-2xl">
+              <img 
+                src="https://i.ibb.co/ynKP9vgm/the-work-of-love.jpg" 
+                alt="The Work of Love Diagram" 
+                className="w-full h-auto max-h-[600px] object-contain"
+              />
+            </div>
+
+            {/* Work of Love Text on the Right */}
+            <div className="lg:w-1/2 space-y-12">
+              <div className="inline-block px-4 py-1 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded">The Reward System</div>
+              <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-4 uppercase">The Work of <span className="text-blue-500 italic font-medium">Love.</span></h2>
+              
+              <div className="space-y-10">
+                <Quote className="text-blue-600 opacity-50" size={64} />
+                <p className="text-2xl md:text-4xl italic font-serif leading-tight text-gray-300">
+                  Loving means doing all the stuff above. This can take a lot of work.
+                </p>
+                
+                <div className="space-y-8">
+                  <div className="space-y-6">
+                    <p className="text-xl md:text-2xl text-gray-400 leading-relaxed">
+                      When we actually do the work of love, we get big rewards: things work smoothly and we a warm-fuzzy loving feeling.
+                    </p>
+                    <p className="text-2xl md:text-4xl font-black text-white border-l-8 border-blue-600 pl-8 uppercase tracking-tighter leading-none">
+                      The loving feeling comes only from doing the work of love.
+                    </p>
+                  </div>
+
+                  <div className="pt-10 border-t border-white/10">
+                    <p className="text-gray-500 text-lg leading-relaxed mb-8">
+                      If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with the conflict and a cold, empty feeling instead.
+                    </p>
+                    <div className="p-10 bg-red-900/10 rounded-[3rem] border border-red-900/30">
+                      <p className="text-xs uppercase tracking-[0.4em] font-black text-red-500 mb-6 flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                        Warning: Entrainment Logic
+                      </p>
+                      <p className="text-xl font-bold text-red-200/60 leading-relaxed italic">
+                        This can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white py-24 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
+          <div>
+            <div className="font-black text-4xl tracking-tighter uppercase mb-4">Trading Tribe</div>
+            <p className="text-xs font-black text-gray-300 uppercase tracking-[0.3em]">Relationship Protocols — February 2026</p>
+          </div>
+          <div className="flex flex-col items-center md:items-end gap-3">
+             <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Optimized System Intelligence</div>
+             <div className="h-0.5 w-32 bg-blue-600"></div>
+             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Seykota relationship Re-Design</div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
-}
+};
+
+export default RelationshipsPage;
