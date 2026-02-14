@@ -30,23 +30,26 @@ type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
 const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
     if (type === 'question') {
         const level = entry.userLevel;
-        if (level === 0) return "FAQ Contributor Says -";
-        if (level === 1) return "Visitor says -";
-        if (level === 2) return "Guest Says -";
-        if (level === 3) return "Explorer Says -";
-        if (level === 4) return "Tribe Member Says -";
-        if (level === 5) return "Chief Says -";
-        if (level === 6) return "Mentor Says -";
-        if (entry.isChatbotEntry) return "Visitor says -";
-        return "Contributor Says -";
+        if (level === 0) return "FAQ Contributor Says";
+        if (level === 1) return "Visitor says";
+        if (level === 2) return "Guest Says";
+        if (level === 3) return "Explorer Says";
+        if (level === 4) return "Tribe Member Says";
+        if (level === 5) return "Chief Says";
+        if (level === 6) return "Mentor Says";
+        if (entry.isChatbotEntry) return "Visitor says";
+        return "Contributor Says";
     } else { // type === 'answer'
+        if (entry.userLevel === 0) return "Ed Says"; // Rule: FAQ Contributor is always answered by Ed.
+
         if (!feedback) return '';
         if (feedback.mentorId === 'chatbot-chief') return "AI Chief says";
         if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says";
+        
         const level = feedback.mentorLevel;
         if (level === 5) return "Tribe Chief Says";
         if (level >= 6) return "Mentor says";
-        return "Mentor says";
+        return "Mentor says"; // Default for any other case.
     }
 };
 
@@ -187,9 +190,9 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 entryId: faq.id,
                 feedbackId: feedbackId,
                 newFeedbackContent: answerContent,
-                imageUrl: answerImageUrl,
-                imageCredit: answerImageCredit,
-                caption: answerCaption,
+                imageUrl: answerImageUrl || undefined,
+                imageCredit: answerImageCredit || undefined,
+                caption: answerCaption || undefined,
                 subject: questionSubject,
             });
             toast({ title: 'Answer updated' });
@@ -429,7 +432,7 @@ export default function FaqPage() {
         id: `chatbot-${session.id}`,
         userId: session.userId || 'anonymous-chatbot-user',
         userName: session.userName || 'Anonymous',
-        userLevel: 1, // Treat as Guest
+        userLevel: 1, // Treat as Visitor
         entryContent: session.question.replace(/<[^>]*>/g, ''),
         createdAt: session.createdAt,
         feedback: [
