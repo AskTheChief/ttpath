@@ -33,7 +33,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships_pics/reality-truth.jpg"
+      img: "/relationships/relationships_pics/reality truth.jpg"
     },
     { 
       title: "Listening", 
@@ -146,20 +146,19 @@ const getPrinciplesFlow = ai.defineFlow(
 
         const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
 
-        // 1. Filter out principles that are no longer in the default list (like "The Swarm")
+        // 1. Filter out principles that are no longer in the default list
         const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
         if (filteredPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
         }
 
-        // 2. Update image URLs to local paths if they are still old external links or have incorrect casing
+        // 2. Fix known bad paths or old external links
         const updatedPrinciples = filteredPrinciples.map(p => {
           const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
-          // Only trigger migration if a default exists and the current img is an old external link or a known bad path.
           const isOldUrl = p.img && (p.img.includes('ibb.co') || p.img.includes('imgbb.com'));
-          const hasIncorrectCasing = defaultPrinciple && p.img && p.img.toLowerCase() === defaultPrinciple.img.toLowerCase() && p.img !== defaultPrinciple.img;
+          const isWrongTruthPath = p.img === '/relationships/relationships_pics/reality-truth.jpg';
 
-          if (defaultPrinciple && (isOldUrl || hasIncorrectCasing)) {
+          if (defaultPrinciple && (isOldUrl || isWrongTruthPath)) {
             needsUpdate = true;
             return { ...p, img: defaultPrinciple.img };
           }
