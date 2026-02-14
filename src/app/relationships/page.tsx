@@ -1,134 +1,120 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Heart, 
   Quote,
   Activity,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Edit,
+  Loader2
 } from 'lucide-react';
+import { getPrinciples, updatePrinciples, type Principle } from '@/ai/flows/relationships-principles';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const RelationshipsPage = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [principles, setPrinciples] = useState<Principle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedPrinciples, setEditedPrinciples] = useState<Principle[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [userLevel, setUserLevel] = useState(0);
+  const { toast } = useToast();
+  
+  const isMentor = userLevel >= 6;
+
+  const fetchContent = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const content = await getPrinciples();
+      setPrinciples(content);
+      setEditedPrinciples(JSON.parse(JSON.stringify(content))); // Deep copy for editing
+    } catch (error) {
+      console.error("Failed to fetch principles", error);
+      toast({ title: "Error loading content", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setUserLevel(userDoc.data().currentUserLevel || 0);
+        }
+      } else {
+        setUserLevel(0);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const principles = [
-    { 
-      title: "Service", 
-      content: "We have a common purpose: namely, serving others.", 
-      img: "https://i.ibb.co/sJqswHCw/service.jpg"
-    },
-    { 
-      title: "Reality / Truth", 
-      content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "https://i.ibb.co/SXLtxLdY/reality-truth.png"
-    },
-    { 
-      title: "Listening", 
-      content: "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.", 
-      img: "https://i.ibb.co/dwbYYbnc/listening.jpg"
-    },
-    { 
-      title: "Owning Feelings", 
-      content: "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.", 
-      img: "https://i.ibb.co/844Z6MYF/owning-feelings.jpg"
-    },
-    { 
-      title: "Now", 
-      content: "We keep our concerns and language in the now.", 
-      img: "https://i.ibb.co/NgpZ1c5v/now.jpg"
-    },
-    { 
-      title: "Support", 
-      content: "We support each other in our interests and activities.", 
-      img: "https://i.ibb.co/WpfsgDmq/support.jpg"
-    },
-    { 
-      title: "Asking Positively", 
-      content: "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.", 
-      img: "https://i.ibb.co/CKTV04WZ/asking-positively.jpg"
-    },
-    { 
-      title: "Stop Judging Feelings", 
-      content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "https://i.ibb.co/gMTRcHHQ/stop-judging-feeling.jpg"
-    },
-    { 
-      title: "Music", 
-      content: "We like to sing and dance and play instruments.", 
-      img: "https://i.ibb.co/fYHnjd40/music.jpg"
-    },
-    { 
-      title: "System Thinking", 
-      content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "https://i.ibb.co/fdRrC5yF/System-Thinking.jpg"
-    },
-    { 
-      title: "Questions", 
-      content: "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.", 
-      img: "https://i.ibb.co/WWkRDhn0/questions.jpg"
-    },
-    { 
-      title: "The Swarm", 
-      content: "We view society as a swarm of individuals.\n\n\"Swarm intelligence\" arises from the way we treat each other in small groups or Tribes.\n\nWe notice society evolving and operating more as an intimacy-centric intelligent swarm, and less as a control-centric hierarchy.\n\nWe affirm our connection with something greater than ourselves as individuals.", 
-      img: "https://i.ibb.co/xKRQ1GzQ/swarms.jpg"
-    },
-    { 
-      title: "Intimacy", 
-      content: "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.", 
-      img: "https://i.ibb.co/MF0zj3s/intimacy.jpg"
-    },
-    { 
-      title: "Adult-to-Adult", 
-      content: "We have our childhood communication patterns and issues behind us. We relate as adults.", 
-      img: "https://i.ibb.co/3YCqFcmc/adult-to-adult.jpg"
-    },
-    { 
-      title: "Outdoors", 
-      content: "We enjoy the great outdoors and we like to watch things grow. We like to hike together, especially in forests and at the beach.", 
-      img: "https://i.ibb.co/7ttNR691/outdoors.jpg"
-    },
-    { 
-      title: "Entertaining", 
-      content: "We invite friends and associates to our home and enjoy deepening our connections.", 
-      img: "https://i.ibb.co/d3fCfKN/entertainment.jpg"
-    },
-    { 
-      title: "Family", 
-      content: "We stay in touch with our families and support each other.", 
-      img: "https://i.ibb.co/mVJFD1qw/family.jpg"
-    },
-    { 
-      title: "Reliability", 
-      content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
-      img: "https://i.ibb.co/VYMpTsk6/realiability.jpg"
-    },
-    { 
-      title: "Health", 
-      content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "https://i.ibb.co/b52bds1c/Health.jpg"
-    },
-    { 
-      title: "Kindness", 
-      content: "We practice kindness and compassion as an art form.", 
-      img: "https://i.ibb.co/qLYnFdBJ/kindness.jpg"
-    },
-    { 
-      title: "Imagination", 
-      content: "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.", 
-      img: "https://i.ibb.co/DPS7pcxp/imagination.jpg"
+  const handleEditChange = (index: number, field: keyof Principle, value: string) => {
+    const newPrinciples = [...editedPrinciples];
+    newPrinciples[index] = { ...newPrinciples[index], [field]: value };
+    setEditedPrinciples(newPrinciples);
+  };
+  
+  const handleSave = async () => {
+    if (!user) {
+      toast({ title: "You must be logged in to save.", variant: "destructive" });
+      return;
     }
-  ];
+    setIsSaving(true);
+    try {
+      const idToken = await user.getIdToken();
+      const result = await updatePrinciples({ idToken, principles: editedPrinciples });
+      if (result.success) {
+        setPrinciples(editedPrinciples);
+        setIsEditing(false);
+        toast({ title: "Content updated successfully!" });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({ title: "Failed to save content", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const handleCancel = () => {
+    setEditedPrinciples(JSON.parse(JSON.stringify(principles)));
+    setIsEditing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a] font-sans selection:bg-blue-100 pb-20">
-      {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md border-b border-gray-100 py-4' : 'bg-transparent py-8'}`}>
         <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
           <div className="flex items-center gap-3 font-black tracking-tighter text-2xl">
@@ -143,7 +129,24 @@ const RelationshipsPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {isMentor && (
+        <div className="fixed bottom-8 right-8 z-50">
+          {isEditing ? (
+            <div className="flex gap-2">
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                Save
+              </Button>
+              <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+            </div>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit className="mr-2 h-4 w-4" /> Edit Page
+            </Button>
+          )}
+        </div>
+      )}
+
       <header className="pt-48 pb-20 px-8 text-center bg-gray-50/50">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
@@ -158,7 +161,6 @@ const RelationshipsPage = () => {
         </div>
       </header>
 
-      {/* Embrace Section - Picture Left, Text Right */}
       <section className="py-24 px-8 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-20">
@@ -187,31 +189,39 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      {/* Principles List - Large Single Column Rows */}
       <section id="principles" className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-8">
           <div className="space-y-20">
-            {principles.map((p, i) => (
+            {(isEditing ? editedPrinciples : principles).map((p, i) => (
               <div 
                 key={i} 
                 className="flex flex-col md:flex-row items-center gap-16 md:gap-24 py-16 border-b border-gray-50 last:border-0 group"
               >
-                {/* Bigger Image on the Left */}
                 <div className="md:w-1/2 flex items-center justify-center p-4">
-                  <img 
-                    src={p.img} 
-                    alt={p.title} 
-                    className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
-                    loading="lazy"
-                  />
+                  <div className="w-full">
+                    <img 
+                      src={p.img} 
+                      alt={p.title} 
+                      className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
+                    />
+                     {isEditing && <Input value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
+                  </div>
                 </div>
                 
-                {/* Text Content on the Right */}
                 <div className="md:w-1/2 space-y-8">
-                  <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-none">{p.title}</h3>
-                  <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
-                    {p.content}
-                  </p>
+                   {isEditing ? (
+                     <div className="space-y-4">
+                        <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-4xl md:text-7xl font-black tracking-tighter leading-none h-auto p-2 border-2 border-dashed" />
+                        <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium h-64 p-2 border-2 border-dashed" />
+                     </div>
+                   ) : (
+                     <>
+                      <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-none">{p.title}</h3>
+                      <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
+                        {p.content}
+                      </p>
+                    </>
+                   )}
                 </div>
               </div>
             ))}
@@ -219,7 +229,6 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      {/* Bee Swarm Section - Matching the pattern */}
       <section id="swarm" className="py-24 px-8 bg-gray-50 border-y border-gray-100">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-20">
@@ -246,14 +255,12 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      {/* The Work of Love Section - Large Layout */}
       <section id="the-work" className="py-32 bg-[#121212] text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 p-40 opacity-[0.02] pointer-events-none">
           <Heart size={800} fill="currentColor" />
         </div>
         <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-24">
-            {/* Work of Love Image on the Left */}
             <div className="lg:w-1/2 flex items-center justify-center p-8 bg-white rounded-[4rem] shadow-2xl">
               <img 
                 src="https://i.ibb.co/ynKP9vgm/the-work-of-love.jpg" 
@@ -262,7 +269,6 @@ const RelationshipsPage = () => {
               />
             </div>
 
-            {/* Work of Love Text on the Right */}
             <div className="lg:w-1/2 space-y-12">
               <div className="inline-block px-4 py-1 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded">The Reward System</div>
               <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-4 uppercase">The Work of <span className="text-blue-500 italic font-medium">Love.</span></h2>
@@ -304,7 +310,6 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-white py-24 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
           <div>

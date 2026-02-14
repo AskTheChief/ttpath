@@ -309,7 +309,7 @@ export const OutboundEmailSchema = z.object({
 });
 export type OutboundEmail = z.infer<typeof OutboundEmailSchema>;
 export const GetOutboxEmailsOutputSchema = z.array(OutboundEmailSchema);
-export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutputSchema>;
+export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutput>;
 
 // src/ai/flows/journal.ts
 export const JournalFeedbackSchema = z.object({
@@ -507,20 +507,25 @@ export const NotifyFaqAuthorOutputSchema = z.object({
 });
 export type NotifyFaqAuthorOutput = z.infer<typeof NotifyFaqAuthorOutputSchema>;
 
-// src/ai/flows/relationships-content.ts
-export const GetRelationshipsContentOutputSchema = z.object({
+// src/ai/flows/relationships-principles.ts
+export const PrincipleSchema = z.object({
+  title: z.string(),
   content: z.string(),
+  img: z.string().url(),
 });
-export type GetRelationshipsContentOutput = z.infer<typeof GetRelationshipsContentOutputSchema>;
+export type Principle = z.infer<typeof PrincipleSchema>;
 
-export const UpdateRelationshipsContentInputSchema = z.object({
+export const GetPrinciplesOutputSchema = z.array(PrincipleSchema);
+export type GetPrinciplesOutput = z.infer<typeof GetPrinciplesOutputSchema>;
+
+export const UpdatePrinciplesInputSchema = z.object({
   idToken: z.string(),
-  content: z.string(),
+  principles: z.array(PrincipleSchema),
 });
-export type UpdateRelationshipsContentInput = z.infer<typeof UpdateRelationshipsContentInputSchema>;
+export type UpdatePrinciplesInput = z.infer<typeof UpdatePrinciplesInputSchema>;
 
-export const UpdateRelationshipsContentOutputSchema = z.object({
+export const UpdatePrinciplesOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
-export type UpdateRelationshipsContentOutput = z.infer<typeof UpdateRelationshipsContentOutputSchema>;
+export type UpdatePrinciplesOutput = z.infer<typeof UpdatePrinciplesOutputSchema>;
