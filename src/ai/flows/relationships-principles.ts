@@ -27,102 +27,102 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Service", 
       content: "We have a common purpose: namely, serving others.", 
-      img: "/relationsips/relationships pics/service.jpg"
+      img: "/relationships/relationships_pics/service.jpg"
     },
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationsips/relationships pics/reality-truth.png"
+      img: "/relationships/relationships_pics/reality-truth.png"
     },
     { 
       title: "Listening", 
       content: "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.", 
-      img: "/relationsips/relationships pics/listening.jpg"
+      img: "/relationships/relationships_pics/listening.jpg"
     },
     { 
       title: "Owning Feelings", 
       content: "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.", 
-      img: "/relationsips/relationships pics/owning-feelings.jpg"
+      img: "/relationships/relationships_pics/owning-feelings.jpg"
     },
     { 
       title: "Now", 
       content: "We keep our concerns and language in the now.", 
-      img: "/relationsips/relationships pics/now.jpg"
+      img: "/relationships/relationships_pics/now.jpg"
     },
     { 
       title: "Support", 
       content: "We support each other in our interests and activities.", 
-      img: "/relationsips/relationships pics/support.jpg"
+      img: "/relationships/relationships_pics/support.jpg"
     },
     { 
       title: "Asking Positively", 
       content: "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.", 
-      img: "/relationsips/relationships pics/asking-positively.jpg"
+      img: "/relationships/relationships_pics/asking-positively.jpg"
     },
     { 
       title: "Stop Judging Feelings", 
       content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "/relationsips/relationships pics/stop-judging-feeling.jpg"
+      img: "/relationships/relationships_pics/stop-judging-feeling.jpg"
     },
     { 
       title: "Music", 
       content: "We like to sing and dance and play instruments.", 
-      img: "/relationsips/relationships pics/music.jpg"
+      img: "/relationships/relationships_pics/music.jpg"
     },
     { 
       title: "System Thinking", 
       content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "/relationsips/relationships pics/System-Thinking.jpg"
+      img: "/relationships/relationships_pics/System-Thinking.jpg"
     },
     { 
       title: "Questions", 
       content: "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.", 
-      img: "/relationsips/relationships pics/questions.jpg"
+      img: "/relationships/relationships_pics/questions.jpg"
     },
     { 
       title: "Intimacy", 
       content: "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.", 
-      img: "/relationsips/relationships pics/intimacy.jpg"
+      img: "/relationships/relationships_pics/intimacy.jpg"
     },
     { 
       title: "Adult-to-Adult", 
       content: "We have our childhood communication patterns and issues behind us. We relate as adults.", 
-      img: "/relationsips/relationships pics/adult-to-adult.jpg"
+      img: "/relationships/relationships_pics/adult-to-adult.jpg"
     },
     { 
       title: "Outdoors", 
       content: "We enjoy the great outdoors and we like to watch things grow. We like to hike together, especially in forests and at the beach.", 
-      img: "/relationsips/relationships pics/outdoors.jpg"
+      img: "/relationships/relationships_pics/outdoors.jpg"
     },
     { 
       title: "Entertaining", 
       content: "We invite friends and associates to our home and enjoy deepening our connections.", 
-      img: "/relationsips/relationships pics/entertainment.jpg"
+      img: "/relationships/relationships_pics/entertainment.jpg"
     },
     { 
       title: "Family", 
       content: "We stay in touch with our families and support each other.", 
-      img: "/relationsips/relationships pics/family.jpg"
+      img: "/relationships/relationships_pics/family.jpg"
     },
     { 
       title: "Reliability", 
       content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
-      img: "/relationsips/relationships pics/reliability.jpg"
+      img: "/relationships/relationships_pics/reliability.jpg"
     },
     { 
       title: "Health", 
       content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "/relationsips/relationships pics/Health.jpg"
+      img: "/relationships/relationships_pics/Health.jpg"
     },
     { 
       title: "Kindness", 
       content: "We practice kindness and compassion as an art form.", 
-      img: "/relationsips/relationships pics/kindness.jpg"
+      img: "/relationships/relationships_pics/kindness.jpg"
     },
     { 
       title: "Imagination", 
       content: "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.", 
-      img: "/relationsips/relationships pics/imagination.jpg"
+      img: "/relationships/relationships_pics/imagination.jpg"
     }
 ];
 
@@ -145,15 +145,15 @@ const getPrinciplesFlow = ai.defineFlow(
 
         const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
 
-        // 1. Filter out principles that are no longer in the default list (e.g. 'The Swarm')
+        // 1. Filter out principles that are no longer in the default list
         const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
         if (filteredPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
         }
 
-        // 2. Update imgbb.co URLs to local paths
+        // 2. Update image URLs to local paths if they are still old
         const updatedPrinciples = filteredPrinciples.map(p => {
-          if (p.img && p.img.includes('i.ibb.co')) {
+          if (p.img && (p.img.includes('i.ibb.co') || !p.img.startsWith('/relationships/relationships_pics/'))) {
             const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
             if (defaultPrinciple && defaultPrinciple.img !== p.img) {
               needsUpdate = true;
@@ -162,13 +162,29 @@ const getPrinciplesFlow = ai.defineFlow(
           }
           return p;
         });
+        
+        // 3. Add any new principles from the default list that are not in the database
+        defaultPrinciples.forEach(dp => {
+          if (!updatedPrinciples.some(p => p.title === dp.title)) {
+            updatedPrinciples.push(dp);
+            needsUpdate = true;
+          }
+        });
+
 
         if (needsUpdate) {
           await contentRef.set({ principles: updatedPrinciples });
         }
         
-        const finalPrinciples = GetPrinciplesOutputSchema.parse(updatedPrinciples);
-        return finalPrinciples;
+        try {
+            const finalPrinciples = GetPrinciplesOutputSchema.parse(updatedPrinciples);
+            return finalPrinciples;
+        } catch (e) {
+            console.error("Data after cleaning still doesn't match schema", e);
+            // Fallback to default if parsing fails
+             await contentRef.set({ principles: defaultPrinciples });
+            return defaultPrinciples;
+        }
       }
     }
 
