@@ -511,7 +511,7 @@ export type NotifyFaqAuthorOutput = z.infer<typeof NotifyFaqAuthorOutputSchema>;
 export const PrincipleSchema = z.object({
   title: z.string(),
   content: z.string(),
-  img: z.string(),
+  img: z.string(), // Allow any string, not just URI format
 });
 export type Principle = z.infer<typeof PrincipleSchema>;
 

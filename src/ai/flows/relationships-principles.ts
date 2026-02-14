@@ -12,6 +12,7 @@ import {
     type GetPrinciplesOutput,
     type UpdatePrinciplesInput,
     type UpdatePrinciplesOutput,
+    PrincipleSchema,
     type Principle
 } from '@/lib/types';
 import { z } from 'zod';
@@ -154,8 +155,11 @@ const getPrinciplesFlow = ai.defineFlow(
         // 2. Update image URLs to local paths if they are still old external links or have incorrect casing
         const updatedPrinciples = filteredPrinciples.map(p => {
           const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
-          if (defaultPrinciple && p.img !== defaultPrinciple.img) {
-            // This covers both external URLs and casing issues.
+          // Only trigger migration if a default exists and the current img is an old external link or a known bad path.
+          const isOldUrl = p.img && (p.img.includes('ibb.co') || p.img.includes('imgbb.com'));
+          const hasIncorrectCasing = defaultPrinciple && p.img && p.img.toLowerCase() === defaultPrinciple.img.toLowerCase() && p.img !== defaultPrinciple.img;
+
+          if (defaultPrinciple && (isOldUrl || hasIncorrectCasing)) {
             needsUpdate = true;
             return { ...p, img: defaultPrinciple.img };
           }
@@ -212,7 +216,8 @@ const updatePrinciplesFlow = ai.defineFlow(
         throw new Error('Permission denied. User is not a mentor.');
       }
       
-      await contentRef.set({ principles });
+      const validatedPrinciples = z.array(PrincipleSchema).parse(principles);
+      await contentRef.set({ principles: validatedPrinciples });
       return { success: true, message: "Content updated successfully." };
 
     } catch (error: any) {
