@@ -136,19 +136,26 @@ const getPrinciplesFlow = ai.defineFlow(
   async () => {
     const docSnap = await contentRef.get();
 
-    if (docSnap.exists) {
+    if (docSnap.exists()) {
       const data = docSnap.data();
       if (data && Array.isArray(data.principles)) {
         
         let principlesFromDb = data.principles as Principle[];
         let needsUpdate = false;
 
-        const updatedPrinciples = principlesFromDb.map(p => {
-          // Check if the image URL is an old one from imgbb
-          if (p.img.includes('i.ibb.co')) {
-            // Find the corresponding default principle to get the new local path
+        const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
+
+        // 1. Filter out principles that are no longer in the default list
+        const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
+        if (filteredPrinciples.length !== principlesFromDb.length) {
+          needsUpdate = true;
+        }
+
+        // 2. Update imgbb.co URLs to local paths
+        const updatedPrinciples = filteredPrinciples.map(p => {
+          if (p.img && p.img.includes('i.ibb.co')) {
             const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
-            if (defaultPrinciple) {
+            if (defaultPrinciple && defaultPrinciple.img !== p.img) {
               needsUpdate = true;
               return { ...p, img: defaultPrinciple.img };
             }
@@ -156,7 +163,6 @@ const getPrinciplesFlow = ai.defineFlow(
           return p;
         });
 
-        // If we found and replaced any old URLs, update the document in Firestore
         if (needsUpdate) {
           await contentRef.set({ principles: updatedPrinciples });
         }
