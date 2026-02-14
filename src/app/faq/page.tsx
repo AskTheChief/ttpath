@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -30,7 +29,7 @@ type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
 const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
     if (type === 'question') {
         const level = entry.userLevel;
-        if (level === 0) return "FAQ Contributor Says";
+        if (level === 0) return "FAQ Contributor";
         if (level === 1) return "Visitor says";
         if (level === 2) return "Guest Says";
         if (level === 3) return "Explorer Says";
@@ -38,9 +37,13 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
         if (level === 5) return "Chief Says";
         if (level === 6) return "Mentor Says";
         if (entry.isChatbotEntry) return "Visitor says";
-        return "Contributor Says";
+        return "Contributor";
     } else { // type === 'answer'
         if (entry.userLevel === 0) return "Ed Says";
+        
+        if (entry.userLevel === 6) {
+            return "Mentor's Mentor Says";
+        }
 
         if (!feedback) return '';
         if (feedback.mentorId === 'chatbot-chief') return "AI Chief says";
@@ -267,11 +270,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         <div id={`faq-${faq.id}`} className="grid lg:grid-cols-2 gap-6 items-start">
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center text-sm mb-2">
+                    <div className="flex justify-between items-center text-sm">
                         <span className="font-bold text-foreground">{questionAuthorLabel}</span>
                         <span className="text-muted-foreground">{questionDate}</span>
                     </div>
-                    <div className="flex justify-between items-start">
+                     <div className="flex justify-between items-start">
                         {faq.subject && <p className="font-semibold pt-2 text-foreground">{faq.subject}</p>}
                         {canEditEntry && (
                             <div className="flex gap-2 ml-auto">
@@ -354,11 +357,13 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                         </div>
                                         <ImageUploader imageUrl={answerImageUrl} onImageUrlChange={handleAnswerImageUrlChange} userId={user?.uid} label="Answer Image" />
                                         
-                                        <div className="space-y-2">
-                                            <Label htmlFor="answer-credit">Image Credit</Label>
-                                            <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
-                                            <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
-                                        </div>
+                                        {answerImageUrl && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="answer-credit">Image Credit</Label>
+                                                <FormattingToolbar textareaRef={answerImageCreditTextareaRef} value={answerImageCredit} onValueChange={setAnswerImageCredit} />
+                                                <Textarea ref={answerImageCreditTextareaRef} id="answer-credit" value={answerImageCredit} onChange={e => setAnswerImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
+                                            </div>
+                                        )}
                                         
                                         <div className="space-y-2">
                                             <Label htmlFor="answer-caption">Caption</Label>
@@ -400,7 +405,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                             <span className="text-muted-foreground">{feedbackDate}</span>
                                         </div>
                                         <div className="flex justify-between items-start">
-                                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
+                                            <div>
+                                                <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: highlightText(fb.feedbackContent, searchTerm).replace(/\n/g, '<br />') }} />
+                                                 {fb.updatedAt && (
+                                                    <p className="text-xs text-muted-foreground mt-2">
+                                                        Replied by {answerAuthorLabel} on {new Date(fb.createdAt).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                            </div>
                                             {canEditFeedback && (
                                                 <div className="flex gap-1 shrink-0 ml-2">
                                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingAnswerId(fb.id); setAnswerContent(fb.feedbackContent); setAnswerImageUrl(fb.imageUrl || ''); setAnswerImageCredit(fb.imageCredit || ''); setAnswerCaption(fb.caption || ''); }} disabled={isSaving}>
