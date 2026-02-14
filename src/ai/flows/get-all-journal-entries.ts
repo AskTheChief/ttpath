@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -81,11 +80,11 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 mentorName: f.mentorName,
                 mentorLevel: f.mentorLevel,
                 feedbackContent: f.feedbackContent,
-                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
-                updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
-                imageUrl: f.imageUrl && f.imageUrl.trim() ? f.imageUrl : undefined,
-                imageCredit: f.imageCredit && f.imageCredit.trim() ? f.imageCredit : undefined,
-                caption: f.caption && f.caption.trim() ? f.caption : undefined,
+                createdAt: createdAt ? (createdAt.toDate ? createdAt.toDate().toISOString() : createdAt) : new Date().toISOString(),
+                updatedAt: updatedAt ? (updatedAt.toDate ? updatedAt.toDate().toISOString() : updatedAt) : undefined,
+                imageUrl: f.imageUrl && typeof f.imageUrl === 'string' && f.imageUrl.trim() ? f.imageUrl : undefined,
+                imageCredit: f.imageCredit && typeof f.imageCredit === 'string' && f.imageCredit.trim() ? f.imageCredit : undefined,
+                caption: f.caption && typeof f.caption === 'string' && f.caption.trim() ? f.caption : undefined,
             };
         });
         
@@ -94,6 +93,9 @@ const getAllJournalEntriesFlow = ai.defineFlow(
 
         const userName = isManual ? data.userName : (userData?.name || data.userName || 'Anonymous');
         const userLevel = isManual ? 0 : (userData?.level || data.userLevel || 1);
+        
+        const entryCreatedAt = data.createdAt;
+        const entryUpdatedAt = data.updatedAt;
 
         return {
             id: doc.id,
@@ -102,12 +104,12 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             userLevel: userLevel,
             subject: data.subject || undefined,
             entryContent: data.entryContent,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+            createdAt: entryCreatedAt ? (entryCreatedAt.toDate ? entryCreatedAt.toDate().toISOString() : entryCreatedAt) : new Date().toISOString(),
+            updatedAt: entryUpdatedAt ? (entryUpdatedAt.toDate ? entryUpdatedAt.toDate().toISOString() : entryUpdatedAt) : undefined,
             feedback: finalFeedback,
-            imageUrl: data.imageUrl && data.imageUrl.trim() ? data.imageUrl : undefined,
+            imageUrl: data.imageUrl && typeof data.imageUrl === 'string' && data.imageUrl.trim() ? data.imageUrl : undefined,
             isManualEntry: data.isManualEntry,
-            caption: data.caption || undefined,
+            caption: data.caption && typeof data.caption === 'string' && data.caption.trim() ? data.caption : undefined,
         };
     }));
 
