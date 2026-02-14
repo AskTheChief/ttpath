@@ -27,102 +27,102 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Service", 
       content: "We have a common purpose: namely, serving others.", 
-      img: "/relationships/relationships pics/service.jpg"
+      img: "/relationsips/relationships pics/service.jpg"
     },
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships pics/reality-truth.png"
+      img: "/relationsips/relationships pics/reality-truth.png"
     },
     { 
       title: "Listening", 
       content: "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.", 
-      img: "/relationships/relationships pics/listening.jpg"
+      img: "/relationsips/relationships pics/listening.jpg"
     },
     { 
       title: "Owning Feelings", 
       content: "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.", 
-      img: "/relationships/relationships pics/owning-feelings.jpg"
+      img: "/relationsips/relationships pics/owning-feelings.jpg"
     },
     { 
       title: "Now", 
       content: "We keep our concerns and language in the now.", 
-      img: "/relationships/relationships pics/now.jpg"
+      img: "/relationsips/relationships pics/now.jpg"
     },
     { 
       title: "Support", 
       content: "We support each other in our interests and activities.", 
-      img: "/relationships/relationships pics/support.jpg"
+      img: "/relationsips/relationships pics/support.jpg"
     },
     { 
       title: "Asking Positively", 
       content: "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.", 
-      img: "/relationships/relationships pics/asking-positively.jpg"
+      img: "/relationsips/relationships pics/asking-positively.jpg"
     },
     { 
       title: "Stop Judging Feelings", 
       content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "/relationships/relationships pics/stop-judging-feeling.jpg"
+      img: "/relationsips/relationships pics/stop-judging-feeling.jpg"
     },
     { 
       title: "Music", 
       content: "We like to sing and dance and play instruments.", 
-      img: "/relationships/relationships pics/music.jpg"
+      img: "/relationsips/relationships pics/music.jpg"
     },
     { 
       title: "System Thinking", 
       content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "/relationships/relationships pics/System-Thinking.jpg"
+      img: "/relationsips/relationships pics/System-Thinking.jpg"
     },
     { 
       title: "Questions", 
       content: "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.", 
-      img: "/relationships/relationships pics/questions.jpg"
+      img: "/relationsips/relationships pics/questions.jpg"
     },
     { 
       title: "Intimacy", 
       content: "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.", 
-      img: "/relationships/relationships pics/intimacy.jpg"
+      img: "/relationsips/relationships pics/intimacy.jpg"
     },
     { 
       title: "Adult-to-Adult", 
       content: "We have our childhood communication patterns and issues behind us. We relate as adults.", 
-      img: "/relationships/relationships pics/adult-to-adult.jpg"
+      img: "/relationsips/relationships pics/adult-to-adult.jpg"
     },
     { 
       title: "Outdoors", 
       content: "We enjoy the great outdoors and we like to watch things grow. We like to hike together, especially in forests and at the beach.", 
-      img: "/relationships/relationships pics/outdoors.jpg"
+      img: "/relationsips/relationships pics/outdoors.jpg"
     },
     { 
       title: "Entertaining", 
       content: "We invite friends and associates to our home and enjoy deepening our connections.", 
-      img: "/relationships/relationships pics/entertainment.jpg"
+      img: "/relationsips/relationships pics/entertainment.jpg"
     },
     { 
       title: "Family", 
       content: "We stay in touch with our families and support each other.", 
-      img: "/relationships/relationships pics/family.jpg"
+      img: "/relationsips/relationships pics/family.jpg"
     },
     { 
       title: "Reliability", 
       content: "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.", 
-      img: "/relationships/relationships pics/reliability.jpg"
+      img: "/relationsips/relationships pics/reliability.jpg"
     },
     { 
       title: "Health", 
       content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "/relationships/relationships pics/Health.jpg"
+      img: "/relationsips/relationships pics/Health.jpg"
     },
     { 
       title: "Kindness", 
       content: "We practice kindness and compassion as an art form.", 
-      img: "/relationships/relationships pics/kindness.jpg"
+      img: "/relationsips/relationships pics/kindness.jpg"
     },
     { 
       title: "Imagination", 
       content: "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.", 
-      img: "/relationships/relationships pics/imagination.jpg"
+      img: "/relationsips/relationships pics/imagination.jpg"
     }
 ];
 
