@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -15,6 +16,36 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
+// Helper function to safely convert various date formats to an ISO string
+const safeToISOString = (dateInput: any): string => {
+    if (!dateInput) return new Date().toISOString(); // Default to now if missing
+    if (dateInput.toDate) return dateInput.toDate().toISOString(); // Firestore Timestamp
+    if (typeof dateInput === 'string') {
+        // Check if it's a valid date string before returning
+        const date = new Date(dateInput);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString();
+        }
+    }
+    if (typeof dateInput === 'number') return new Date(dateInput).toISOString(); // JS Milliseconds
+    return new Date().toISOString(); // Fallback for any other invalid format
+};
+
+// Helper for optional dates
+const safeToISOStringOptional = (dateInput: any): string | undefined => {
+    if (!dateInput) return undefined;
+    if (dateInput.toDate) return dateInput.toDate().toISOString(); // Firestore Timestamp
+    if (typeof dateInput === 'string') {
+        const date = new Date(dateInput);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString();
+        }
+    }
+    if (typeof dateInput === 'number') return new Date(dateInput).toISOString();
+    return undefined;
+};
+
+
 const getAllJournalEntriesFlow = ai.defineFlow(
   {
     name: 'getAllJournalEntriesFlow',
@@ -29,14 +60,10 @@ const getAllJournalEntriesFlow = ai.defineFlow(
       return [];
     }
 
-    // 1. Get all unique user IDs
     const userIds = [...new Set(entriesSnapshot.docs.map(doc => doc.data().userId))].filter(Boolean);
 
-    // 2. Fetch all corresponding users in one go
     const usersMap = new Map<string, { name: string, level: number }>();
     if (userIds.length > 0) {
-      // Note: Firestore 'in' queries are limited to 30 items. 
-      // For a larger scale app, this would need to be chunked into multiple queries.
       const usersSnapshot = await db.collection('users').where('__name__', 'in', userIds).get();
       usersSnapshot.forEach(doc => {
         const userData = doc.data();
@@ -45,20 +72,18 @@ const getAllJournalEntriesFlow = ai.defineFlow(
       });
     }
     
-    // 3. Map entries and enrich with user name, and repair data if needed.
     const allEntries = await Promise.all(entriesSnapshot.docs.map(async (doc) => {
         const data = doc.data();
         let needsUpdate = false;
         
-        // This is the read-repair logic for feedback without IDs
         const feedbackWithIds = (data.feedback || []).map((f: any) => {
-            if (f.id) {
+            if (f && f.id) {
                 return f;
             }
             needsUpdate = true;
             return {
                 ...f,
-                id: db.collection('journal_entries').doc().id, // Give it a real, unique ID
+                id: db.collection('journal_entries').doc().id,
             };
         });
 
@@ -67,49 +92,45 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 await doc.ref.update({ feedback: feedbackWithIds });
             } catch (e) {
                 console.error(`Failed to repair feedback IDs for entry ${doc.id}`, e);
-                // Continue even if repair fails for some reason
             }
         }
         
-        const finalFeedback = (needsUpdate ? feedbackWithIds : (data.feedback || [])).map((f: any) => {
-            const createdAt = f.createdAt;
-            const updatedAt = f.updatedAt;
+        const finalFeedback = (needsUpdate ? feedbackWithIds : (data.feedback || []))
+          .filter((f: any) => f && f.id && typeof f.feedbackContent === 'string') // Ensure feedback is valid
+          .map((f: any) => {
             return {
-                id: f.id,
-                mentorId: f.mentorId,
-                mentorName: f.mentorName,
-                mentorLevel: f.mentorLevel,
-                feedbackContent: f.feedbackContent,
-                createdAt: createdAt ? (createdAt.toDate ? createdAt.toDate().toISOString() : createdAt) : new Date().toISOString(),
-                updatedAt: updatedAt ? (updatedAt.toDate ? updatedAt.toDate().toISOString() : updatedAt) : undefined,
-                imageUrl: f.imageUrl && typeof f.imageUrl === 'string' && f.imageUrl.trim() ? f.imageUrl : undefined,
-                imageCredit: f.imageCredit && typeof f.imageCredit === 'string' && f.imageCredit.trim() ? f.imageCredit : undefined,
-                caption: f.caption && typeof f.caption === 'string' && f.caption.trim() ? f.caption : undefined,
+                id: String(f.id),
+                mentorId: String(f.mentorId || ''),
+                mentorName: String(f.mentorName || 'A Mentor'),
+                mentorLevel: typeof f.mentorLevel === 'number' ? f.mentorLevel : undefined,
+                feedbackContent: String(f.feedbackContent),
+                createdAt: safeToISOString(f.createdAt),
+                updatedAt: safeToISOStringOptional(f.updatedAt),
+                imageUrl: (typeof f.imageUrl === 'string' && f.imageUrl.trim()) ? f.imageUrl : undefined,
+                imageCredit: (typeof f.imageCredit === 'string' && f.imageCredit.trim()) ? f.imageCredit : undefined,
+                caption: (typeof f.caption === 'string' && f.caption.trim()) ? f.caption : undefined,
             };
         });
         
         const isManual = data.isManualEntry === true;
         const userData = usersMap.get(data.userId);
 
-        const userName = isManual ? data.userName : (userData?.name || data.userName || 'Anonymous');
+        const userName = isManual ? String(data.userName || 'Contributor') : (userData?.name || String(data.userName || 'Anonymous'));
         const userLevel = isManual ? 0 : (userData?.level || data.userLevel || 1);
         
-        const entryCreatedAt = data.createdAt;
-        const entryUpdatedAt = data.updatedAt;
-
         return {
             id: doc.id,
-            userId: data.userId,
+            userId: String(data.userId || ''),
             userName: userName,
-            userLevel: userLevel,
-            subject: data.subject || undefined,
-            entryContent: data.entryContent,
-            createdAt: entryCreatedAt ? (entryCreatedAt.toDate ? entryCreatedAt.toDate().toISOString() : entryCreatedAt) : new Date().toISOString(),
-            updatedAt: entryUpdatedAt ? (entryUpdatedAt.toDate ? entryUpdatedAt.toDate().toISOString() : entryUpdatedAt) : undefined,
+            userLevel: typeof userLevel === 'number' ? userLevel : undefined,
+            subject: (typeof data.subject === 'string' && data.subject.trim()) ? data.subject : undefined,
+            entryContent: String(data.entryContent || ''),
+            createdAt: safeToISOString(data.createdAt),
+            updatedAt: safeToISOStringOptional(data.updatedAt),
             feedback: finalFeedback,
-            imageUrl: data.imageUrl && typeof data.imageUrl === 'string' && data.imageUrl.trim() ? data.imageUrl : undefined,
-            isManualEntry: data.isManualEntry,
-            caption: data.caption && typeof data.caption === 'string' && data.caption.trim() ? data.caption : undefined,
+            imageUrl: (typeof data.imageUrl === 'string' && data.imageUrl.trim()) ? data.imageUrl : undefined,
+            isManualEntry: isManual,
+            caption: (typeof data.caption === 'string' && data.caption.trim()) ? data.caption : undefined,
         };
     }));
 
@@ -119,3 +140,4 @@ const getAllJournalEntriesFlow = ai.defineFlow(
 export async function getAllJournalEntries(): Promise<GetAllJournalEntriesOutput> {
     return getAllJournalEntriesFlow();
 }
+
