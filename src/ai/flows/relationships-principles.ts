@@ -72,7 +72,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "System Thinking", 
       content: "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.", 
-      img: "/relationships/relationships_pics/System-Thinking.jpg"
+      img: "/relationships/relationships_pics/system-thinking.jpg"
     },
     { 
       title: "Questions", 
@@ -112,7 +112,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Health", 
       content: "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.", 
-      img: "/relationships/relationships_pics/Health.jpg"
+      img: "/relationships/relationships_pics/health.jpg"
     },
     { 
       title: "Kindness", 
@@ -145,20 +145,19 @@ const getPrinciplesFlow = ai.defineFlow(
 
         const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
 
-        // 1. Filter out principles that are no longer in the default list
+        // 1. Filter out principles that are no longer in the default list (like "The Swarm")
         const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
         if (filteredPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
         }
 
-        // 2. Update image URLs to local paths if they are still old
+        // 2. Update image URLs to local paths if they are still old external links or have incorrect casing
         const updatedPrinciples = filteredPrinciples.map(p => {
-          if (p.img && (p.img.includes('i.ibb.co') || !p.img.startsWith('/relationships/relationships_pics/'))) {
-            const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
-            if (defaultPrinciple && defaultPrinciple.img !== p.img) {
-              needsUpdate = true;
-              return { ...p, img: defaultPrinciple.img };
-            }
+          const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
+          if (defaultPrinciple && p.img !== defaultPrinciple.img) {
+            // This covers both external URLs and casing issues.
+            needsUpdate = true;
+            return { ...p, img: defaultPrinciple.img };
           }
           return p;
         });
@@ -181,7 +180,6 @@ const getPrinciplesFlow = ai.defineFlow(
             return finalPrinciples;
         } catch (e) {
             console.error("Data after cleaning still doesn't match schema", e);
-            // Fallback to default if parsing fails
              await contentRef.set({ principles: defaultPrinciples });
             return defaultPrinciples;
         }
