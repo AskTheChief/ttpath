@@ -83,7 +83,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
                 feedbackContent: f.feedbackContent,
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : (createdAt || new Date().toISOString()),
                 updatedAt: updatedAt?.toDate ? updatedAt.toDate().toISOString() : undefined,
-                imageUrl: f.imageUrl || undefined,
+                imageUrl: f.imageUrl && f.imageUrl.trim() ? f.imageUrl : undefined,
                 imageCredit: f.imageCredit || undefined,
                 caption: f.caption || undefined,
             };
@@ -105,7 +105,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
             feedback: finalFeedback,
-            imageUrl: data.imageUrl || undefined,
+            imageUrl: data.imageUrl && data.imageUrl.trim() ? data.imageUrl : undefined,
             isManualEntry: data.isManualEntry,
             caption: data.caption || undefined,
         };
