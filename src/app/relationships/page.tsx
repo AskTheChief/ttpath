@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -53,6 +54,7 @@ const RelationshipsPage = () => {
   }, [fetchContent]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
