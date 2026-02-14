@@ -11,9 +11,9 @@ We've moved away from the old accordion-style view. Now, all questions and their
 
 ## Editing Questions and Answers
 
-As a mentor, you have full control over the content.
+As a mentor, you have full control over the content. The "Edit" (pencil) and "Delete" (trash) icons are always visible to you on questions and answers.
 
-- **To Edit:** Simply hover over a question or an existing answer, and an "Edit" (pencil) icon will appear. Clicking this will turn the text into an editable field.
+- **To Edit:** Simply click the "Edit" (pencil) icon next to a question or an existing answer. This will turn the text into an editable field.
 - **Formatting Toolbar:** A simple toolbar with **Bold**, *Italic*, and <u>Underline</u> buttons will appear above the text box. Highlight any text and click a button to apply formatting.
 - **Saving:** Once you're done editing, click "Save" to update the content.
 
@@ -28,8 +28,8 @@ When an answer is edited, you now have two options for saving:
 
 To keep the FAQ clean and relevant, you can delete content:
 
-- **Delete an Answer:** Hover over any answer and click the "Delete" (trash) icon to remove just that specific reply.
-- **Delete an Entire FAQ Entry:** Hover over the *question* card and click its "Delete" (trash) icon. This will permanently remove the question and **all** of its associated answers. A confirmation dialog will appear to prevent accidental deletions.
+- **Delete an Answer:** Click the "Delete" (trash) icon next to any answer to remove just that specific reply.
+- **Delete an Entire FAQ Entry:** Click the "Delete" (trash) icon on the *question* card. This will permanently remove the question and **all** of its associated answers. A confirmation dialog will appear to prevent accidental deletions.
 
 ## The Mentor Dashboard
 
