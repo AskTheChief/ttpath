@@ -135,18 +135,42 @@ const getPrinciplesFlow = ai.defineFlow(
   },
   async () => {
     const docSnap = await contentRef.get();
+
     if (docSnap.exists) {
       const data = docSnap.data();
-      // Ensure the fetched data conforms to the schema
       if (data && Array.isArray(data.principles)) {
-        return data.principles as GetPrinciplesOutput;
+        
+        let principlesFromDb = data.principles as Principle[];
+        let needsUpdate = false;
+
+        const updatedPrinciples = principlesFromDb.map(p => {
+          // Check if the image URL is an old one from imgbb
+          if (p.img.includes('i.ibb.co')) {
+            // Find the corresponding default principle to get the new local path
+            const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
+            if (defaultPrinciple) {
+              needsUpdate = true;
+              return { ...p, img: defaultPrinciple.img };
+            }
+          }
+          return p;
+        });
+
+        // If we found and replaced any old URLs, update the document in Firestore
+        if (needsUpdate) {
+          await contentRef.set({ principles: updatedPrinciples });
+        }
+
+        return updatedPrinciples;
       }
     }
+
     // If doc doesn't exist or is malformed, seed with default and return
     await contentRef.set({ principles: defaultPrinciples });
     return defaultPrinciples;
   }
 );
+
 
 export async function getPrinciples(): Promise<GetPrinciplesOutput> {
   return getPrinciplesFlow();
