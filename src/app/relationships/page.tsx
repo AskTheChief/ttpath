@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -165,7 +166,7 @@ const RelationshipsPage = () => {
           <div className="flex flex-col md:flex-row items-center gap-20">
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="https://i.ibb.co/JR1wGZQZ/embrace.jpg" 
+                src="/relationships/relationships_pics/kindness.jpg"
                 alt="Embrace Diagram" 
                 className="w-full h-auto max-h-[500px] object-contain rounded-3xl shadow-sm"
               />
@@ -236,7 +237,7 @@ const RelationshipsPage = () => {
           <div className="flex flex-col lg:flex-row items-center gap-24">
             <div className="lg:w-1/2 flex items-center justify-center p-8 bg-white rounded-[4rem] shadow-2xl">
               <img 
-                src="https://i.ibb.co/ynKP9vgm/the-work-of-love.jpg" 
+                src="/relationships/relationships_pics/support.jpg"
                 alt="The Work of Love Diagram" 
                 className="w-full h-auto max-h-[600px] object-contain"
               />
