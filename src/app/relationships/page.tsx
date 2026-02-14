@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,7 +8,9 @@ import {
   Zap,
   CheckCircle2,
   Edit,
-  Loader2
+  Loader2,
+  Trash2,
+  PlusCircle
 } from 'lucide-react';
 import { getPrinciples, updatePrinciples, type Principle } from '@/ai/flows/relationships-principles';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -76,6 +77,19 @@ const RelationshipsPage = () => {
     const newPrinciples = [...editedPrinciples];
     newPrinciples[index] = { ...newPrinciples[index], [field]: value };
     setEditedPrinciples(newPrinciples);
+  };
+
+  const handleAddNewPrinciple = () => {
+    const newPrinciple: Principle = {
+      title: "New Principle",
+      content: "Enter new content here...",
+      img: "" // User must provide an image path
+    };
+    setEditedPrinciples(prev => [...prev, newPrinciple]);
+  };
+
+  const handleRemovePrinciple = (indexToRemove: number) => {
+    setEditedPrinciples(prev => prev.filter((_, index) => index !== indexToRemove));
   };
   
   const handleSave = async () => {
@@ -213,6 +227,10 @@ const RelationshipsPage = () => {
                      <div className="space-y-4">
                         <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-4xl md:text-7xl font-black tracking-tighter leading-none h-auto p-2 border-2 border-dashed" />
                         <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium h-64 p-2 border-2 border-dashed" />
+                        <Button variant="destructive" size="sm" onClick={() => handleRemovePrinciple(i)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove Section
+                        </Button>
                      </div>
                    ) : (
                      <>
@@ -225,6 +243,14 @@ const RelationshipsPage = () => {
                 </div>
               </div>
             ))}
+             {isEditing && (
+              <div className="text-center pt-16">
+                <Button size="lg" onClick={handleAddNewPrinciple}>
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Add New Section
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
