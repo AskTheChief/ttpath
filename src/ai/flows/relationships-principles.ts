@@ -33,7 +33,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Reality / Truth", 
       content: "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.", 
-      img: "/relationships/relationships_pics/reality truth.jpg"
+      img: "/relationships/relationships_pics/reality-truth.jpg"
     },
     { 
       title: "Listening", 
@@ -63,7 +63,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Stop Judging Feelings", 
       content: "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.", 
-      img: "/relationships/relationships_pics/stop-judging-feeling.jpg"
+      img: "/relationships/relationships_pics/stop-judging-feelings.jpg"
     },
     { 
       title: "Music", 
@@ -98,7 +98,7 @@ const defaultPrinciples: Principle[] = [
     { 
       title: "Entertaining", 
       content: "We invite friends and associates to our home and enjoy deepening our connections.", 
-      img: "/relationships/relationships_pics/entertainment.jpg"
+      img: "/relationships/relationships_pics/entertaining.jpg"
     },
     { 
       title: "Family", 
@@ -141,40 +141,38 @@ const getPrinciplesFlow = ai.defineFlow(
       const data = docSnap.data();
       if (data && Array.isArray(data.principles)) {
         
-        let principlesFromDb = data.principles as Principle[];
+        const principlesFromDb = data.principles as Principle[];
         let needsUpdate = false;
 
-        const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
+        const defaultPrinciplesMap = new Map(defaultPrinciples.map(p => [p.title, p]));
 
-        // 1. Filter out principles that are no longer in the default list
-        const filteredPrinciples = principlesFromDb.filter(p => defaultTitles.has(p.title));
-        if (filteredPrinciples.length !== principlesFromDb.length) {
+        // 1. Filter out principles that are no longer in the default list (like 'The Swarm')
+        let updatedPrinciples = principlesFromDb.filter(p => defaultPrinciplesMap.has(p.title));
+        if (updatedPrinciples.length !== principlesFromDb.length) {
           needsUpdate = true;
         }
-
-        // 2. Fix known bad paths or old external links
-        const updatedPrinciples = filteredPrinciples.map(p => {
-          const defaultPrinciple = defaultPrinciples.find(dp => dp.title === p.title);
-          const isOldUrl = p.img && (p.img.includes('ibb.co') || p.img.includes('imgbb.com'));
-          const isWrongTruthPath = p.img === '/relationships/relationships_pics/reality-truth.jpg';
-
-          if (defaultPrinciple && (isOldUrl || isWrongTruthPath)) {
-            needsUpdate = true;
-            return { ...p, img: defaultPrinciple.img };
-          }
-          return p;
-        });
         
-        // 3. Add any new principles from the default list that are not in the database
+        // 2. Add any new principles from the default list that are not in the database
         defaultPrinciples.forEach(dp => {
           if (!updatedPrinciples.some(p => p.title === dp.title)) {
             updatedPrinciples.push(dp);
             needsUpdate = true;
           }
         });
-
+        
+        // 3. Check and correct image paths for all principles
+        updatedPrinciples = updatedPrinciples.map(p => {
+          const defaultPrinciple = defaultPrinciplesMap.get(p.title);
+          // If the image path in the DB doesn't match the standardized path in the code, update it.
+          if (defaultPrinciple && p.img !== defaultPrinciple.img) {
+            needsUpdate = true;
+            return { ...p, img: defaultPrinciple.img };
+          }
+          return p;
+        });
 
         if (needsUpdate) {
+          console.log("Updating relationship principles in the database.");
           await contentRef.set({ principles: updatedPrinciples });
         }
         
