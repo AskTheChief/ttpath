@@ -1987,10 +1987,10 @@ function MyTribePageContent() {
                                                                     <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
                                                                     </div>
-                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                                                    {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                                                 </div>
                                                             )}
-                                                             {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                                         </AlertDescription>
                                                         {isMentor && (
                                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
