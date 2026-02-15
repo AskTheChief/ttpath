@@ -293,11 +293,6 @@ const RelationshipsPage = () => {
             <div className="font-bold text-2xl tracking-tight mb-2">Trading Tribe</div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relationship Principles</p>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-2">
-             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Optimized System Intelligence</div>
-             <div className="h-0.5 w-24 bg-primary"></div>
-             <div className="text-xs font-medium text-muted-foreground">Seykota Relationship Re-Design</div>
-          </div>
         </div>
       </footer>
     </div>
