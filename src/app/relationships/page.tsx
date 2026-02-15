@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -177,12 +176,9 @@ const RelationshipsPage = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-6">
             <Zap size={14} /> February 13, 2026
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-            Relationship Principles
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
+            Trading Tribe<br />Relationship<br />Principles
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-            A guide for serving others through intimacy-centric swarm intelligence.
-          </p>
         </div>
       </header>
 
@@ -200,7 +196,7 @@ const RelationshipsPage = () => {
                       <img 
                         src={p.img} 
                         alt={p.title} 
-                        className="w-full h-auto rounded-lg shadow-lg object-contain max-h-[500px]"
+                        className="w-full h-auto object-contain max-h-[500px]"
                       />
                     )}
                      {isEditing && <Input placeholder="Image Path" value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
@@ -250,7 +246,7 @@ const RelationshipsPage = () => {
               <img 
                 src="/relationships/relationships_pics/support.jpg"
                 alt="The Work of Love Diagram" 
-                className="w-full h-auto max-h-[500px] object-contain rounded-lg"
+                className="w-full h-auto max-h-[500px] object-contain"
               />
             </div>
 
@@ -269,13 +265,13 @@ const RelationshipsPage = () => {
                     When we actually do the work of love, we get big rewards: things work smoothly and we experience a warm-fuzzy loving feeling.
                   </p>
                   <p className="text-xl md:text-2xl font-semibold border-l-4 border-primary pl-6">
-                    The loving feeling comes only from doing the work of love.
+                    The loving feeling comes from doing the work of love.
                   </p>
                 </div>
 
                 <div className="pt-8 border-t">
                   <p className="text-muted-foreground mb-6">
-                    If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling instead.
+                    If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling.
                   </p>
                   <div className="p-6 bg-destructive/10 rounded-lg border border-destructive/20">
                     <p className="text-sm font-semibold text-destructive mb-4 flex items-center gap-2">
