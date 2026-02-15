@@ -87,7 +87,7 @@ const RelationshipsPage = () => {
     const newPrinciple: Principle = {
       title: "New Principle",
       content: "Enter new content here...",
-      img: "" // User must provide an image path
+      img: ""
     };
     setEditedPrinciples(prev => [...prev, newPrinciple]);
   };
@@ -133,17 +133,17 @@ const RelationshipsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#1a1a1a] font-sans selection:bg-blue-100 pb-20">
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md border-b border-gray-100 py-4' : 'bg-transparent py-8'}`}>
-        <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
-          <div className="flex items-center gap-3 font-black tracking-tighter text-2xl">
-            <Activity className="text-blue-600" size={28} />
-            <span>TRADING TRIBE<span className="font-light text-gray-400 ml-2">RELATIONSHIP</span></span>
+    <div className="bg-background text-foreground selection:bg-primary/20">
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-background/90 backdrop-blur-md border-b py-3' : 'bg-transparent py-6'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center gap-3 font-bold text-lg">
+            <Activity className="text-primary" size={24} />
+            <span>TRADING TRIBE<span className="font-light text-muted-foreground ml-2">RELATIONSHIP</span></span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex gap-10">
-                <a href="#principles" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">Principles</a>
-                <a href="#the-work" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Work</a>
+            <div className="hidden md:flex gap-6">
+                <a href="#principles" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Principles</a>
+                <a href="#the-work" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">The Work</a>
             </div>
             <Button asChild variant="outline">
               <Link href="/">
@@ -172,46 +172,46 @@ const RelationshipsPage = () => {
         </div>
       )}
 
-      <header className="pt-48 pb-20 px-8 text-center bg-gray-50/50">
+      <header className="pt-40 pb-24 px-4 sm:px-6 lg:px-8 text-center bg-secondary/50">
         <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
-            <Zap size={14} fill="currentColor" /> February 13, 2026
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-6">
+            <Zap size={14} /> February 13, 2026
           </div>
-          <h1 className="text-7xl md:text-[10rem] font-black mb-10 leading-[0.85] tracking-tighter text-gray-900 text-center">
-            Relationship <br/><span className="text-blue-600 italic font-medium">Principles.</span>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+            Relationship Principles
           </h1>
-          <p className="text-2xl md:text-3xl text-gray-400 font-light max-w-3xl mx-auto leading-relaxed italic">
-            "A guide for serving others through intimacy-centric swarm intelligence."
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+            A guide for serving others through intimacy-centric swarm intelligence.
           </p>
         </div>
       </header>
 
-      <section id="principles" className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="space-y-20">
+      <section id="principles" className="py-16 md:py-24 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="space-y-16">
             {(isEditing ? editedPrinciples : principles).map((p, i) => (
               <div 
                 key={i} 
-                className="flex flex-col md:flex-row items-center gap-16 md:gap-24 py-16 border-b border-gray-50 last:border-0 group"
+                className="grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 group"
               >
-                <div className="md:w-1/2 flex items-center justify-center p-4">
+                <div className="flex items-center justify-center">
                   <div className="w-full">
                     {p.img && (
                       <img 
                         src={p.img} 
                         alt={p.title} 
-                        className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
+                        className="w-full h-auto rounded-lg shadow-lg object-contain max-h-[500px]"
                       />
                     )}
-                     {isEditing && <Input value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
+                     {isEditing && <Input placeholder="Image Path" value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
                   </div>
                 </div>
                 
-                <div className="md:w-1/2 space-y-8">
+                <div className="space-y-4">
                    {isEditing ? (
                      <div className="space-y-4">
-                        <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-4xl md:text-7xl font-black tracking-tighter leading-none h-auto p-2 border-2 border-dashed" />
-                        <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium h-64 p-2 border-2 border-dashed" />
+                        <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-3xl font-bold h-auto p-2 border-2 border-dashed" />
+                        <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-lg text-muted-foreground h-48 p-2 border-2 border-dashed" />
                         <Button variant="destructive" size="sm" onClick={() => handleRemovePrinciple(i)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Remove Section
@@ -219,8 +219,8 @@ const RelationshipsPage = () => {
                      </div>
                    ) : (
                      <>
-                      <h3 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 leading-none">{p.title}</h3>
-                      <p className="text-xl md:text-3xl text-gray-400 leading-relaxed font-medium whitespace-pre-line">
+                      <h3 className="text-3xl font-bold tracking-tight">{p.title}</h3>
+                      <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                         {p.content}
                       </p>
                     </>
@@ -240,53 +240,51 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      <section id="the-work" className="py-32 bg-[#121212] text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-40 opacity-[0.02] pointer-events-none">
+      <section id="the-work" className="py-24 md:py-32 bg-secondary/50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-40 opacity-5 text-muted-foreground pointer-events-none">
           <Heart size={800} fill="currentColor" />
         </div>
-        <div className="max-w-7xl mx-auto px-8 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-24">
-            <div className="lg:w-1/2 flex items-center justify-center p-8 bg-white rounded-[4rem] shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 items-center gap-16">
+            <div className="flex items-center justify-center p-8 bg-background rounded-2xl shadow-xl">
               <img 
                 src="/relationships/relationships_pics/support.jpg"
                 alt="The Work of Love Diagram" 
-                className="w-full h-auto max-h-[600px] object-contain"
+                className="w-full h-auto max-h-[500px] object-contain rounded-lg"
               />
             </div>
 
-            <div className="lg:w-1/2 space-y-12">
-              <div className="inline-block px-4 py-1 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded">The Reward System</div>
-              <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-4 uppercase">The Work of <span className="text-blue-500 italic font-medium">Love.</span></h2>
+            <div className="space-y-8">
+              <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full">The Reward System</div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">The Work of Love</h2>
               
-              <div className="space-y-10">
-                <Quote className="text-blue-600 opacity-50" size={64} />
-                <p className="text-2xl md:text-4xl italic font-serif leading-tight text-gray-300">
+              <div className="space-y-8">
+                <Quote className="text-primary opacity-70" size={48} />
+                <p className="text-xl md:text-2xl text-muted-foreground">
                   Loving means doing all the stuff above. This can take a lot of work.
                 </p>
                 
-                <div className="space-y-8">
-                  <div className="space-y-6">
-                    <p className="text-xl md:text-2xl text-gray-400 leading-relaxed">
-                      When we actually do the work of love, we get big rewards: things work smoothly and we a warm-fuzzy loving feeling.
-                    </p>
-                    <p className="text-2xl md:text-4xl font-black text-white border-l-8 border-blue-600 pl-8 uppercase tracking-tighter leading-none">
-                      The loving feeling comes only from doing the work of love.
-                    </p>
-                  </div>
+                <div className="space-y-6">
+                  <p className="text-lg text-muted-foreground">
+                    When we actually do the work of love, we get big rewards: things work smoothly and we experience a warm-fuzzy loving feeling.
+                  </p>
+                  <p className="text-xl md:text-2xl font-semibold border-l-4 border-primary pl-6">
+                    The loving feeling comes only from doing the work of love.
+                  </p>
+                </div>
 
-                  <div className="pt-10 border-t border-white/10">
-                    <p className="text-gray-500 text-lg leading-relaxed mb-8">
-                      If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with the conflict and a cold, empty feeling instead.
+                <div className="pt-8 border-t">
+                  <p className="text-muted-foreground mb-6">
+                    If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling instead.
+                  </p>
+                  <div className="p-6 bg-destructive/10 rounded-lg border border-destructive/20">
+                    <p className="text-sm font-semibold text-destructive mb-4 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse"></span>
+                      Warning: Entrainment Logic
                     </p>
-                    <div className="p-10 bg-red-900/10 rounded-[3rem] border border-red-900/30">
-                      <p className="text-xs uppercase tracking-[0.4em] font-black text-red-500 mb-6 flex items-center gap-3">
-                        <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
-                        Warning: Entrainment Logic
-                      </p>
-                      <p className="text-xl font-bold text-red-200/60 leading-relaxed italic">
-                        This can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.
-                      </p>
-                    </div>
+                    <p className="text-destructive/80">
+                      This can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -295,16 +293,16 @@ const RelationshipsPage = () => {
         </div>
       </section>
 
-      <footer className="bg-white py-24 border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
+      <footer className="bg-background py-16 border-t">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div>
-            <div className="font-black text-4xl tracking-tighter uppercase mb-4">Trading Tribe</div>
-            <p className="text-xs font-black text-gray-300 uppercase tracking-[0.3em]">Relationship Protocols — February 2026</p>
+            <div className="font-bold text-2xl tracking-tight mb-2">Trading Tribe</div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relationship Protocols — February 2026</p>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-3">
-             <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Optimized System Intelligence</div>
-             <div className="h-0.5 w-32 bg-blue-600"></div>
-             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Seykota relationship Re-Design</div>
+          <div className="flex flex-col items-center md:items-end gap-2">
+             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Optimized System Intelligence</div>
+             <div className="h-0.5 w-24 bg-primary"></div>
+             <div className="text-xs font-medium text-muted-foreground">Seykota Relationship Re-Design</div>
           </div>
         </div>
       </footer>
@@ -313,5 +311,3 @@ const RelationshipsPage = () => {
 };
 
 export default RelationshipsPage;
-
-    
