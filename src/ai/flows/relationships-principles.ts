@@ -26,23 +26,28 @@ const ADMIN_LEVEL = 6;
 
 const defaultPrinciples: Principle[] = [
     {
+      "title": "Embrace",
+      "content": "Embrace: to accept with willingness and enthusiasm.\n\nI embrace these principles.",
+      "img": "/relationships/relationships_pics/embrace.jpg"
+    },
+    {
       "title": "Service",
       "content": "We have a common purpose: namely, serving others.",
       "img": "/relationships/relationships_pics/service.jpg"
     },
     {
       "title": "Reality / Truth",
-      "content": "We hold that reality and truth ultimately rest on subjective opinions and feelings.\\n\\nAccordingly, we do not argue about facts or right and wrong.\\n\\nInstead, we share our opinons with each other and receive them as gifts.",
+      "content": "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.",
       "img": "/relationships/relationships_pics/reality-truth.jpg"
     },
     {
       "title": "Listening",
-      "content": "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\\n\\nWe respect our partner's willingness to receive.\\n\\nWe stay in communication until we both feel complete.",
+      "content": "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.",
       "img": "/relationships/relationships_pics/listening.jpg"
     },
     {
       "title": "Owning Feelings",
-      "content": "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\\n\\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.",
+      "content": "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.",
       "img": "/relationships/relationships_pics/owning feelings.jpg"
     },
     {
@@ -62,7 +67,7 @@ const defaultPrinciples: Principle[] = [
     },
     {
       "title": "Stop Judging Feelings",
-      "content": "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\\n\\nWe thank them for sharing their feeling and encourage them to share more.",
+      "content": "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.",
       "img": "/relationships/relationships_pics/stop judging feelings.jpg"
     },
     {
@@ -72,17 +77,17 @@ const defaultPrinciples: Principle[] = [
     },
     {
       "title": "System Thinking",
-      "content": "We view our relationship holistically and imagine methods to improve it.\\n\\nWe avoid using causal models that can lead to blame.",
+      "content": "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.",
       "img": "/relationships/relationships_pics/system thinking.jpg"
     },
     {
       "title": "Questions",
-      "content": "We invite our partner to share his feelings, rather than demand he invent logical answers.\\n\\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.",
+      "content": "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.",
       "img": "/relationships/relationships_pics/questions.jpg"
     },
     {
       "title": "Intimacy",
-      "content": "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\\n\\nWe accept, encourge and explore each others' preferences and fantasies.",
+      "content": "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.",
       "img": "/relationships/relationships_pics/intimacy.jpg"
     },
     {
@@ -122,7 +127,7 @@ const defaultPrinciples: Principle[] = [
     },
     {
       "title": "Imagination",
-      "content": "We support each other in our imagining.\\n\\nWhen we get stuck in a rut, we imagine something larger and move on to it.",
+      "content": "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.",
       "img": "/relationships/relationships_pics/imagination.jpg"
     }
 ];

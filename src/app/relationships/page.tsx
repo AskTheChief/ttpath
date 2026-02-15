@@ -177,34 +177,6 @@ const RelationshipsPage = () => {
         </div>
       </header>
 
-      <section className="py-24 px-8 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center gap-20">
-            <div className="md:w-1/2 flex justify-center">
-              <img 
-                src="/relationships/relationships_pics/kindness.jpg"
-                alt="Embrace Diagram" 
-                className="w-full h-auto max-h-[500px] object-contain rounded-3xl shadow-sm"
-              />
-            </div>
-            <div className="md:w-1/2 space-y-10">
-              <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter text-blue-600">Embrace</h2>
-              <div className="space-y-8">
-                <p className="text-2xl md:text-4xl font-light text-gray-500 leading-tight">
-                  Embrace: to accept with willingness and enthusiasm.
-                </p>
-                <div className="pt-10 border-t border-gray-100">
-                  <p className="text-2xl md:text-5xl font-black flex items-center gap-6 text-gray-900 leading-none">
-                    <CheckCircle2 size={48} className="text-blue-600 flex-shrink-0" />
-                    I embrace these principles.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="principles" className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-8">
           <div className="space-y-20">
