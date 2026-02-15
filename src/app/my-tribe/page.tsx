@@ -152,6 +152,7 @@ function FeedbackForm({
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
   const imageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const captionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
@@ -233,7 +234,8 @@ function FeedbackForm({
         )}
         <div className="space-y-1">
             <Label htmlFor="caption" className="text-xs">Caption</Label>
-            <Textarea id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
+            <FormattingToolbar textareaRef={captionTextareaRef} value={caption} onValueChange={setCaption} />
+            <Textarea ref={captionTextareaRef} id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
         </div>
       </div>
       <div className="flex gap-2 pt-2">
@@ -441,33 +443,36 @@ function MyTribePageContent() {
   const manualFaqQuestionRef = useRef<HTMLTextAreaElement>(null);
   const manualFaqAnswerRef = useRef<HTMLTextAreaElement>(null);
   const manualFaqAnswerCreditRef = useRef<HTMLTextAreaElement>(null);
+  const manualFaqAnswerCaptionRef = useRef<HTMLTextAreaElement>(null);
+  const manualFaqQuestionCaptionRef = useRef<HTMLTextAreaElement>(null);
+
 
   type FaqEntry = JournalEntry;
   const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
       if (type === 'question') {
           const level = entry.userLevel;
-          if (level === 0) return "FAQ Contributor";
-          if (level === 1) return "Visitor says";
-          if (level === 2) return "Guest Says";
-          if (level === 3) return "Explorer Says";
-          if (level === 4) return "Tribe Member Says";
-          if (level === 5) return "Chief Says";
-          if (level === 6) return "Mentor Says";
-          return "Contributor";
+          if (level === 0) return "FAQ Contributor:";
+          if (level === 1) return "Visitor says:";
+          if (level === 2) return "Guest Says:";
+          if (level === 3) return "Explorer Says:";
+          if (level === 4) return "Tribe Member Says:";
+          if (level === 5) return "Chief Says:";
+          if (level === 6) return "Mentor Says:";
+          return "Contributor:";
       } else { // type === 'answer'
-          if (entry.userLevel === 0) return "Ed Says";
+          if (entry.userLevel === 0) return "Ed Says:";
           
           if (entry.userLevel === 6) {
-              return "Mentor's Mentor Says";
+              return "Mentor's Mentor Says:";
           }
 
           if (!feedback) return '';
-          if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says";
+          if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
           
           const level = feedback.mentorLevel;
-          if (level === 5) return "Tribe Chief Says";
-          if (level >= 6) return "Mentor says";
-          return "Mentor says";
+          if (level === 5) return "Tribe Chief Says:";
+          if (level >= 6) return "Mentor says:";
+          return "Mentor says:";
       }
   };
 
@@ -1947,7 +1952,7 @@ function MyTribePageContent() {
                                                 <Image src={entry.imageUrl} alt="Question image" fill className="rounded-md object-contain" />
                                             </div>
                                         )}
-                                        {entry.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{entry.caption}</p>}
+                                        {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
                                         <div className="mt-6 space-y-4">
                                         <h4 className="font-semibold text-md">Feedback</h4>
                                         {entry.feedback && entry.feedback.length > 0 ? (
@@ -1977,18 +1982,15 @@ function MyTribePageContent() {
                                                               <span className="text-muted-foreground">{feedbackDate}</span>
                                                           </div>
                                                             <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
-                                                            <div className="text-xs text-muted-foreground mt-2">
-                                                                {fb.updatedAt && ` (edited ${isClient ? new Date(fb.updatedAt).toLocaleString() : '...'})`}
-                                                            </div>
                                                             {fb.imageUrl && (
                                                                 <div className="mt-4">
                                                                     <div className="relative aspect-video">
-                                                                        <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-cover" />
+                                                                        <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
                                                                     </div>
                                                                     {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
                                                                 </div>
                                                             )}
-                                                            {fb.caption && <p className="text-center text-sm text-muted-foreground italic mt-2">{fb.caption}</p>}
+                                                             {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                                         </AlertDescription>
                                                         {isMentor && (
                                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2064,7 +2066,8 @@ function MyTribePageContent() {
                          <ImageUploader imageUrl={manualFaqData.imageUrl} onImageUrlChange={(url) => handleManualFaqImageUrlChange(url, 'question')} userId={user?.uid} label="Question Image (Optional)" />
                          <div className="space-y-2">
                             <Label htmlFor="questionCaption">Question Caption</Label>
-                            <Textarea id="questionCaption" placeholder="Caption for question image or text" value={manualFaqData.questionCaption} onChange={handleManualFaqChange} rows={2}/>
+                            <FormattingToolbar textareaRef={manualFaqQuestionCaptionRef} value={manualFaqData.questionCaption} onValueChange={(val) => setManualFaqData(p => ({...p, questionCaption: val}))} />
+                            <Textarea ref={manualFaqQuestionCaptionRef} id="questionCaption" placeholder="Caption for question image or text" value={manualFaqData.questionCaption} onChange={handleManualFaqChange} rows={2}/>
                          </div>
 
                         <div className="space-y-2">
@@ -2080,7 +2083,8 @@ function MyTribePageContent() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="answerCaption">Answer Caption</Label>
-                            <Textarea id="answerCaption" placeholder="Caption for answer image or text" value={manualFaqData.answerCaption} onChange={handleManualFaqChange} rows={2}/>
+                            <FormattingToolbar textareaRef={manualFaqAnswerCaptionRef} value={manualFaqData.answerCaption} onValueChange={(val) => setManualFaqData(p => ({...p, answerCaption: val}))} />
+                            <Textarea ref={manualFaqAnswerCaptionRef} id="answerCaption" placeholder="Caption for answer image or text" value={manualFaqData.answerCaption} onChange={handleManualFaqChange} rows={2}/>
                          </div>
                     </CardContent>
                     <CardFooter>
