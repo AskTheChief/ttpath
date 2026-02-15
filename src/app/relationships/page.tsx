@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -173,9 +174,6 @@ const RelationshipsPage = () => {
 
       <header className="pt-40 pb-24 px-4 sm:px-6 lg:px-8 text-center bg-secondary/50">
         <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-6">
-            <Zap size={14} /> February 13, 2026
-          </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
             Trading Tribe<br />Relationship<br />Principles
           </h1>
@@ -190,13 +188,13 @@ const RelationshipsPage = () => {
                 key={i} 
                 className="grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 group"
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center p-4">
                   <div className="w-full">
                     {p.img && (
                       <img 
                         src={p.img} 
                         alt={p.title} 
-                        className="w-full h-auto object-contain max-h-[500px]"
+                        className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
                       />
                     )}
                      {isEditing && <Input placeholder="Image Path" value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
@@ -293,7 +291,7 @@ const RelationshipsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div>
             <div className="font-bold text-2xl tracking-tight mb-2">Trading Tribe</div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relationship Protocols — February 2026</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relationship Principles</p>
           </div>
           <div className="flex flex-col items-center md:items-end gap-2">
              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Optimized System Intelligence</div>
