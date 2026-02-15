@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { 
   Heart, 
   Quote,
@@ -11,7 +12,8 @@ import {
   Edit,
   Loader2,
   Trash2,
-  PlusCircle
+  PlusCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { getPrinciples, updatePrinciples, type Principle } from '@/ai/flows/relationships-principles';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -138,9 +140,16 @@ const RelationshipsPage = () => {
             <Activity className="text-blue-600" size={28} />
             <span>TRADING TRIBE<span className="font-light text-gray-400 ml-2">RELATIONSHIP</span></span>
           </div>
-          <div className="hidden md:flex gap-10">
-            <a href="#principles" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">Principles</a>
-            <a href="#the-work" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Work</a>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex gap-10">
+                <a href="#principles" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">Principles</a>
+                <a href="#the-work" className="text-xs font-black hover:text-blue-600 transition-colors uppercase tracking-widest">The Work</a>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
+              </Link>
+            </Button>
           </div>
         </div>
       </nav>
@@ -304,3 +313,5 @@ const RelationshipsPage = () => {
 };
 
 export default RelationshipsPage;
+
+    
