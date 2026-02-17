@@ -212,15 +212,15 @@ const RelationshipsPage = () => {
         </div>
       )}
 
-      <header className="pt-64 pb-48 px-4 sm:px-6 lg:px-8 text-center bg-background">
-        <div className="max-w-7xl mx-auto flex flex-col items-center space-y-0">
-          <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[11rem] font-black tracking-tighter leading-[0.8] text-foreground/90 uppercase">
+      <header className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 text-center bg-background">
+        <div className="max-w-5xl mx-auto flex flex-col items-center space-y-1">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
             Trading Tribe
           </h1>
-          <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[11rem] font-black tracking-tighter leading-[0.8] text-primary uppercase">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-primary uppercase leading-tight">
             Relationship
           </h1>
-          <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[11rem] font-black tracking-tighter leading-[0.8] text-foreground/90 uppercase">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
             Principles
           </h1>
         </div>
