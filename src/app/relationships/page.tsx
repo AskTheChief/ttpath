@@ -271,12 +271,12 @@ const RelationshipsPage = () => {
                   <p className="text-muted-foreground mb-6">
                     If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling.
                   </p>
-                  <div className="p-6 bg-destructive/10 rounded-lg border border-destructive/20">
-                    <p className="text-sm font-semibold text-destructive mb-4 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse"></span>
+                  <div className="p-6 bg-muted/50 rounded-lg border border-border">
+                    <p className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground"></span>
                       Warning: Entrainment Logic
                     </p>
-                    <p className="text-destructive/80">
+                    <p className="text-muted-foreground">
                       This can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.
                     </p>
                   </div>

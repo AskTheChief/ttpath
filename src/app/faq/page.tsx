@@ -31,13 +31,13 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
     if (type === 'question') {
         const level = entry.userLevel;
         if (level === 0) return "FAQ Contributor:";
-        if (level === 1) return "Visitor says:";
+        if (level === 1) return "Visitor Says:";
         if (level === 2) return "Guest Says:";
         if (level === 3) return "Explorer Says:";
         if (level === 4) return "Tribe Member Says:";
         if (level === 5) return "Chief Says:";
         if (level === 6) return "Mentor Says:";
-        if (entry.isChatbotEntry) return "Visitor says:";
+        if (entry.isChatbotEntry) return "Visitor Says:";
         return "Contributor:";
     } else { // type === 'answer'
         if (entry.userLevel === 0) return "Ed Says:";
@@ -47,13 +47,13 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
         }
 
         if (!feedback) return '';
-        if (feedback.mentorId === 'chatbot-chief') return "AI Chief says:";
+        if (feedback.mentorId === 'chatbot-chief') return "AI Chief Says:";
         if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
         
         const level = feedback.mentorLevel;
         if (level === 5) return "Tribe Chief Says:";
-        if (level >= 6) return "Mentor says:";
-        return "Mentor says:"; // Default for any other case.
+        if (level >= 6) return "Mentor Says:";
+        return "Mentor Says:"; // Default for any other case.
     }
 };
 
@@ -321,6 +321,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
                             <div className="space-y-2">
                                 <Label htmlFor="question-caption">Caption</Label>
+                                <FormattingToolbar textareaRef={answerCaptionTextareaRef} value={questionCaption} onValueChange={setQuestionCaption} />
                                 <Textarea id="question-caption" value={questionCaption} onChange={e => setQuestionCaption(e.target.value)} placeholder="Caption for the question content or image..." rows={2}/>
                             </div>
                             <div className="flex gap-2 pt-2">
@@ -346,7 +347,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                 <CardContent className="space-y-4 flex-grow pt-6">
                     {(faq.feedback || []).map(fb => {
                          const answerAuthorLabel = getAuthorDisplay('answer', faq, fb);
-                         const feedbackDate = new Date(fb.createdAt).toLocaleDateString();
                          const canEditFeedback = isMentor && fb.mentorId !== 'chatbot-chief';
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
@@ -405,7 +405,6 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     <div>
                                         <div className="flex justify-between items-center text-sm mb-2">
                                             <span className="font-bold text-foreground">{answerAuthorLabel}</span>
-                                            <span className="text-muted-foreground">{feedbackDate}</span>
                                         </div>
                                         <div className="flex justify-between items-start">
                                             <div>
@@ -438,7 +437,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'contain' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-4" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
+                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-6" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
                                                 {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                             </div>
                                         )}

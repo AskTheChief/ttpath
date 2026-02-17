@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -452,7 +451,7 @@ function MyTribePageContent() {
       if (type === 'question') {
           const level = entry.userLevel;
           if (level === 0) return "FAQ Contributor:";
-          if (level === 1) return "Visitor says:";
+          if (level === 1) return "Visitor Says:";
           if (level === 2) return "Guest Says:";
           if (level === 3) return "Explorer Says:";
           if (level === 4) return "Tribe Member Says:";
@@ -471,8 +470,8 @@ function MyTribePageContent() {
           
           const level = feedback.mentorLevel;
           if (level === 5) return "Tribe Chief Says:";
-          if (level >= 6) return "Mentor says:";
-          return "Mentor says:";
+          if (level >= 6) return "Mentor Says:";
+          return "Mentor Says:";
       }
   };
 
@@ -484,7 +483,7 @@ function MyTribePageContent() {
       .sort((a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime());
     const past = userTribe.meetings
       .filter(m => new Date(m.date as string) < now)
-      .sort((a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime());
+      .sort((a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime());
     return { upcomingMeetings: upcoming, pastMeetings: past };
   }, [userTribe?.meetings]);
 
@@ -1352,7 +1351,7 @@ function MyTribePageContent() {
                         {journalEntries.map(entry => (
                             <AccordionItem key={entry.id} value={entry.id}>
                                 <div className="flex items-center w-full p-4">
-                                    <AccordionTrigger className="flex-grow p-0">
+                                    <AccordionTrigger className="flex-grow p-0 text-left">
                                         <div className="grid w-full gap-1 text-left">
                                             <div className="flex w-full justify-between">
                                                 <span className="font-semibold">Question {entry.subject && <span className="font-normal text-muted-foreground">- Subject: {entry.subject}</span>}</span>
@@ -1386,14 +1385,12 @@ function MyTribePageContent() {
                                           <h4 className="font-semibold text-md">Feedback from Mentors</h4>
                                           {entry.feedback.map((fb, index) => {
                                             const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
-                                            const feedbackDate = isClient ? format(new Date(fb.createdAt), 'PPP p') : '...';
                                             return (
                                               <Alert key={index} className="bg-muted/50">
                                                   <UserIcon className="h-4 w-4" />
                                                   <AlertDescription>
                                                       <div className="flex justify-between items-center text-sm mb-2">
                                                           <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
-                                                          <span className="text-muted-foreground">{feedbackDate}</span>
                                                       </div>
                                                       <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
                                                   </AlertDescription>
@@ -1742,7 +1739,7 @@ function MyTribePageContent() {
                     <Accordion type="single" collapsible className="w-full">
                     {tribeMembers.map(member => (
                         <AccordionItem key={member.uid} value={member.uid}>
-                        <AccordionTrigger>{member.uid === userTribe.chief ? 'Chief: ' : ''}{member.firstName} {member.lastName}</AccordionTrigger>
+                        <AccordionTrigger className="text-left">{member.uid === userTribe.chief ? 'Chief: ' : ''}{member.firstName} {member.lastName}</AccordionTrigger>
                         <AccordionContent>
                             <div className="space-y-4">
                               <div className="flex justify-between items-start">
@@ -1815,7 +1812,7 @@ function MyTribePageContent() {
                     <Accordion type="single" collapsible className="w-full">
                         {joinApplications.map(app => (
                         <AccordionItem key={app.id} value={app.id}>
-                            <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
+                            <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                             <AccordionContent>
                             <div className="space-y-4">
                                 <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
@@ -1853,7 +1850,7 @@ function MyTribePageContent() {
                               <Accordion type="single" collapsible className="w-full">
                               {tribeCreationApps.map(app => (
                               <AccordionItem key={app.id} value={app.id}>
-                                  <AccordionTrigger><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
+                                  <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                   <AccordionContent>
                                   <div className="space-y-4">
                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
@@ -1888,7 +1885,7 @@ function MyTribePageContent() {
                             <Accordion type="single" collapsible className="w-full">
                             {mentorApplications.map(app => (
                                 <AccordionItem key={app.id} value={app.id}>
-                                <AccordionTrigger><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
+                                <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                 <AccordionContent>
                                     <div className="space-y-4">
                                         <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
@@ -1934,7 +1931,7 @@ function MyTribePageContent() {
                                 <Accordion type="single" collapsible className="w-full">
                                 {pendingEntries.map(entry => (
                                     <AccordionItem key={entry.id} value={entry.id}>
-                                        <AccordionTrigger>
+                                        <AccordionTrigger className="text-left">
                                             <div className="grid w-full gap-1 text-left">
                                                 <div className="flex w-full justify-between">
                                                     <span className="font-semibold">{entry.userName}{entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}</span>
@@ -1959,7 +1956,6 @@ function MyTribePageContent() {
                                             <div className="space-y-4">
                                             {entry.feedback.map((fb) => {
                                                 const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
-                                                const feedbackDate = isClient ? new Date(fb.createdAt).toLocaleDateString() : '...';
                                                 
                                                 return editingFeedbackId === fb.id ? (
                                                     <FeedbackForm
@@ -1979,7 +1975,6 @@ function MyTribePageContent() {
                                                         <AlertDescription>
                                                           <div className="flex justify-between items-center text-sm mb-2">
                                                               <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
-                                                              <span className="text-muted-foreground">{feedbackDate}</span>
                                                           </div>
                                                             <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
                                                             {fb.imageUrl && (
@@ -1987,7 +1982,7 @@ function MyTribePageContent() {
                                                                     <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
                                                                     </div>
-                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-4" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-6" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
                                                                     {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                                                 </div>
                                                             )}
@@ -2010,7 +2005,7 @@ function MyTribePageContent() {
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
+                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, feedbackId)}>Delete</AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                                 </AlertDialogContent>
                                                             </AlertDialog>
