@@ -1,28 +1,30 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { 
   Heart, 
-  Quote,
   Activity,
-  Zap,
-  CheckCircle2,
   Edit,
   Loader2,
   Trash2,
   PlusCircle,
-  ArrowLeft
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  CheckCircle2
 } from 'lucide-react';
 import { getPrinciples, updatePrinciples, type Principle } from '@/ai/flows/relationships-principles';
+import { getRelationshipAgreements, toggleRelationshipAgreement } from '@/ai/flows/relationship-agreements';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const RelationshipsPage = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -33,35 +35,31 @@ const RelationshipsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(0);
+  const [userAgreements, setUserAgreements] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   
   const isMentor = userLevel >= 6;
 
-  const fetchContent = useCallback(async () => {
+  const fetchContent = useCallback(async (currentUser: User | null) => {
     setIsLoading(true);
     try {
       const content = await getPrinciples();
       setPrinciples(content);
-      setEditedPrinciples(JSON.parse(JSON.stringify(content))); // Deep copy for editing
+      setEditedPrinciples(JSON.parse(JSON.stringify(content))); 
+
+      if (currentUser) {
+        const idToken = await currentUser.getIdToken();
+        const agreements = await getRelationshipAgreements({ idToken });
+        setUserAgreements(new Set(agreements.agreedTitles));
+      }
     } catch (error) {
-      console.error("Failed to fetch principles", error);
+      console.error("Failed to fetch content", error);
       toast({ title: "Error loading content", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -73,13 +71,30 @@ const RelationshipsPage = () => {
       } else {
         setUserLevel(0);
       }
+      fetchContent(currentUser);
     });
     return () => unsubscribe();
+  }, [fetchContent]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleEditChange = (index: number, field: keyof Principle, value: string) => {
     const newPrinciples = [...editedPrinciples];
     newPrinciples[index] = { ...newPrinciples[index], [field]: value };
+    setEditedPrinciples(newPrinciples);
+  };
+
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    const newPrinciples = [...editedPrinciples];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newPrinciples.length) return;
+    
+    [newPrinciples[index], newPrinciples[targetIndex]] = [newPrinciples[targetIndex], newPrinciples[index]];
     setEditedPrinciples(newPrinciples);
   };
 
@@ -124,6 +139,31 @@ const RelationshipsPage = () => {
     setIsEditing(false);
   };
 
+  const handleToggleAgreement = async (title: string, agreed: boolean) => {
+    if (!user) {
+        toast({ title: "Please log in to record your agreement.", variant: "destructive" });
+        return;
+    }
+
+    // Optimistic update
+    const newAgreements = new Set(userAgreements);
+    if (agreed) newAgreements.add(title);
+    else newAgreements.delete(title);
+    setUserAgreements(newAgreements);
+
+    try {
+        const idToken = await user.getIdToken();
+        const result = await toggleRelationshipAgreement({ idToken, title, agreed });
+        if (!result.success) throw new Error(result.message);
+    } catch (error: any) {
+        console.error("Agreement toggle failed", error);
+        toast({ title: "Failed to update agreement", description: error.message, variant: "destructive" });
+        // Revert on failure
+        const reverted = new Set(userAgreements);
+        setUserAgreements(reverted);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -143,7 +183,6 @@ const RelationshipsPage = () => {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex gap-6">
                 <a href="#principles" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Principles</a>
-                <a href="#the-work" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">The Work</a>
             </div>
             <Button asChild variant="outline">
               <Link href="/">
@@ -160,7 +199,7 @@ const RelationshipsPage = () => {
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                Save
+                Save Changes
               </Button>
               <Button variant="outline" onClick={handleCancel}>Cancel</Button>
             </div>
@@ -183,106 +222,88 @@ const RelationshipsPage = () => {
       <section id="principles" className="py-16 md:py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-16">
-            {(isEditing ? editedPrinciples : principles).map((p, i) => (
-              <div 
-                key={i} 
-                className="grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 group"
-              >
-                <div className="flex items-center justify-center p-4">
-                  <div className="w-full">
-                    {p.img && (
-                      <img 
-                        src={p.img} 
-                        alt={p.title} 
-                        className="w-full h-auto max-h-[600px] object-contain transition-transform duration-1000 group-hover:scale-105"
-                      />
-                    )}
-                     {isEditing && <Input placeholder="Image Path" value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
+            {(isEditing ? editedPrinciples : principles).map((p, i) => {
+              const isAgreed = userAgreements.has(p.title);
+              
+              return (
+                <div 
+                  key={i} 
+                  className={cn(
+                    "grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 border-b last:border-0",
+                    isAgreed && "opacity-80 transition-opacity"
+                  )}
+                >
+                  <div className="flex flex-col items-center justify-center p-4">
+                    <div className="w-full relative">
+                      {p.img && (
+                        <img 
+                          src={p.img} 
+                          alt={p.title} 
+                          className="w-full h-auto max-h-[600px] object-contain"
+                        />
+                      )}
+                       {isEditing && <Input placeholder="Image Path" value={p.img} onChange={(e) => handleEditChange(i, 'img', e.target.value)} className="mt-4" />}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-6">
+                     {isEditing ? (
+                       <div className="space-y-4 bg-muted/30 p-6 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                          <div className="flex justify-between items-center gap-2">
+                            <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-2xl font-bold h-auto p-2" placeholder="Title" />
+                            <div className="flex gap-1">
+                                <Button size="icon" variant="ghost" onClick={() => handleMove(i, 'up')} disabled={i === 0}><ArrowUp className="h-4 w-4"/></Button>
+                                <Button size="icon" variant="ghost" onClick={() => handleMove(i, 'down')} disabled={i === editedPrinciples.length - 1}><ArrowDown className="h-4 w-4"/></Button>
+                            </div>
+                          </div>
+                          <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-lg text-muted-foreground h-48 p-2" placeholder="Content" />
+                          <Button variant="destructive" size="sm" onClick={() => handleRemovePrinciple(i)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove Section
+                          </Button>
+                       </div>
+                     ) : (
+                       <div className="relative">
+                        <div className="flex items-start justify-between mb-4">
+                            <h3 className="text-3xl font-bold tracking-tight">{p.title}</h3>
+                            {user && (
+                                <div className="flex flex-col items-center gap-2 pt-1">
+                                    <Label htmlFor={`agree-${i}`} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">I Agree</Label>
+                                    <Checkbox 
+                                        id={`agree-${i}`} 
+                                        checked={isAgreed}
+                                        onCheckedChange={(checked) => handleToggleAgreement(p.title, !!checked)}
+                                        className="h-6 w-6"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className={cn(
+                            "text-lg text-muted-foreground leading-relaxed whitespace-pre-line prose prose-slate dark:prose-invert max-w-none",
+                            isAgreed && "text-muted-foreground/60"
+                        )}>
+                          {p.content}
+                        </div>
+                        {isAgreed && (
+                            <div className="mt-4 flex items-center gap-2 text-primary font-semibold">
+                                <CheckCircle2 size={20} />
+                                <span>I embrace this principle.</span>
+                            </div>
+                        )}
+                      </div>
+                     )}
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                   {isEditing ? (
-                     <div className="space-y-4">
-                        <Input value={p.title} onChange={(e) => handleEditChange(i, 'title', e.target.value)} className="text-3xl font-bold h-auto p-2 border-2 border-dashed" />
-                        <Textarea value={p.content} onChange={(e) => handleEditChange(i, 'content', e.target.value)} className="text-lg text-muted-foreground h-48 p-2 border-2 border-dashed" />
-                        <Button variant="destructive" size="sm" onClick={() => handleRemovePrinciple(i)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remove Section
-                        </Button>
-                     </div>
-                   ) : (
-                     <>
-                      <h3 className="text-3xl font-bold tracking-tight">{p.title}</h3>
-                      <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
-                        {p.content}
-                      </p>
-                    </>
-                   )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
              {isEditing && (
               <div className="text-center pt-16">
                 <Button size="lg" onClick={handleAddNewPrinciple}>
                   <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Section
+                  Add New Principle Section
                 </Button>
               </div>
             )}
-          </div>
-        </div>
-      </section>
-
-      <section id="the-work" className="py-24 md:py-32 bg-secondary/50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-40 opacity-5 text-muted-foreground pointer-events-none">
-          <Heart size={800} fill="currentColor" />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 items-center gap-16">
-            <div className="flex items-center justify-center p-8 bg-background rounded-2xl shadow-xl">
-              <img 
-                src="/relationships/relationships_pics/support.jpg"
-                alt="The Work of Love Diagram" 
-                className="w-full h-auto max-h-[500px] object-contain"
-              />
-            </div>
-
-            <div className="space-y-8">
-              <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full">The Reward System</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">The Work of Love</h2>
-              
-              <div className="space-y-8">
-                <Quote className="text-primary opacity-70" size={48} />
-                <p className="text-xl md:text-2xl text-muted-foreground">
-                  Loving means doing all the stuff above. This can take a lot of work.
-                </p>
-                
-                <div className="space-y-6">
-                  <p className="text-lg text-muted-foreground">
-                    When we actually do the work of love, we get big rewards: things work smoothly and we experience a warm-fuzzy loving feeling.
-                  </p>
-                  <p className="text-xl md:text-2xl font-semibold border-l-4 border-primary pl-6">
-                    The loving feeling comes from doing the work of love.
-                  </p>
-                </div>
-
-                <div className="pt-8 border-t">
-                  <p className="text-muted-foreground mb-6">
-                    If we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling.
-                  </p>
-                  <div className="p-6 bg-muted/50 rounded-lg border border-border">
-                    <p className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground"></span>
-                      Warning: Entrainment Logic
-                    </p>
-                    <p className="text-muted-foreground">
-                      This can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

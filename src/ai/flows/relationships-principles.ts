@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -129,6 +128,11 @@ const defaultPrinciples: Principle[] = [
       "title": "Imagination",
       "content": "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.",
       "img": "/relationships/relationships_pics/imagination.jpg"
+    },
+    {
+      "title": "The Work of Love",
+      "content": "Loving means doing all the stuff above. This can take a lot of work.\n\nWhen we actually do the work of love, we get big rewards: things work smoothly and we experience a warm-fuzzy loving feeling.\n\nThe loving feeling comes from doing the work of love.\n\nIf we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling.\n\nWarning: Entrainment Logic\nThis can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.",
+      "img": "/relationships/relationships_pics/support.jpg"
     }
 ];
 
@@ -151,44 +155,28 @@ const getPrinciplesFlow = ai.defineFlow(
       return defaultPrinciples;
     }
 
-    const dbPrinciplesMap = new Map(principlesFromDb.map(p => [p.title, p]));
+    // Check if we need to sync based on titles or length
+    const dbTitles = new Set(principlesFromDb.map(p => p.title));
+    const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
+    
     let needsDbUpdate = false;
-
-    // Create the final list by iterating through the default list.
-    // This preserves the order from code, adds new principles, and uses saved data for existing ones.
-    const finalPrinciples = defaultPrinciples.map(defaultPrinciple => {
-      const dbPrinciple = dbPrinciplesMap.get(defaultPrinciple.title);
-      if (dbPrinciple) {
-        // If a principle with the same title exists in the DB, use the DB version.
-        // This preserves all user edits (content, img url, etc.).
-        return dbPrinciple;
-      } else {
-        // If it's a new principle from the default list, add it.
-        needsDbUpdate = true;
-        return defaultPrinciple;
-      }
-    });
-
-    // Check if the number of principles has changed (e.g., a principle was removed from the default list).
-    if (finalPrinciples.length !== principlesFromDb.length) {
-        needsDbUpdate = true;
+    
+    // Add missing default principles while keeping existing edits
+    const syncedPrinciples = [...principlesFromDb];
+    for (const dp of defaultPrinciples) {
+        if (!dbTitles.has(dp.title)) {
+            syncedPrinciples.push(dp);
+            needsDbUpdate = true;
+        }
     }
 
     if (needsDbUpdate) {
       console.log("Syncing relationship principles with the database.");
-      await contentRef.set({ principles: finalPrinciples });
+      await contentRef.set({ principles: syncedPrinciples });
+      return syncedPrinciples;
     }
     
-    try {
-        // Always return the potentially updated list, and validate it.
-        const validatedPrinciples = GetPrinciplesOutputSchema.parse(finalPrinciples);
-        return validatedPrinciples;
-    } catch (e) {
-        console.error("Data after sync still doesn't match schema", e);
-        // If validation fails as a last resort, re-seed with pure defaults.
-        await contentRef.set({ principles: defaultPrinciples });
-        return defaultPrinciples;
-    }
+    return principlesFromDb;
   }
 );
 

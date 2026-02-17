@@ -532,3 +532,27 @@ export const UpdatePrinciplesOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type UpdatePrinciplesOutput = z.infer<typeof UpdatePrinciplesOutputSchema>;
+
+// User Relationship Agreement Schemas
+export const GetRelationshipAgreementsInputSchema = z.object({
+  idToken: z.string(),
+});
+export type GetRelationshipAgreementsInput = z.infer<typeof GetRelationshipAgreementsInputSchema>;
+
+export const GetRelationshipAgreementsOutputSchema = z.object({
+  agreedTitles: z.array(z.string()),
+});
+export type GetRelationshipAgreementsOutput = z.infer<typeof GetRelationshipAgreementsOutputSchema>;
+
+export const ToggleRelationshipAgreementInputSchema = z.object({
+  idToken: z.string(),
+  title: z.string(),
+  agreed: z.boolean(),
+});
+export type ToggleRelationshipAgreementInput = z.infer<typeof ToggleRelationshipAgreementInputSchema>;
+
+export const ToggleRelationshipAgreementOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type ToggleRelationshipAgreementOutput = z.infer<typeof ToggleRelationshipAgreementOutputSchema>;

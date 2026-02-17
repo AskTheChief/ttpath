@@ -53,3 +53,4 @@ import '@/ai/flows/send-meeting-report-reminder.ts';
 import '@/ai/flows/add-manual-faq.ts';
 import '@/ai/flows/notify-faq-author.ts';
 import '@/ai/flows/relationships-principles.ts';
+import '@/ai/flows/relationship-agreements.ts';
