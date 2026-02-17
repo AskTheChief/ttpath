@@ -271,19 +271,8 @@ const RelationshipsPage = () => {
                        </div>
                      ) : (
                        <div className="relative">
-                        <div className="flex items-start justify-between mb-4">
+                        <div className="mb-4">
                             <h3 className="text-3xl font-bold tracking-tight">{p.title}</h3>
-                            {user && (
-                                <div className="flex flex-col items-center gap-2 pt-1">
-                                    <Label htmlFor={`agree-${i}`} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">I Agree</Label>
-                                    <Checkbox 
-                                        id={`agree-${i}`} 
-                                        checked={isAgreed}
-                                        onCheckedChange={(checked) => handleToggleAgreement(p.title, !!checked)}
-                                        className="h-6 w-6"
-                                    />
-                                </div>
-                            )}
                         </div>
                         <div className={cn(
                             "text-lg text-muted-foreground leading-relaxed whitespace-pre-line prose prose-slate dark:prose-invert max-w-none",
@@ -291,10 +280,23 @@ const RelationshipsPage = () => {
                         )}>
                           {p.content}
                         </div>
-                        {isAgreed && (
-                            <div className="mt-4 flex items-center gap-2 text-primary font-semibold">
-                                <CheckCircle2 size={20} />
-                                <span>I embrace this principle.</span>
+                        {user && (
+                            <div className="mt-8 flex items-center gap-3">
+                                <Checkbox 
+                                    id={`agree-${i}`} 
+                                    checked={isAgreed}
+                                    onCheckedChange={(checked) => handleToggleAgreement(p.title, !!checked)}
+                                    className="h-6 w-6 border-2"
+                                />
+                                <Label 
+                                    htmlFor={`agree-${i}`} 
+                                    className={cn(
+                                        "text-xl font-bold cursor-pointer transition-colors",
+                                        isAgreed ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    I embrace this principle.
+                                </Label>
                             </div>
                         )}
                       </div>
