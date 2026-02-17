@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -213,8 +214,14 @@ const RelationshipsPage = () => {
 
       <header className="pt-40 pb-24 px-4 sm:px-6 lg:px-8 text-center bg-secondary/50">
         <div className="max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-6xl font-bold mb-2 tracking-tight leading-tight">
+            Trading Tribe
+          </h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-2 tracking-tight leading-tight">
+            Relationship
+          </h1>
           <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
-            Trading Tribe<br />Relationship<br />Principles
+            Principles
           </h1>
         </div>
       </header>
