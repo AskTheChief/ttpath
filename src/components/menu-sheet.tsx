@@ -182,7 +182,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <Heart className="mr-4 w-10 h-10" />
-                  Relationships
+                  Relationship Principles
               </Button>
             </Link>
             <DropdownMenu>

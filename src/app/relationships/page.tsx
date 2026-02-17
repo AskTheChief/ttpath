@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -213,14 +214,14 @@ const RelationshipsPage = () => {
       )}
 
       <header className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 text-center bg-background">
-        <div className="max-w-5xl mx-auto flex flex-col items-center space-y-1">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
+        <div className="max-w-5xl mx-auto flex flex-col items-center space-y-2">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
             Trading Tribe
           </h1>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-primary uppercase leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-primary uppercase leading-tight">
             Relationship
           </h1>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
             Principles
           </h1>
         </div>
