@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploader } from '@/components/image-uploader';
 import { Label } from '@/components/ui/label';
+import ChatbotModal from '@/components/modals/chatbot-modal';
 
 // Augment JournalEntry type for this component to include chatbot entries
 type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
@@ -461,6 +462,7 @@ export default function FaqPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(0);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const fetchFaqs = useCallback(async () => {
     setLoading(true);
@@ -538,6 +540,24 @@ export default function FaqPage() {
 
   const isMentor = userLevel >= 6;
 
+  const NavigationButtons = () => (
+    <div className="flex flex-wrap gap-3 mb-8">
+      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+        <Link href="/my-tribe?view=faq">
+          <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Ed
+        </Link>
+      </Button>
+      <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">
+        <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the Ai Chief
+      </Button>
+      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+        <Link href="/my-tribe?view=meeting-reports">
+          <FileText className="mr-2 h-4 w-4 text-primary" /> Write Tribe Report
+        </Link>
+      </Button>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -549,25 +569,39 @@ export default function FaqPage() {
 
   if (!isMentor) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-            <Card className="max-w-md">
-                <CardHeader>
-                    <CardTitle>Access Restricted</CardTitle>
-                    <CardDescription>
-                        This page is currently under review and is only available to Mentors.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p>We are working on anonymizing all entries before making them public. Thank you for your patience.</p>
-                </CardContent>
-                <CardFooter>
-                    <Button asChild className="w-full">
+        <div className="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col items-center justify-center">
+            <div className="max-w-4xl w-full">
+                <header className="flex justify-between items-center mb-8">
+                    <h1 className="text-4xl font-bold">FAQ</h1>
+                    <Button asChild variant="outline">
                         <Link href="/">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
                         </Link>
                     </Button>
-                </CardFooter>
-            </Card>
+                </header>
+
+                <NavigationButtons />
+
+                <Card className="max-w-md mx-auto text-center">
+                    <CardHeader>
+                        <CardTitle>Access Restricted</CardTitle>
+                        <CardDescription>
+                            This page is currently under review and is only available to Mentors.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p>We are working on anonymizing all entries before making them public. Thank you for your patience.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild className="w-full">
+                            <Link href="/">
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+            <ChatbotModal isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
         </div>
     );
   }
@@ -595,6 +629,8 @@ export default function FaqPage() {
         </div>
       </header>
 
+      <NavigationButtons />
+
       <div className="space-y-8">
         <div className="relative flex-grow w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -619,6 +655,7 @@ export default function FaqPage() {
             </div>
         )}
       </div>
+      <ChatbotModal isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
     </div>
   );
 }
