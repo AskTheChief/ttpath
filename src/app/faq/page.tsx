@@ -4,12 +4,13 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
+import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { notifyFaqAuthor } from '@/ai/flows/notify-faq-author';
@@ -23,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ImageUploader } from '@/components/image-uploader';
 import { Label } from '@/components/ui/label';
 import ChatbotModal from '@/components/modals/chatbot-modal';
+import { cn } from '@/lib/utils';
 
 // Augment JournalEntry type for this component to include chatbot entries
 type ForumEntry = JournalEntry & { isChatbotEntry?: boolean };
@@ -115,7 +117,132 @@ function FormattingToolbar({
   );
 }
 
-function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: ForumEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
+function FeedbackForm({
+  entryId,
+  onActionComplete,
+  user,
+  editingFeedback,
+  onCancelEdit,
+}: {
+  entryId: string;
+  onActionComplete: () => void;
+  user: User | null;
+  editingFeedback?: JournalFeedback | null;
+  onCancelEdit?: () => void;
+}) {
+  const [feedbackContent, setFeedbackContent] = useState(editingFeedback ? editingFeedback.feedbackContent : '');
+  const [imageUrl, setImageUrl] = useState(editingFeedback?.imageUrl || '');
+  const [imageCredit, setImageCredit] = useState(editingFeedback?.imageCredit || '');
+  const [caption, setCaption] = useState(editingFeedback?.caption || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const isEditMode = !!editingFeedback;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const captionTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
+    setImageUrl(editingFeedback?.imageUrl || '');
+    setImageCredit(editingFeedback?.imageCredit || '');
+    setCaption(editingFeedback?.caption || '');
+  }, [editingFeedback]);
+
+  const handleSubmit = async () => {
+    if (!feedbackContent.trim() || !user) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const idToken = await user.getIdToken();
+      if (isEditMode && editingFeedback) {
+        const result = await editJournalFeedback({
+          idToken,
+          entryId,
+          feedbackId: editingFeedback.id,
+          newFeedbackContent: feedbackContent,
+          imageUrl: imageUrl,
+          imageCredit: imageCredit,
+          caption: caption,
+        });
+        if (result.success) {
+          toast({ title: 'Feedback Updated' });
+        } else {
+          throw new Error(result.message);
+        }
+      } else {
+        const result = await addJournalFeedback({
+          idToken,
+          entryId,
+          feedbackContent,
+          imageUrl: imageUrl,
+          imageCredit: imageCredit,
+          caption: caption,
+        });
+        if (result.success) {
+          toast({ title: 'Feedback Added' });
+          setFeedbackContent('');
+          setImageUrl('');
+          setImageCredit('');
+          setCaption('');
+        } else {
+          throw new Error(result.message);
+        }
+      }
+      onActionComplete();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!user) {
+    return <p className="text-sm text-muted-foreground">You must be logged in to provide feedback.</p>;
+  }
+
+  return (
+    <div className="mt-4 space-y-4 p-4 border rounded-lg bg-background">
+      <h4 className="font-semibold">{isEditMode ? 'Edit Your Feedback' : 'Add Feedback'}</h4>
+      <FormattingToolbar textareaRef={textareaRef} value={feedbackContent} onValueChange={setFeedbackContent} />
+      <Textarea
+        ref={textareaRef}
+        placeholder="Write your feedback..."
+        value={feedbackContent}
+        onChange={(e) => setFeedbackContent(e.target.value)}
+        rows={3}
+      />
+      <div className="space-y-4">
+        <ImageUploader imageUrl={imageUrl} onImageUrlChange={setImageUrl} userId={user?.uid} label="Feedback Image" />
+        {imageUrl && (
+          <div className="space-y-1">
+              <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
+              <FormattingToolbar textareaRef={imageCreditTextareaRef} value={imageCredit} onValueChange={setImageCredit} />
+              <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
+          </div>
+        )}
+        <div className="space-y-1">
+            <Label htmlFor="caption" className="text-xs">Caption</Label>
+            <FormattingToolbar textareaRef={captionTextareaRef} value={caption} onValueChange={setCaption} />
+            <Textarea ref={captionTextareaRef} id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
+        </div>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEditMode ? null : <Send className="mr-2 h-4 w-4" />}
+          {isEditMode ? 'Update Feedback' : 'Submit Feedback'}
+        </Button>
+        {isEditMode && (
+          <Button variant="ghost" onClick={onCancelEdit}>
+            Cancel
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingView = false }: { faq: ForumEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; isPendingView?: boolean; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
@@ -271,11 +398,16 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Fo
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
     
     return (
-        <div id={`faq-${faq.id}`} className="grid lg:grid-cols-2 gap-6 items-start">
+        <div id={`faq-${faq.id}`} className={cn("grid lg:grid-cols-2 gap-6 items-start", isPendingView && "bg-primary/5 p-4 rounded-xl border border-primary/20 shadow-sm")}>
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center text-sm">
-                        <span className="font-bold text-foreground">{questionAuthorLabel}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">{questionAuthorLabel}</span>
+                            {faq.recipient === 'Ed' && (
+                                <span className="flex items-center text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>
+                            )}
+                        </div>
                         <span className="text-muted-foreground">{questionDate}</span>
                     </div>
                      <div className="flex justify-between items-start">
@@ -449,7 +581,16 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: Fo
                          )
                     })}
                     {(!faq.feedback || faq.feedback.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                        <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                            {isMentor && (
+                                <FeedbackForm
+                                    entryId={faq.id}
+                                    user={user}
+                                    onActionComplete={onUpdate}
+                                />
+                            )}
+                        </div>
                     )}
                 </CardContent>
             </Card>
@@ -525,9 +666,16 @@ export default function ForumPage() {
     return () => unsubscribe();
   }, []);
 
-  const filteredFaqs = useMemo(() => {
-    let results = faqs;
-    
+  const isMentor = Number(userLevel) >= 6;
+
+  const { pendingFaqs, answeredFaqs } = useMemo(() => {
+    const pending = faqs.filter(faq => !faq.feedback || faq.feedback.length === 0);
+    const answered = faqs.filter(faq => faq.feedback && faq.feedback.length > 0);
+    return { pendingFaqs: pending, answeredFaqs: answered };
+  }, [faqs]);
+
+  const filteredAnsweredFaqs = useMemo(() => {
+    let results = answeredFaqs;
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
@@ -537,11 +685,8 @@ export default function ForumPage() {
             return searchWords.every(word => combinedText.includes(word));
         });
     }
-
     return results;
-  }, [faqs, searchTerm]);
-
-  const isMentor = Number(userLevel) >= 6;
+  }, [answeredFaqs, searchTerm]);
 
   const NavigationButtons = () => (
     <div className="flex flex-wrap gap-3 mb-8">
@@ -639,27 +784,65 @@ export default function ForumPage() {
 
       <NavigationButtons />
 
+      {/* MENTOR ONLY PENDING SECTION */}
+      {isMentor && pendingFaqs.length > 0 && (
+        <section className="mb-16 space-y-6">
+            <div className="flex items-center gap-3 border-b pb-4">
+                <div className="bg-primary/10 p-2 rounded-full">
+                    <BookHeart className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-primary">Pending Forum Entries</h2>
+                    <p className="text-sm text-muted-foreground">Answer these questions to make them visible in the public forum.</p>
+                </div>
+            </div>
+            <div className="space-y-12">
+                {pendingFaqs.map(faq => (
+                    <ForumItemCard 
+                        key={faq.id} 
+                        faq={faq} 
+                        user={user} 
+                        userLevel={userLevel} 
+                        onUpdate={fetchFaqs} 
+                        searchTerm={searchTerm} 
+                        isPendingView={true}
+                    />
+                ))}
+            </div>
+        </section>
+      )}
+
       <div className="space-y-8">
+        <div className="flex items-center gap-3 border-b pb-4">
+            <div className="bg-muted p-2 rounded-full">
+                <UserIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold">Public Archive</h2>
+                <p className="text-sm text-muted-foreground">Explore all answered questions and community knowledge.</p>
+            </div>
+        </div>
+
         <div className="relative flex-grow w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Refine search by keyword..."
+              placeholder="Refine archive search by keyword..."
               className="w-full pl-10 text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
         </div>
         
-        {filteredFaqs.length > 0 ? (
+        {filteredAnsweredFaqs.length > 0 ? (
            <div className="space-y-12">
-            {filteredFaqs.map(faq => (
+            {filteredAnsweredFaqs.map(faq => (
                 <ForumItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
             ))}
         </div>
         ) : (
             <div className="text-center py-16 text-muted-foreground">
-                <p>No results found for your query.</p>
+                <p>{searchTerm ? 'No results found for your archive query.' : 'No public entries yet.'}</p>
             </div>
         )}
       </div>
