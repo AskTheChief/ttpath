@@ -17,6 +17,8 @@ import {
     type SaveJournalEntryOutput
 } from '@/lib/types';
 import { z } from 'zod';
+import Mailgun from 'mailgun.js';
+import formData from 'form-data';
 
 
 if (!getApps().length) {
@@ -70,6 +72,41 @@ const saveJournalEntryFlow = ai.defineFlow(
 
     if (!entryId) {
         dataToSave.createdAt = Timestamp.now();
+
+        // EMAIL NOTIFICATION FOR ED
+        if (recipient === 'Ed') {
+            const mailgunApiKey = process.env.MAILGUN_API_KEY;
+            const mailgunDomain = process.env.MAILGUN_DOMAIN;
+            if (mailgunApiKey && mailgunDomain) {
+                try {
+                    const mailgun = new Mailgun(formData);
+                    const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
+                    const dashboardUrl = `https://ttpath.net/my-tribe?view=mentor-dashboard`;
+                    
+                    await mg.messages.create(mailgunDomain, {
+                        from: `TTpath Forum <info@${mailgunDomain}>`,
+                        to: 'tt_95@yahoo.com',
+                        subject: `New Forum Question for Ed: ${subject || 'No Subject'}`,
+                        html: `
+                            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                                <p>Hello Ed,</p>
+                                <p><strong>${userName}</strong> has asked you a question in The Forum:</p>
+                                <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+                                    <p>${entryContent}</p>
+                                </div>
+                                <p>You can respond to this question in your Mentor Dashboard:</p>
+                                <p><a href="${dashboardUrl}" style="display: inline-block; padding: 10px 20px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Respond in Mentor Dashboard</a></p>
+                                <br>
+                                <p>- The TTpath Team</p>
+                            </div>
+                        `,
+                    });
+                } catch (emailError) {
+                    console.error("Failed to send email notification to Ed:", emailError);
+                }
+            }
+        }
     }
 
     await docRef.set(dataToSave, { merge: true });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -1549,6 +1548,116 @@ function MyTribePageContent() {
     </div>
   );
 
+  const renderPendingForumList = (entries: JournalEntry[]) => (
+    <Accordion type="single" collapsible className="w-full">
+        {entries.map(entry => (
+            <AccordionItem key={entry.id} value={entry.id}>
+                <AccordionTrigger className="text-left">
+                    <div className="grid w-full gap-1 text-left">
+                        <div className="flex w-full justify-between">
+                            <span className="font-semibold">
+                                {entry.userName}
+                                {entry.recipient && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO {entry.recipient.toUpperCase()}</span>}
+                                {entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                        </div>
+                        <p className="truncate text-sm text-muted-foreground break-words pr-4">
+                            {entry.entryContent}
+                        </p>
+                    </div>
+                </AccordionTrigger>
+            <AccordionContent>
+                <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
+                {entry.imageUrl && (
+                    <div className="my-4 px-4 relative aspect-video">
+                        <Image src={entry.imageUrl} alt="Forum entry image" fill className="rounded-md object-contain" />
+                    </div>
+                )}
+                {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
+                <div className="mt-6 space-y-4 px-4 pb-4">
+                <h4 className="font-semibold text-md">Feedback</h4>
+                {entry.feedback && entry.feedback.length > 0 ? (
+                    <div className="space-y-4">
+                    {entry.feedback.map((fb) => {
+                        const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
+                        
+                        return editingFeedbackId === fb.id ? (
+                            <FeedbackForm
+                            key={fb.id}
+                            entryId={entry.id}
+                            user={user}
+                            editingFeedback={fb}
+                            onActionComplete={() => {
+                                setEditingFeedbackId(null);
+                                if (user) fetchTribesAndUserData(user);
+                            }}
+                            onCancelEdit={() => setEditingFeedbackId(null)}
+                            />
+                        ) : (
+                            <Alert key={fb.id} className="bg-muted/50 relative group">
+                                <UserIcon className="h-4 w-4" />
+                                <AlertDescription>
+                                  <div className="flex justify-between items-center text-sm mb-2">
+                                      <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                  </div>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
+                                    {fb.imageUrl && (
+                                        <div className="mt-4">
+                                            <div className="relative aspect-video">
+                                                <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
+                                            </div>
+                                            {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                            {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
+                                        </div>
+                                    )}
+                                </AlertDescription>
+                                {isMentor && (
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                )}
+                            </Alert>
+                        )
+                    }
+                    )}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                )}
+                {editingFeedbackId === null && (
+                    <FeedbackForm
+                        entryId={entry.id}
+                        user={user}
+                        onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
+                    />
+                )}
+                </div>
+            </AccordionContent>
+            </AccordionItem>
+        ))}
+    </Accordion>
+  );
+
   const renderMemberChiefView = () => (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
@@ -2050,14 +2159,38 @@ function MyTribePageContent() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* PENDING FOR ED SECTION */}
+                <Card className="border-primary/50 shadow-md">
+                    <CardHeader className="bg-primary/5">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-primary"><BookHeart /> Pending for Ed</CardTitle>
+                                <CardDescription>Forum entries directed specifically to Ed that need a response.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        ) : (() => {
+                            const pendingForEd = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && entry.recipient === 'Ed');
+                            return pendingForEd.length > 0 ? renderPendingForumList(pendingForEd) : (
+                                <p className="text-muted-foreground text-center p-8">No pending questions for Ed.</p>
+                            );
+                        })()}
+                    </CardContent>
+                </Card>
+
+                {/* GENERAL PENDING SECTION */}
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending Forum Entries</CardTitle>
-                                <CardDescription>Review and respond to entries in the forum. Only showing entries with zero answers.</CardDescription>
+                                <CardTitle className="flex items-center gap-2"><BookHeart /> General Pending Forum Entries</CardTitle>
+                                <CardDescription>Review and respond to general entries in the forum.</CardDescription>
                             </div>
-                            <Button asChild>
+                            <Button asChild variant="outline" size="sm">
                                 <Link href="/faq">Go to The Forum</Link>
                             </Button>
                         </div>
@@ -2066,121 +2199,14 @@ function MyTribePageContent() {
                         {isLoading ? (
                             <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                         ) : (() => {
-                            const pendingEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0);
-                            return pendingEntries.length > 0 ? (
-                                <Accordion type="single" collapsible className="w-full">
-                                {pendingEntries.map(entry => (
-                                    <AccordionItem key={entry.id} value={entry.id}>
-                                        <AccordionTrigger className="text-left">
-                                            <div className="grid w-full gap-1 text-left">
-                                                <div className="flex w-full justify-between">
-                                                    <span className="font-semibold">
-                                                        {entry.userName}
-                                                        {entry.recipient && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO {entry.recipient.toUpperCase()}</span>}
-                                                        {entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
-                                                </div>
-                                                <p className="truncate text-sm text-muted-foreground break-words pr-4">
-                                                    {entry.entryContent}
-                                                </p>
-                                            </div>
-                                        </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
-                                        {entry.imageUrl && (
-                                            <div className="my-4 px-4 relative aspect-video">
-                                                <Image src={entry.imageUrl} alt="Forum entry image" fill className="rounded-md object-contain" />
-                                            </div>
-                                        )}
-                                        {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
-                                        <div className="mt-6 space-y-4 px-4 pb-4">
-                                        <h4 className="font-semibold text-md">Feedback</h4>
-                                        {entry.feedback && entry.feedback.length > 0 ? (
-                                            <div className="space-y-4">
-                                            {entry.feedback.map((fb) => {
-                                                const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
-                                                
-                                                return editingFeedbackId === fb.id ? (
-                                                    <FeedbackForm
-                                                    key={fb.id}
-                                                    entryId={entry.id}
-                                                    user={user}
-                                                    editingFeedback={fb}
-                                                    onActionComplete={() => {
-                                                        setEditingFeedbackId(null);
-                                                        if (user) fetchTribesAndUserData(user);
-                                                    }}
-                                                    onCancelEdit={() => setEditingFeedbackId(null)}
-                                                    />
-                                                ) : (
-                                                    <Alert key={fb.id} className="bg-muted/50 relative group">
-                                                        <UserIcon className="h-4 w-4" />
-                                                        <AlertDescription>
-                                                          <div className="flex justify-between items-center text-sm mb-2">
-                                                              <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
-                                                          </div>
-                                                            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
-                                                            {fb.imageUrl && (
-                                                                <div className="mt-4">
-                                                                    <div className="relative aspect-video">
-                                                                        <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
-                                                                    </div>
-                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
-                                                                    {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
-                                                                </div>
-                                                            )}
-                                                        </AlertDescription>
-                                                        {isMentor && (
-                                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                        )}
-                                                    </Alert>
-                                                )
-                                            }
-                                            )}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                                        )}
-                                        {editingFeedbackId === null && (
-                                            <FeedbackForm
-                                                entryId={entry.id}
-                                                user={user}
-                                                onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
-                                            />
-                                        )}
-                                        </div>
-                                    </AccordionContent>
-                                    </AccordionItem>
-                                ))}
-                                </Accordion>
-                            ) : (
-                               <p className="text-muted-foreground text-center p-8">There are currently no pending forum questions.</p>
+                            const pendingOthers = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && entry.recipient !== 'Ed');
+                            return pendingOthers.length > 0 ? renderPendingForumList(pendingOthers) : (
+                               <p className="text-muted-foreground text-center p-8">There are currently no other pending forum questions.</p>
                             );
                         })()}
                     </CardContent>
                 </Card>
+
                 <Card id="manual-faq-entry">
                     <CardHeader>
                         <CardTitle>Ed's Manual Forum Entry</CardTitle>
