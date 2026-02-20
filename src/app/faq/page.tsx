@@ -700,7 +700,7 @@ export default function ForumPage() {
       {Number(userLevel) === 4 && (
         <Button asChild variant="secondary" className="shadow-sm border border-border/50">
           <Link href="/my-tribe?view=faq#ask-chief">
-            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Your Chief
+            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Report to my Chief
           </Link>
         </Button>
       )}
@@ -708,7 +708,7 @@ export default function ForumPage() {
       {Number(userLevel) >= 5 && (
         <Button asChild variant="secondary" className="shadow-sm border border-border/50">
           <Link href="/my-tribe?view=faq#ask-mentor">
-            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Your Mentor
+            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Report to my Mentor
           </Link>
         </Button>
       )}

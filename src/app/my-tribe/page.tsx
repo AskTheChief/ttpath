@@ -1400,7 +1400,7 @@ function MyTribePageContent() {
 
             <Card id="ask-mentor">
                 <CardHeader>
-                    <CardTitle>Ask a Mentor</CardTitle>
+                    <CardTitle>Report to my Mentor</CardTitle>
                     <CardDescription>
                       Ask a question to the community of Mentors. Your question and the response will appear in the Forum.
                     </CardDescription>
@@ -1431,14 +1431,14 @@ function MyTribePageContent() {
                 <CardFooter>
                     <Button onClick={() => handleSaveJournalEntry('Mentor')} disabled={isJournalLoading || !newMentorEntryContent.trim()} variant="secondary" className="w-full">
                         {isJournalLoading && newMentorEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                        Submit Question to Mentor
+                        Report to my Mentor
                     </Button>
                 </CardFooter>
             </Card>
 
             <Card id="ask-chief">
                 <CardHeader>
-                    <CardTitle>Ask Your Chief</CardTitle>
+                    <CardTitle>Report to my Chief</CardTitle>
                     <CardDescription>
                       Direct a question to your Tribe Chief. If you are not in a tribe, your question will be held until you join one.
                     </CardDescription>
@@ -1469,7 +1469,7 @@ function MyTribePageContent() {
                 <CardFooter>
                     <Button onClick={() => handleSaveJournalEntry('Chief')} disabled={isJournalLoading || !newChiefEntryContent.trim()} variant="outline" className="w-full">
                         {isJournalLoading && newChiefEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                        Submit Question to Chief
+                        Report to my Chief
                     </Button>
                 </CardFooter>
             </Card>
