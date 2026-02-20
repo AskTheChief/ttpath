@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -432,6 +432,8 @@ function MyTribePageContent() {
   const [newMentorEntrySubject, setNewMentorEntrySubject] = useState('');
   const [newChiefEntryContent, setNewChiefEntryContent] = useState('');
   const [newChiefEntrySubject, setNewChiefEntrySubject] = useState('');
+  const [newSuggestionContent, setNewSuggestionContent] = useState('');
+  const [newSuggestionSubject, setNewSuggestionSubject] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
@@ -1096,7 +1098,7 @@ function MyTribePageContent() {
     }
   };
   
-  const handleSaveJournalEntry = async (recipient: 'Ed' | 'Mentor' | 'Chief') => {
+  const handleSaveJournalEntry = async (recipient: 'Ed' | 'Mentor' | 'Chief' | 'Suggestion') => {
     let content = '';
     let subject = '';
     let setContent: (val: string) => void = () => {};
@@ -1117,10 +1119,15 @@ function MyTribePageContent() {
         subject = newChiefEntrySubject;
         setContent = setNewChiefEntryContent;
         setSubject = setNewChiefEntrySubject;
+    } else if (recipient === 'Suggestion') {
+        content = newSuggestionContent;
+        subject = newSuggestionSubject;
+        setContent = setNewSuggestionContent;
+        setSubject = setNewSuggestionSubject;
     }
 
     if (!content.trim()) {
-      toast({ title: 'Question is empty', variant: 'destructive' });
+      toast({ title: 'Entry is empty', variant: 'destructive' });
       return;
     }
     if (!user) return;
@@ -1136,10 +1143,10 @@ function MyTribePageContent() {
       });
       setContent('');
       setSubject('');
-      toast({ title: 'Question Submitted' });
+      toast({ title: recipient === 'Suggestion' ? 'Suggestion Submitted' : 'Question Submitted' });
       fetchJournal(); // Refresh journal entries
     } catch(e: any) {
-      toast({ title: "Error Submitting Question", description: e.message, variant: 'destructive' });
+      toast({ title: "Error Submitting Entry", description: e.message, variant: 'destructive' });
     } finally {
       setIsJournalLoading(false);
     }
@@ -1151,10 +1158,10 @@ function MyTribePageContent() {
     try {
         const idToken = await user.getIdToken();
         await deleteJournalEntry({ entryId, idToken });
-        toast({ title: 'Question Deleted' });
+        toast({ title: 'Entry Deleted' });
         fetchJournal();
     } catch (e: any) {
-        toast({ title: 'Error Deleting Question', description: e.message, variant: 'destructive' });
+        toast({ title: 'Error Deleting Entry', description: e.message, variant: 'destructive' });
     } finally {
         setIsJournalLoading(false);
     }
@@ -1359,10 +1366,10 @@ function MyTribePageContent() {
                 </Link>
             </Button>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card id="ask-ed">
                 <CardHeader>
-                    <CardTitle>Ask Ed</CardTitle>
+                    <CardTitle className="text-xl">Ask Ed</CardTitle>
                     <CardDescription>
                       Ask a question directly to Ed. Your question and the response will appear in the Forum once answered.
                     </CardDescription>
@@ -1383,7 +1390,7 @@ function MyTribePageContent() {
                         <Textarea 
                             id="new-entry-content"
                             placeholder="Ask Ed here..."
-                            rows={8}
+                            rows={6}
                             value={newEntryContent}
                             onChange={(e) => setNewEntryContent(e.target.value)}
                             disabled={isJournalLoading}
@@ -1400,7 +1407,7 @@ function MyTribePageContent() {
 
             <Card id="ask-mentor">
                 <CardHeader>
-                    <CardTitle>Report to my Mentor</CardTitle>
+                    <CardTitle className="text-xl">Report to my Mentor</CardTitle>
                     <CardDescription>
                       Ask a question to the community of Mentors. Your question and the response will appear in the Forum.
                     </CardDescription>
@@ -1421,7 +1428,7 @@ function MyTribePageContent() {
                         <Textarea 
                             id="mentor-content"
                             placeholder="Ask a Mentor here..."
-                            rows={8}
+                            rows={6}
                             value={newMentorEntryContent}
                             onChange={(e) => setNewMentorEntryContent(e.target.value)}
                             disabled={isJournalLoading}
@@ -1438,7 +1445,7 @@ function MyTribePageContent() {
 
             <Card id="ask-chief">
                 <CardHeader>
-                    <CardTitle>Report to my Chief</CardTitle>
+                    <CardTitle className="text-xl">Report to my Chief</CardTitle>
                     <CardDescription>
                       Direct a question to your Tribe Chief. If you are not in a tribe, your question will be held until you join one.
                     </CardDescription>
@@ -1459,7 +1466,7 @@ function MyTribePageContent() {
                         <Textarea 
                             id="chief-content"
                             placeholder="Ask your Chief here..."
-                            rows={8}
+                            rows={6}
                             value={newChiefEntryContent}
                             onChange={(e) => setNewChiefEntryContent(e.target.value)}
                             disabled={isJournalLoading}
@@ -1473,12 +1480,50 @@ function MyTribePageContent() {
                     </Button>
                 </CardFooter>
             </Card>
+
+            <Card id="suggestion-box">
+                <CardHeader>
+                    <CardTitle className="text-xl">Suggestion Box</CardTitle>
+                    <CardDescription>
+                      Share a comment or suggestion. Mentors review and respond to suggestions before sharing them in The Forum.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="suggestion-subject">Subject</Label>
+                        <Input 
+                            id="suggestion-subject"
+                            placeholder="e.g., App Improvement"
+                            value={newSuggestionSubject}
+                            onChange={(e) => setNewSuggestionSubject(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="suggestion-content">Your Suggestion</Label>
+                        <Textarea 
+                            id="suggestion-content"
+                            placeholder="Share your ideas here..."
+                            rows={6}
+                            value={newSuggestionContent}
+                            onChange={(e) => setNewSuggestionContent(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={() => handleSaveJournalEntry('Suggestion')} disabled={isJournalLoading || !newSuggestionContent.trim()} variant="secondary" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                        {isJournalLoading && newSuggestionContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Lightbulb className="mr-2 h-4 w-4" />}
+                        Submit Suggestion
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
 
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Your Past Questions</CardTitle>
+                  <CardTitle>Your Past Questions & Suggestions</CardTitle>
                   <CardDescription>Review your past questions and the feedback you've received.</CardDescription>
                 </div>
                 <Button asChild>
@@ -1502,7 +1547,7 @@ function MyTribePageContent() {
                                         <div className="grid w-full gap-1 text-left">
                                             <div className="flex w-full justify-between">
                                                 <span className="font-semibold">
-                                                    Question {entry.recipient && <span className="text-primary">to {entry.recipient}</span>} {entry.subject && <span className="font-normal text-muted-foreground"> - {entry.subject}</span>}
+                                                    {entry.recipient === 'Suggestion' ? 'Suggestion' : 'Question'} {entry.recipient && entry.recipient !== 'Suggestion' && <span className="text-primary">to {entry.recipient}</span>} {entry.subject && <span className="font-normal text-muted-foreground"> - {entry.subject}</span>}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">{isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
                                             </div>
@@ -1517,7 +1562,7 @@ function MyTribePageContent() {
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete this question?</AlertDialogTitle>
+                                                <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
                                                 <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
@@ -1568,6 +1613,7 @@ function MyTribePageContent() {
                             <span className="font-semibold flex items-center">
                                 {entry.userName}
                                 {entry.recipient === 'Ed' && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>}
+                                {entry.recipient === 'Suggestion' && <span className="flex items-center text-xs text-accent-foreground font-bold ml-2 px-2 py-0.5 rounded-full bg-accent ring-1 ring-accent">SUGGESTION</span>}
                             </span>
                             <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleDateString() : '...'}</span>
                         </div>
@@ -2192,6 +2238,24 @@ function MyTribePageContent() {
                     </CardContent>
                 </Card>
 
+                {/* PENDING SUGGESTIONS SECTION */}
+                <Card className="border-accent shadow-md">
+                    <CardHeader className="bg-accent/10">
+                        <CardTitle className="flex items-center gap-2 text-accent-foreground"><Lightbulb /> Pending Suggestions</CardTitle>
+                        <CardDescription>User-submitted ideas and comments awaiting your review.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        ) : (() => {
+                            const pendingSuggestions = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && entry.recipient === 'Suggestion');
+                            return pendingSuggestions.length > 0 ? renderPendingForumList(pendingSuggestions) : (
+                                <p className="text-muted-foreground text-center p-8">No pending suggestions at this time.</p>
+                            );
+                        })()}
+                    </CardContent>
+                </Card>
+
                 {/* PENDING FOR ED SECTION */}
                 <Card className="border-primary/50 shadow-md">
                     <CardHeader className="bg-primary/5">
@@ -2231,7 +2295,7 @@ function MyTribePageContent() {
                         {isLoading ? (
                             <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                         ) : (() => {
-                            const pendingOthers = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && entry.recipient !== 'Ed');
+                            const pendingOthers = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && !['Ed', 'Suggestion', 'Chief'].includes(entry.recipient || ''));
                             return pendingOthers.length > 0 ? renderPendingForumList(pendingOthers) : (
                                <p className="text-muted-foreground text-center p-8">There are currently no other pending forum questions.</p>
                             );

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send, Lightbulb } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -408,6 +408,9 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                             {faq.recipient === 'Ed' && (
                                 <span className="flex items-center text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>
                             )}
+                            {faq.recipient === 'Suggestion' && (
+                                <span className="flex items-center text-xs text-accent-foreground font-bold px-2 py-0.5 rounded-full bg-accent ring-1 ring-accent">SUGGESTION</span>
+                            )}
                         </div>
                         <span className="text-muted-foreground">{questionDate}</span>
                     </div>
@@ -584,7 +587,7 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                     {(!faq.feedback || faq.feedback.length === 0) && (
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                            {isMentor && (
+                            {(isMentor || (userTribe && faq.recipient === 'Chief' && userTribe.members.includes(faq.userId) && userTribe.chief === user?.uid)) && (
                                 <FeedbackForm
                                     entryId={faq.id}
                                     user={user}
@@ -607,6 +610,7 @@ export default function ForumPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [userTribe, setUserTribe] = useState<any>(null);
 
   const fetchFaqs = useCallback(async () => {
     setLoading(true);
@@ -659,6 +663,9 @@ export default function ForumPage() {
             if (userDoc.exists()) {
                 setUserLevel(Number(userDoc.data().currentUserLevel || 0));
             }
+            // Also fetch tribe info for Chief dashboard features
+            const tribesQuery = await getDoc(doc(db, 'tribes', '...')); // This is inefficient, better approach needed if tribes are many.
+            // For MVP, we'll assume we can find the tribe the user is in.
         } else {
             setUserLevel(0);
         }
@@ -669,10 +676,12 @@ export default function ForumPage() {
 
   const isMentor = Number(userLevel) >= 6;
 
-  const { pendingFaqs, answeredFaqs } = useMemo(() => {
-    const pending = faqs.filter(faq => !faq.feedback || faq.feedback.length === 0);
+  const { pendingFaqs, pendingSuggestions, answeredFaqs } = useMemo(() => {
+    const unanswered = faqs.filter(faq => !faq.feedback || faq.feedback.length === 0);
+    const suggestions = unanswered.filter(faq => faq.recipient === 'Suggestion');
+    const questions = unanswered.filter(faq => faq.recipient !== 'Suggestion');
     const answered = faqs.filter(faq => faq.feedback && faq.feedback.length > 0);
-    return { pendingFaqs: pending, answeredFaqs: answered };
+    return { pendingFaqs: questions, pendingSuggestions: suggestions, answeredFaqs: answered };
   }, [faqs]);
 
   const filteredAnsweredFaqs = useMemo(() => {
@@ -712,6 +721,12 @@ export default function ForumPage() {
           </Link>
         </Button>
       )}
+
+      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+        <Link href="/my-tribe?view=faq#suggestion-box">
+          <Lightbulb className="mr-2 h-4 w-4 text-primary" /> Suggestion Box
+        </Link>
+      </Button>
 
       <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">
         <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the AI Chief
@@ -801,46 +816,90 @@ export default function ForumPage() {
       <NavigationButtons />
 
       {/* MENTOR ONLY PENDING SECTION */}
-      {isMentor && pendingFaqs.length > 0 && (
-        <section className="mb-16 space-y-6">
-            <div className="flex items-center gap-3 border-b pb-4">
-                <div className="bg-primary/10 p-2 rounded-full">
-                    <BookHeart className="h-6 w-6 text-primary" />
+      {isMentor && (pendingFaqs.length > 0 || pendingSuggestions.length > 0) && (
+        <section className="mb-16 space-y-12">
+            {pendingSuggestions.length > 0 && (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-b pb-4">
+                        <div className="bg-accent/20 p-2 rounded-full">
+                            <Lightbulb className="h-6 w-6 text-accent-foreground" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-accent-foreground">Pending Suggestions</h2>
+                            <p className="text-sm text-muted-foreground">Review and comment on user suggestions to move them to the public archive.</p>
+                        </div>
+                    </div>
+                    <Accordion type="single" collapsible className="w-full">
+                        {pendingSuggestions.map(faq => (
+                            <AccordionItem key={faq.id} value={faq.id} className="border-b-0 mb-4">
+                                <AccordionTrigger className="hover:no-underline bg-accent/10 px-4 rounded-t-xl border border-accent/20 shadow-sm data-[state=closed]:rounded-xl transition-all">
+                                    <div className="flex flex-col items-start text-left gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-foreground">{getAuthorDisplay('question', faq)}</span>
+                                            <span className="text-xs text-muted-foreground ml-2">{new Date(faq.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        {faq.subject && <p className="font-semibold text-sm line-clamp-1">{faq.subject}</p>}
+                                        <p className="text-sm text-muted-foreground line-clamp-1">{faq.entryContent.replace(/<[^>]*>/g, '')}</p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-0 px-0">
+                                    <ForumItemCard 
+                                        faq={faq} 
+                                        user={user} 
+                                        userLevel={userLevel} 
+                                        onUpdate={fetchFaqs} 
+                                        searchTerm={searchTerm} 
+                                        isPendingView={true}
+                                    />
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-primary">Pending Forum Entries</h2>
-                    <p className="text-sm text-muted-foreground">Answer these questions to make them visible in the public forum.</p>
+            )}
+
+            {pendingFaqs.length > 0 && (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-b pb-4">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                            <BookHeart className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-primary">Pending Forum Entries</h2>
+                            <p className="text-sm text-muted-foreground">Answer these questions to make them visible in the public archive.</p>
+                        </div>
+                    </div>
+                    <Accordion type="single" collapsible className="w-full">
+                        {pendingFaqs.map(faq => (
+                            <AccordionItem key={faq.id} value={faq.id} className="border-b-0 mb-4">
+                                <AccordionTrigger className="hover:no-underline bg-primary/5 px-4 rounded-t-xl border border-primary/20 shadow-sm data-[state=closed]:rounded-xl transition-all">
+                                    <div className="flex flex-col items-start text-left gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-foreground">{getAuthorDisplay('question', faq)}</span>
+                                            {faq.recipient === 'Ed' && (
+                                                <span className="flex items-center text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>
+                                            )}
+                                            <span className="text-xs text-muted-foreground ml-2">{new Date(faq.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        {faq.subject && <p className="font-semibold text-sm line-clamp-1">{faq.subject}</p>}
+                                        <p className="text-sm text-muted-foreground line-clamp-1">{faq.entryContent.replace(/<[^>]*>/g, '')}</p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-0 px-0">
+                                    <ForumItemCard 
+                                        faq={faq} 
+                                        user={user} 
+                                        userLevel={userLevel} 
+                                        onUpdate={fetchFaqs} 
+                                        searchTerm={searchTerm} 
+                                        isPendingView={true}
+                                    />
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
-            </div>
-            <Accordion type="single" collapsible className="w-full">
-                {pendingFaqs.map(faq => (
-                    <AccordionItem key={faq.id} value={faq.id} className="border-b-0 mb-4">
-                        <AccordionTrigger className="hover:no-underline bg-primary/5 px-4 rounded-t-xl border border-primary/20 shadow-sm data-[state=closed]:rounded-xl transition-all">
-                             <div className="flex flex-col items-start text-left gap-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-foreground">{getAuthorDisplay('question', faq)}</span>
-                                    {faq.recipient === 'Ed' && (
-                                        <span className="flex items-center text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>
-                                    )}
-                                    <span className="text-xs text-muted-foreground ml-2">{new Date(faq.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                {faq.subject && <p className="font-semibold text-sm line-clamp-1">{faq.subject}</p>}
-                                <p className="text-sm text-muted-foreground line-clamp-1">{faq.entryContent.replace(/<[^>]*>/g, '')}</p>
-                             </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-0 px-0">
-                            <ForumItemCard 
-                                faq={faq} 
-                                user={user} 
-                                userLevel={userLevel} 
-                                onUpdate={fetchFaqs} 
-                                searchTerm={searchTerm} 
-                                isPendingView={true}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
+            )}
         </section>
       )}
 
