@@ -2076,7 +2076,7 @@ function MyTribePageContent() {
                                                 <div className="flex w-full justify-between">
                                                     <span className="font-semibold">
                                                         {entry.userName}
-                                                        {entry.recipient && <span className="text-xs text-primary font-normal ml-2">(To {entry.recipient})</span>}
+                                                        {entry.recipient && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO {entry.recipient.toUpperCase()}</span>}
                                                         {entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
