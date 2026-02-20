@@ -431,6 +431,8 @@ function MyTribePageContent() {
   const [newEntrySubject, setNewEntrySubject] = useState('');
   const [newMentorEntryContent, setNewMentorEntryContent] = useState('');
   const [newMentorEntrySubject, setNewMentorEntrySubject] = useState('');
+  const [newChiefEntryContent, setNewChiefEntryContent] = useState('');
+  const [newChiefEntrySubject, setNewChiefEntrySubject] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
@@ -869,7 +871,7 @@ function MyTribePageContent() {
     let hours = parseInt(hour, 10);
     const minutes = parseInt(minute, 10);
 
-    if (isNaN(hours) || iNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+    if (isNaN(hours) || isNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
       toast({ title: 'Invalid Time', description: 'Please enter a valid time.', variant: 'destructive' });
       return;
     }
@@ -1032,7 +1034,7 @@ function MyTribePageContent() {
     }
 
     try {
-      const idToken = await user.getIdToken();
+      const idToken = await currentUser.getIdToken();
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
@@ -1085,11 +1087,28 @@ function MyTribePageContent() {
     }
   };
   
-  const handleSaveJournalEntry = async (recipient: 'Ed' | 'Mentor') => {
-    const content = recipient === 'Ed' ? newEntryContent : newMentorEntryContent;
-    const subject = recipient === 'Ed' ? newEntrySubject : newMentorEntrySubject;
-    const setContent = recipient === 'Ed' ? setNewEntryContent : setNewMentorEntryContent;
-    const setSubject = recipient === 'Ed' ? setNewEntrySubject : setNewMentorEntrySubject;
+  const handleSaveJournalEntry = async (recipient: 'Ed' | 'Mentor' | 'Chief') => {
+    let content = '';
+    let subject = '';
+    let setContent: (val: string) => void = () => {};
+    let setSubject: (val: string) => void = () => {};
+
+    if (recipient === 'Ed') {
+        content = newEntryContent;
+        subject = newEntrySubject;
+        setContent = setNewEntryContent;
+        setSubject = setNewEntrySubject;
+    } else if (recipient === 'Mentor') {
+        content = newMentorEntryContent;
+        subject = newMentorEntrySubject;
+        setContent = setNewMentorEntryContent;
+        setSubject = setNewMentorEntrySubject;
+    } else if (recipient === 'Chief') {
+        content = newChiefEntryContent;
+        subject = newChiefEntrySubject;
+        setContent = setNewChiefEntryContent;
+        setSubject = setNewChiefEntrySubject;
+    }
 
     if (!content.trim()) {
       toast({ title: 'Question is empty', variant: 'destructive' });
@@ -1332,7 +1351,7 @@ function MyTribePageContent() {
                 </Link>
             </Button>
         </div>
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card id="ask-ed">
                 <CardHeader>
                     <CardTitle>Ask Ed</CardTitle>
@@ -1364,7 +1383,7 @@ function MyTribePageContent() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={() => handleSaveJournalEntry('Ed')} disabled={isJournalLoading || !newEntryContent.trim()}>
+                    <Button onClick={() => handleSaveJournalEntry('Ed')} disabled={isJournalLoading || !newEntryContent.trim()} className="w-full">
                         {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                         Submit Question to Ed
                     </Button>
@@ -1402,9 +1421,47 @@ function MyTribePageContent() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={() => handleSaveJournalEntry('Mentor')} disabled={isJournalLoading || !newMentorEntryContent.trim()} variant="secondary">
+                    <Button onClick={() => handleSaveJournalEntry('Mentor')} disabled={isJournalLoading || !newMentorEntryContent.trim()} variant="secondary" className="w-full">
                         {isJournalLoading && newMentorEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                         Submit Question to Mentor
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card id="ask-chief">
+                <CardHeader>
+                    <CardTitle>Ask Your Chief</CardTitle>
+                    <CardDescription>
+                      Direct a question to your Tribe Chief. If you are not in a tribe, your question will be held until you join one.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="chief-subject">Subject</Label>
+                        <Input 
+                            id="chief-subject"
+                            placeholder="e.g., Next Meeting"
+                            value={newChiefEntrySubject}
+                            onChange={(e) => setNewChiefEntrySubject(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="chief-content">Your Question</Label>
+                        <Textarea 
+                            id="chief-content"
+                            placeholder="Ask your Chief here..."
+                            rows={8}
+                            value={newChiefEntryContent}
+                            onChange={(e) => setNewChiefEntryContent(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={() => handleSaveJournalEntry('Chief')} disabled={isJournalLoading || !newChiefEntryContent.trim()} variant="outline" className="w-full">
+                        {isJournalLoading && newChiefEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Submit Question to Chief
                     </Button>
                 </CardFooter>
             </Card>
@@ -1672,7 +1729,7 @@ function MyTribePageContent() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleResetProgress}>Yes, Reset My Progress</AlertDialogAction>
+                              <AlertDialogAction onClick={handleResetProgress}>Yes, Reset My Progress</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
