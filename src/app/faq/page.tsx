@@ -505,7 +505,7 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                                         <div className="space-y-2">
                                             <Label htmlFor="answer-caption">Caption</Label>
                                             <FormattingToolbar textareaRef={answerCaptionTextareaRef} value={answerCaption} onValueChange={setAnswerCaption} />
-                                            <Textarea ref={answerCaptionTextareaRef} id="answer-caption" value={answerCaption} onChange={e => setAnswerCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
+                                            <Textarea ref={answerCaptionTextareaRef} id="answer-caption" value={answerCaption} onChange={e => setCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
                                         </div>
 
                                         {isManualOrContributor && (
@@ -696,19 +696,34 @@ export default function ForumPage() {
           <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Ed
         </Link>
       </Button>
-      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
-        <Link href="/my-tribe?view=faq#ask-mentor">
-          <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask a Mentor
-        </Link>
-      </Button>
+      
+      {Number(userLevel) === 4 && (
+        <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+          <Link href="/my-tribe?view=faq#ask-chief">
+            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Your Chief
+          </Link>
+        </Button>
+      )}
+
+      {Number(userLevel) >= 5 && (
+        <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+          <Link href="/my-tribe?view=faq#ask-mentor">
+            <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Your Mentor
+          </Link>
+        </Button>
+      )}
+
       <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">
         <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the AI Chief
       </Button>
-      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
-        <Link href="/my-tribe?view=meeting-reports">
-          <FileText className="mr-2 h-4 w-4 text-primary" /> Write Tribe Report
-        </Link>
-      </Button>
+      
+      {Number(userLevel) >= 4 && (
+        <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+          <Link href="/my-tribe?view=meeting-reports">
+            <FileText className="mr-2 h-4 w-4 text-primary" /> Write Tribe Report
+          </Link>
+        </Button>
+      )}
     </div>
   );
 

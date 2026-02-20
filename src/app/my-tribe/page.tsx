@@ -503,8 +503,13 @@ function MyTribePageContent() {
   }, [user, pastMeetings, meetingReports]);
   
   const chiefBadgeCount = useMemo(() => {
-    return joinApplications.length;
-  }, [joinApplications]);
+    const pendingForChief = allJournalEntries.filter(entry => 
+        (!entry.feedback || entry.feedback.length === 0) && 
+        entry.recipient === 'Chief' &&
+        userTribe?.members?.includes(entry.userId)
+    ).length;
+    return joinApplications.length + pendingForChief;
+  }, [joinApplications, allJournalEntries, userTribe]);
 
   const mentorBadgeCount = useMemo(() => {
     const pendingForumEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
@@ -613,27 +618,24 @@ function MyTribePageContent() {
       setUserTribe(currentUserTribe || null);
       
       // Fetch role-specific data
-      if (Number(progress.currentUserLevel) >= 6) { // Mentor
-        const [newTribeAppsResult, newMentorAppsResult, allJournalEntriesResult] = await Promise.all([
-          manageApplication({ action: 'get', type: 'new_tribe', idToken }),
-          manageApplication({ action: 'get', type: 'new_mentor', idToken }),
-          getAllJournalEntries()
-        ]);
-        if (newTribeAppsResult.success && newTribeAppsResult.applications) {
-            setTribeCreationApps(newTribeAppsResult.applications);
-        }
-        if (newMentorAppsResult.success && newMentorAppsResult.applications) {
-            setMentorApplications(newMentorAppsResult.applications);
-        }
+      if (Number(progress.currentUserLevel) >= 5) { // Chief or Mentor
+        const allJournalEntriesResult = await getAllJournalEntries();
         setAllJournalEntries(allJournalEntriesResult);
+
+        if (Number(progress.currentUserLevel) >= 6) { // Mentor
+            const [newTribeAppsResult, newMentorAppsResult] = await Promise.all([
+              manageApplication({ action: 'get', type: 'new_tribe', idToken }),
+              manageApplication({ action: 'get', type: 'new_mentor', idToken }),
+            ]);
+            if (newTribeAppsResult.success && newTribeAppsResult.applications) {
+                setTribeCreationApps(newTribeAppsResult.applications);
+            }
+            if (newMentorAppsResult.success && newMentorAppsResult.applications) {
+                setMentorApplications(newMentorAppsResult.applications);
+            }
+        }
       }
-      if (Number(progress.currentUserLevel) >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
-          const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
-          if (joinAppsResult.success && joinAppsResult.applications) {
-              const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
-              setJoinApplications(sortedApps);
-          }
-      }
+      
       if (currentUserTribe) { // Member or Chief of a tribe
           const [members, reports] = await Promise.all([
              getTribeMembers({ tribeId: currentUserTribe.id, idToken }),
@@ -641,6 +643,14 @@ function MyTribePageContent() {
           ]);
           setTribeMembers(members);
           setMeetingReports(reports);
+          
+          if (currentUserTribe.chief === currentUser.uid) { // Chief specific
+              const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
+              if (joinAppsResult.success && joinAppsResult.applications) {
+                  const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
+                  setJoinApplications(sortedApps);
+              }
+          }
       } else {
           setTribeMembers([]);
           setMeetingReports([]);
@@ -1612,7 +1622,7 @@ function MyTribePageContent() {
                                         </div>
                                     )}
                                 </AlertDescription>
-                                {isMentor && (
+                                {(isMentor || isChief) && (
                                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
                                         <Edit className="h-4 w-4" />
@@ -1644,7 +1654,7 @@ function MyTribePageContent() {
                 ) : (
                     <p className="text-sm text-muted-foreground">No feedback yet.</p>
                 )}
-                {editingFeedbackId === null && (
+                {editingFeedbackId === null && (isMentor || isChief) && (
                     <FeedbackForm
                         entryId={entry.id}
                         user={user}
@@ -1974,6 +1984,28 @@ function MyTribePageContent() {
                     </div>
                     </CardContent>
                 </Card>
+
+                <Card className="border-primary/50 shadow-md">
+                    <CardHeader className="bg-primary/5">
+                        <CardTitle className="flex items-center gap-2 text-primary"><BookHeart /> Pending Forum Entries</CardTitle>
+                        <CardDescription>Questions from your tribe members that need a response.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        ) : (() => {
+                            const pendingForChief = allJournalEntries.filter(entry => 
+                                (!entry.feedback || entry.feedback.length === 0) && 
+                                entry.recipient === 'Chief' &&
+                                userTribe?.members?.includes(entry.userId)
+                            );
+                            return pendingForChief.length > 0 ? renderPendingForumList(pendingForChief) : (
+                                <p className="text-muted-foreground text-center p-8">No pending questions for you.</p>
+                            );
+                        })()}
+                    </CardContent>
+                </Card>
+
                 <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
