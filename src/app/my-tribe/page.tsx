@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -2064,7 +2063,7 @@ function MyTribePageContent() {
                 </Card>
                 <Card id="manual-faq-entry">
                     <CardHeader>
-                        <CardTitle>Manual FAQ Entry</CardTitle>
+                        <CardTitle>Ed's Manual FAQ Entry</CardTitle>
                         <CardDescription>
                             Add an FAQ entry from an external source, like an email.
                         </CardDescription>

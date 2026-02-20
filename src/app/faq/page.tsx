@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -552,7 +551,7 @@ export default function FaqPage() {
         </Link>
       </Button>
       <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">
-        <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the Ai Chief
+        <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the AI Chief
       </Button>
       <Button asChild variant="secondary" className="shadow-sm border border-border/50">
         <Link href="/my-tribe?view=meeting-reports">
@@ -621,7 +620,7 @@ export default function FaqPage() {
           {isMentor && (
             <Button asChild>
               <Link href="/my-tribe?view=mentor-dashboard#manual-faq-entry">
-                <Edit className="mr-2 h-4 w-4" /> Manual FAQ Entry
+                <Edit className="mr-2 h-4 w-4" /> Ed's Manual FAQ Entry
               </Link>
             </Button>
           )}
