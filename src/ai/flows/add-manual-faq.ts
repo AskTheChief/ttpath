@@ -75,9 +75,9 @@ const addManualFaqFlow = ai.defineFlow(
         feedback: FieldValue.arrayUnion(newFeedback),
       });
 
-      return { success: true, message: 'FAQ entry added successfully.' };
+      return { success: true, message: 'Forum entry added successfully.' };
     } catch (error: any) {
-      console.error('Error creating manual FAQ:', error);
+      console.error('Error creating manual forum entry:', error);
       return { success: false, message: 'An unexpected error occurred.' };
     }
   }

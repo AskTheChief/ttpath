@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -45,7 +44,7 @@ const menuItems = [
 
 // Defines additional links that are visible to guests.
 const newLinks = [
-    { id: 'faq', icon: MessageCircleQuestion, label: 'FAQ Pages', action: 'link', url: 'https://www.seykota.com/tt/FAQ_Index/' },
+    { id: 'faq', icon: MessageCircleQuestion, label: 'Legacy FAQ Pages', action: 'link', url: 'https://www.seykota.com/tt/FAQ_Index/' },
     { id: 'charts', icon: BarChart2, label: 'Stock and Futures Charts', action: 'link', url: 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php' },
     { id: 'reach-out', icon: Link2, label: 'TT Reach-Out Pages', action: 'link', url: 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php' }
 ]
@@ -172,7 +171,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <BookCopy className="mr-4 w-10 h-10" />
-                  FAQ
+                  The Forum
               </Button>
             </Link>
             <Link href="/relationships" passHref>

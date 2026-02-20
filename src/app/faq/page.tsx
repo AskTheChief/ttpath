@@ -25,12 +25,12 @@ import { Label } from '@/components/ui/label';
 import ChatbotModal from '@/components/modals/chatbot-modal';
 
 // Augment JournalEntry type for this component to include chatbot entries
-type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
+type ForumEntry = JournalEntry & { isChatbotEntry?: boolean };
 
-const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
+const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedback?: JournalFeedback): string => {
     if (type === 'question') {
         const level = Number(entry.userLevel || 0);
-        if (level === 0) return "FAQ Contributor:";
+        if (level === 0) return "Forum Contributor:";
         if (level === 1) return "Visitor Says:";
         if (level === 2) return "Guest Says:";
         if (level === 3) return "Explorer Says:";
@@ -115,7 +115,7 @@ function FormattingToolbar({
   );
 }
 
-function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
+function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: ForumEntry; user: User | null; userLevel: number, onUpdate: () => void; searchTerm: string; }) {
     const { toast } = useToast();
     const [editingQuestion, setEditingQuestion] = useState(false);
     const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
@@ -243,7 +243,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
         try {
             const idToken = await user.getIdToken();
             await deleteJournalEntry({ idToken, entryId: faq.id });
-            toast({ title: 'FAQ entry deleted' });
+            toast({ title: 'Forum entry deleted' });
             onUpdate();
         } catch (e: any) {
             toast({ title: 'Error deleting entry', description: e.message, variant: 'destructive' });
@@ -293,7 +293,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete this entire FAQ entry?</AlertDialogTitle>
+                                            <AlertDialogTitle>Delete this entire Forum entry?</AlertDialogTitle>
                                             <AlertDialogDescription>
                                                 This will permanently delete the question and all associated answers. This action cannot be undone.
                                             </AlertDialogDescription>
@@ -336,7 +336,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                             <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightText(faq.entryContent, searchTerm).replace(/\n/g, '<br />') }} />
                             {faq.imageUrl && (
                                 <div className="mt-4 relative aspect-video">
-                                    <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'contain' }} className="rounded-md" />
+                                    <Image src={faq.imageUrl} alt="Forum Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'contain' }} className="rounded-md" />
                                 </div>
                             )}
                              {faq.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: faq.caption.replace(/\n/g, '<br />')}}/>}
@@ -457,8 +457,8 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     );
 }
 
-export default function FaqPage() {
-  const [faqs, setFaqs] = useState<FaqEntry[]>([]);
+export default function ForumPage() {
+  const [faqs, setFaqs] = useState<ForumEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -474,7 +474,7 @@ export default function FaqPage() {
         getChatSessions()
       ]);
 
-      const chatbotFaqs: FaqEntry[] = chatSessions.map(session => ({
+      const chatbotFaqs: ForumEntry[] = chatSessions.map(session => ({
         id: `chatbot-${session.id}`,
         userId: session.userId || 'anonymous-chatbot-user',
         userName: session.userName || 'Anonymous',
@@ -498,7 +498,7 @@ export default function FaqPage() {
       
       setFaqs(allFaqs);
     } catch (error) {
-      console.error('Failed to fetch FAQ data:', error);
+      console.error('Failed to fetch forum data:', error);
     } finally {
       setLoading(false);
     }
@@ -570,7 +570,7 @@ export default function FaqPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading the FAQ...</p>
+        <p className="mt-4 text-muted-foreground">Loading The Forum...</p>
       </div>
     );
   }
@@ -580,7 +580,7 @@ export default function FaqPage() {
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col items-center justify-center">
             <div className="max-w-4xl w-full">
                 <header className="flex justify-between items-center mb-8">
-                    <h1 className="text-4xl font-bold">FAQ</h1>
+                    <h1 className="text-4xl font-bold">The Forum</h1>
                     <Button asChild variant="outline">
                         <Link href="/">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Path
@@ -618,14 +618,14 @@ export default function FaqPage() {
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-4xl font-bold">FAQ</h1>
-          <p className="text-muted-foreground">Search and explore over {faqs.length} questions and answers from past experiences.</p>
+          <h1 className="text-4xl font-bold">The Forum</h1>
+          <p className="text-muted-foreground">Search and explore over {faqs.length} entries in the forum.</p>
         </div>
         <div className="flex items-center gap-4">
           {isMentor && (
             <Button asChild>
               <Link href="/my-tribe?view=mentor-dashboard#manual-faq-entry">
-                <Edit className="mr-2 h-4 w-4" /> Ed's Manual FAQ Entry
+                <Edit className="mr-2 h-4 w-4" /> Ed's Manual Forum Entry
               </Link>
             </Button>
           )}
@@ -654,7 +654,7 @@ export default function FaqPage() {
         {filteredFaqs.length > 0 ? (
            <div className="space-y-12">
             {filteredFaqs.map(faq => (
-                <FaqItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
+                <ForumItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
             ))}
         </div>
         ) : (

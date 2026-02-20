@@ -456,11 +456,11 @@ function MyTribePageContent() {
   const manualFaqQuestionCaptionRef = useRef<HTMLTextAreaElement>(null);
 
 
-  type FaqEntry = JournalEntry;
-  const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
+  type ForumEntry = JournalEntry;
+  const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedback?: JournalFeedback): string => {
       if (type === 'question') {
           const level = Number(entry.userLevel || 0);
-          if (level === 0) return "FAQ Contributor:";
+          if (level === 0) return "Forum Contributor:";
           if (level === 1) return "Visitor Says:";
           if (level === 2) return "Guest Says:";
           if (level === 3) return "Explorer Says:";
@@ -508,8 +508,8 @@ function MyTribePageContent() {
   }, [joinApplications]);
 
   const mentorBadgeCount = useMemo(() => {
-    const pendingFAQs = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
-    return tribeCreationApps.length + mentorApplications.length + pendingFAQs;
+    const pendingForumEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
+    return tribeCreationApps.length + mentorApplications.length + pendingForumEntries;
   }, [tribeCreationApps, mentorApplications, allJournalEntries]);
 
   useEffect(() => {
@@ -557,7 +557,7 @@ function MyTribePageContent() {
         const entries = await getJournalEntries({ idToken });
         setJournalEntries(entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (e: any) {
-        toast({ title: "Error fetching questions", description: e.message, variant: "destructive" });
+        toast({ title: "Error fetching forum questions", description: e.message, variant: "destructive" });
     } finally {
         setIsJournalLoading(false);
     }
@@ -1347,7 +1347,7 @@ function MyTribePageContent() {
             <Button asChild variant="outline">
                 <Link href="/faq">
                     <BookOpen className="mr-2 h-4 w-4" />
-                    Go to FAQ Page
+                    Go to The Forum
                 </Link>
             </Button>
         </div>
@@ -1356,7 +1356,7 @@ function MyTribePageContent() {
                 <CardHeader>
                     <CardTitle>Ask Ed</CardTitle>
                     <CardDescription>
-                      Ask a question directly to Ed. Your question and the response will appear in the FAQ once answered.
+                      Ask a question directly to Ed. Your question and the response will appear in the Forum once answered.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1394,7 +1394,7 @@ function MyTribePageContent() {
                 <CardHeader>
                     <CardTitle>Ask a Mentor</CardTitle>
                     <CardDescription>
-                      Ask a question to the community of Mentors. Your question and the response will appear in the FAQ.
+                      Ask a question to the community of Mentors. Your question and the response will appear in the Forum.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1464,8 +1464,7 @@ function MyTribePageContent() {
                         Submit Question to Chief
                     </Button>
                 </CardFooter>
-            </Card>
-        </div>
+            </div>
 
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -1476,7 +1475,7 @@ function MyTribePageContent() {
                 <Button asChild>
                     <Link href="/faq">
                         <BookOpen className="mr-2 h-4 w-4" />
-                        Go to Full FAQ Page
+                        Go to The Forum
                     </Link>
                 </Button>
             </CardHeader>
@@ -1555,7 +1554,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6 h-auto p-1">
             {renderLockedTabTrigger("my-profile", "My Profile & Test", 3)}
             {renderLockedTabTrigger("meeting-reports", "Meeting Reports", 4, outstandingReportsCount)}
-            {renderLockedTabTrigger("faq", "FAQ", 2)}
+            {renderLockedTabTrigger("faq", "The Forum", 2)}
             {renderLockedTabTrigger("chief-dashboard", "Chief Dashboard", 5, chiefBadgeCount > 0 ? chiefBadgeCount : undefined)}
             {renderLockedTabTrigger("mentor-dashboard", "Mentor Dashboard", 6, mentorBadgeCount > 0 ? mentorBadgeCount : undefined)}
         </TabsList>
@@ -2055,11 +2054,11 @@ function MyTribePageContent() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ</CardTitle>
-                                <CardDescription>Review and respond to questions from users. Only showing questions with zero answers.</CardDescription>
+                                <CardTitle className="flex items-center gap-2"><BookHeart /> Pending Forum Entries</CardTitle>
+                                <CardDescription>Review and respond to entries in the forum. Only showing entries with zero answers.</CardDescription>
                             </div>
                             <Button asChild>
-                                <Link href="/faq">Go to FAQ Page</Link>
+                                <Link href="/faq">Go to The Forum</Link>
                             </Button>
                         </div>
                     </CardHeader>
@@ -2091,7 +2090,7 @@ function MyTribePageContent() {
                                         <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
                                         {entry.imageUrl && (
                                             <div className="my-4 px-4 relative aspect-video">
-                                                <Image src={entry.imageUrl} alt="Question image" fill className="rounded-md object-contain" />
+                                                <Image src={entry.imageUrl} alt="Forum entry image" fill className="rounded-md object-contain" />
                                             </div>
                                         )}
                                         {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
@@ -2177,16 +2176,16 @@ function MyTribePageContent() {
                                 ))}
                                 </Accordion>
                             ) : (
-                               <p className="text-muted-foreground text-center p-8">There are currently no pending questions.</p>
+                               <p className="text-muted-foreground text-center p-8">There are currently no pending forum questions.</p>
                             );
                         })()}
                     </CardContent>
                 </Card>
                 <Card id="manual-faq-entry">
                     <CardHeader>
-                        <CardTitle>Ed's Manual FAQ Entry</CardTitle>
+                        <CardTitle>Ed's Manual Forum Entry</CardTitle>
                         <CardDescription>
-                            Add an FAQ entry from an external source, like an email.
+                            Add a Forum entry from an external source, like an email.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -2230,7 +2229,7 @@ function MyTribePageContent() {
                     <CardFooter>
                         <Button onClick={handleAddManualFaq} disabled={isAddingManualFaq}>
                             {isAddingManualFaq ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                            Add FAQ Entry
+                            Add Forum Entry
                         </Button>
                     </CardFooter>
                 </Card>
@@ -2244,7 +2243,7 @@ function MyTribePageContent() {
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
             <TabsTrigger value="my-profile" className="text-base">My Profile &amp; Test</TabsTrigger>
-            {renderLockedTabTrigger("faq", "FAQ", 2)}
+            {renderLockedTabTrigger("faq", "The Forum", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
              <ExplorerView 

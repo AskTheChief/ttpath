@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -52,7 +53,7 @@ const notifyFaqAuthorFlow = ai.defineFlow(
         const entryDoc = await entryRef.get();
 
         if (!entryDoc.exists) {
-            return { success: false, message: 'FAQ entry not found.' };
+            return { success: false, message: 'Forum entry not found.' };
         }
         const entryData = entryDoc.data()!;
 
@@ -88,17 +89,17 @@ const notifyFaqAuthorFlow = ai.defineFlow(
         const mailgun = new Mailgun(formData);
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
-        const faqUrl = `https://ttpath.net/faq#faq-${entryId}`;
+        const forumUrl = `https://ttpath.net/faq#faq-${entryId}`;
 
         const messageData = {
             from: `TTpath Notifier <notifications@${mailgunDomain}>`,
             to: recipientEmail,
-            subject: 'A mentor has responded to your question',
+            subject: 'A mentor has responded to your question in The Forum',
             html: `
                 <p>Hello ${recipientName},</p>
-                <p>A mentor has provided feedback on a question you asked on TTpath.</p>
+                <p>A mentor has provided feedback on a question you asked in The Forum on TTpath.</p>
                 <p>You can view the answer by clicking the link below:</p>
-                <p><a href="${faqUrl}" style="padding: 10px 15px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px;">View Your Answer</a></p>
+                <p><a href="${forumUrl}" style="padding: 10px 15px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px;">View Your Answer</a></p>
                 <br>
                 <p>- The TTpath Team</p>
             `,
@@ -107,7 +108,7 @@ const notifyFaqAuthorFlow = ai.defineFlow(
         await mg.messages.create(mailgunDomain, messageData);
         return { success: true, message: `Notification sent to ${recipientEmail}.` };
     } catch (error: any) {
-        console.error('Error sending FAQ notification:', error);
+        console.error('Error sending forum notification:', error);
         return { success: false, message: `Failed to send notification. Error: ${error.message}` };
     }
   }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -176,7 +175,7 @@ export default function AllJournalEntriesPage() {
       const fetchedEntries = await getAllJournalEntries();
       setEntries(fetchedEntries);
     } catch (error) {
-      console.error("Error fetching all journal entries: ", error);
+      console.error("Error fetching forum entries: ", error);
     } finally {
       setLoading(false);
     }
@@ -205,7 +204,7 @@ export default function AllJournalEntriesPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">All FAQ 2.1 Entries</h1>
+        <h1 className="text-3xl font-bold">The Forum Entries</h1>
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -216,8 +215,8 @@ export default function AllJournalEntriesPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>User Questions (FAQ 2.1)</CardTitle>
-          <CardDescription>A chronological log of all questions submitted by users via the FAQ 2.1 system.</CardDescription>
+          <CardTitle>User Questions (The Forum)</CardTitle>
+          <CardDescription>A chronological log of all entries submitted via The Forum.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
