@@ -427,6 +427,8 @@ function MyTribePageContent() {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [newEntryContent, setNewEntryContent] = useState('');
   const [newEntrySubject, setNewEntrySubject] = useState('');
+  const [newMentorEntryContent, setNewMentorEntryContent] = useState('');
+  const [newMentorEntrySubject, setNewMentorEntrySubject] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
@@ -1028,7 +1030,7 @@ function MyTribePageContent() {
     }
 
     try {
-      const idToken = await user.getIdToken();
+      const idToken = await currentUser.getIdToken();
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
@@ -1081,8 +1083,13 @@ function MyTribePageContent() {
     }
   };
   
-  const handleSaveJournalEntry = async () => {
-    if (!newEntryContent.trim()) {
+  const handleSaveJournalEntry = async (recipient: 'Ed' | 'Mentor') => {
+    const content = recipient === 'Ed' ? newEntryContent : newMentorEntryContent;
+    const subject = recipient === 'Ed' ? newEntrySubject : newMentorEntrySubject;
+    const setContent = recipient === 'Ed' ? setNewEntryContent : setNewMentorEntryContent;
+    const setSubject = recipient === 'Ed' ? setNewEntrySubject : setNewMentorEntrySubject;
+
+    if (!content.trim()) {
       toast({ title: 'Question is empty', variant: 'destructive' });
       return;
     }
@@ -1092,12 +1099,13 @@ function MyTribePageContent() {
     try {
       const idToken = await user.getIdToken();
       await saveJournalEntry({ 
-        entryContent: newEntryContent, 
-        subject: newEntrySubject,
-        idToken 
+        entryContent: content, 
+        subject: subject,
+        idToken,
+        recipient: recipient
       });
-      setNewEntryContent('');
-      setNewEntrySubject('');
+      setContent('');
+      setSubject('');
       toast({ title: 'Question Submitted' });
       fetchJournal(); // Refresh journal entries
     } catch(e: any) {
@@ -1314,43 +1322,83 @@ function MyTribePageContent() {
 
   const renderJournalView = () => (
      <div className="m-0 space-y-8">
-        <Card>
-            <CardHeader>
-                <CardTitle>Ask Ed</CardTitle>
-                <CardDescription>
-                  Ask a question directly to Ed and the Mentors. Your question and the response will appear in the FAQ once answered.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="new-entry-subject">Subject</Label>
-                    <Input 
-                        id="new-entry-subject"
-                        placeholder="e.g., Dealing with Fear"
-                        value={newEntrySubject}
-                        onChange={(e) => setNewEntrySubject(e.target.value)}
-                        disabled={isJournalLoading}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="new-entry-content">Your Question</Label>
-                    <Textarea 
-                        id="new-entry-content"
-                        placeholder="Ask your question here..."
-                        rows={8}
-                        value={newEntryContent}
-                        onChange={(e) => setNewEntryContent(e.target.value)}
-                        disabled={isJournalLoading}
-                    />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
-                    {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                    Submit Question
-                </Button>
-            </CardFooter>
-        </Card>
+        <div className="grid md:grid-cols-2 gap-8">
+            <Card id="ask-ed">
+                <CardHeader>
+                    <CardTitle>Ask Ed</CardTitle>
+                    <CardDescription>
+                      Ask a question directly to Ed. Your question and the response will appear in the FAQ once answered.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="new-entry-subject">Subject</Label>
+                        <Input 
+                            id="new-entry-subject"
+                            placeholder="e.g., Dealing with Fear"
+                            value={newEntrySubject}
+                            onChange={(e) => setNewEntrySubject(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-entry-content">Your Question</Label>
+                        <Textarea 
+                            id="new-entry-content"
+                            placeholder="Ask Ed here..."
+                            rows={8}
+                            value={newEntryContent}
+                            onChange={(e) => setNewEntryContent(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={() => handleSaveJournalEntry('Ed')} disabled={isJournalLoading || !newEntryContent.trim()}>
+                        {isJournalLoading && newEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Submit Question to Ed
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card id="ask-mentor">
+                <CardHeader>
+                    <CardTitle>Ask a Mentor</CardTitle>
+                    <CardDescription>
+                      Ask a question to the community of Mentors. Your question and the response will appear in the FAQ.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="mentor-subject">Subject</Label>
+                        <Input 
+                            id="mentor-subject"
+                            placeholder="e.g., Tribe Logistics"
+                            value={newMentorEntrySubject}
+                            onChange={(e) => setNewMentorEntrySubject(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="mentor-content">Your Question</Label>
+                        <Textarea 
+                            id="mentor-content"
+                            placeholder="Ask a Mentor here..."
+                            rows={8}
+                            value={newMentorEntryContent}
+                            onChange={(e) => setNewMentorEntryContent(e.target.value)}
+                            disabled={isJournalLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={() => handleSaveJournalEntry('Mentor')} disabled={isJournalLoading || !newMentorEntryContent.trim()} variant="secondary">
+                        {isJournalLoading && newMentorEntryContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Submit Question to Mentor
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
 
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -1378,7 +1426,9 @@ function MyTribePageContent() {
                                     <AccordionTrigger className="flex-grow p-0 text-left">
                                         <div className="grid w-full gap-1 text-left">
                                             <div className="flex w-full justify-between">
-                                                <span className="font-semibold">Question {entry.subject && <span className="font-normal text-muted-foreground">- Subject: {entry.subject}</span>}</span>
+                                                <span className="font-semibold">
+                                                    Question {entry.recipient && <span className="text-primary">to {entry.recipient}</span>} {entry.subject && <span className="font-normal text-muted-foreground"> - {entry.subject}</span>}
+                                                </span>
                                                 <span className="text-xs text-muted-foreground">{isClient ? format(new Date(entry.createdAt), 'PPP p') : '...'}</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground truncate w-full max-w-lg">{entry.entryContent}</p>
@@ -1403,10 +1453,10 @@ function MyTribePageContent() {
                                     </AlertDialog>
                                 </div>
                                 <AccordionContent>
-                                    <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
+                                    <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
                                     {entry.feedback && entry.feedback.length > 0 && (
-                                      <div className="mt-6 space-y-4">
-                                          <h4 className="font-semibold text-md">Feedback from Mentors</h4>
+                                      <div className="mt-6 space-y-4 px-4 pb-4">
+                                          <h4 className="font-semibold text-md">Feedback</h4>
                                           {entry.feedback.map((fb, index) => {
                                             const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
                                             return (
@@ -1958,7 +2008,11 @@ function MyTribePageContent() {
                                         <AccordionTrigger className="text-left">
                                             <div className="grid w-full gap-1 text-left">
                                                 <div className="flex w-full justify-between">
-                                                    <span className="font-semibold">{entry.userName}{entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}</span>
+                                                    <span className="font-semibold">
+                                                        {entry.userName}
+                                                        {entry.recipient && <span className="text-xs text-primary font-normal ml-2">(To {entry.recipient})</span>}
+                                                        {entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}
+                                                    </span>
                                                     <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
                                                 </div>
                                                 <p className="truncate text-sm text-muted-foreground break-words pr-4">
@@ -1967,14 +2021,14 @@ function MyTribePageContent() {
                                             </div>
                                         </AccordionTrigger>
                                     <AccordionContent>
-                                        <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
+                                        <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
                                         {entry.imageUrl && (
-                                            <div className="my-4 relative aspect-video">
+                                            <div className="my-4 px-4 relative aspect-video">
                                                 <Image src={entry.imageUrl} alt="Question image" fill className="rounded-md object-contain" />
                                             </div>
                                         )}
                                         {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
-                                        <div className="mt-6 space-y-4">
+                                        <div className="mt-6 space-y-4 px-4 pb-4">
                                         <h4 className="font-semibold text-md">Feedback</h4>
                                         {entry.feedback && entry.feedback.length > 0 ? (
                                             <div className="space-y-4">

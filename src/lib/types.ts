@@ -339,6 +339,7 @@ export const JournalEntrySchema = z.object({
     imageUrl: z.string().url().or(z.literal('')).optional(),
     isManualEntry: z.boolean().optional(),
     caption: z.string().optional(),
+    recipient: z.string().optional(),
 });
 export type JournalEntry = z.infer<typeof JournalEntrySchema>;
 
@@ -349,6 +350,7 @@ export const SaveJournalEntryInputSchema = z.object({
   imageUrl: z.string().url().or(z.literal('')).optional(),
   subject: z.string().optional(),
   caption: z.string().optional(),
+  recipient: z.string().optional(),
 });
 export type SaveJournalEntryInput = z.infer<typeof SaveJournalEntryInputSchema>;
 

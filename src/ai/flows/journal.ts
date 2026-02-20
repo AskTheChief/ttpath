@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -35,7 +34,7 @@ const saveJournalEntryFlow = ai.defineFlow(
     inputSchema: SaveJournalEntryInputSchema,
     outputSchema: SaveJournalEntryOutputSchema,
   },
-  async ({ idToken, entryContent, entryId, imageUrl, subject, caption }) => {
+  async ({ idToken, entryContent, entryId, imageUrl, subject, caption, recipient }) => {
     let decodedToken;
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -61,6 +60,7 @@ const saveJournalEntryFlow = ai.defineFlow(
 
     if (subject !== undefined) { dataToSave.subject = subject; }
     if (caption !== undefined) { dataToSave.caption = caption; }
+    if (recipient !== undefined) { dataToSave.recipient = recipient; }
 
     if (imageUrl) {
         dataToSave.imageUrl = imageUrl;
@@ -150,6 +150,7 @@ const getJournalEntriesFlow = ai.defineFlow(
             ...data,
             subject: data.subject || undefined,
             caption: data.caption || undefined,
+            recipient: data.recipient || undefined,
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
             feedback: finalFeedback,

@@ -546,8 +546,13 @@ export default function FaqPage() {
   const NavigationButtons = () => (
     <div className="flex flex-wrap gap-3 mb-8">
       <Button asChild variant="secondary" className="shadow-sm border border-border/50">
-        <Link href="/my-tribe?view=faq">
+        <Link href="/my-tribe?view=faq#ask-ed">
           <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask Ed
+        </Link>
+      </Button>
+      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+        <Link href="/my-tribe?view=faq#ask-mentor">
+          <PlusCircle className="mr-2 h-4 w-4 text-primary" /> Ask a Mentor
         </Link>
       </Button>
       <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">

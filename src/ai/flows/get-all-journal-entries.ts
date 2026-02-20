@@ -112,6 +112,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             imageUrl: typeof data.imageUrl === 'string' && data.imageUrl.startsWith('http') ? data.imageUrl : undefined,
             isManualEntry: isManual,
             caption: typeof data.caption === 'string' ? data.caption : undefined,
+            recipient: typeof data.recipient === 'string' ? data.recipient : undefined,
         });
     }
 
