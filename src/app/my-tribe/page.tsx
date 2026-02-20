@@ -1034,7 +1034,7 @@ function MyTribePageContent() {
     }
 
     try {
-      const idToken = await currentUser.getIdToken();
+      const idToken = await user.getIdToken();
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
@@ -1330,7 +1330,6 @@ function MyTribePageContent() {
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    {/* The div wrapper is necessary for Tooltip with disabled elements */}
                     <div>{Trigger}</div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -1464,7 +1463,8 @@ function MyTribePageContent() {
                         Submit Question to Chief
                     </Button>
                 </CardFooter>
-            </div>
+            </Card>
+        </div>
 
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
