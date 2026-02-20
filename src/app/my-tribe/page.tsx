@@ -1551,23 +1551,23 @@ function MyTribePageContent() {
   const renderPendingForumList = (entries: JournalEntry[]) => (
     <Accordion type="single" collapsible className="w-full">
         {entries.map(entry => (
-            <AccordionItem key={entry.id} value={entry.id}>
-                <AccordionTrigger className="text-left">
+            <AccordionItem key={entry.id} value={entry.id} className="border-b mb-2">
+                <AccordionTrigger className="text-left py-4 px-2 hover:no-underline hover:bg-muted/50 rounded-md transition-all">
                     <div className="grid w-full gap-1 text-left">
-                        <div className="flex w-full justify-between">
-                            <span className="font-semibold">
+                        <div className="flex w-full justify-between items-center">
+                            <span className="font-semibold flex items-center">
                                 {entry.userName}
-                                {entry.recipient && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO {entry.recipient.toUpperCase()}</span>}
-                                {entry.subject && <span className="font-normal text-muted-foreground"> - Subject: {entry.subject}</span>}
+                                {entry.recipient === 'Ed' && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>}
                             </span>
-                            <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleString() : '...'}</span>
+                            <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleDateString() : '...'}</span>
                         </div>
-                        <p className="truncate text-sm text-muted-foreground break-words pr-4">
-                            {entry.entryContent}
+                        {entry.subject && <p className="font-medium text-sm text-foreground/80 line-clamp-1">Subject: {entry.subject}</p>}
+                        <p className="truncate text-xs text-muted-foreground break-words pr-4">
+                            {entry.entryContent.replace(/<[^>]*>/g, '')}
                         </p>
                     </div>
                 </AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent className="pt-4 border-t mt-2">
                 <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
                 {entry.imageUrl && (
                     <div className="my-4 px-4 relative aspect-video">

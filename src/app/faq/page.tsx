@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
@@ -398,7 +399,7 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
     const questionDate = new Date(faq.createdAt).toLocaleDateString();
     
     return (
-        <div id={`faq-${faq.id}`} className={cn("grid lg:grid-cols-2 gap-6 items-start", isPendingView && "bg-primary/5 p-4 rounded-xl border border-primary/20 shadow-sm")}>
+        <div id={`faq-card-${faq.id}`} className={cn("grid lg:grid-cols-2 gap-6 items-start", isPendingView && "bg-background p-4 pt-0")}>
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center text-sm">
@@ -796,19 +797,35 @@ export default function ForumPage() {
                     <p className="text-sm text-muted-foreground">Answer these questions to make them visible in the public forum.</p>
                 </div>
             </div>
-            <div className="space-y-12">
+            <Accordion type="single" collapsible className="w-full">
                 {pendingFaqs.map(faq => (
-                    <ForumItemCard 
-                        key={faq.id} 
-                        faq={faq} 
-                        user={user} 
-                        userLevel={userLevel} 
-                        onUpdate={fetchFaqs} 
-                        searchTerm={searchTerm} 
-                        isPendingView={true}
-                    />
+                    <AccordionItem key={faq.id} value={faq.id} className="border-b-0 mb-4">
+                        <AccordionTrigger className="hover:no-underline bg-primary/5 px-4 rounded-t-xl border border-primary/20 shadow-sm data-[state=closed]:rounded-xl transition-all">
+                             <div className="flex flex-col items-start text-left gap-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-foreground">{getAuthorDisplay('question', faq)}</span>
+                                    {faq.recipient === 'Ed' && (
+                                        <span className="flex items-center text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>
+                                    )}
+                                    <span className="text-xs text-muted-foreground ml-2">{new Date(faq.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                {faq.subject && <p className="font-semibold text-sm line-clamp-1">{faq.subject}</p>}
+                                <p className="text-sm text-muted-foreground line-clamp-1">{faq.entryContent.replace(/<[^>]*>/g, '')}</p>
+                             </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-0 px-0">
+                            <ForumItemCard 
+                                faq={faq} 
+                                user={user} 
+                                userLevel={userLevel} 
+                                onUpdate={fetchFaqs} 
+                                searchTerm={searchTerm} 
+                                isPendingView={true}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
                 ))}
-            </div>
+            </Accordion>
         </section>
       )}
 
