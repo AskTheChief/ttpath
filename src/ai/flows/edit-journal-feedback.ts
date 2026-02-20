@@ -80,7 +80,7 @@ const editJournalFeedbackFlow = ai.defineFlow(
     }
 
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    const userLevel = userDoc.data()?.currentUserLevel || 0;
+    const userLevel = Number(userDoc.data()?.currentUserLevel || 0);
     
     if (userLevel < ADMIN_LEVEL && feedbackToEdit.mentorId !== decodedToken.uid) {
       throw new Error('Permission denied. Only the author or a mentor can edit this feedback.');

@@ -73,6 +73,7 @@ const mapContainerStyle = {
   width: '100%',
   height: '300px',
   borderRadius: '0.5rem',
+  marginBottom: '1rem',
 };
 
 const overviewMapContainerStyle = {
@@ -150,6 +151,7 @@ function FeedbackForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
+  const feedbackTextareaRef = useRef<HTMLTextAreaElement>(null);
   const imageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
   const captionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -216,7 +218,9 @@ function FeedbackForm({
   return (
     <div className="mt-4 space-y-4 p-4 border rounded-lg bg-background">
       <h4 className="font-semibold">{isEditMode ? 'Edit Your Feedback' : 'Add Feedback'}</h4>
+      <FormattingToolbar textareaRef={feedbackTextareaRef} value={feedbackContent} onValueChange={setFeedbackContent} />
       <Textarea
+        ref={feedbackTextareaRef}
         placeholder="Write your feedback..."
         value={feedbackContent}
         onChange={(e) => setFeedbackContent(e.target.value)}
@@ -403,6 +407,7 @@ function MyTribePageContent() {
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
+  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -424,7 +429,6 @@ function MyTribePageContent() {
   const [newEntryContent, setNewEntryContent] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
-  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
   const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
   const [manualFaqData, setManualFaqData] = useState({
@@ -449,7 +453,7 @@ function MyTribePageContent() {
   type FaqEntry = JournalEntry;
   const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
       if (type === 'question') {
-          const level = entry.userLevel;
+          const level = Number(entry.userLevel || 0);
           if (level === 0) return "FAQ Contributor:";
           if (level === 1) return "Visitor Says:";
           if (level === 2) return "Guest Says:";
@@ -459,16 +463,17 @@ function MyTribePageContent() {
           if (level === 6) return "Mentor Says:";
           return "Contributor:";
       } else { // type === 'answer'
-          if (entry.userLevel === 0) return "Ed Says:";
+          const qLevel = Number(entry.userLevel || 0);
+          if (qLevel === 0) return "Ed Says:";
           
-          if (entry.userLevel === 6) {
+          if (qLevel === 6) {
               return "Mentor's Mentor Says:";
           }
 
           if (!feedback) return '';
           if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
           
-          const level = feedback.mentorLevel;
+          const level = Number(feedback.mentorLevel || 0);
           if (level === 5) return "Tribe Chief Says:";
           if (level >= 6) return "Mentor Says:";
           return "Mentor Says:";
@@ -509,7 +514,7 @@ function MyTribePageContent() {
   }, []);
 
   const activeTabFromUrl = searchParams.get('view');
-  const activeTab = activeTabFromUrl || (userLevel < 4 ? 'find-or-start-tribe' : 'my-profile');
+  const activeTab = activeTabFromUrl || (Number(userLevel) < 4 ? 'find-or-start-tribe' : 'my-profile');
 
   const { toast } = useToast();
   
@@ -519,7 +524,7 @@ function MyTribePageContent() {
   });
 
   const isChief = userTribe && userTribe.chief === user?.uid;
-  const isMentor = userLevel >= 6;
+  const isMentor = Number(userLevel) >= 6;
 
   const handleTabChange = (value: string) => {
     router.push(`/my-tribe?view=${value}`, { scroll: false });
@@ -580,7 +585,7 @@ function MyTribePageContent() {
         manageApplication({ action: 'get', type: 'my_pending', idToken }),
       ]);
 
-      setUserLevel(progress.currentUserLevel);
+      setUserLevel(Number(progress.currentUserLevel || 1));
       setUserProfile(profile);
       
       if (myPendingAppsResult.success && myPendingAppsResult.applications) {
@@ -603,7 +608,7 @@ function MyTribePageContent() {
       setUserTribe(currentUserTribe || null);
       
       // Fetch role-specific data
-      if (progress.currentUserLevel >= 6) { // Mentor
+      if (Number(progress.currentUserLevel) >= 6) { // Mentor
         const [newTribeAppsResult, newMentorAppsResult, allJournalEntriesResult] = await Promise.all([
           manageApplication({ action: 'get', type: 'new_tribe', idToken }),
           manageApplication({ action: 'get', type: 'new_mentor', idToken }),
@@ -617,7 +622,7 @@ function MyTribePageContent() {
         }
         setAllJournalEntries(allJournalEntriesResult);
       }
-      if (progress.currentUserLevel >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
+      if (Number(progress.currentUserLevel) >= 5 && currentUserTribe?.chief === currentUser.uid) { // Chief
           const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
           if (joinAppsResult.success && joinAppsResult.applications) {
               const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
@@ -1268,7 +1273,7 @@ function MyTribePageContent() {
   const meetingDates = userTribe?.meetings?.map(m => new Date(m.date as string)) || [];
   
   const renderLockedTabTrigger = (value: string, title: string, requiredLevel: number, badgeCount?: number) => {
-    const isUnlocked = userLevel >= requiredLevel;
+    const isUnlocked = Number(userLevel) >= requiredLevel;
     const tooltipContent = `Requires Level ${requiredLevel} (${{4: 'Member', 5: 'Chief', 6: 'Mentor'}[requiredLevel]}).`;
     
     const Trigger = (
@@ -1495,7 +1500,7 @@ function MyTribePageContent() {
                 </form>
             </Card>
             
-            {userLevel >= 5 && (
+            {Number(userLevel) >= 5 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Apply for Mentorship</CardTitle>
@@ -1915,7 +1920,7 @@ function MyTribePageContent() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <CardTitle className="flex items-center gap-2"><BookHeart /> Pending FAQ</CardTitle>
-                                <CardDescription>Review and respond to questions from users.</CardDescription>
+                                <CardDescription>Review and respond to questions from users. Only showing questions with zero answers.</CardDescription>
                             </div>
                             <Button asChild>
                                 <Link href="/faq">Go to FAQ Page</Link>
@@ -1982,8 +1987,8 @@ function MyTribePageContent() {
                                                                     <div className="relative aspect-video">
                                                                         <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
                                                                     </div>
-                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-6" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
-                                                                    {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
+                                                                    {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                                                    {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                                                 </div>
                                                             )}
                                                         </AlertDescription>
@@ -2005,7 +2010,7 @@ function MyTribePageContent() {
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, feedbackId)}>Delete</AlertDialogAction>
+                                                                    <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                                 </AlertDialogContent>
                                                             </AlertDialog>
@@ -2208,7 +2213,7 @@ function MyTribePageContent() {
           </Link>
         </header>
 
-        {userLevel < 4 ? renderExplorerView() : renderMemberChiefView()}
+        {Number(userLevel) < 4 ? renderExplorerView() : renderMemberChiefView()}
 
       </div>
       

@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, MessageSquare, Send, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageSquare, Send, Edit, Trash2, Bold, Italic, Underline } from 'lucide-react';
 import { format } from 'date-fns';
 import { type JournalEntry, type JournalFeedback } from '@/lib/types';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -19,7 +19,51 @@ import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+
+function FormattingToolbar({
+  textareaRef,
+  onValueChange,
+  value,
+}: {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  onValueChange: (newValue: string) => void;
+  value: string;
+}) {
+  const formatText = (tag: 'b' | 'i' | 'u') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+
+    if (selectedText) {
+      const newText = `${value.substring(0, start)}<${tag}>${selectedText}</${tag}>${value.substring(end)}`;
+      onValueChange(newText);
+      
+      // Re-focus and select the text after update
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + tag.length + 2, end + tag.length + 2);
+      }, 0);
+    }
+  };
+
+  return (
+    <div className="flex gap-1 mb-2 p-1 border rounded-md bg-muted">
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('b')} title="Bold">
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('i')} title="Italic">
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => formatText('u')} title="Underline">
+        <Underline className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 function FeedbackForm({
   entryId,
@@ -38,6 +82,7 @@ function FeedbackForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setFeedbackContent(editingFeedback ? editingFeedback.feedbackContent : '');
@@ -90,13 +135,15 @@ function FeedbackForm({
   return (
     <div className="mt-4 space-y-2 p-4 border rounded-lg bg-background">
       <h4 className="font-semibold">{isEditMode ? 'Edit Your Feedback' : 'Add Feedback'}</h4>
+      <FormattingToolbar textareaRef={textareaRef} value={feedbackContent} onValueChange={setFeedbackContent} />
       <Textarea
+        ref={textareaRef}
         placeholder="Write your feedback..."
         value={feedbackContent}
         onChange={(e) => setFeedbackContent(e.target.value)}
         rows={3}
       />
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-2">
         <Button onClick={handleSubmit} disabled={isSubmitting || !feedbackContent.trim()}>
           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEditMode ? null : <Send className="mr-2 h-4 w-4" />}
           {isEditMode ? 'Update Feedback' : 'Submit Feedback'}
@@ -218,11 +265,7 @@ export default function AllJournalEntriesPage() {
                                       <MessageSquare className="h-4 w-4" />
                                       <AlertTitle>Feedback from {fb.mentorName}</AlertTitle>
                                       <AlertDescription>
-                                          <p className="whitespace-pre-wrap break-words">{fb.feedbackContent}</p>
-                                          <p className="text-xs text-muted-foreground mt-2">
-                                            {format(new Date(fb.createdAt), 'PPP p')}
-                                            {fb.updatedAt && ` (edited ${format(new Date(fb.updatedAt), 'PPP p')})`}
-                                          </p>
+                                          <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
                                       </AlertDescription>
                                       {user && (
                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

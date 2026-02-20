@@ -30,7 +30,7 @@ const addJournalFeedbackFlow = ai.defineFlow(
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
       mentorDoc = await db.collection('users').doc(decodedToken.uid).get();
-      if (!mentorDoc.exists || (mentorDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+      if (!mentorDoc.exists || Number(mentorDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
         throw new Error('Permission denied. User is not an admin.');
       }
     } catch (error: any) {
@@ -48,7 +48,7 @@ const addJournalFeedbackFlow = ai.defineFlow(
       id: feedbackId,
       mentorId: decodedToken.uid,
       mentorName: mentorName,
-      mentorLevel: mentorDoc.data()?.currentUserLevel || 0,
+      mentorLevel: Number(mentorDoc.data()?.currentUserLevel || 0),
       feedbackContent: feedbackContent,
       createdAt: Timestamp.now(),
     };

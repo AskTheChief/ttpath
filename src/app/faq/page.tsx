@@ -30,7 +30,7 @@ type FaqEntry = JournalEntry & { isChatbotEntry?: boolean };
 
 const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback?: JournalFeedback): string => {
     if (type === 'question') {
-        const level = entry.userLevel;
+        const level = Number(entry.userLevel || 0);
         if (level === 0) return "FAQ Contributor:";
         if (level === 1) return "Visitor Says:";
         if (level === 2) return "Guest Says:";
@@ -41,9 +41,10 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
         if (entry.isChatbotEntry) return "Visitor Says:";
         return "Contributor:";
     } else { // type === 'answer'
-        if (entry.userLevel === 0) return "Ed Says:";
+        const qLevel = Number(entry.userLevel || 0);
+        if (qLevel === 0) return "Ed Says:";
         
-        if (entry.userLevel === 6) {
+        if (qLevel === 6) {
             return "Mentor's Mentor Says:";
         }
 
@@ -51,10 +52,10 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: FaqEntry, feedback
         if (feedback.mentorId === 'chatbot-chief') return "AI Chief Says:";
         if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
         
-        const level = feedback.mentorLevel;
+        const level = Number(feedback.mentorLevel || 0);
         if (level === 5) return "Tribe Chief Says:";
         if (level >= 6) return "Mentor Says:";
-        return "Mentor Says:"; // Default for any other case.
+        return "Mentor Says:"; 
     }
 };
 
@@ -137,10 +138,11 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
     const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
     const answerImageCreditTextareaRef = useRef<HTMLTextAreaElement>(null);
     const answerCaptionTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const questionCaptionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const isMentor = userLevel >= 6;
+    const isMentor = Number(userLevel) >= 6;
     const canEditEntry = isMentor && !faq.isChatbotEntry;
-    const isManualOrContributor = faq.isManualEntry || faq.userLevel === 0;
+    const isManualOrContributor = faq.isManualEntry || Number(faq.userLevel) === 0;
 
     
     useEffect(() => {
@@ -322,8 +324,8 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                             <ImageUploader imageUrl={questionImageUrl} onImageUrlChange={setQuestionImageUrl} userId={user?.uid} />
                             <div className="space-y-2">
                                 <Label htmlFor="question-caption">Caption</Label>
-                                <FormattingToolbar textareaRef={answerCaptionTextareaRef} value={questionCaption} onValueChange={setQuestionCaption} />
-                                <Textarea id="question-caption" value={questionCaption} onChange={e => setQuestionCaption(e.target.value)} placeholder="Caption for the question content or image..." rows={2}/>
+                                <FormattingToolbar textareaRef={questionCaptionTextareaRef} value={questionCaption} onValueChange={setQuestionCaption} />
+                                <Textarea ref={questionCaptionTextareaRef} id="question-caption" value={questionCaption} onChange={e => setQuestionCaption(e.target.value)} placeholder="Caption for the question content or image..." rows={2}/>
                             </div>
                             <div className="flex gap-2 pt-2">
                                 <Button size="sm" onClick={handleSaveQuestion} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
@@ -338,7 +340,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                     <Image src={faq.imageUrl} alt="FAQ Image" fill sizes="(max-width: 1023px) 90vw, 45vw" style={{ objectFit: 'contain' }} className="rounded-md" />
                                 </div>
                             )}
-                             {faq.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: faq.caption.replace(/\n/g, '<br />')}}/>}
+                             {faq.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: faq.caption.replace(/\n/g, '<br />')}}/>}
                         </>
                     )}
                 </CardContent>
@@ -438,14 +440,14 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
                                                 <div className="relative aspect-video">
                                                     <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 45vw, (min-width: 1024px) 40vw" style={{ objectFit: 'contain' }} className="rounded-md" />
                                                 </div>
-                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-1 mb-6" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
-                                                {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
+                                                {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: highlightText(fb.imageCredit, searchTerm).replace(/\n/g, '<br />') }} />}
+                                                {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
                                             </div>
                                         )}
                                     </div>
                                 )}
                             </div>
-                        )
+                         )
                     })}
                     {(!faq.feedback || faq.feedback.length === 0) && (
                         <p className="text-sm text-muted-foreground">No feedback yet.</p>
@@ -459,6 +461,7 @@ function FaqItemCard({ faq, user, userLevel, onUpdate, searchTerm }: { faq: FaqE
 export default function FaqPage() {
   const [faqs, setFaqs] = useState<FaqEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(0);
@@ -513,11 +516,12 @@ export default function FaqPage() {
             const userDocRef = doc(db, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
-                setUserLevel(userDoc.data().currentUserLevel || 0);
+                setUserLevel(Number(userDoc.data().currentUserLevel || 0));
             }
         } else {
             setUserLevel(0);
         }
+        setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -538,7 +542,7 @@ export default function FaqPage() {
     return results;
   }, [faqs, searchTerm]);
 
-  const isMentor = userLevel >= 6;
+  const isMentor = Number(userLevel) >= 6;
 
   const NavigationButtons = () => (
     <div className="flex flex-wrap gap-3 mb-8">
@@ -558,7 +562,7 @@ export default function FaqPage() {
     </div>
   );
 
-  if (loading) {
+  if (loading || isAuthLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

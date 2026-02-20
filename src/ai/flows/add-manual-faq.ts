@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -25,7 +26,7 @@ const addManualFaqFlow = ai.defineFlow(
     try {
       mentorToken = await adminAuth.verifyIdToken(idToken);
       const mentorUserDoc = await db.collection('users').doc(mentorToken.uid).get();
-      if (!mentorUserDoc.exists || (mentorUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+      if (!mentorUserDoc.exists || Number(mentorUserDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
         throw new Error('Permission denied. User is not a mentor.');
       }
       mentorData = mentorUserDoc.data();
@@ -61,7 +62,7 @@ const addManualFaqFlow = ai.defineFlow(
         id: feedbackId,
         mentorId: mentorToken.uid,
         mentorName: mentorToken.name || 'A Mentor',
-        mentorLevel: mentorData?.currentUserLevel || 0,
+        mentorLevel: Number(mentorData?.currentUserLevel || 0),
         feedbackContent: answer,
         createdAt: Timestamp.now(),
       };
