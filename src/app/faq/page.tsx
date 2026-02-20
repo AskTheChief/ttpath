@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
