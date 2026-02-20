@@ -427,6 +427,7 @@ function MyTribePageContent() {
   
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [newEntryContent, setNewEntryContent] = useState('');
+  const [newEntrySubject, setNewEntrySubject] = useState('');
   const [isJournalLoading, setIsJournalLoading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState<string | null>(null);
   const [allJournalEntries, setAllJournalEntries] = useState<JournalEntry[]>([]);
@@ -1091,8 +1092,13 @@ function MyTribePageContent() {
     setIsJournalLoading(true);
     try {
       const idToken = await user.getIdToken();
-      await saveJournalEntry({ entryContent: newEntryContent, idToken });
+      await saveJournalEntry({ 
+        entryContent: newEntryContent, 
+        subject: newEntrySubject,
+        idToken 
+      });
       setNewEntryContent('');
+      setNewEntrySubject('');
       toast({ title: 'Question Submitted' });
       fetchJournal(); // Refresh journal entries
     } catch(e: any) {
@@ -1311,19 +1317,33 @@ function MyTribePageContent() {
      <div className="m-0 space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>New FAQ Question</CardTitle>
+                <CardTitle>Ask Ed</CardTitle>
                 <CardDescription>
-                  Ask a question and receive feedback from a mentor. This replaces the old email-based FAQ system.
+                  Ask a question directly to Ed and the Mentors. Your question and the response will appear in the FAQ once answered.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <Textarea 
-                    placeholder="Ask your question here..."
-                    rows={8}
-                    value={newEntryContent}
-                    onChange={(e) => setNewEntryContent(e.target.value)}
-                    disabled={isJournalLoading}
-                />
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="new-entry-subject">Subject</Label>
+                    <Input 
+                        id="new-entry-subject"
+                        placeholder="e.g., Dealing with Fear"
+                        value={newEntrySubject}
+                        onChange={(e) => setNewEntrySubject(e.target.value)}
+                        disabled={isJournalLoading}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="new-entry-content">Your Question</Label>
+                    <Textarea 
+                        id="new-entry-content"
+                        placeholder="Ask your question here..."
+                        rows={8}
+                        value={newEntryContent}
+                        onChange={(e) => setNewEntryContent(e.target.value)}
+                        disabled={isJournalLoading}
+                    />
+                </div>
             </CardContent>
             <CardFooter>
                 <Button onClick={handleSaveJournalEntry} disabled={isJournalLoading || !newEntryContent.trim()}>
