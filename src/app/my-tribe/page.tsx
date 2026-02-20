@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -148,6 +149,7 @@ function FeedbackForm({
   const [imageCredit, setImageCredit] = useState(editingFeedback?.imageCredit || '');
   const [caption, setCaption] = useState(editingFeedback?.caption || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
   const feedbackTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -364,7 +366,7 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                 </GoogleMap>
             </div>
             {selectedTribe && (
-                <div className="absolute top-4 right-4 w-full max-w-sm z-10">
+                <div className="absolute top-4 right-4 w-full max-sm z-10">
                     <Card>
                         <CardHeader>
                             <CardTitle>{selectedTribe.name}</CardTitle>
@@ -867,7 +869,7 @@ function MyTribePageContent() {
     let hours = parseInt(hour, 10);
     const minutes = parseInt(minute, 10);
 
-    if (isNaN(hours) || isNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+    if (isNaN(hours) || iNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
       toast({ title: 'Invalid Time', description: 'Please enter a valid time.', variant: 'destructive' });
       return;
     }
@@ -1030,7 +1032,7 @@ function MyTribePageContent() {
     }
 
     try {
-      const idToken = await currentUser.getIdToken();
+      const idToken = await user.getIdToken();
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
@@ -1322,6 +1324,14 @@ function MyTribePageContent() {
 
   const renderJournalView = () => (
      <div className="m-0 space-y-8">
+        <div className="flex justify-end">
+            <Button asChild variant="outline">
+                <Link href="/faq">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Go to FAQ Page
+                </Link>
+            </Button>
+        </div>
         <div className="grid md:grid-cols-2 gap-8">
             <Card id="ask-ed">
                 <CardHeader>
@@ -1662,7 +1672,7 @@ function MyTribePageContent() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleResetProgress}>Yes, Reset My Progress</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleResetProgress}>Yes, Reset My Progress</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
