@@ -149,7 +149,6 @@ function FeedbackForm({
   const [imageCredit, setImageCredit] = useState(editingFeedback?.imageCredit || '');
   const [caption, setCaption] = useState(editingFeedback?.caption || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isNotifying, setIsNotifying] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!editingFeedback;
   const feedbackTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -1496,6 +1495,7 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
+            </Card>
         </div>
 
         <Card>
@@ -2160,8 +2160,8 @@ function MyTribePageContent() {
                                   <div className="space-y-4">
                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
                                       <div>
-                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
-                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
                                       <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
@@ -2374,7 +2374,7 @@ function MyTribePageContent() {
                 </CardHeader>
                 <form onSubmit={handleSaveProfile}>
                     <CardContent className="space-y-4">
-                        <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={userProfile.firstName || ''} onChange={handleProfileChange} /></div>
                             <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={userProfile.lastName || ''} onChange={handleProfileChange} /></div>
                         </div>
