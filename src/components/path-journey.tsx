@@ -23,7 +23,7 @@ import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { getUserProfile } from '@/ai/flows/user-profile';
 import MenuSheet from './menu-sheet';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
@@ -86,6 +86,8 @@ export default function PathJourney() {
   const [logoZIndex, setLogoZIndex] = useState(201);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const autoSelectNodeParam = searchParams.get('node');
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userFirstName, setUserFirstName] = useState<string | null>(null);
@@ -374,7 +376,7 @@ export default function PathJourney() {
         setTimeout(() => setSelectedNodeId(currentSelected), 0);
       }
     }
-  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId]);
+  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId, justCompletedActionId]);
   
   const fetchUserProgress = useCallback(async (user: FirebaseUser | null) => {
     setIsAuthLoading(true);
@@ -511,8 +513,19 @@ export default function PathJourney() {
 
 
   useEffect(() => {
-      setSelectedNodeId(null);
-  }, [currentUserLevel]);
+      if (isMounted && !isLoadingProgress && !isAnimating) {
+          if (autoSelectNodeParam) {
+              const nodeId = autoSelectNodeParam.startsWith('node-') ? autoSelectNodeParam : `node-${autoSelectNodeParam}`;
+              const node = pathNodesData.find(n => n.id === nodeId);
+              if (node && node.level <= currentUserLevel) {
+                  setSelectedNodeId(node.id);
+                  playSound('click', 'C4', '8n');
+              }
+          } else {
+              setSelectedNodeId(null);
+          }
+      }
+  }, [currentUserLevel, autoSelectNodeParam, isMounted, isLoadingProgress, isAnimating, playSound]);
 
   const handleNodeClick = (nodeData: PathNodeData) => {
     if (isAnimating) return;

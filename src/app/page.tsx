@@ -3,6 +3,8 @@
 import PathJourney from '@/components/path-journey';
 import { Toaster } from '@/components/ui/toaster';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -23,7 +25,9 @@ export default function Home() {
       </Accordion>
 
       <div className="w-full max-w-7xl">
-        <PathJourney />
+        <Suspense fallback={<div className="h-96 flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+          <PathJourney />
+        </Suspense>
       </div>
       <Toaster />
     </main>

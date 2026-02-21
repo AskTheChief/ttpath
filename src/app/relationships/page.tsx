@@ -212,24 +212,26 @@ const RelationshipsPage = () => {
     setIsSaving(true);
     try {
       const idToken = await user.getIdToken();
-      const progress = await getUserProgress({ idToken });
-      const newReqs = { ...progress.requirementsState, 'embrace-customs': true };
+      const newReqs = { ...requirementsState, 'embrace-customs': true };
       
       // Update progress in backend
       await updateUserProgress({ 
-        currentUserLevel: progress.currentUserLevel, 
+        currentUserLevel: userLevel, 
         requirementsState: newReqs, 
         idToken 
       });
       
+      setRequirementsState(newReqs);
+      const allTitles = principles.map(p => p.title);
+      setUserAgreements(new Set(allTitles));
+
       playToggleSound(true); // Confirmation sound
-      toast({ title: "You embrace the customs", description: "Requirement complete. You may now continue on the Path." });
+      toast({ title: "You embrace the customs", description: "Requirement complete. Returning to your journey..." });
       
-      // Navigate back to the path journey
-      router.push('/');
+      // Immediate redirect back to the path journey with node auto-selection
+      router.push('/?node=guest');
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
       setIsSaving(false);
     }
   };
@@ -243,7 +245,7 @@ const RelationshipsPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
