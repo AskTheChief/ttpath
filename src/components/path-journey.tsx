@@ -1,7 +1,7 @@
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
-import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass, BookOpen, Database, CheckSquare } from 'lucide-react';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass, BookOpen, Database, CheckSquare, Check } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import * as Tone from 'tone';
@@ -689,9 +689,9 @@ export default function PathJourney() {
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
-          const Checkmark = isCompleted ? (
+          const CompletedIcon = isCompleted ? (
             <span className={cn("checkmark-container flex items-center justify-center h-5 w-5 bg-green-100 rounded-full", checkmarkAnimationClass)}>
-              <CheckSquare className="h-3 w-3 text-green-600 fill-current" />
+              <Check className="h-3 w-3 text-green-600" />
             </span>
           ) : null;
 
@@ -706,9 +706,8 @@ export default function PathJourney() {
               disabled={isLocked}
             >
               <div className="flex shrink-0 items-center justify-center w-5 h-5">
-                {isCompleted ? Checkmark : null}
+                {isCompleted ? CompletedIcon : (Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />)}
               </div>
-              {Icon && <Icon className="h-4 w-4 shrink-0" />}
               <span className="flex-grow">{action.label}</span>
             </Button>
           );
