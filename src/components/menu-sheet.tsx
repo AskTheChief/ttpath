@@ -235,7 +235,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               onSendTestEmail={onSendTestEmail}
               onSendTestDiploma={onSendTestDiploma}
               onSendBugFinderDiploma={onSendBugFinderDiploma}
-              onResetProgress={handleResetProgress}
+              onResetProgress={onResetProgress}
               currentUser={currentUser}
             />
           )}
