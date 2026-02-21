@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -210,7 +209,7 @@ const RelationshipsPage = () => {
         idToken 
       });
       playToggleSound(true); // Extra confirmation sound
-      toast({ title: "Customs Embraced!", description: "Requirement complete. You may now continue on the Path." });
+      toast({ title: "You embrace the customs", description: "Requirement complete. You may now continue on the Path." });
       router.push('/');
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -394,7 +393,7 @@ const RelationshipsPage = () => {
                             htmlFor="final-embrace" 
                             className="text-2xl font-black text-primary cursor-pointer uppercase tracking-tight"
                         >
-                            {isSaving ? "Processing..." : "I Have Embraced the Customs"}
+                            {isSaving ? "Processing..." : "I embrace the customs"}
                         </Label>
                     </div>
                     {isSaving && <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />}
