@@ -49,9 +49,16 @@ const RelationshipsPage = () => {
   const synth = useRef<Tone.PolySynth | null>(null);
 
   useEffect(() => {
+    // Initializing a softer, gentler synth
     synth.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
-        envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 1 }
+        envelope: { 
+          attack: 0.15, // Slower attack for a softer start
+          decay: 0.2, 
+          sustain: 0.2, 
+          release: 1.5 
+        },
+        volume: -18 // Lower volume to be less intrusive
     }).toDestination();
     return () => { synth.current?.dispose(); };
   }, []);
@@ -61,9 +68,11 @@ const RelationshipsPage = () => {
     if (Tone.context.state !== 'running') Tone.start();
     const now = Tone.now();
     if (isAgreed) {
-        synth.current.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+        // A gentle, high-register perfect fifth for a "crystalline" positive feel
+        synth.current.triggerAttackRelease(["G4", "D5"], "4n", now);
     } else {
-        synth.current.triggerAttackRelease(["G3", "D3"], "16n", now);
+        // A very subtle, muted downward interval
+        synth.current.triggerAttackRelease(["D4", "G3"], "8n", now);
     }
   };
 
@@ -208,7 +217,7 @@ const RelationshipsPage = () => {
         requirementsState: newReqs, 
         idToken 
       });
-      playToggleSound(true); // Extra confirmation sound
+      playToggleSound(true); // Confirmation sound
       toast({ title: "You embrace the customs", description: "Requirement complete. You may now continue on the Path." });
       router.push('/');
     } catch (error: any) {
