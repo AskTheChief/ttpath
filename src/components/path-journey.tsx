@@ -1,3 +1,4 @@
+
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -8,6 +9,7 @@ import * as Tone from 'tone';
 import SignupModal from './modals/signup-modal';
 import ChatbotModal from './modals/chatbot-modal';
 import AlignmentTestModal from './modals/alignment-test-modal';
+import LibraryModal from './modals/library-modal';
 import FeedbackModal from './modals/feedback-modal';
 import LinkModal from './modals/link-modal';
 import VideoModal from './modals/video-modal';
@@ -89,6 +91,7 @@ export default function PathJourney() {
     login: false,
     chatbot: false,
     alignmentTest: false,
+    library: false,
     feedback: false,
     link: false,
     video: false,
@@ -309,7 +312,7 @@ export default function PathJourney() {
     
     const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
     
-    if (action?.id !== 'open-alignment-test') {
+    if (action?.id !== 'open-alignment-test' && action?.id !== 'visit-library') {
         playSound('complete');
     }
     
@@ -577,6 +580,10 @@ export default function PathJourney() {
         return;
     }
 
+    if (action.action === 'visit-library') {
+      setModalState(s => ({ ...s, library: true }));
+      return;
+    }
 
     if (action.action === 'open-alignment-test') {
       setModalState(s => ({ ...s, alignmentTest: true }));
@@ -1077,6 +1084,10 @@ export default function PathJourney() {
         onSendBugFinderDiploma={handleSendBugFinderDiploma}
         onResetProgress={handleResetProgress}
         currentUser={currentUser}
+      />
+      <LibraryModal 
+        isOpen={modalState.library}
+        onClose={() => setModalState(s => ({ ...s, library: false }))}
       />
       <LinkModal
         isOpen={modalState.link}
