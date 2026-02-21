@@ -1,4 +1,3 @@
-
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -52,9 +51,28 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 const actionIcons: { [key: string]: React.FC<any> } = {
   'open-alignment-test': GraduationCap,
   'watch-video': Video,
-  'embrace-customs': GraduationCap,
+  'embrace-customs': Heart,
   'visit-library': BookOpen,
 };
+
+function Heart(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  );
+}
 
 export default function PathJourney() {
   const [currentUserLevel, setCurrentUserLevel] = useState(1);
@@ -373,7 +391,7 @@ export default function PathJourney() {
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
           if (progress.currentUserLevel >= 3) {
-            // This user is an explorer but has an incomplete profile. Force completion.
+            // Force completion if level is explorer but profile is incomplete
             setNeedsProfileCompletion(true);
           }
           setCurrentUserLevel(progress.currentUserLevel || 1);
@@ -415,15 +433,11 @@ export default function PathJourney() {
     const visitorNode = pathNodesData.find(n => n.level === 1)!;
     const guestNode = pathNodesData.find(n => n.level === 2)!;
     
-    // Animate from visitor to guest
     await animateUserIcon(guestNode, visitorNode.level);
 
-    // Update the state to reflect the new level
     setCurrentUser(user);
     setCurrentUserLevel(guestNode.level);
     setRequirementsState(prev => ({ ...prev, 'sign-up': true }));
-    // The onAuthStateChanged listener will also fire and fetch full profile info,
-    // but this ensures the UI is responsive immediately.
   }, [animateUserIcon]);
 
 
@@ -599,7 +613,6 @@ export default function PathJourney() {
         if (action.targetView) {
             router.push(`/my-tribe?view=${action.targetView}`);
         } else {
-            // Fallback logic
             const defaultView = currentUserLevel < 4 ? 'find-or-start-tribe' : 'my-profile';
             router.push(`/my-tribe?view=${defaultView}`);
         }
@@ -664,8 +677,8 @@ export default function PathJourney() {
 
           const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
           const Checkmark = isCompleted ? (
-            <span className={`checkmark-container ${checkmarkAnimationClass}`}>
-              <CheckSquare className="h-4 w-4 text-green-500 fill-green-500/10 inline-block mr-2" />
+            <span className={cn("checkmark-container flex items-center justify-center h-5 w-5 bg-green-100 rounded-full", checkmarkAnimationClass)}>
+              <CheckSquare className="h-3 w-3 text-green-600 fill-current" />
             </span>
           ) : null;
 
@@ -674,13 +687,15 @@ export default function PathJourney() {
               key={action.id}
               variant="secondary"
               size="sm"
-              className={cn('w-full justify-start h-auto p-2 text-wrap text-left')}
+              className={cn('w-full justify-start h-auto p-2 text-wrap text-left gap-2')}
               data-action-id={action.id}
               onClick={() => handleActionClick(action)}
               disabled={isLocked}
             >
-              {isCompleted ? Checkmark : null}
-              {Icon && <Icon className="h-4 w-4 mr-2 shrink-0" />}
+              <div className="flex shrink-0 items-center justify-center w-5 h-5">
+                {isCompleted ? Checkmark : null}
+              </div>
+              {Icon && <Icon className="h-4 w-4 shrink-0" />}
               <span className="flex-grow">{action.label}</span>
             </Button>
           );

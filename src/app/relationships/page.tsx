@@ -49,16 +49,16 @@ const RelationshipsPage = () => {
   const synth = useRef<Tone.PolySynth | null>(null);
 
   useEffect(() => {
-    // Initializing a softer, gentler synth
+    // Soft, gentle synth for feedback
     synth.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
         envelope: { 
-          attack: 0.15, // Slower attack for a softer start
+          attack: 0.15, 
           decay: 0.2, 
           sustain: 0.2, 
           release: 1.5 
         },
-        volume: -18 // Lower volume to be less intrusive
+        volume: -18
     }).toDestination();
     return () => { synth.current?.dispose(); };
   }, []);
@@ -68,10 +68,10 @@ const RelationshipsPage = () => {
     if (Tone.context.state !== 'running') Tone.start();
     const now = Tone.now();
     if (isAgreed) {
-        // A gentle, high-register perfect fifth for a "crystalline" positive feel
+        // Gentle crystalline positive feel
         synth.current.triggerAttackRelease(["G4", "D5"], "4n", now);
     } else {
-        // A very subtle, muted downward interval
+        // Subtle muted downward interval
         synth.current.triggerAttackRelease(["D4", "G3"], "8n", now);
     }
   };
@@ -201,6 +201,8 @@ const RelationshipsPage = () => {
         toast({ title: "Failed to update agreement", description: error.message, variant: "destructive" });
         // Revert on failure
         const reverted = new Set(userAgreements);
+        if (agreed) reverted.delete(title);
+        else reverted.add(title);
         setUserAgreements(reverted);
     }
   };
@@ -212,13 +214,18 @@ const RelationshipsPage = () => {
       const idToken = await user.getIdToken();
       const progress = await getUserProgress({ idToken });
       const newReqs = { ...progress.requirementsState, 'embrace-customs': true };
+      
+      // Update progress in backend
       await updateUserProgress({ 
         currentUserLevel: progress.currentUserLevel, 
         requirementsState: newReqs, 
         idToken 
       });
+      
       playToggleSound(true); // Confirmation sound
       toast({ title: "You embrace the customs", description: "Requirement complete. You may now continue on the Path." });
+      
+      // Navigate back to the path journey
       router.push('/');
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -383,7 +390,7 @@ const RelationshipsPage = () => {
             )}
           </div>
           
-          {!isEditing && allEmbraced && !hasCompletedRequirement && userLevel === 2 && (
+          {!isEditing && allEmbraced && !hasCompletedRequirement && (userLevel === 2 || userLevel === 1) && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
                 <h3 className="text-2xl font-bold">Requirement Completion</h3>
                 <p className="text-muted-foreground">
@@ -410,12 +417,16 @@ const RelationshipsPage = () => {
             </div>
           )}
           
-          {!isEditing && hasCompletedRequirement && (
-             <div className="mt-24 text-center">
+          {!isEditing && (hasCompletedRequirement || userLevel >= 3) && (
+             <div className="mt-24 text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-primary font-bold text-xl">
+                    <CheckCircle2 className="h-6 w-6" />
+                    <span>Requirement Complete</span>
+                </div>
                 <Button asChild variant="secondary" size="lg">
                     <Link href="/">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Requirement Complete - Return to Path
+                        Return to Path
                     </Link>
                 </Button>
              </div>
