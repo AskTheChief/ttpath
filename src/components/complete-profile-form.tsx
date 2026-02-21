@@ -129,7 +129,11 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
       const idToken = await user.getIdToken();
       await updateUserProgress({
         currentUserLevel: 3,
-        requirementsState: { 'sign-up': true, 'complete-comprehension-test': true },
+        requirementsState: { 
+          'sign-up': true, 
+          'embrace-customs': true,
+          'register-as-explorer': true 
+        },
         idToken,
       });
 

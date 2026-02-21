@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -181,7 +182,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <Heart className="mr-4 w-10 h-10" />
-                  Relationship Principles
+                  Trading Tribe Customs
               </Button>
             </Link>
             <DropdownMenu>
@@ -234,7 +235,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
               onSendTestEmail={onSendTestEmail}
               onSendTestDiploma={onSendTestDiploma}
               onSendBugFinderDiploma={onSendBugFinderDiploma}
-              onResetProgress={onResetProgress}
+              onResetProgress={handleResetProgress}
               currentUser={currentUser}
             />
           )}

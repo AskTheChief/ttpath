@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -18,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -319,9 +320,9 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                 </div>
 
                 <div className="border-t pt-4 mt-4 space-y-2">
-                    <h4 className="font-semibold">Alignment Test Requirement</h4>
+                    <h4 className="font-semibold">Preparation Requirements</h4>
                     <p className="text-sm text-muted-foreground">
-                        Mentors review your test answers. The answers show your understanding of Tribe methods. This process helps you prepare for Tribe. You access the test on your 'My Profile & Test' tab. You write your answers and then you receive feedback from The Chief.
+                        Before starting a tribe, we recommend exploring the community resources. You can document your understanding by taking the Alignment Test on your 'My Profile & Test' tab.
                     </p>
                     <Button
                         variant="link"
@@ -660,7 +661,7 @@ function MyTribePageContent() {
 
     } catch (error: any) {
         console.error("Error fetching page data: ", error);
-        toast({ title: 'Error', description: error.message || 'Could not load your tribe and alignment test data.', variant: 'destructive' });
+        toast({ title: 'Error', description: error.message || 'Could not load your tribe and test data.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -727,17 +728,6 @@ function MyTribePageContent() {
         return;
     }
     
-    // Check for alignment test completion
-    if (Object.keys(alignmentTestData.answers).length === 0) {
-        toast({
-            title: 'Alignment Test Required',
-            description: 'You must complete the alignment test before creating a tribe. You are now on the test page.',
-            duration: 5000,
-        });
-        handleTabChange('my-profile');
-        return;
-    }
-
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
@@ -767,17 +757,6 @@ function MyTribePageContent() {
 
   const handleJoinTribe = async (tribeId: string) => {
     if (!user) return;
-
-    if (Object.keys(alignmentTestData.answers).length === 0) {
-        toast({
-            title: 'Alignment Test Required',
-            description: 'You must complete the alignment test before joining a tribe. You are now on the test page.',
-            duration: 5000,
-        });
-        handleTabChange('my-profile');
-        setSelectedTribe(null);
-        return;
-    }
 
     setIsLoading(true);
     try {
@@ -1517,7 +1496,6 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
-            </Card>
         </div>
 
         <Card>

@@ -40,10 +40,11 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.20,
     title: "Guest",
     req: "",
-    description: "",
+    description: "As a Guest, you study the Tribe methods and customs. Before you can register as an Explorer and join a tribe, you must embrace the Trading Tribe Customs.",
     actions: [
       { id: "read-full-book", label: "Read Trading Tribe Methods", action: "open-full-book" },
-      { id: "register-as-explorer", label: "Register as an Explorer", action: "open-profile-form", next: "explorer", dependsOn: "read-full-book" }
+      { id: "embrace-customs", label: "Embrace Trading Tribe Customs", action: "navigate-customs", dependsOn: "read-full-book" },
+      { id: "register-as-explorer", label: "Register as an Explorer", action: "open-profile-form", next: "explorer", dependsOn: "embrace-customs" }
     ],
     panelPos: "left"
   },

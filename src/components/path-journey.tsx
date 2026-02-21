@@ -51,6 +51,7 @@ const nodeIcons: { [key: string]: React.FC<any> } = {
 const actionIcons: { [key: string]: React.FC<any> } = {
   'open-alignment-test': GraduationCap,
   'watch-video': Video,
+  'embrace-customs': GraduationCap,
 };
 
 export default function PathJourney() {
@@ -542,7 +543,7 @@ export default function PathJourney() {
 
     playSound('action', 'C4', '8n');
 
-    const requiresAuth = action.id === 'open-alignment-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form';
+    const requiresAuth = action.id === 'open-alignment-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form' || action.action === 'navigate-customs';
     if (requiresAuth && !isGuest) {
       toast({
         variant: "destructive",
@@ -556,6 +557,11 @@ export default function PathJourney() {
     if (action.action === 'open-profile-form') {
       setNeedsProfileCompletion(true);
       return;
+    }
+
+    if (action.action === 'navigate-customs') {
+        router.push('/relationships');
+        return;
     }
 
     if (action.action === 'open-pamphlet' || action.action === 'open-full-book' || action.action === 'open-full-book-part-2') {

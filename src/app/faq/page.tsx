@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail, PlusCircle, Sparkles, FileText, User as UserIcon, BookHeart, Send, Lightbulb, Heart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -663,9 +664,6 @@ export default function ForumPage() {
             if (userDoc.exists()) {
                 setUserLevel(Number(userDoc.data().currentUserLevel || 0));
             }
-            // Also fetch tribe info for Chief dashboard features
-            const tribesQuery = await getDoc(doc(db, 'tribes', '...')); // This is inefficient, better approach needed if tribes are many.
-            // For MVP, we'll assume we can find the tribe the user is in.
         } else {
             setUserLevel(0);
         }
@@ -730,6 +728,12 @@ export default function ForumPage() {
 
       <Button variant="secondary" onClick={() => setIsChatbotOpen(true)} className="shadow-sm border border-border/50">
         <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ask the AI Chief
+      </Button>
+      
+      <Button asChild variant="secondary" className="shadow-sm border border-border/50">
+        <Link href="/relationships">
+          <Heart className="mr-2 h-4 w-4 text-primary" /> Trading Tribe Customs
+        </Link>
       </Button>
       
       {Number(userLevel) >= 4 && (

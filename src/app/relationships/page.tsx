@@ -1,8 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Heart, 
   Activity,
@@ -27,8 +28,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { updateUserProgress } from '@/ai/flows/update-user-progress';
 
 const RelationshipsPage = () => {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +42,7 @@ const RelationshipsPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userLevel, setUserLevel] = useState(0);
   const [userAgreements, setUserAgreements] = useState<Set<string>>(new Set());
+  const [requirementsState, setRequirementsState] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   
   const isMentor = userLevel >= 6;
@@ -53,6 +58,9 @@ const RelationshipsPage = () => {
         const idToken = await currentUser.getIdToken();
         const agreements = await getRelationshipAgreements({ idToken });
         setUserAgreements(new Set(agreements.agreedTitles));
+        
+        const progress = await getUserProgress({ idToken });
+        setRequirementsState(progress.requirementsState || {});
       }
     } catch (error) {
       console.error("Failed to fetch content", error);
@@ -102,7 +110,7 @@ const RelationshipsPage = () => {
 
   const handleAddNewPrinciple = () => {
     const newPrinciple: Principle = {
-      title: "New Principle",
+      title: "New Custom",
       content: "Enter new content here...",
       img: ""
     };
@@ -166,6 +174,33 @@ const RelationshipsPage = () => {
     }
   };
 
+  const handleCompleteEmbrace = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const idToken = await user.getIdToken();
+      const progress = await getUserProgress({ idToken });
+      const newReqs = { ...progress.requirementsState, 'embrace-customs': true };
+      await updateUserProgress({ 
+        currentUserLevel: progress.currentUserLevel, 
+        requirementsState: newReqs, 
+        idToken 
+      });
+      toast({ title: "Customs Embraced!", description: "Requirement complete. You may now continue on the Path." });
+      router.push('/');
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const allEmbraced = useMemo(() => {
+    return principles.length > 0 && userAgreements.size >= principles.length;
+  }, [principles, userAgreements]);
+
+  const hasCompletedRequirement = requirementsState['embrace-customs'] === true;
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -180,11 +215,11 @@ const RelationshipsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3 font-bold text-lg">
             <Activity className="text-primary" size={24} />
-            <span>TRADING TRIBE<span className="font-light text-muted-foreground ml-2">RELATIONSHIP</span></span>
+            <span>TRADING TRIBE<span className="font-light text-muted-foreground ml-2">CUSTOMS</span></span>
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex gap-6">
-                <a href="#principles" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Principles</a>
+                <a href="#customs" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Customs</a>
             </div>
             <Button asChild variant="outline">
               <Link href="/">
@@ -207,7 +242,7 @@ const RelationshipsPage = () => {
             </div>
           ) : (
             <Button onClick={() => setIsEditing(true)}>
-              <Edit className="mr-2 h-4 w-4" /> Edit Page
+              <Edit className="mr-2 h-4 w-4" /> Edit Customs
             </Button>
           )}
         </div>
@@ -219,15 +254,15 @@ const RelationshipsPage = () => {
             Trading Tribe
           </h1>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-primary uppercase leading-tight">
-            Relationship
+            Customs
           </h1>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
-            Principles
-          </h1>
+          <p className="max-w-2xl mt-8 text-lg text-muted-foreground">
+            The Trading Tribe relies on shared customs to maintain a safe and productive environment for all members. Guests must embrace these customs before proceeding to become Explorers.
+          </p>
         </div>
       </header>
 
-      <section id="principles" className="py-16 md:py-24 bg-background">
+      <section id="customs" className="py-16 md:py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-16">
             {(isEditing ? editedPrinciples : principles).map((p, i) => {
@@ -296,7 +331,7 @@ const RelationshipsPage = () => {
                                         isAgreed ? "text-primary" : "text-muted-foreground hover:text-foreground"
                                     )}
                                 >
-                                    I embrace this principle.
+                                    I embrace this custom.
                                 </Label>
                             </div>
                         )}
@@ -310,11 +345,35 @@ const RelationshipsPage = () => {
               <div className="text-center pt-16">
                 <Button size="lg" onClick={handleAddNewPrinciple}>
                   <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Principle Section
+                  Add New Custom Section
                 </Button>
               </div>
             )}
           </div>
+          
+          {!isEditing && allEmbraced && !hasCompletedRequirement && userLevel === 2 && (
+            <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
+                <h3 className="text-2xl font-bold">You Have Embraced the Customs</h3>
+                <p className="text-muted-foreground">
+                    Congratulations. You have acknowledged and agreed to all Trading Tribe Customs. Click the button below to complete this requirement and proceed to Explorer registration.
+                </p>
+                <Button size="lg" onClick={handleCompleteEmbrace} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                    I Have Embraced the Customs
+                </Button>
+            </div>
+          )}
+          
+          {!isEditing && hasCompletedRequirement && (
+             <div className="mt-24 text-center">
+                <Button asChild variant="secondary" size="lg">
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Requirement Complete - Return to Path
+                    </Link>
+                </Button>
+             </div>
+          )}
         </div>
       </section>
 
@@ -322,7 +381,7 @@ const RelationshipsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div>
             <div className="font-bold text-2xl tracking-tight mb-2">Trading Tribe</div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relationship Principles</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trading Tribe Customs</p>
           </div>
         </div>
       </footer>
