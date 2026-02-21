@@ -1,4 +1,3 @@
-
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -52,6 +51,7 @@ const actionIcons: { [key: string]: React.FC<any> } = {
   'open-alignment-test': GraduationCap,
   'watch-video': Video,
   'embrace-customs': GraduationCap,
+  'visit-library': BookOpen,
 };
 
 export default function PathJourney() {
