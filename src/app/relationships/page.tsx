@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
+import * as Tone from 'tone';
 
 const RelationshipsPage = () => {
   const router = useRouter();
@@ -46,6 +47,26 @@ const RelationshipsPage = () => {
   const { toast } = useToast();
   
   const isMentor = userLevel >= 6;
+  const synth = useRef<Tone.PolySynth | null>(null);
+
+  useEffect(() => {
+    synth.current = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 1 }
+    }).toDestination();
+    return () => { synth.current?.dispose(); };
+  }, []);
+
+  const playToggleSound = (isAgreed: boolean) => {
+    if (!synth.current) return;
+    if (Tone.context.state !== 'running') Tone.start();
+    const now = Tone.now();
+    if (isAgreed) {
+        synth.current.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+    } else {
+        synth.current.triggerAttackRelease(["G3", "D3"], "16n", now);
+    }
+  };
 
   const fetchContent = useCallback(async (currentUser: User | null) => {
     setIsLoading(true);
@@ -155,6 +176,8 @@ const RelationshipsPage = () => {
         return;
     }
 
+    playToggleSound(agreed);
+
     // Optimistic update
     const newAgreements = new Set(userAgreements);
     if (agreed) newAgreements.add(title);
@@ -186,6 +209,7 @@ const RelationshipsPage = () => {
         requirementsState: newReqs, 
         idToken 
       });
+      playToggleSound(true); // Extra confirmation sound
       toast({ title: "Customs Embraced!", description: "Requirement complete. You may now continue on the Path." });
       router.push('/');
     } catch (error: any) {
@@ -353,14 +377,28 @@ const RelationshipsPage = () => {
           
           {!isEditing && allEmbraced && !hasCompletedRequirement && userLevel === 2 && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
-                <h3 className="text-2xl font-bold">You Have Embraced the Customs</h3>
+                <h3 className="text-2xl font-bold">Requirement Completion</h3>
                 <p className="text-muted-foreground">
-                    Congratulations. You have acknowledged and agreed to all Trading Tribe Customs. Click the button below to complete this requirement and proceed to Explorer registration.
+                    You have acknowledged and agreed to all Trading Tribe Customs. Toggle the final checkbox below to confirm your commitment and proceed to Explorer registration.
                 </p>
-                <Button size="lg" onClick={handleCompleteEmbrace} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                    I Have Embraced the Customs
-                </Button>
+                <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-xl shadow-sm border">
+                    <div className="flex items-center gap-4">
+                        <Checkbox 
+                            id="final-embrace" 
+                            checked={hasCompletedRequirement}
+                            onCheckedChange={(checked) => checked && handleCompleteEmbrace()}
+                            className="h-8 w-8 border-2"
+                            disabled={isSaving}
+                        />
+                        <Label 
+                            htmlFor="final-embrace" 
+                            className="text-2xl font-black text-primary cursor-pointer uppercase tracking-tight"
+                        >
+                            {isSaving ? "Processing..." : "I Have Embraced the Customs"}
+                        </Label>
+                    </div>
+                    {isSaving && <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />}
+                </div>
             </div>
           )}
           
