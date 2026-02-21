@@ -214,7 +214,7 @@ const RelationshipsPage = () => {
       const idToken = await user.getIdToken();
       const newReqs = { ...requirementsState, 'embrace-customs': true };
       
-      // Update progress in backend
+      // Update progress in backend - preserve existing level (important for Mentors)
       await updateUserProgress({ 
         currentUserLevel: userLevel, 
         requirementsState: newReqs, 
@@ -392,11 +392,11 @@ const RelationshipsPage = () => {
             )}
           </div>
           
-          {!isEditing && allEmbraced && !hasCompletedRequirement && (userLevel === 2 || userLevel === 1) && (
+          {!isEditing && allEmbraced && !hasCompletedRequirement && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
                 <h3 className="text-2xl font-bold">Requirement Completion</h3>
                 <p className="text-muted-foreground">
-                    You have acknowledged and agreed to all Trading Tribe Customs. Toggle the final checkbox below to confirm your commitment and proceed to Explorer registration.
+                    You have acknowledged and agreed to all Trading Tribe Customs. Toggle the final checkbox below to confirm your commitment and proceed.
                 </p>
                 <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-xl shadow-sm border">
                     <div className="flex items-center gap-4">
@@ -419,7 +419,7 @@ const RelationshipsPage = () => {
             </div>
           )}
           
-          {!isEditing && (hasCompletedRequirement || userLevel >= 3) && (
+          {!isEditing && hasCompletedRequirement && (
              <div className="mt-24 text-center space-y-4">
                 <div className="flex items-center justify-center gap-2 text-primary font-bold text-xl">
                     <CheckCircle2 className="h-6 w-6" />
