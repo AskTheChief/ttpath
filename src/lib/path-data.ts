@@ -7,6 +7,7 @@ export type PathAction = {
   requires?: string;
   dependsOn?: string;
   targetView?: string;
+  optional?: boolean;
 };
 
 export type PathNodeData = {
@@ -42,7 +43,7 @@ export const pathNodesData: PathNodeData[] = [
     req: "",
     description: "As a Guest, you study the Tribe methods and customs. Before you can register as an Explorer and join a tribe, you must embrace the Trading Tribe Customs.",
     actions: [
-      { id: "visit-library", label: "Visit the Library (Optional)", action: "visit-library" },
+      { id: "visit-library", label: "Visit the Library (Optional)", action: "visit-library", optional: true },
       { id: "embrace-customs", label: "Embrace Trading Tribe Customs", action: "navigate-customs" },
       { id: "register-as-explorer", label: "Register as an Explorer", action: "open-profile-form", next: "explorer", dependsOn: "embrace-customs" }
     ],

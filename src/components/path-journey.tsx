@@ -1,3 +1,4 @@
+
 'use client';
 
 import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
@@ -679,12 +680,33 @@ export default function PathJourney() {
     }
   }, [selectedNodeId, placeInfoPanel, requirementsState]);
 
+  const getActionCompletionStatus = (node: PathNodeData, action: PathAction) => {
+    // Basic explicit completion check
+    if (requirementsState[action.id]) return true;
+
+    // Optional steps don't block node completion, but we still show their explicit status
+    if (action.optional) return false;
+
+    // Level-based implicit completion
+    // If user level is > node level, foundational progression actions are done
+    if (action.next && currentUserLevel > node.level) return true;
+
+    // Special cases for foundational visitor/guest steps
+    if (currentUserLevel >= 3) {
+        if (action.id === 'read-book' || action.id === 'sign-up' || action.id === 'embrace-customs' || action.id === 'register-as-explorer') {
+            return true;
+        }
+    }
+
+    return false;
+  };
+
   const renderAbilities = (node: PathNodeData) => {
     return (
       <div className="space-y-2">
         {node.actions.map(action => {
-          const isCompleted = requirementsState[action.id];
-          const isLocked = action.dependsOn && !requirementsState[action.dependsOn];
+          const isCompleted = getActionCompletionStatus(node, action);
+          const isLocked = action.dependsOn && !requirementsState[action.dependsOn] && !isCompleted;
           
           const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
 
@@ -1056,6 +1078,8 @@ export default function PathJourney() {
               const isSelected = selectedNodeId === node.id;
               const isStartNode = node.id === 'node-visitor' && currentUserLevel === 1;
 
+              const isNodeCompleted = node.actions.every(action => getActionCompletionStatus(node, action));
+
               return (
                 <Tooltip key={node.id} delayDuration={100} open={isSelected ? false : undefined}>
                   <TooltipTrigger asChild>
@@ -1072,7 +1096,10 @@ export default function PathJourney() {
                       onClick={() => handleNodeClick(node)}
                     >
                       <Icon className={cn("h-8 w-8", (node.level > 4) ? "text-accent" : "text-muted-foreground")} />
-                      <span className="node-label">{node.title}</span>
+                      <span className="node-label flex items-center gap-1">
+                        {node.title}
+                        {isNodeCompleted && <Check className="h-3 w-3 text-green-500" />}
+                      </span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-card text-card-foreground p-0 border-border w-80 shadow-2xl" sideOffset={15}>
