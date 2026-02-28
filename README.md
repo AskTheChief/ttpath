@@ -4,33 +4,36 @@ A community-driven platform for personal growth and trading psychology, based on
 
 ## 🚀 Deployment to Your New Repository
 
-If you see an "Authentication failed" error, it is because GitHub requires a **Personal Access Token (PAT)** instead of a password. Follow these steps exactly to move your code to `https://github.com/AskTheChief/ttpath.git`:
+**Don't worry: Removing the old remote will NOT delete your code.** Your local changes are safe. We are simply changing where your code is sent when you "push."
 
-1. **Open your terminal** in the project root folder.
-2. **Remove the old connection:**
-   ```bash
-   git remote remove origin
-   ```
-3. **Connect to your new repository:**
-   ```bash
-   git remote add origin https://github.com/AskTheChief/ttpath.git
-   ```
-4. **Stage and commit your current files:**
-   ```bash
-   git add .
-   git commit -m "Initial commit to new repository"
-   ```
-5. **Push the code to GitHub:**
-   ```bash
-   git push -u origin main
-   ```
+Follow these steps exactly to move your code to `https://github.com/AskTheChief/ttpath.git`:
+
+1.  **Open your terminal** in the project root folder.
+2.  **Remove the old connection:**
+    ```bash
+    git remote remove origin
+    ```
+3.  **Connect to your new repository:**
+    ```bash
+    git remote add origin https://github.com/AskTheChief/ttpath.git
+    ```
+4.  **Stage and commit your current files:**
+    ```bash
+    git add .
+    git commit -m "Initial commit to new repository"
+    ```
+5.  **Push the code to GitHub:**
+    ```bash
+    git push -u origin main
+    ```
 
 ### 🔑 How to Authenticate during Push:
+When prompted for credentials:
 - **Username:** `AskTheChief`
-- **Password:** Paste this token (do not use your regular GitHub password):
+- **Password:** Paste this token (GitHub no longer accepts your regular password here):
   `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`
 
-**⚠️ Important:** Once the push is successful, delete this token from the README file and commit/push again to keep your account secure.
+**⚠️ Important:** Once the push is successful, delete this token from this README file and commit/push again to keep your account secure.
 
 ## Getting Started Locally
 
