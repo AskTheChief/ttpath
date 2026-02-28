@@ -2,41 +2,6 @@
 
 A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP). This application guides users through a journey from Visitor to Mentor, emphasizing emotional honesty, accountability, and the SVOP-B (Subject-Verb-Object-Present, Action-based) communication style.
 
-## 🚀 Deployment to Your New Repository
-
-If you are having trouble pushing your code because of authentication errors (GitHub rejecting your password), follow these steps to use your **Personal Access Token (PAT)**.
-
-**Note: Removing the old remote will NOT delete your code.** Your local changes are safe.
-
-### Step 1: Open your terminal
-Navigate to your project root folder in your terminal or command prompt.
-
-### Step 2: Remove the old connection
-```bash
-git remote remove origin
-```
-
-### Step 3: Connect to your new repository (Force Token Method)
-This method embeds your token into the URL so you don't have to wait for a prompt that might not appear.
-```bash
-git remote add origin https://AskTheChief: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@github.com/AskTheChief/ttpath.git
-```
-
-### Step 4: Stage and commit your current files
-```bash
-git add .
-git commit -m "Initial commit to new repository"
-```
-
-### Step 5: Push the code
-```bash
-git push -u origin main
-```
-
-**⚠️ IMPORTANT SECURITY STEP:** Once the push is successful, delete the Personal Access Token (the `ghp_...` part) from this README file and commit/push again to keep your account secure.
-
----
-
 ## Getting Started Locally
 
 1. **Install dependencies:**
