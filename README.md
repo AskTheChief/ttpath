@@ -4,54 +4,36 @@ A community-driven platform for personal growth and trading psychology, based on
 
 ## 🚀 Deployment to Your New Repository
 
-**Don't worry: Removing the old remote will NOT delete your code.** Your local changes are safe. We are simply changing where your code is sent when you "push."
+If you are having trouble pushing your code because of authentication errors (GitHub rejecting your password), follow these steps to use your **Personal Access Token (PAT)**.
 
-Follow these steps exactly to move your code to `https://github.com/AskTheChief/ttpath.git`:
+**Note: Removing the old remote will NOT delete your code.** Your local changes are safe.
 
-1.  **Open your terminal** in the project root folder.
-2.  **Remove the old connection:**
-    ```bash
-    git remote remove origin
-    ```
-3.  **Connect to your new repository:**
-    ```bash
-    git remote add origin https://github.com/AskTheChief/ttpath.git
-    ```
-4.  **Stage and commit your current files:**
-    ```bash
-    git add .
-    git commit -m "Initial commit to new repository"
-    ```
-5.  **Push the code to GitHub:**
-    ```bash
-    git push -u origin main
-    ```
+### Step 1: Open your terminal
+Navigate to your project root folder in your terminal or command prompt.
 
-### 🔑 How to Authenticate during Push:
-When prompted for credentials:
-- **Username:** `AskTheChief`
-- **Password:** Paste this token (GitHub no longer accepts your regular password here):
-  `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`
+### Step 2: Remove the old connection
+```bash
+git remote remove origin
+```
 
----
+### Step 3: Connect to your new repository (Force Token Method)
+This method embeds your token into the URL so you don't have to wait for a prompt that might not appear.
+```bash
+git remote add origin https://AskTheChief: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@github.com/AskTheChief/ttpath.git
+```
 
-### 🛠️ Troubleshooting: What to do if you aren't prompted for a password
-If Git fails with an authentication error and DOES NOT ask you for a password, it is using old cached credentials. You can "force" the token by running these commands:
+### Step 4: Stage and commit your current files
+```bash
+git add .
+git commit -m "Initial commit to new repository"
+```
 
-1.  **Remove the current remote:**
-    ```bash
-    git remote remove origin
-    ```
-2.  **Add the remote with your token built-in (Force Token Method):**
-    ```bash
-    git remote add origin https://AskTheChief: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@github.com/AskTheChief/ttpath.git
-    ```
-3.  **Push your code:**
-    ```bash
-    git push -u origin main
-    ```
+### Step 5: Push the code
+```bash
+git push -u origin main
+```
 
-**⚠️ Important:** Once the push is successful, delete the token from this README file and commit/push again to keep your account secure.
+**⚠️ IMPORTANT SECURITY STEP:** Once the push is successful, delete the Personal Access Token (the `ghp_...` part) from this README file and commit/push again to keep your account secure.
 
 ---
 
