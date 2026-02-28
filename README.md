@@ -33,7 +33,27 @@ When prompted for credentials:
 - **Password:** Paste this token (GitHub no longer accepts your regular password here):
   `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`
 
-**⚠️ Important:** Once the push is successful, delete this token from this README file and commit/push again to keep your account secure.
+---
+
+### 🛠️ Troubleshooting: What to do if you aren't prompted for a password
+If Git fails with an authentication error and DOES NOT ask you for a password, it is using old cached credentials. You can "force" the token by running these commands:
+
+1.  **Remove the current remote:**
+    ```bash
+    git remote remove origin
+    ```
+2.  **Add the remote with your token built-in (Force Token Method):**
+    ```bash
+    git remote add origin https://AskTheChief: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@github.com/AskTheChief/ttpath.git
+    ```
+3.  **Push your code:**
+    ```bash
+    git push -u origin main
+    ```
+
+**⚠️ Important:** Once the push is successful, delete the token from this README file and commit/push again to keep your account secure.
+
+---
 
 ## Getting Started Locally
 
