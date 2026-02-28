@@ -1,10 +1,10 @@
 # The Trading Tribe Path
 
-A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP).
+A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP). This application guides users through a journey from Visitor to Mentor, emphasizing emotional honesty, accountability, and the SVOP-B (Subject-Verb-Object-Present, Action-based) communication style.
 
-## Getting Started
+## Getting Started Locally
 
-To run this project locally after downloading:
+If you have downloaded the codebase, follow these steps to run it on your machine:
 
 1. **Install dependencies:**
    ```bash
@@ -12,7 +12,11 @@ To run this project locally after downloading:
    ```
 
 2. **Set up Environment Variables:**
-   Create a `.env.local` file in the root directory and add your required keys (Firebase, Google Maps, Mailgun, and Gemini API). Refer to `apphosting.yaml` for the required secret names.
+   Create a `.env.local` file in the root directory and add your required keys. You will need:
+   - `NEXT_PUBLIC_FIREBASE_API_KEY` (and other Firebase config vars)
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (for the tribe and feelings maps)
+   - `GEMINI_API_KEY` (for the AI Chief)
+   - `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` (for automated diplomas and notifications)
 
 3. **Run the development server:**
    ```bash
@@ -24,15 +28,16 @@ To run this project locally after downloading:
 
 ## Key Features
 
-- **The Path Journey:** An interactive, guided progression from Visitor to Mentor.
-- **Trading Tribe Customs:** A mandatory commitment gate for new members.
-- **The Forum:** A centralized Q&A system for community knowledge.
-- **Game Center:** Educational games like SVOP Scramble and the Feelings Panel.
-- **Mentor Dashboard:** Specialized tools for managing tribe applications and providing feedback.
+- **The Path Journey:** An interactive, guided progression with animated transitions and visual feedback.
+- **Trading Tribe Customs:** A mandatory commitment gate where members acknowledge core principles with audio chimes.
+- **The Forum:** A community Q&A system for sharing wisdom and resolving issues.
+- **Game Center:** Educational tools like SVOP Scramble, Feelings Slicer, and the Body Feelings Map.
+- **Mentor Dashboard:** Specialized tools for high-level members to guide the community and review applications.
 
 ## Tech Stack
 
 - **Framework:** Next.js (App Router)
 - **Styling:** Tailwind CSS & Shadcn UI
 - **Database/Auth:** Firebase (Firestore, Auth, Storage)
-- **AI Integration:** Genkit with Google Gemini Pro/Flash
+- **AI Integration:** Genkit with Google Gemini 2.5
+- **Audio:** Tone.js for interactive feedback
