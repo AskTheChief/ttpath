@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { ai } from '@/ai/genkit';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
@@ -14,7 +14,7 @@ if (!getApps().length) {
 const db = getFirestore();
 const adminAuth = getAuth();
 
-async function sendNewApplicationEmail(chiefId: string, applicantId: string, tribeName: string) {
+async function sendNewApplicationEmail(chiefId: string, applicantId: string, tribeName: string, embracedCustoms: string[]) {
     const mailgunApiKey = process.env.MAILGUN_API_KEY;
     const mailgunDomain = process.env.MAILGUN_DOMAIN;
 
@@ -35,22 +35,33 @@ async function sendNewApplicationEmail(chiefId: string, applicantId: string, tri
         }
 
         const chiefEmail = chiefDoc.data()?.email;
-        const applicantName = applicantDoc.exists ? `${applicantDoc.data()?.firstName} ${applicantDoc.data()?.lastName}` : 'A new applicant';
+        const applicantData = applicantDoc.data();
+        const applicantName = applicantDoc.exists ? `${applicantData?.firstName} ${applicantData?.lastName}` : 'A new applicant';
+        
+        const customsList = embracedCustoms.length > 0 
+            ? embracedCustoms.map(c => `• ${c}`).join('\n') 
+            : 'None';
 
         const mailgun = new Mailgun(formData);
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
         const dashboardUrl = `https://ttpath.net/my-tribe?view=chief-dashboard`;
 
-        const textBody = `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nPlease log in to your account to review the application:\n${dashboardUrl}\n\n- The TTpath Team`;
+        const textBody = `Hello Chief,\n\nYou have received a new application from ${applicantName} to join your tribe, "${tribeName}".\n\nEmbraced Customs:\n${customsList}\n\nPlease log in to your account to review the application:\n${dashboardUrl}\n\n- The TTpath Team`;
         const htmlBody = `
-            <p>Hello Chief,</p>
-            <p>You have received a new application from <strong>${applicantName}</strong> to join your tribe, "<strong>${tribeName}</strong>".</p>
-            <p>Please click the link below to review the application in your Chief Dashboard.</p>
-            <p><a href="${dashboardUrl}" style="padding: 10px 15px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px;">Review Application</a></p>
-            <p>If the button does not work, copy and paste this link into your browser: ${dashboardUrl}</p>
-            <br>
-            <p>- The TTpath Team</p>
+            <div style="font-family: sans-serif; color: #333;">
+                <p>Hello Chief,</p>
+                <p>You have received a new application from <strong>${applicantName}</strong> to join your tribe, "<strong>${tribeName}</strong>".</p>
+                <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; margin: 20px 0;">
+                    <h4 style="margin-top: 0; color: #166534;">Embraced Customs:</h4>
+                    <p style="margin-bottom: 0;">${embracedCustoms.length > 0 ? embracedCustoms.join(', ') : 'No customs embraced yet.'}</p>
+                </div>
+                <p>Please click the link below to review the application in your Chief Dashboard.</p>
+                <p><a href="${dashboardUrl}" style="display: inline-block; padding: 10px 15px; background-color: #14532d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Review Application</a></p>
+                <p style="font-size: 12px; color: #666;">If the button does not work, copy and paste this link into your browser: ${dashboardUrl}</p>
+                <br>
+                <p>- The TTpath Team</p>
+            </div>
         `;
 
         const messageData = {
@@ -65,7 +76,6 @@ async function sendNewApplicationEmail(chiefId: string, applicantId: string, tri
         console.log(`New application email sent to ${chiefEmail}`);
     } catch (error) {
         console.error('Error sending new application email:', error);
-        // Do not throw, as the main flow should still succeed.
     }
 }
 
@@ -108,34 +118,32 @@ const joinTribeFlow = ai.defineFlow(
       const tribeData = tribeDoc.data();
       const hasMembers = tribeData?.members && tribeData.members.length > 0;
       const chiefId = tribeData?.chief;
+      const embracedCustoms = applicantData?.embracedCustoms || [];
 
       if (!hasMembers) {
         const userRef = db.collection('users').doc(user.uid);
-        // If tribe has no members, make the applicant the new chief and update their level.
         await db.runTransaction(async (transaction) => {
           transaction.update(tribeRef, {
             chief: user.uid,
             members: FieldValue.arrayUnion(user.uid),
           });
-          transaction.update(userRef, { currentUserLevel: 5 }); // Level 5 for Chief
+          transaction.update(userRef, { currentUserLevel: 5 }); 
         });
         return { success: true };
       } else {
-        // If tribe has members, create an application.
         const applicationRef = db.collection('tribe_applications').doc();
         await applicationRef.set({
           type: 'join_tribe',
           tribeId: input.tribeId,
           applicantId: user.uid,
           answers: input.answers || {},
-          embracedCustoms: applicantData?.embracedCustoms || [],
+          embracedCustoms: embracedCustoms,
           status: 'pending',
           createdAt: Timestamp.now(),
         });
 
-        // Send email notification to the chief
         if (chiefId) {
-            await sendNewApplicationEmail(chiefId, user.uid, tribeData?.name || 'Your Tribe');
+            await sendNewApplicationEmail(chiefId, user.uid, tribeData?.name || 'Your Tribe', embracedCustoms);
         }
 
         return { success: true };

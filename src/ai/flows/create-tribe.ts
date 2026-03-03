@@ -1,10 +1,7 @@
-
-'use server';
+'use client';
 
 /**
  * @fileOverview A Genkit flow for creating a new Tribe application.
- *
- * - createTribe - A function that allows an authenticated user to apply to create a new Tribe.
  */
 
 import { ai } from '@/ai/genkit';
@@ -16,7 +13,6 @@ import Mailgun from 'mailgun.js';
 import formData from 'form-data';
 
 
-// Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
   initializeApp();
 }
@@ -24,7 +20,7 @@ const db = getFirestore();
 const adminAuth = getAuth();
 
 
-async function sendNewChiefApplicationEmailToMentors(applicantName: string, tribeName: string) {
+async function sendNewChiefApplicationEmailToMentors(applicantName: string, tribeName: string, embracedCustoms: string[]) {
     const mailgunApiKey = process.env.MAILGUN_API_KEY;
     const mailgunDomain = process.env.MAILGUN_DOMAIN;
 
@@ -49,6 +45,10 @@ async function sendNewChiefApplicationEmailToMentors(applicantName: string, trib
             return;
         }
 
+        const customsList = embracedCustoms.length > 0 
+            ? embracedCustoms.map(c => `• ${c}`).join('\n') 
+            : 'None';
+
         const mailgun = new Mailgun(formData);
         const mg = mailgun.client({ username: 'api', key: mailgunApiKey });
 
@@ -56,7 +56,19 @@ async function sendNewChiefApplicationEmailToMentors(applicantName: string, trib
             from: `TTpath Notifier <info@${mailgunDomain}>`,
             to: mentorEmails,
             subject: `New Tribe Application: "${tribeName}"`,
-            text: `Hello Mentors,\n\nA new application has been submitted by ${applicantName} to create the tribe "${tribeName}".\n\nPlease log in to your account to review the application.\n\n- The TTpath Team`,
+            text: `Hello Mentors,\n\nA new application has been submitted by ${applicantName} to create the tribe "${tribeName}".\n\nEmbraced Customs:\n${customsList}\n\nPlease log in to your account to review the application.\n\n- The TTpath Team`,
+            html: `
+                <div style="font-family: sans-serif; color: #333;">
+                    <p>Hello Mentors,</p>
+                    <p>A new application has been submitted by <strong>${applicantName}</strong> to create the tribe "<strong>${tribeName}</strong>".</p>
+                    <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; margin: 20px 0;">
+                        <h4 style="margin-top: 0; color: #166534;">Applicant's Embraced Customs:</h4>
+                        <p style="margin-bottom: 0;">${embracedCustoms.length > 0 ? embracedCustoms.join(', ') : 'No customs embraced yet.'}</p>
+                    </div>
+                    <p>Please log in to your account to review the application.</p>
+                    <p>- The TTpath Team</p>
+                </div>
+            `,
         };
 
         await mg.messages.create(mailgunDomain, messageData);
@@ -64,7 +76,6 @@ async function sendNewChiefApplicationEmailToMentors(applicantName: string, trib
 
     } catch (error) {
         console.error('Error sending new chief application email to mentors:', error);
-        // Do not throw, as the main flow should still succeed.
     }
 }
 
@@ -91,7 +102,9 @@ const createTribeFlow = ai.defineFlow(
     }
     
     const user = { uid: decodedToken.uid };
-    const applicantName = applicantDoc.exists ? `${applicantDoc.data()?.firstName || 'Unknown'} ${applicantDoc.data()?.lastName || ''}`.trim() : 'A new applicant';
+    const applicantData = applicantDoc.data();
+    const applicantName = applicantDoc.exists ? `${applicantData?.firstName || 'Unknown'} ${applicantData?.lastName || ''}`.trim() : 'A new applicant';
+    const embracedCustoms = applicantData?.embracedCustoms || [];
     
     try {
       const { name, location, lat, lng } = input;
@@ -103,7 +116,6 @@ const createTribeFlow = ai.defineFlow(
       const userTutorialDoc = await db.collection('user_tutorials').doc(user.uid).get();
       const answers = userTutorialDoc.exists ? userTutorialDoc.data()?.answers || {} : {};
 
-      // Create an application instead of a tribe directly
       const applicationRef = db.collection('tribe_applications').doc();
       await applicationRef.set({
         type: 'new_tribe',
@@ -113,18 +125,16 @@ const createTribeFlow = ai.defineFlow(
         lng: lng,
         applicantId: user.uid,
         answers: answers,
+        embracedCustoms: embracedCustoms,
         status: 'pending',
         createdAt: Timestamp.now(),
       });
 
-      // Send email notification to mentors
-      await sendNewChiefApplicationEmailToMentors(applicantName, name);
+      await sendNewChiefApplicationEmailToMentors(applicantName, name, embracedCustoms);
 
-      // Return a successful response.
       return { success: true, message: "Your application to create a tribe has been submitted for review by a mentor." };
     } catch (error) {
       console.error('Error creating tribe application in Firestore:', error);
-      // Return a failure response.
       return { success: false, message: 'An unexpected error occurred while submitting your application.' };
     }
   }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'rea
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, updateDoc, increment, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment, setDoc, getDoc } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
 import { getAlignmentTest } from '@/ai/flows/get-alignment-test';
 import { comprehensionQuestions } from '@/lib/data';
@@ -321,14 +321,14 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
                 <div className="border-t pt-4 mt-4 space-y-2">
                     <h4 className="font-semibold">Preparation Requirements</h4>
                     <p className="text-sm text-muted-foreground">
-                        Before starting a tribe, we recommend exploring the community resources. You can document your understanding by taking the Alignment Test on your 'My Profile & Test' tab.
+                        Before starting a tribe, we recommend exploring the community resources. You can document your understanding by embracing the Customs on the 'Trading Tribe Customs' page.
                     </p>
                     <Button
                         variant="link"
                         className="p-0 h-auto"
-                        onClick={() => handleTabChange('my-profile')}
+                        asChild
                     >
-                        Go to My Profile & Test
+                        <Link href="/relationships">Go to Trading Tribe Customs</Link>
                     </Button>
                 </div>
                 
@@ -469,17 +469,12 @@ function MyTribePageContent() {
           if (level === 5) return "Chief Says:";
           if (level === 6) return "Mentor Says:";
           return "Contributor:";
-      } else { // type === 'answer'
+      } else { 
           const qLevel = Number(entry.userLevel || 0);
           if (qLevel === 0) return "Ed Says:";
-          
-          if (qLevel === 6) {
-              return "Mentor's Mentor Says:";
-          }
-
+          if (qLevel === 6) return "Mentor's Mentor Says:";
           if (!feedback) return '';
           if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
-          
           const level = Number(feedback.mentorLevel || 0);
           if (level === 5) return "Tribe Chief Says:";
           if (level >= 6) return "Mentor Says:";
@@ -521,7 +516,7 @@ function MyTribePageContent() {
   useEffect(() => {
     setIsClient(true);
     setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); 
     return () => clearInterval(timer);
   }, []);
 
@@ -587,7 +582,7 @@ function MyTribePageContent() {
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, {
         myAccountVisits: increment(1)
-      }).catch(err => console.log("Could not update last login, probably a new user."));
+      }).catch(err => console.log("Could not update last login."));
 
 
       const [progress, allTribes, profile, myPendingAppsResult] = await Promise.all([
@@ -619,12 +614,11 @@ function MyTribePageContent() {
       const currentUserTribe = (tribesWithMembers as Tribe[]).find(tribe => tribe.members.includes(currentUser.uid));
       setUserTribe(currentUserTribe || null);
       
-      // Fetch role-specific data
-      if (Number(progress.currentUserLevel) >= 5) { // Chief or Mentor
+      if (Number(progress.currentUserLevel) >= 5) { 
         const allJournalEntriesResult = await getAllJournalEntries();
         setAllJournalEntries(allJournalEntriesResult);
 
-        if (Number(progress.currentUserLevel) >= 6) { // Mentor
+        if (Number(progress.currentUserLevel) >= 6) { 
             const [newTribeAppsResult, newMentorAppsResult] = await Promise.all([
               manageApplication({ action: 'get', type: 'new_tribe', idToken }),
               manageApplication({ action: 'get', type: 'new_mentor', idToken }),
@@ -638,7 +632,7 @@ function MyTribePageContent() {
         }
       }
       
-      if (currentUserTribe) { // Member or Chief of a tribe
+      if (currentUserTribe) { 
           const [members, reports] = await Promise.all([
              getTribeMembers({ tribeId: currentUserTribe.id, idToken }),
              getMeetingReports({ tribeId: currentUserTribe.id, idToken }),
@@ -646,7 +640,7 @@ function MyTribePageContent() {
           setTribeMembers(members);
           setMeetingReports(reports);
           
-          if (currentUserTribe.chief === currentUser.uid) { // Chief specific
+          if (currentUserTribe.chief === currentUser.uid) { 
               const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
               if (joinAppsResult.success && joinAppsResult.applications) {
                   const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
@@ -683,7 +677,7 @@ function MyTribePageContent() {
             setIsFetchingAnswers(false);
         }
       } else {
-        router.push('/'); // Redirect to home if not logged in
+        router.push('/'); 
       }
     });
 
@@ -742,7 +736,7 @@ function MyTribePageContent() {
         setNewTribeName('');
         setNewTribeLocation('');
         setNewTribeCoords(null);
-        if (user) fetchTribesAndUserData(user); // Refresh data
+        if (user) fetchTribesAndUserData(user); 
       } else {
         throw new Error(result.message || 'Failed to create tribe application.');
       }
@@ -760,15 +754,14 @@ function MyTribePageContent() {
     setIsLoading(true);
     try {
       const idToken = await user.getIdToken();
-      const userAnswersData = await getAlignmentTest({ idToken });
-      const result = await joinTribe({ tribeId, idToken, answers: userAnswersData.answers });
+      const result = await joinTribe({ tribeId, idToken });
       if (result.success) {
         toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
-        if (user) fetchTribesAndUserData(user); // Refresh data
+        if (user) fetchTribesAndUserData(user); 
       } else {
         throw new Error(result.message || "Failed to send application.");
       }
-      setSelectedTribe(null); // Close info card on success
+      setSelectedTribe(null); 
     } catch (error: any) {
       console.error("Error joining tribe: ", error);
       toast({ title: 'Error', description: error.message || 'Failed to join tribe.', variant: 'destructive' });
@@ -790,7 +783,7 @@ function MyTribePageContent() {
         });
         if (result.success) {
             toast({ title: 'Application Withdrawn', description: 'Your application has been successfully withdrawn.' });
-            fetchTribesAndUserData(user); // Refresh data
+            fetchTribesAndUserData(user); 
         } else {
             throw new Error(result.message || 'Failed to withdraw application.');
         }
@@ -810,10 +803,7 @@ function MyTribePageContent() {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { currentUserLevel: 3 }, { merge: true });
       toast({ title: 'Left Tribe', description: 'You have successfully left the tribe. Refreshing your data...' });
-      
-      // Force a full refresh of user data to resync state
       window.location.reload();
-
     } catch (error) {
       console.error("Error leaving tribe: ", error);
       toast({ title: 'Error', description: 'Failed to leave tribe.', variant: 'destructive' });
@@ -832,7 +822,7 @@ function MyTribePageContent() {
       const result = await deleteTribe({ tribeId, idToken });
       if (result.success) {
         toast({ title: 'Tribe Deleted', description: 'The tribe has been successfully deleted.' });
-        if (user) fetchTribesAndUserData(user); // Refresh data
+        if (user) fetchTribesAndUserData(user); 
       } else {
         throw new Error(result.message || 'Failed to delete tribe.');
       }
@@ -1122,7 +1112,7 @@ function MyTribePageContent() {
       setContent('');
       setSubject('');
       toast({ title: recipient === 'Suggestion' ? 'Suggestion Submitted' : 'Question Submitted' });
-      fetchJournal(); // Refresh journal entries
+      fetchJournal(); 
     } catch(e: any) {
       toast({ title: "Error Submitting Entry", description: e.message, variant: 'destructive' });
     } finally {
@@ -1153,7 +1143,7 @@ function MyTribePageContent() {
         const result = await applyForMentor({ idToken });
         if (result.success) {
             toast({ title: 'Application Submitted', description: result.message });
-            fetchTribesAndUserData(user); // Refresh data
+            fetchTribesAndUserData(user); 
         } else {
             throw new Error(result.message);
         }
@@ -1221,7 +1211,7 @@ function MyTribePageContent() {
       const result = await deleteJournalFeedback({ idToken, entryId, feedbackId });
       if (result.success) {
         toast({ title: 'Feedback Deleted' });
-        if (user) fetchTribesAndUserData(user); // Refresh data
+        if (user) fetchTribesAndUserData(user); 
       } else {
         throw new Error(result.message);
       }
@@ -1283,6 +1273,117 @@ function MyTribePageContent() {
           setIsAddingManualFaq(false);
       }
   };
+
+  const renderPendingForumList = (entries: JournalEntry[]) => (
+    <Accordion type="single" collapsible className="w-full">
+        {entries.map(entry => (
+            <AccordionItem key={entry.id} value={entry.id} className="border-b mb-2">
+                <AccordionTrigger className="text-left py-4 px-2 hover:no-underline hover:bg-muted/50 rounded-md transition-all">
+                    <div className="grid w-full gap-1 text-left">
+                        <div className="flex w-full justify-between items-center">
+                            <span className="font-semibold flex items-center">
+                                {entry.userName}
+                                {entry.recipient === 'Ed' && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>}
+                                {entry.recipient === 'Suggestion' && <span className="flex items-center text-xs text-accent-foreground font-bold ml-2 px-2 py-0.5 rounded-full bg-accent ring-1 ring-accent">SUGGESTION</span>}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleDateString() : '...'}</span>
+                        </div>
+                        {entry.subject && <p className="font-medium text-sm text-foreground/80 line-clamp-1">Subject: {entry.subject}</p>}
+                        <p className="truncate text-xs text-muted-foreground break-words pr-4">
+                            {entry.entryContent.replace(/<[^>]*>/g, '')}
+                        </p>
+                    </div>
+                </AccordionTrigger>
+            <AccordionContent className="pt-4 border-t mt-2">
+                <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
+                {entry.imageUrl && (
+                    <div className="my-4 px-4 relative aspect-video">
+                        <Image src={entry.imageUrl} alt="Forum entry image" fill className="rounded-md object-contain" />
+                    </div>
+                )}
+                {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
+                <div className="mt-6 space-y-4 px-4 pb-4">
+                <h4 className="font-semibold text-md">Feedback</h4>
+                {entry.feedback && entry.feedback.length > 0 ? (
+                    <div className="space-y-4">
+                    {entry.feedback.map((fb) => {
+                        const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
+                        
+                        return editingFeedbackId === fb.id ? (
+                            <FeedbackForm
+                            key={fb.id}
+                            entryId={entry.id}
+                            user={user}
+                            editingFeedback={fb}
+                            onActionComplete={() => {
+                                setEditingFeedbackId(null);
+                                if (user) fetchTribesAndUserData(user);
+                            }}
+                            onCancelEdit={() => setEditingFeedbackId(null)}
+                            />
+                        ) : (
+                            <Alert key={fb.id} className="bg-muted/50 relative group">
+                                <UserIcon className="h-4 w-4" />
+                                <AlertDescription>
+                                  <div className="flex justify-between items-center text-sm mb-2">
+                                      <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
+                                  </div>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
+                                    {fb.imageUrl && (
+                                        <div className="mt-4">
+                                            <div className="relative aspect-video">
+                                                <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
+                                            </div>
+                                            {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
+                                            {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
+                                        </div>
+                                    )}
+                                </AlertDescription>
+                                {(isMentor || isChief) && (
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                )}
+                            </Alert>
+                        )
+                    }
+                    )}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                )}
+                {editingFeedbackId === null && (isMentor || isChief) && (
+                    <FeedbackForm
+                        entryId={entry.id}
+                        user={user}
+                        onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
+                    />
+                )}
+                </div>
+            </AccordionContent>
+            </AccordionItem>
+        ))}
+    </Accordion>
+  );
 
   if (isLoading || !isLoaded || !user) {
     return (
@@ -1495,6 +1596,7 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
+            </Card>
         </div>
 
         <Card>
@@ -1578,117 +1680,6 @@ function MyTribePageContent() {
             </CardContent>
         </Card>
     </div>
-  );
-
-  const renderPendingForumList = (entries: JournalEntry[]) => (
-    <Accordion type="single" collapsible className="w-full">
-        {entries.map(entry => (
-            <AccordionItem key={entry.id} value={entry.id} className="border-b mb-2">
-                <AccordionTrigger className="text-left py-4 px-2 hover:no-underline hover:bg-muted/50 rounded-md transition-all">
-                    <div className="grid w-full gap-1 text-left">
-                        <div className="flex w-full justify-between items-center">
-                            <span className="font-semibold flex items-center">
-                                {entry.userName}
-                                {entry.recipient === 'Ed' && <span className="flex items-center text-xs text-primary font-bold ml-2 px-2 py-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20">TO ED</span>}
-                                {entry.recipient === 'Suggestion' && <span className="flex items-center text-xs text-accent-foreground font-bold ml-2 px-2 py-0.5 rounded-full bg-accent ring-1 ring-accent">SUGGESTION</span>}
-                            </span>
-                            <span className="text-xs text-muted-foreground">{isClient ? new Date(entry.createdAt).toLocaleDateString() : '...'}</span>
-                        </div>
-                        {entry.subject && <p className="font-medium text-sm text-foreground/80 line-clamp-1">Subject: {entry.subject}</p>}
-                        <p className="truncate text-xs text-muted-foreground break-words pr-4">
-                            {entry.entryContent.replace(/<[^>]*>/g, '')}
-                        </p>
-                    </div>
-                </AccordionTrigger>
-            <AccordionContent className="pt-4 border-t mt-2">
-                <div className="prose dark:prose-invert max-w-none px-4 pb-4" dangerouslySetInnerHTML={{ __html: entry.entryContent.replace(/\n/g, '<br />') }} />
-                {entry.imageUrl && (
-                    <div className="my-4 px-4 relative aspect-video">
-                        <Image src={entry.imageUrl} alt="Forum entry image" fill className="rounded-md object-contain" />
-                    </div>
-                )}
-                {entry.caption && <div className="text-center text-sm text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: entry.caption.replace(/\n/g, '<br />')}}/>}
-                <div className="mt-6 space-y-4 px-4 pb-4">
-                <h4 className="font-semibold text-md">Feedback</h4>
-                {entry.feedback && entry.feedback.length > 0 ? (
-                    <div className="space-y-4">
-                    {entry.feedback.map((fb) => {
-                        const answerAuthorLabel = getAuthorDisplay('answer', entry, fb);
-                        
-                        return editingFeedbackId === fb.id ? (
-                            <FeedbackForm
-                            key={fb.id}
-                            entryId={entry.id}
-                            user={user}
-                            editingFeedback={fb}
-                            onActionComplete={() => {
-                                setEditingFeedbackId(null);
-                                if (user) fetchTribesAndUserData(user);
-                            }}
-                            onCancelEdit={() => setEditingFeedbackId(null)}
-                            />
-                        ) : (
-                            <Alert key={fb.id} className="bg-muted/50 relative group">
-                                <UserIcon className="h-4 w-4" />
-                                <AlertDescription>
-                                  <div className="flex justify-between items-center text-sm mb-2">
-                                      <span className="font-semibold text-foreground">{answerAuthorLabel}</span>
-                                  </div>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: fb.feedbackContent.replace(/\n/g, '<br />') }} />
-                                    {fb.imageUrl && (
-                                        <div className="mt-4">
-                                            <div className="relative aspect-video">
-                                                <Image src={fb.imageUrl} alt="Feedback Image" fill sizes="(max-width: 1023px) 90vw, 45vw" className="rounded-md object-contain" />
-                                            </div>
-                                            {fb.imageCredit && <div className="text-center text-xs text-muted-foreground italic mt-2" dangerouslySetInnerHTML={{ __html: fb.imageCredit}} />}
-                                            {fb.caption && <div className="text-center text-sm text-muted-foreground italic mt-4" dangerouslySetInnerHTML={{ __html: fb.caption.replace(/\n/g, '<br />')}}/>}
-                                        </div>
-                                    )}
-                                </AlertDescription>
-                                {(isMentor || isChief) && (
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingFeedbackId(fb.id)}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>This will permanently delete this feedback. This action cannot be undone.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteFeedback(entry.id, fb.id)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                                )}
-                            </Alert>
-                        )
-                    }
-                    )}
-                    </div>
-                ) : (
-                    <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                )}
-                {editingFeedbackId === null && (isMentor || isChief) && (
-                    <FeedbackForm
-                        entryId={entry.id}
-                        user={user}
-                        onActionComplete={() => { if(user) fetchTribesAndUserData(user) }}
-                    />
-                )}
-                </div>
-            </AccordionContent>
-            </AccordionItem>
-        ))}
-    </Accordion>
   );
 
   const renderMemberChiefView = () => (
@@ -2093,11 +2084,10 @@ function MyTribePageContent() {
                                     }) : <p className="text-xs text-muted-foreground">No past meetings to report on.</p>}
                                 </div>
                             </div>
-                            {member.embracedCustoms && (
-                                <div>
+                            <div>
                                 <h4 className="font-semibold mb-2">Embraced Customs</h4>
                                 <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/50">
-                                    {member.embracedCustoms.length > 0 ? member.embracedCustoms.map((custom, idx) => (
+                                    {member.embracedCustoms && member.embracedCustoms.length > 0 ? member.embracedCustoms.map((custom, idx) => (
                                         <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
                                             <CheckCircle2 className="h-3 w-3" />
                                             {custom}
@@ -2106,8 +2096,7 @@ function MyTribePageContent() {
                                         <p className="text-sm text-muted-foreground">No customs embraced yet.</p>
                                     )}
                                 </div>
-                                </div>
-                            )}
+                            </div>
                             </div>
                         </AccordionContent>
                         </AccordionItem>
@@ -2172,8 +2161,8 @@ function MyTribePageContent() {
                                   <div className="space-y-4">
                                       <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
                                       <div>
-                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
-                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                      <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
                                       <h4 className="font-semibold mb-2">Embraced Customs</h4>
@@ -2242,7 +2231,6 @@ function MyTribePageContent() {
                     </CardContent>
                 </Card>
 
-                {/* PENDING SUGGESTIONS SECTION */}
                 <Card className="border-accent shadow-md">
                     <CardHeader className="bg-accent/10">
                         <CardTitle className="flex items-center gap-2 text-accent-foreground"><Lightbulb /> Pending Suggestions</CardTitle>
@@ -2260,7 +2248,6 @@ function MyTribePageContent() {
                     </CardContent>
                 </Card>
 
-                {/* PENDING FOR ED SECTION */}
                 <Card className="border-primary/50 shadow-md">
                     <CardHeader className="bg-primary/5">
                         <div className="flex justify-between items-center">
@@ -2282,7 +2269,6 @@ function MyTribePageContent() {
                     </CardContent>
                 </Card>
 
-                {/* GENERAL PENDING SECTION */}
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
