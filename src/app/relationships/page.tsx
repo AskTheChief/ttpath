@@ -235,8 +235,6 @@ const RelationshipsPage = () => {
     }
   };
 
-  const hasCompletedRequirement = userLevel >= 3 || requirementsState['embrace-customs'] === true;
-
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -396,30 +394,21 @@ const RelationshipsPage = () => {
             )}
           </div>
           
-          {!isEditing && !hasCompletedRequirement && user && (
+          {!isEditing && user && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
                 <h3 className="text-2xl font-bold">Review Complete</h3>
                 <p className="text-muted-foreground">
-                    You have reviewed the Trading Tribe Customs. By continuing, you confirm that you have embraced the customs you align with and are ready to proceed on your journey.
+                    By clicking the button below, you confirm that you have reviewed the Trading Tribe Customs and are ready to return to your journey.
                 </p>
-                <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-xl shadow-sm border">
-                    <div className="flex items-center gap-4">
-                        <Checkbox 
-                            id="final-embrace" 
-                            checked={hasCompletedRequirement}
-                            onCheckedChange={(checked) => checked && handleCompleteEmbrace()}
-                            className="h-8 w-8 border-2"
-                            disabled={isSaving}
-                        />
-                        <Label 
-                            htmlFor="final-embrace" 
-                            className="text-2xl font-black text-primary cursor-pointer uppercase tracking-tight"
-                        >
-                            {isSaving ? "Processing..." : "I embrace the customs"}
-                        </Label>
-                    </div>
-                    {isSaving && <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />}
-                </div>
+                <Button 
+                    size="lg" 
+                    className="text-xl font-bold px-12 py-8 h-auto shadow-lg"
+                    onClick={handleCompleteEmbrace}
+                    disabled={isSaving}
+                >
+                    {isSaving ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : null}
+                    FINISH & RETURN TO PATH
+                </Button>
             </div>
           )}
         </div>
