@@ -307,8 +307,7 @@ const RelationshipsPage = () => {
                 <div 
                   key={i} 
                   className={cn(
-                    "grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 border-b last:border-0",
-                    isAgreed && "opacity-80 transition-opacity"
+                    "grid md:grid-cols-2 items-center gap-12 md:gap-16 py-8 border-b last:border-0"
                   )}
                 >
                   <div className="flex flex-col items-center justify-center p-4">
@@ -346,8 +345,7 @@ const RelationshipsPage = () => {
                             <h3 className="text-3xl font-bold tracking-tight">{p.title}</h3>
                         </div>
                         <div className={cn(
-                            "text-lg text-muted-foreground leading-relaxed whitespace-pre-line prose prose-slate dark:prose-invert max-w-none",
-                            isAgreed && "text-muted-foreground/60"
+                            "text-lg text-muted-foreground leading-relaxed whitespace-pre-line prose prose-slate dark:prose-invert max-w-none"
                         )}>
                           {p.content}
                         </div>
