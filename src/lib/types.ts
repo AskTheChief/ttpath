@@ -31,6 +31,7 @@ export const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
   idToken: z.string().optional(),
   answers: z.record(z.string()).optional().describe("The user's answers to the Comprehension Test questions."),
+  embracedCustoms: z.array(z.string()).optional().describe("The list of customs the user has embraced."),
 });
 export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 
@@ -111,6 +112,7 @@ export const ApplicationSchema = z.object({
     applicantEmail: z.string().optional(),
     applicantPhone: z.string().optional(),
     answers: z.record(z.string()).optional(),
+    embracedCustoms: z.array(z.string()).optional(),
     issue: z.string().optional(),
     serviceProject: z.string().optional(),
     status: z.string(),
@@ -159,6 +161,7 @@ export const UserProfileSchema = z.object({
   serviceProject: z.string().optional(),
   myAccountVisits: z.number().optional(),
   emailsSent: z.number().optional(),
+  embracedCustoms: z.array(z.string()).optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -203,6 +206,7 @@ export const TribeMemberSchema = z.object({
     email: z.string(),
     phone: z.string(),
     answers: z.record(z.string()).optional(),
+    embracedCustoms: z.array(z.string()).optional(),
     issue: z.string().optional(),
     serviceProject: z.string().optional(),
 });

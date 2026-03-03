@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -87,8 +86,11 @@ const joinTribeFlow = ai.defineFlow(
     }
 
     let decodedToken;
+    let applicantData;
     try {
         decodedToken = await adminAuth.verifyIdToken(input.idToken);
+        const applicantSnap = await db.collection('users').doc(decodedToken.uid).get();
+        applicantData = applicantSnap.data();
     } catch (error) {
         console.error('Error verifying ID token:', error);
         throw new Error('User not authenticated. Invalid token.');
@@ -125,7 +127,8 @@ const joinTribeFlow = ai.defineFlow(
           type: 'join_tribe',
           tribeId: input.tribeId,
           applicantId: user.uid,
-          answers: input.answers,
+          answers: input.answers || {},
+          embracedCustoms: applicantData?.embracedCustoms || [],
           status: 'pending',
           createdAt: Timestamp.now(),
         });

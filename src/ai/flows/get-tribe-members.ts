@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -68,6 +67,7 @@ const getTribeMembersFlow = ai.defineFlow(
           email: data.email || '',
           phone: data.phone || '',
           answers: answers,
+          embracedCustoms: data.embracedCustoms || [],
           issue: data.issue || '',
           serviceProject: data.serviceProject || '',
         };

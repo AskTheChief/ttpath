@@ -214,7 +214,7 @@ const RelationshipsPage = () => {
       const idToken = await user.getIdToken();
       const newReqs = { ...requirementsState, 'embrace-customs': true };
       
-      // Update progress in backend - preserve existing level (important for Mentors)
+      // Update progress in backend - preserve existing level
       await updateUserProgress({ 
         currentUserLevel: userLevel, 
         requirementsState: newReqs, 
@@ -222,8 +222,6 @@ const RelationshipsPage = () => {
       });
       
       setRequirementsState(newReqs);
-      const allTitles = principles.map(p => p.title);
-      setUserAgreements(new Set(allTitles));
 
       playToggleSound(true); // Confirmation sound
       toast({ title: "You embrace the customs", description: "Requirement complete. Returning to your journey..." });
@@ -235,10 +233,6 @@ const RelationshipsPage = () => {
       setIsSaving(false);
     }
   };
-
-  const allEmbraced = useMemo(() => {
-    return principles.length > 0 && userAgreements.size >= principles.length;
-  }, [principles, userAgreements]);
 
   const hasCompletedRequirement = requirementsState['embrace-customs'] === true;
 
@@ -298,7 +292,7 @@ const RelationshipsPage = () => {
             Customs
           </h1>
           <p className="max-w-2xl mt-8 text-lg text-muted-foreground">
-            The Trading Tribe relies on shared customs to maintain a safe and productive environment for all members. Guests must embrace these customs before proceeding to become Explorers.
+            The Trading Tribe relies on shared customs to maintain a safe and productive environment for all members. Guests review these customs and embrace those they align with before proceeding to become Explorers.
           </p>
         </div>
       </header>
@@ -392,11 +386,11 @@ const RelationshipsPage = () => {
             )}
           </div>
           
-          {!isEditing && allEmbraced && !hasCompletedRequirement && (
+          {!isEditing && !hasCompletedRequirement && user && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
-                <h3 className="text-2xl font-bold">Requirement Completion</h3>
+                <h3 className="text-2xl font-bold">Review Complete</h3>
                 <p className="text-muted-foreground">
-                    You have acknowledged and agreed to all Trading Tribe Customs. Toggle the final checkbox below to confirm your commitment and proceed.
+                    You have reviewed the Trading Tribe Customs. By continuing, you confirm that you have embraced the customs you align with and are ready to proceed on your journey.
                 </p>
                 <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-xl shadow-sm border">
                     <div className="flex items-center gap-4">

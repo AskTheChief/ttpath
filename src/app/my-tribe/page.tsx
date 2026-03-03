@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -19,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -40,6 +39,7 @@ import { evaluateAlignmentTest } from '@/ai/flows/evaluate-alignment-test';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { updateUserProgress } from '@/ai/flows/update-user-progress';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { resetUserProgress } from '@/ai/flows/reset-user-progress';
 import EmailComposerModal from '@/components/modals/email-composer-modal';
@@ -1495,7 +1495,6 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
-            </Card>
         </div>
 
         <Card>
@@ -1976,7 +1975,7 @@ function MyTribePageContent() {
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                     <div>
-                        <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
+                        <Calendar mode="single" selected={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
                         <div className="flex items-center gap-2 mt-4">
                           <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
                           <div className="flex w-full items-center gap-1">
@@ -2035,7 +2034,7 @@ function MyTribePageContent() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Users />Tribe Members</CardTitle>
-                            <CardDescription>As Chief, you can view member details and their test answers.</CardDescription>
+                            <CardDescription>As Chief, you can view member details and their embraced customs.</CardDescription>
                         </div>
                         <Button onClick={openComposerForMembers}><Mail className="mr-2 h-4 w-4" />Email All Members</Button>
                     </div>
@@ -2094,12 +2093,18 @@ function MyTribePageContent() {
                                     }) : <p className="text-xs text-muted-foreground">No past meetings to report on.</p>}
                                 </div>
                             </div>
-                            {member.answers && (
+                            {member.embracedCustoms && (
                                 <div>
-                                <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
-                                <div className="space-y-3 text-sm p-3 border rounded-md max-h-60 overflow-y-auto bg-muted/50">
-                                    {comprehensionQuestions.map((q, i) => (<div key={i}><p className="font-medium">{i + 1}. {q}</p><p className="text-muted-foreground whitespace-pre-wrap">{member.answers?.[q] || "No answer provided."}</p></div>))}
-                                    {Object.keys(member.answers).length === 0 && <p>No answers submitted.</p>}
+                                <h4 className="font-semibold mb-2">Embraced Customs</h4>
+                                <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/50">
+                                    {member.embracedCustoms.length > 0 ? member.embracedCustoms.map((custom, idx) => (
+                                        <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            {custom}
+                                        </div>
+                                    )) : (
+                                        <p className="text-sm text-muted-foreground">No customs embraced yet.</p>
+                                    )}
                                 </div>
                                 </div>
                             )}
@@ -2126,9 +2131,16 @@ function MyTribePageContent() {
                                 <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                 </div>
                                 <div>
-                                <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
-                                <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
-                                    {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
+                                <h4 className="font-semibold mb-2">Embraced Customs</h4>
+                                <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                                    {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
+                                        <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            {custom}
+                                        </div>
+                                    )) : (
+                                        <p className="text-sm text-muted-foreground">No customs embraced.</p>
+                                    )}
                                 </div>
                                 </div>
                                 <div className="flex justify-end gap-2 pt-2"><Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
@@ -2164,9 +2176,16 @@ function MyTribePageContent() {
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {member.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
-                                      <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
-                                      <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
-                                          {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
+                                      <h4 className="font-semibold mb-2">Embraced Customs</h4>
+                                      <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                                          {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
+                                              <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
+                                                  <CheckCircle2 className="h-3 w-3" />
+                                                  {custom}
+                                              </div>
+                                          )) : (
+                                              <p className="text-sm text-muted-foreground">No customs embraced.</p>
+                                          )}
                                       </div>
                                       </div>
                                       <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
@@ -2199,9 +2218,16 @@ function MyTribePageContent() {
                                             <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold mb-2">Alignment Test Answers</h4>
-                                            <div className="space-y-2 text-sm p-3 border rounded-md max-h-60 overflow-y-auto">{Object.entries(app.answers || {}).map(([question, answer]) => (<div key={question}><p className="font-medium">{question}</p><p className="text-muted-foreground whitespace-pre-wrap">{answer || "No answer provided."}</p></div>))}
-                                                {(!app.answers || Object.keys(app.answers).length === 0) && <p>No answers provided.</p>}
+                                            <h4 className="font-semibold mb-2">Embraced Customs</h4>
+                                            <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                                                {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
+                                                    <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        {custom}
+                                                    </div>
+                                                )) : (
+                                                    <p className="text-sm text-muted-foreground">No customs embraced.</p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>

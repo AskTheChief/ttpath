@@ -21,6 +21,11 @@ if (!getApps().length) {
 const db = getFirestore();
 const adminAuth = getAuth();
 
+/**
+ * @fileOverview Flows for managing a user's embraced customs (formerly relationship agreements).
+ * Now stores data directly in the user's document in the 'users' collection.
+ */
+
 const getRelationshipAgreementsFlow = ai.defineFlow(
   {
     name: 'getRelationshipAgreementsFlow',
@@ -32,11 +37,11 @@ const getRelationshipAgreementsFlow = ai.defineFlow(
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const userId = decodedToken.uid;
       
-      const docRef = db.collection('relationship_agreements').doc(userId);
-      const docSnap = await docRef.get();
+      const userRef = db.collection('users').doc(userId);
+      const userSnap = await userRef.get();
 
-      if (docSnap.exists) {
-        return { agreedTitles: docSnap.data()?.agreedTitles || [] };
+      if (userSnap.exists) {
+        return { agreedTitles: userSnap.data()?.embracedCustoms || [] };
       }
       
       return { agreedTitles: [] };
@@ -58,21 +63,35 @@ const toggleRelationshipAgreementFlow = ai.defineFlow(
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       const userId = decodedToken.uid;
       
-      const docRef = db.collection('relationship_agreements').doc(userId);
+      const userRef = db.collection('users').doc(userId);
       
       if (agreed) {
-        await docRef.set({
-          agreedTitles: FieldValue.arrayUnion(title)
-        }, { merge: true });
+        await userRef.update({
+          embracedCustoms: FieldValue.arrayUnion(title)
+        });
       } else {
-        await docRef.set({
-          agreedTitles: FieldValue.arrayRemove(title)
-        }, { merge: true });
+        await userRef.update({
+          embracedCustoms: FieldValue.arrayRemove(title)
+        });
       }
 
       return { success: true };
     } catch (error: any) {
       console.error('Error toggling relationship agreement:', error);
+      // If document doesn't exist yet, we should use set instead of update
+      if (error.code === 5 || error.message.includes('NOT_FOUND')) {
+          try {
+              const decodedToken = await adminAuth.verifyIdToken(idToken);
+              const userId = decodedToken.uid;
+              const userRef = db.collection('users').doc(userId);
+              await userRef.set({
+                  embracedCustoms: agreed ? [title] : []
+              }, { merge: true });
+              return { success: true };
+          } catch (retryError: any) {
+              return { success: false, message: retryError.message };
+          }
+      }
       return { success: false, message: error.message };
     }
   }
