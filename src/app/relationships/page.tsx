@@ -235,7 +235,7 @@ const RelationshipsPage = () => {
     }
   };
 
-  const hasCompletedRequirement = requirementsState['embrace-customs'] === true;
+  const hasCompletedRequirement = userLevel >= 3 || requirementsState['embrace-customs'] === true;
 
   if (isLoading) {
     return (
@@ -351,22 +351,33 @@ const RelationshipsPage = () => {
                           {p.content}
                         </div>
                         {user && (
-                            <div className="mt-8 flex items-center gap-3">
-                                <Checkbox 
-                                    id={`agree-${i}`} 
-                                    checked={isAgreed}
-                                    onCheckedChange={(checked) => handleToggleAgreement(p.title, !!checked)}
-                                    className="h-6 w-6 border-2"
-                                />
-                                <Label 
-                                    htmlFor={`agree-${i}`} 
-                                    className={cn(
-                                        "text-xl font-bold cursor-pointer transition-colors",
-                                        isAgreed ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    I embrace this custom.
-                                </Label>
+                            <div className="mt-8 flex flex-col gap-4">
+                                <span className="text-xl font-bold text-foreground/80">I embrace this custom:</span>
+                                <div className="flex gap-4 items-center">
+                                    <Button 
+                                        variant={isAgreed ? "default" : "outline"} 
+                                        size="lg"
+                                        className={cn(
+                                            "w-32 text-xl font-black tracking-tighter transition-all flex items-center justify-center gap-2",
+                                            isAgreed ? "bg-primary hover:bg-primary/90 text-primary-foreground scale-105 shadow-md border-primary" : "text-muted-foreground"
+                                        )}
+                                        onClick={() => !isAgreed && handleToggleAgreement(p.title, true)}
+                                    >
+                                        {isAgreed && <CheckCircle2 className="h-6 w-6" />}
+                                        YES
+                                    </Button>
+                                    <Button 
+                                        variant={!isAgreed ? "destructive" : "outline"}
+                                        size="lg"
+                                        className={cn(
+                                            "w-32 text-xl font-black tracking-tighter transition-all",
+                                            !isAgreed ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground scale-105 shadow-md border-destructive" : "text-muted-foreground"
+                                        )}
+                                        onClick={() => isAgreed && handleToggleAgreement(p.title, false)}
+                                    >
+                                        NO
+                                    </Button>
+                                </div>
                             </div>
                         )}
                       </div>
