@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -409,21 +410,6 @@ const RelationshipsPage = () => {
                     {isSaving && <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />}
                 </div>
             </div>
-          )}
-          
-          {!isEditing && hasCompletedRequirement && (
-             <div className="mt-24 text-center space-y-4">
-                <div className="flex items-center justify-center gap-2 text-primary font-bold text-xl">
-                    <CheckCircle2 className="h-6 w-6" />
-                    <span>Requirement Complete</span>
-                </div>
-                <Button asChild variant="secondary" size="lg">
-                    <Link href="/">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Return to Path
-                    </Link>
-                </Button>
-             </div>
           )}
         </div>
       </section>
