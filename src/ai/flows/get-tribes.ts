@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -24,6 +23,28 @@ const getTribesFlow = ai.defineFlow(
   async () => {
     try {
       const tribesSnapshot = await db.collection('tribes').get();
+      
+      // Fetch all unique member IDs to resolve names
+      const allMemberIds = new Set<string>();
+      tribesSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        (data.members || []).forEach((id: string) => allMemberIds.add(id));
+        if (data.chief) allMemberIds.add(data.chief);
+      });
+
+      const memberIdsArray = Array.from(allMemberIds);
+      const userNamesMap = new Map<string, string>();
+
+      // Batch fetch users in chunks of 30 (Firestore limit)
+      for (let i = 0; i < memberIdsArray.length; i += 30) {
+        const chunk = memberIdsArray.slice(i, i + 30);
+        const usersSnapshot = await db.collection('users').where('__name__', 'in', chunk).get();
+        usersSnapshot.forEach(uDoc => {
+          const uData = uDoc.data();
+          userNamesMap.set(uDoc.id, `${uData.firstName || ''} ${uData.lastName || ''}`.trim() || 'Unknown User');
+        });
+      }
+
       const tribes = tribesSnapshot.docs.map(doc => {
         const data = doc.data();
         
@@ -32,10 +53,12 @@ const getTribesFlow = ai.defineFlow(
           const meetingDate = meeting.date;
           return {
             ...meeting,
-            // Convert Firestore Timestamp to ISO string if it's a Timestamp object
             date: meetingDate?.toDate ? meetingDate.toDate().toISOString() : meetingDate,
           };
         });
+
+        const memberNames = (data.members || []).map((id: string) => userNamesMap.get(id) || 'Unknown Member');
+        const isChiefValid = data.chief ? userNamesMap.has(data.chief) : false;
 
         return {
           id: doc.id,
@@ -44,8 +67,10 @@ const getTribesFlow = ai.defineFlow(
           lat: data.lat,
           lng: data.lng,
           chief: data.chief,
-          members: data.members,
+          members: data.members || [],
           meetings: meetings,
+          memberNames: memberNames,
+          isChiefValid: isChiefValid,
         };
       });
       return tribes;

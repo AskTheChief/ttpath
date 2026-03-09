@@ -55,6 +55,8 @@ export const TribeSchema = z.object({
   chief: z.string().optional(),
   members: z.array(z.string()).optional(),
   meetings: z.array(MeetingSchema).optional(),
+  memberNames: z.array(z.string()).optional(),
+  isChiefValid: z.boolean().optional(),
 });
 
 export const GetTribesOutputSchema = z.array(TribeSchema);

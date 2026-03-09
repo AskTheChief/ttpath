@@ -97,10 +97,12 @@ const joinTribeFlow = ai.defineFlow(
 
     let decodedToken;
     let applicantData;
+    let applicantLevel = 1;
     try {
         decodedToken = await adminAuth.verifyIdToken(input.idToken);
         const applicantSnap = await db.collection('users').doc(decodedToken.uid).get();
         applicantData = applicantSnap.data();
+        applicantLevel = Number(applicantData?.currentUserLevel || 1);
     } catch (error) {
         console.error('Error verifying ID token:', error);
         throw new Error('User not authenticated. Invalid token.');
@@ -116,21 +118,32 @@ const joinTribeFlow = ai.defineFlow(
       }
 
       const tribeData = tribeDoc.data();
-      const hasMembers = tribeData?.members && tribeData.members.length > 0;
       const chiefId = tribeData?.chief;
       const embracedCustoms = applicantData?.embracedCustoms || [];
 
-      if (!hasMembers) {
+      // Check if chief exists
+      let isChiefValid = false;
+      if (chiefId) {
+          const chiefDoc = await db.collection('users').doc(chiefId).get();
+          isChiefValid = chiefDoc.exists;
+      }
+
+      // Logic: If no chief OR chief account is deleted, the joiner assumes leadership
+      if (!chiefId || !isChiefValid) {
         const userRef = db.collection('users').doc(user.uid);
         await db.runTransaction(async (transaction) => {
           transaction.update(tribeRef, {
             chief: user.uid,
             members: FieldValue.arrayUnion(user.uid),
           });
-          transaction.update(userRef, { currentUserLevel: 5 }); 
+          // Promote to Chief (5) only if they aren't already higher (6)
+          if (applicantLevel < 5) {
+            transaction.update(userRef, { currentUserLevel: 5 }); 
+          }
         });
-        return { success: true };
+        return { success: true, message: "You have assumed leadership of this orphaned tribe." };
       } else {
+        // Normal application process
         const applicationRef = db.collection('tribe_applications').doc();
         await applicationRef.set({
           type: 'join_tribe',

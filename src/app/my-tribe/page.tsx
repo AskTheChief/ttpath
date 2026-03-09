@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2 } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2, UserCircle } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -370,12 +370,33 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                         <CardHeader>
                             <CardTitle>{selectedTribe.name}</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">{selectedTribe.location}</p>
-                            <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <p className="text-muted-foreground">{selectedTribe.location}</p>
+                                <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
+                            </div>
+                            
+                            {selectedTribe.memberNames && selectedTribe.memberNames.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Members:</h4>
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedTribe.memberNames.map((name, i) => (
+                                            <span key={i} className="text-xs bg-muted px-2 py-1 rounded-md">{name}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {!selectedTribe.isChiefValid && (
+                                <Alert variant="destructive" className="py-2 px-3">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertDescription className="text-xs">Leadership missing. You can assume leadership of this tribe.</AlertDescription>
+                                </Alert>
+                            )}
+
                             {handleJoinTribe && (
-                                <Button className="w-full mt-4" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading || !!pendingApplication}>
-                                     {pendingApplication ? 'Application Pending' : 'Apply to Join'}
+                                <Button className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading || !!pendingApplication}>
+                                     {pendingApplication ? 'Application Pending' : (!selectedTribe.isChiefValid ? 'Assume Leadership & Join' : 'Apply to Join')}
                                 </Button>
                             )}
                         </CardContent>
@@ -756,7 +777,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await joinTribe({ tribeId, idToken });
       if (result.success) {
-        toast({ title: 'Application Sent', description: 'Your request to join has been sent to the Tribe Chief.' });
+        toast({ title: result.message ? 'Success' : 'Application Sent', description: result.message || 'Your request to join has been sent to the Tribe Chief.' });
         if (user) fetchTribesAndUserData(user); 
       } else {
         throw new Error(result.message || "Failed to send application.");
@@ -1596,7 +1617,6 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
-            </Card>
         </div>
 
         <Card>
