@@ -2,6 +2,25 @@
 
 A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP). This application guides users through a journey from Visitor to Mentor, emphasizing emotional honesty, accountability, and the SVOP-B (Subject-Verb-Object-Present, Action-based) communication style.
 
+## 🚀 Git Integration & Export
+
+To move your code from Firebase Studio to your local machine and GitHub:
+
+1.  **Download the ZIP**: Click the **Download icon** (downward arrow) in the Firebase Studio header.
+2.  **Unzip**: Extract the files to a folder on your computer.
+3.  **Initialize Git**: Open your terminal in that folder and run:
+    ```bash
+    git init
+    git remote add origin https://github.com/AskTheChief/ttpath.git
+    ```
+4.  **Push to GitHub**:
+    ```bash
+    git add .
+    git commit -m "Export from Firebase Studio"
+    git push -u origin main
+    ```
+    *Note: Use your Personal Access Token (PAT) when prompted for a password.*
+
 ## Getting Started Locally
 
 1. **Install dependencies:**
