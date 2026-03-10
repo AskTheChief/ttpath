@@ -2,26 +2,40 @@
 
 A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP). This application guides users through a journey from Visitor to Mentor, emphasizing emotional honesty, accountability, and the SVOP-B (Subject-Verb-Object-Present, Action-based) communication style.
 
-## 🚀 Git Integration & Export
+## 🚀 Deployment & Exporting Your Code
 
-To move your code from Firebase Studio to your local machine and GitHub:
+To move your code from this environment to your local machine and GitHub, follow these steps:
 
-1.  **Download the ZIP**: Click the **Download icon** (downward arrow) in the Firebase Studio header.
-2.  **Unzip**: Extract the files to a folder on your computer.
-3.  **Initialize Git**: Open your terminal in that folder and run:
+### 1. Download the Project
+*   **Locate the Export Button:** Look in the top-right header area for a **Download icon** (usually a downward arrow icon). 
+*   **Alternative Location:** If not in the header, check the **Project** or **Settings** menu in the left sidebar.
+*   **Save:** This will download a `.zip` file containing all your project files.
+
+### 2. Local Setup
+1.  **Unzip:** Extract the downloaded files into a new folder on your computer.
+2.  **Open Terminal:** Open your terminal (Command Prompt, PowerShell, or Terminal) in that folder.
+3.  **Initialize Git:**
     ```bash
     git init
-    git remote add origin https://github.com/AskTheChief/ttpath.git
-    ```
-4.  **Push to GitHub**:
-    ```bash
     git add .
-    git commit -m "Export from Firebase Studio"
+    git commit -m "Initial commit from Studio"
+    ```
+
+### 3. Connect to GitHub (Force Token Method)
+If you encounter authentication errors, use this method to link your new repository (`AskTheChief/ttpath.git`) using your **Personal Access Token (PAT)**:
+
+1.  **Add the Remote:**
+    ```bash
+    git remote add origin https://<YOUR_GITHUB_USERNAME>:<YOUR_TOKEN>@github.com/AskTheChief/ttpath.git
+    ```
+    *(Replace `<YOUR_GITHUB_USERNAME>` with your username and `<YOUR_TOKEN>` with your GitHub PAT).*
+
+2.  **Push to GitHub:**
+    ```bash
     git push -u origin main
     ```
-    *Note: Use your Personal Access Token (PAT) when prompted for a password.*
 
-## Getting Started Locally
+## Local Development
 
 1. **Install dependencies:**
    ```bash
@@ -29,7 +43,7 @@ To move your code from Firebase Studio to your local machine and GitHub:
    ```
 
 2. **Set up Environment Variables:**
-   Create a `.env.local` file in the root directory and add your required keys. You will need:
+   Create a `.env.local` file in the root directory and add your required keys:
    - `NEXT_PUBLIC_FIREBASE_API_KEY`
    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
    - `GEMINI_API_KEY`
@@ -46,11 +60,11 @@ To move your code from Firebase Studio to your local machine and GitHub:
 
 ## Key Features
 
-- **The Path Journey:** An interactive, guided progression with animated transitions and visual feedback.
-- **Trading Tribe Customs:** A mandatory commitment gate where members acknowledge core principles with audio chimes.
-- **The Forum:** A community Q&A system for sharing wisdom and resolving issues.
-- **Game Center:** Educational tools like SVOP Scramble, Feelings Slicer, and the Feelings Panel.
-- **Mentor Dashboard:** Specialized tools for high-level members to guide the community and review applications.
+- **The Path Journey:** An interactive, guided progression with animated transitions.
+- **Embraced Customs:** A commitment system where members choose principles they align with.
+- **The Forum:** A community Q&A system for sharing wisdom.
+- **Game Center:** Educational tools like SVOP Scramble and the Feelings Panel.
+- **Mentor Dashboard:** Tools for high-level members to review applications and guide the community.
 
 ## Tech Stack
 
