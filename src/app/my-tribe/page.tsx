@@ -1617,6 +1617,7 @@ function MyTribePageContent() {
                         Submit Suggestion
                     </Button>
                 </CardFooter>
+            </Card>
         </div>
 
         <Card>
