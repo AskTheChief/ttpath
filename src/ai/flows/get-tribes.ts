@@ -48,12 +48,20 @@ const getTribesFlow = ai.defineFlow(
       const tribes = tribesSnapshot.docs.map(doc => {
         const data = doc.data();
         
+        const parseTimestamp = (ts: any) => {
+            if (!ts) return ts;
+            if (typeof ts === 'string') return ts;
+            if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+            if (typeof ts._seconds === 'number') return new Date(ts._seconds * 1000).toISOString();
+            if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+            return ts;
+        };
+
         // Ensure meetings and their dates are serializable
         const meetings = (data.meetings || []).map((meeting: any) => {
-          const meetingDate = meeting.date;
           return {
             ...meeting,
-            date: meetingDate?.toDate ? meetingDate.toDate().toISOString() : meetingDate,
+            date: parseTimestamp(meeting.date),
           };
         });
 

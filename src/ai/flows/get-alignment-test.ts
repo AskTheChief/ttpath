@@ -61,10 +61,19 @@ const getAlignmentTestFlow = ai.defineFlow(
         const data = doc.data();
         let latestFeedback;
         if (data?.latestFeedback) {
+            const parseTimestamp = (ts: any) => {
+                if (!ts) return new Date().toISOString();
+                if (typeof ts === 'string') return ts;
+                if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+                if (typeof ts._seconds === 'number') return new Date(ts._seconds * 1000).toISOString();
+                if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+                return ts;
+            };
+
             const createdAt = data.latestFeedback.createdAt;
             latestFeedback = {
                 feedback: data.latestFeedback.feedback,
-                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
+                createdAt: parseTimestamp(createdAt),
             };
         }
         return {

@@ -51,7 +51,20 @@ const getUserProfileFlow = ai.defineFlow(
 
     const data = docSnap.data();
 
-    return data as GetUserProfileOutput;
+    const parseTimestamp = (ts: any) => {
+        if (!ts) return ts;
+        if (typeof ts === 'string') return ts;
+        if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+        if (typeof ts._seconds === 'number') return new Date(ts._seconds * 1000).toISOString();
+        if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+        return ts;
+    };
+
+    return {
+        ...data,
+        createdAt: parseTimestamp(data?.createdAt),
+        lastActiveAt: parseTimestamp(data?.lastActiveAt),
+    } as GetUserProfileOutput;
   }
 );
 

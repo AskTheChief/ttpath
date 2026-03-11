@@ -66,7 +66,15 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
 
         const applications = await Promise.all(applicationsSnapshot.docs.map(async (doc) => {
             const data = doc.data();
-            const createdAt = data.createdAt;
+
+            const parseTimestamp = (ts: any) => {
+                if (!ts) return ts;
+                if (typeof ts === 'string') return ts;
+                if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+                if (typeof ts._seconds === 'number') return new Date(ts._seconds * 1000).toISOString();
+                if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+                return ts;
+            };
 
             let applicantProfile: { name?: string, email?: string, phone?: string, issue?: string, serviceProject?: string } = {};
             if (data.applicantId) {
@@ -98,7 +106,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 applicantPhone: applicantProfile.phone,
                 issue: applicantProfile.issue,
                 serviceProject: applicantProfile.serviceProject,
-                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : createdAt,
+                createdAt: parseTimestamp(data.createdAt),
             };
         }));
         return applications as z.infer<typeof ApplicationSchema>[];

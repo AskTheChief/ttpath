@@ -627,7 +627,7 @@ function MyTribePageContent() {
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, {
         myAccountVisits: increment(1),
-        lastActiveAt: serverTimestamp()
+        lastActiveAt: new Date().toISOString()
       }).catch(err => console.log("Could not update last activity."));
 
 
