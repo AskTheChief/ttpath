@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // --- Shared Base Schemas ---
@@ -270,12 +269,14 @@ export const CreateTribeInputSchema = z.object({
   lng: z.number(),
   idToken: z.string().optional(),
 });
+export type CreateTribeInput = z.infer<typeof CreateTribeInputSchema>;
 
 export const CreateTribeOutputSchema = z.object({
   success: z.boolean(),
   tribeId: z.string().optional(),
   message: z.string().optional(),
 });
+export type CreateTribeOutput = z.infer<typeof CreateTribeOutputSchema>;
 
 export const JoinTribeInputSchema = z.object({
   tribeId: z.string(),
@@ -283,21 +284,25 @@ export const JoinTribeInputSchema = z.object({
   answers: z.record(z.string()).optional(),
   embracedCustoms: z.array(z.string()).optional(),
 });
+export type JoinTribeInput = z.infer<typeof JoinTribeInputSchema>;
 
 export const JoinTribeOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type JoinTribeOutput = z.infer<typeof JoinTribeOutputSchema>;
 
 export const DeleteTribeInputSchema = z.object({
   tribeId: z.string(),
   idToken: z.string(),
 });
+export type DeleteTribeInput = z.infer<typeof DeleteTribeInputSchema>;
 
 export const DeleteTribeOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type DeleteTribeOutput = z.infer<typeof DeleteTribeOutputSchema>;
 
 export const UpdateTribeMeetingsInputSchema = z.object({
   tribeId: z.string(),
@@ -307,11 +312,13 @@ export const UpdateTribeMeetingsInputSchema = z.object({
   })),
   idToken: z.string(),
 });
+export type UpdateTribeMeetingsInput = z.infer<typeof UpdateTribeMeetingsInputSchema>;
 
 export const UpdateTribeMeetingsOutputSchema = z.object({
     success: z.boolean(),
     message: z.string().optional(),
 });
+export type UpdateTribeMeetingsOutput = z.infer<typeof UpdateTribeMeetingsOutputSchema>;
 
 export const ManageApplicationInputSchema = z.object({
   action: z.enum(['get', 'approve', 'deny', 'withdraw']),
@@ -321,12 +328,14 @@ export const ManageApplicationInputSchema = z.object({
   tribeId: z.string().optional(),
   applicantId: z.string().optional(),
 });
+export type ManageApplicationInput = z.infer<typeof ManageApplicationInputSchema>;
 
 export const ManageApplicationOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
   applications: z.array(ApplicationSchema).optional(),
 });
+export type ManageApplicationOutput = z.infer<typeof ManageApplicationOutputSchema>;
 
 export const AddJournalFeedbackInputSchema = z.object({
   idToken: z.string(),
@@ -336,11 +345,13 @@ export const AddJournalFeedbackInputSchema = z.object({
   imageCredit: z.string().optional(),
   caption: z.string().optional(),
 });
+export type AddJournalFeedbackInput = z.infer<typeof AddJournalFeedbackInputSchema>;
 
 export const AddJournalFeedbackOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type AddJournalFeedbackOutput = z.infer<typeof AddJournalFeedbackOutputSchema>;
 
 export const EditJournalFeedbackInputSchema = z.object({
   idToken: z.string(),
@@ -352,22 +363,26 @@ export const EditJournalFeedbackInputSchema = z.object({
   caption: z.string().optional(),
   subject: z.string().optional(),
 });
+export type EditJournalFeedbackInput = z.infer<typeof EditJournalFeedbackInputSchema>;
 
 export const EditJournalFeedbackOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type EditJournalFeedbackOutput = z.infer<typeof EditJournalFeedbackOutputSchema>;
 
 export const DeleteJournalFeedbackInputSchema = z.object({
   idToken: z.string(),
   entryId: z.string(),
   feedbackId: z.string(),
 });
+export type DeleteJournalFeedbackInput = z.infer<typeof DeleteJournalFeedbackInputSchema>;
 
 export const DeleteJournalFeedbackOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type DeleteJournalFeedbackOutput = z.infer<typeof DeleteJournalFeedbackOutputSchema>;
 
 export const SendDirectEmailInputSchema = z.object({
   recipientEmail: z.string().email(),
@@ -375,23 +390,30 @@ export const SendDirectEmailInputSchema = z.object({
   subject: z.string(),
   body: z.string(),
 });
+export type SendDirectEmailInput = z.infer<typeof SendDirectEmailInputSchema>;
 
 export const SendDirectEmailOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+export type SendDirectEmailOutput = z.infer<typeof SendDirectEmailOutputSchema>;
 
 export const SaveEmailTemplateInputSchema = z.object({
   name: z.string(),
   subject: z.string(),
   body: z.string(),
 });
+export type SaveEmailTemplateInput = z.infer<typeof SaveEmailTemplateInputSchema>;
 
 export const SaveEmailTemplateOutputSchema = z.object({
   success: z.boolean(),
   templateId: z.string().optional(),
   message: z.string().optional(),
 });
+export type SaveEmailTemplateOutput = z.infer<typeof SaveEmailTemplateOutputSchema>;
+
+export const GetEmailTemplatesOutputSchema = z.array(EmailTemplateSchema);
+export type GetEmailTemplatesOutput = z.infer<typeof GetEmailTemplatesOutputSchema>;
 
 export const AddUserInputSchema = z.object({
   idToken: z.string(),
@@ -402,12 +424,14 @@ export const AddUserInputSchema = z.object({
   address: z.string().optional(),
   currentUserLevel: z.number().optional().default(1),
 });
+export type AddUserInput = z.infer<typeof AddUserInputSchema>;
 
 export const AddUserOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
   userId: z.string().optional(),
 });
+export type AddUserOutput = z.infer<typeof AddUserOutputSchema>;
 
 export const AddManualFaqInputSchema = z.object({
   idToken: z.string(),
@@ -421,32 +445,41 @@ export const AddManualFaqInputSchema = z.object({
   questionCaption: z.string().optional(),
   answerCaption: z.string().optional(),
 });
+export type AddManualFaqInput = z.infer<typeof AddManualFaqInputSchema>;
 
 export const AddManualFaqOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+export type AddManualFaqOutput = z.infer<typeof AddManualFaqOutputSchema>;
 
 export const NotifyFaqAuthorInputSchema = z.object({
   idToken: z.string(),
   entryId: z.string(),
   recipientEmail: z.string().email().optional(),
 });
+export type NotifyFaqAuthorInput = z.infer<typeof NotifyFaqAuthorInputSchema>;
 
 export const NotifyFaqAuthorOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+export type NotifyFaqAuthorOutput = z.infer<typeof NotifyFaqAuthorOutputSchema>;
 
 export const UpdatePrinciplesInputSchema = z.object({
   idToken: z.string(),
   principles: z.array(PrincipleSchema),
 });
+export type UpdatePrinciplesInput = z.infer<typeof UpdatePrinciplesInputSchema>;
 
 export const UpdatePrinciplesOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type UpdatePrinciplesOutput = z.infer<typeof UpdatePrinciplesOutputSchema>;
+
+export const GetPrinciplesOutputSchema = z.array(PrincipleSchema);
+export type GetPrinciplesOutput = z.infer<typeof GetPrinciplesOutputSchema>;
 
 export const AdminTribeActionInputSchema = z.object({
   idToken: z.string(),
@@ -454,29 +487,128 @@ export const AdminTribeActionInputSchema = z.object({
   tribeId: z.string(),
   targetUserId: z.string(),
 });
+export type AdminTribeActionInput = z.infer<typeof AdminTribeActionInputSchema>;
 
 export const AdminTribeActionOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+export type AdminTribeActionOutput = z.infer<typeof AdminTribeActionOutputSchema>;
 
 export const UpdateUserLevelInputSchema = z.object({
   idToken: z.string(),
   targetUserId: z.string(),
   newLevel: z.number().int().min(1).max(6),
 });
+export type UpdateUserLevelInput = z.infer<typeof UpdateUserLevelInputSchema>;
 
 export const UpdateUserLevelOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type UpdateUserLevelOutput = z.infer<typeof UpdateUserLevelOutputSchema>;
 
 export const DeleteUserInputSchema = z.object({
   idToken: z.string(),
   targetUserId: z.string(),
 });
+export type DeleteUserInput = z.infer<typeof DeleteUserInputSchema>;
 
 export const DeleteUserOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
 });
+export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
+
+export const GetMeetingReportsInputSchema = z.object({
+  tribeId: z.string(),
+  idToken: z.string(),
+});
+export type GetMeetingReportsInput = z.infer<typeof GetMeetingReportsInputSchema>;
+
+export const GetMeetingReportsOutputSchema = z.array(MeetingReportSchema);
+export type GetMeetingReportsOutput = z.infer<typeof GetMeetingReportsOutputSchema>;
+
+export const GetTribesInputSchema = z.object({
+  idToken: z.string().optional(),
+});
+export type GetTribesInput = z.infer<typeof GetTribesInputSchema>;
+
+export const GetTribesOutputSchema = z.array(TribeSchema);
+export type GetTribesOutput = z.infer<typeof GetTribesOutputSchema>;
+
+export const GetTribeMembersInputSchema = z.object({
+  tribeId: z.string(),
+  idToken: z.string(),
+});
+export type GetTribeMembersInput = z.infer<typeof GetTribeMembersInputSchema>;
+
+const TribeMemberSchema = z.object({
+  uid: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  answers: z.record(z.string()),
+  embracedCustoms: z.array(z.string()),
+  issue: z.string(),
+  serviceProject: z.string(),
+});
+export type TribeMember = z.infer<typeof TribeMemberSchema>;
+
+export const GetTribeMembersOutputSchema = z.array(TribeMemberSchema);
+export type GetTribeMembersOutput = z.infer<typeof GetTribeMembersOutputSchema>;
+
+export const SaveJournalEntryInputSchema = z.object({
+  idToken: z.string(),
+  entryContent: z.string(),
+  entryId: z.string().optional(),
+  imageUrl: z.string().optional(),
+  subject: z.string().optional(),
+  caption: z.string().optional(),
+  recipient: z.enum(['Ed', 'Mentor', 'Chief', 'Suggestion']).optional(),
+});
+export type SaveJournalEntryInput = z.infer<typeof SaveJournalEntryInputSchema>;
+
+export const SaveJournalEntryOutputSchema = z.object({
+  success: z.boolean(),
+  entryId: z.string().optional(),
+});
+export type SaveJournalEntryOutput = z.infer<typeof SaveJournalEntryOutputSchema>;
+
+export const GetRelationshipAgreementsInputSchema = z.object({
+  idToken: z.string(),
+});
+export type GetRelationshipAgreementsInput = z.infer<typeof GetRelationshipAgreementsInputSchema>;
+
+export const GetRelationshipAgreementsOutputSchema = z.object({
+  agreedTitles: z.array(z.string()),
+});
+export type GetRelationshipAgreementsOutput = z.infer<typeof GetRelationshipAgreementsOutputSchema>;
+
+export const ToggleRelationshipAgreementInputSchema = z.object({
+  idToken: z.string(),
+  title: z.string(),
+  agreed: z.boolean(),
+});
+export type ToggleRelationshipAgreementInput = z.infer<typeof ToggleRelationshipAgreementInputSchema>;
+
+export const ToggleRelationshipAgreementOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type ToggleRelationshipAgreementOutput = z.infer<typeof ToggleRelationshipAgreementOutputSchema>;
+
+export const SubmitMeetingReportInputSchema = z.object({
+  tribeId: z.string(),
+  meetingId: z.string(),
+  reportContent: z.string(),
+  idToken: z.string(),
+});
+export type SubmitMeetingReportInput = z.infer<typeof SubmitMeetingReportInputSchema>;
+
+export const SubmitMeetingReportOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type SubmitMeetingReportOutput = z.infer<typeof SubmitMeetingReportOutputSchema>;
