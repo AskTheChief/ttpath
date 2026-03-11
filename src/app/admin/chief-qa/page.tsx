@@ -1,0 +1,77 @@
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
+export default function ChiefQAPage() {
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchChatSessions() {
+      try {
+        const sessions = await getChatSessions();
+        setChatSessions(sessions);
+      } catch (error) {
+        console.error("Error fetching chat sessions: ", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchChatSessions();
+  }, []);
+
+  return (
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+       <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Chief Q&A Sessions</h1>
+         <Button asChild variant="outline">
+            <Link href="/admin">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+            </Link>
+        </Button>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Chief Sessions</CardTitle>
+          <CardDescription>A log of all interactions users have had with The Chief.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p>Loading sessions...</p>
+          ) : (
+            <Accordion type="single" collapsible className="w-full">
+              {chatSessions.map(session => (
+                <AccordionItem key={session.id} value={session.id}>
+                  <AccordionTrigger>
+                    <div className="flex flex-col text-left">
+                       <span>{session.question}</span>
+                       <span className="text-xs text-muted-foreground">
+                         - {session.userName || 'Anonymous'} ({new Date(session.createdAt).toLocaleDateString()})
+                       </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="whitespace-pre-wrap">{session.answer}</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {new Date(session.createdAt).toLocaleString()}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

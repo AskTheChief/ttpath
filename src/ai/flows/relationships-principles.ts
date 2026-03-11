@@ -1,0 +1,216 @@
+'use server';
+
+import { ai } from '@/ai/genkit';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { 
+    GetPrinciplesOutputSchema,
+    UpdatePrinciplesInputSchema, 
+    UpdatePrinciplesOutputSchema,
+    type GetPrinciplesOutput,
+    type UpdatePrinciplesInput,
+    type UpdatePrinciplesOutput,
+    PrincipleSchema,
+    type Principle
+} from '@/lib/types';
+import { z } from 'zod';
+
+if (!getApps().length) {
+  initializeApp();
+}
+const db = getFirestore();
+const adminAuth = getAuth();
+const ADMIN_LEVEL = 6;
+
+const defaultPrinciples: Principle[] = [
+    {
+      "title": "Embrace",
+      "content": "Embrace: to accept with willingness and enthusiasm.\n\nI embrace these principles.",
+      "img": "/relationships/relationships_pics/embrace.jpg"
+    },
+    {
+      "title": "Service",
+      "content": "We have a common purpose: namely, serving others.",
+      "img": "/relationships/relationships_pics/service.jpg"
+    },
+    {
+      "title": "Reality / Truth",
+      "content": "We hold that reality and truth ultimately rest on subjective opinions and feelings.\n\nAccordingly, we do not argue about facts or right and wrong.\n\nInstead, we share our opinons with each other and receive them as gifts.",
+      "img": "/relationships/relationships_pics/reality-truth.jpg"
+    },
+    {
+      "title": "Listening",
+      "content": "We listen to each other actively and with gratitude. We receive, consider and acknowledge our partner's messages as gifts before we proceed to express our own.\n\nWe respect our partner's willingness to receive.\n\nWe stay in communication until we both feel complete.",
+      "img": "/relationships/relationships_pics/listening.jpg"
+    },
+    {
+      "title": "Owning Feelings",
+      "content": "We own our feelings and take responsibility for them; we do not blame our feelings on each other.\n\nWe do not guess what the other person feels; we do not tell the other person what they feel; we simply ask how the other person feels - and then we listen.",
+      "img": "/relationships/relationships_pics/owning feelings.jpg"
+    },
+    {
+      "title": "Now",
+      "content": "We keep our concerns and language in the now.",
+      "img": "/relationships/relationships_pics/now.jpg"
+    },
+    {
+      "title": "Support",
+      "content": "We support each other in our interests and activities.",
+      "img": "/relationships/relationships_pics/support.jpg"
+    },
+    {
+      "title": "Asking Positively",
+      "content": "We state what we desire, positively and optimistically, without complaining, criticizing, nagging or belittling.",
+      "img": "/relationships/relationships_pics/asking positively.jpg"
+    },
+    {
+      "title": "Stop Judging Feelings",
+      "content": "When our partner feels angry (or any other feeling), we do not judge their feeling or tell them not to feel it.\n\nWe thank them for sharing their feeling and encourage them to share more.",
+      "img": "/relationships/relationships_pics/stop judging feelings.jpg"
+    },
+    {
+      "title": "Music",
+      "content": "We like to sing and dance and play instruments.",
+      "img": "/relationships/relationships_pics/music.jpg"
+    },
+    {
+      "title": "System Thinking",
+      "content": "We view our relationship holistically and imagine methods to improve it.\n\nWe avoid using causal models that can lead to blame.",
+      "img": "/relationships/relationships_pics/system thinking.jpg"
+    },
+    {
+      "title": "Questions",
+      "content": "We invite our partner to share his feelings, rather than demand he invent logical answers.\n\nWe expecially avoid using \"why\" questions as they invite causal thinking and fighting.",
+      "img": "/relationships/relationships_pics/questions.jpg"
+    },
+    {
+      "title": "Intimacy",
+      "content": "We celebrate our affection and physical desire for each other naturally, joyfully and frequently.\n\nWe accept, encourge and explore each others' preferences and fantasies.",
+      "img": "/relationships/relationships_pics/intimacy.jpg"
+    },
+    {
+      "title": "Adult-to-Adult",
+      "content": "We have our childhood communication patterns and issues behind us. We relate as adults.",
+      "img": "/relationships/relationships_pics/adult to adult.jpg"
+    },
+    {
+      "title": "Outdoors",
+      "content": "We enjoy the great outdoors and we like to watch things grow. We like to hike together, especially in forests and at the beach.",
+      "img": "/relationships/relationships_pics/outdoors.jpg"
+    },
+    {
+      "title": "Entertaining",
+      "content": "We invite friends and associates to our home and enjoy deepening our connections.",
+      "img": "/relationships/relationships_pics/entertainment.jpg"
+    },
+    {
+      "title": "Family",
+      "content": "We stay in touch with our families and support each other.",
+      "img": "/relationships/relationships_pics/family.jpg"
+    },
+    {
+      "title": "Reliability",
+      "content": "We clarify agreements before we make them. After we make them, we keep them or modify them by mutual consent.",
+      "img": "/relationships/relationships_pics/reliability.jpg"
+    },
+    {
+      "title": "Health",
+      "content": "We observe healthy practices in our diets, hygiene, exercise, sleeping and stress management.",
+      "img": "/relationships/relationships_pics/health.jpg"
+    },
+    {
+      "title": "Kindness",
+      "content": "We practice kindness and compassion as an art form.",
+      "img": "/relationships/relationships_pics/kindness.jpg"
+    },
+    {
+      "title": "Imagination",
+      "content": "We support each other in our imagining.\n\nWhen we get stuck in a rut, we imagine something larger and move on to it.",
+      "img": "/relationships/relationships_pics/imagination.jpg"
+    },
+    {
+      "title": "The Work of Love",
+      "content": "Loving means doing all the stuff above. This can take a lot of work.\n\nWhen we actually do the work of love, we get big rewards: things work smoothly and we experience a warm-fuzzy loving feeling.\n\nThe loving feeling comes from doing the work of love.\n\nIf we try to get the warm-fuzzy feeling of love without doing the work of love, we may wind up with conflict and a cold, empty feeling.\n\nWarning: Entrainment Logic\nThis can entrain manipulation, control, guilt, bullying, frustration, exhaustion, depression, making others responsible for our feelings, writing country songs, etc.",
+      "img": "/relationships/relationships_pics/support.jpg"
+    }
+];
+
+const contentRef = db.collection('content').doc('relationships');
+
+const getPrinciplesFlow = ai.defineFlow(
+  {
+    name: 'getPrinciplesFlow',
+    outputSchema: GetPrinciplesOutputSchema,
+  },
+  async () => {
+    const docSnap = await contentRef.get();
+    let principlesFromDb: Principle[] = [];
+
+    if (docSnap.exists && docSnap.data()?.principles && Array.isArray(docSnap.data()!.principles)) {
+      principlesFromDb = docSnap.data()!.principles as Principle[];
+    } else {
+      // If the document doesn't exist or is malformed, we'll seed it.
+      await contentRef.set({ principles: defaultPrinciples });
+      return defaultPrinciples;
+    }
+
+    // Check if we need to sync based on titles or length
+    const dbTitles = new Set(principlesFromDb.map(p => p.title));
+    const defaultTitles = new Set(defaultPrinciples.map(p => p.title));
+    
+    let needsDbUpdate = false;
+    
+    // Add missing default principles while keeping existing edits
+    const syncedPrinciples = [...principlesFromDb];
+    for (const dp of defaultPrinciples) {
+        if (!dbTitles.has(dp.title)) {
+            syncedPrinciples.push(dp);
+            needsDbUpdate = true;
+        }
+    }
+
+    if (needsDbUpdate) {
+      console.log("Syncing relationship principles with the database.");
+      await contentRef.set({ principles: syncedPrinciples });
+      return syncedPrinciples;
+    }
+    
+    return principlesFromDb;
+  }
+);
+
+
+export async function getPrinciples(): Promise<GetPrinciplesOutput> {
+  return getPrinciplesFlow();
+}
+
+
+const updatePrinciplesFlow = ai.defineFlow(
+  {
+    name: 'updatePrinciplesFlow',
+    inputSchema: UpdatePrinciplesInputSchema,
+    outputSchema: UpdatePrinciplesOutputSchema,
+  },
+  async ({ idToken, principles }) => {
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (!userDoc.exists || (userDoc.data()?.currentUserLevel || 0) < ADMIN_LEVEL) {
+        throw new Error('Permission denied. User is not a mentor.');
+      }
+      
+      const validatedPrinciples = z.array(PrincipleSchema).parse(principles);
+      await contentRef.set({ principles: validatedPrinciples });
+      return { success: true, message: "Content updated successfully." };
+
+    } catch (error: any) {
+      console.error("Error updating relationship principles:", error);
+      return { success: false, message: error.message || "An unexpected error occurred." };
+    }
+  }
+);
+
+export async function updatePrinciples(input: UpdatePrinciplesInput): Promise<UpdatePrinciplesOutput> {
+    return updatePrinciplesFlow(input);
+}

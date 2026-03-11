@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // DANGER: WIDE OPEN RULES FOR DEBUGGING ONLY
+      // This allows anyone to read and write to your storage bucket.
+      // This should be locked down before any production use.
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,1200 @@
+
+'use client';
+
+import { pathNodesData, PathNodeData, PathAction } from '@/lib/path-data';
+import { Crown, FileCheck, GraduationCap, User, UserPlus, Users, X, LogIn, LogOut, Menu, Mail, MessageSquare, Video, Compass, BookOpen, Database, CheckSquare, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { cn } from '@/lib/utils';
+import * as Tone from 'tone';
+import SignupModal from './modals/signup-modal';
+import ChatbotModal from './modals/chatbot-modal';
+import AlignmentTestModal from './modals/alignment-test-modal';
+import LibraryModal from './modals/library-modal';
+import FeedbackModal from './modals/feedback-modal';
+import LinkModal from './modals/link-modal';
+import VideoModal from './modals/video-modal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import LoginModal from './modals/login-modal';
+import { getUserProgress } from '@/ai/flows/get-user-progress';
+import { updateUserProgress } from '@/ai/flows/update-user-progress';
+import { getUserProfile } from '@/ai/flows/user-profile';
+import MenuSheet from './menu-sheet';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { sendTestEmail } from '@/ai/flows/send-test-email';
+import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
+import CompleteProfileForm from './complete-profile-form';
+import { resetUserProgress } from '@/ai/flows/reset-user-progress';
+import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
+
+type SoundType = 'click' | 'locked' | 'progress' | 'hop' | 'complete' | 'action';
+
+interface LinkModalData {
+  title: string;
+  url: string;
+  requirementId: string | null;
+}
+
+const nodeIcons: { [key: string]: React.FC<any> } = {
+  visitor: User,
+  guest: UserPlus,
+  explorer: Compass,
+  member: Users,
+  chief: Crown,
+  mentor: GraduationCap
+};
+
+const actionIcons: { [key: string]: React.FC<any> } = {
+  'open-alignment-test': GraduationCap,
+  'watch-video': Video,
+  'embrace-customs': Heart,
+  'visit-library': BookOpen,
+};
+
+function Heart(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  );
+}
+
+export default function PathJourney() {
+  const [currentUserLevel, setCurrentUserLevel] = useState(1);
+  const [requirementsState, setRequirementsState] = useState<Record<string, boolean>>({});
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [justCompletedActionId, setJustCompletedActionId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showCurtain, setShowCurtain] = useState(true);
+  const [logoZIndex, setLogoZIndex] = useState(201);
+  const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const autoSelectNodeParam = searchParams.get('node');
+  
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userFirstName, setUserFirstName] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<{ firstName?: string, lastName?: string } | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+  const isGuest = currentUser !== null;
+  const [showCreateTribeModalForTest, setShowCreateTribeModalForTest] = useState(false);
+  
+  const [showLockedAlert, setShowLockedAlert] = useState(false);
+  const [lockedAlertContent, setLockedAlertContent] = useState({
+    title: "Prerequisite Not Met",
+    description: "You must complete the previous steps on the path before you can perform this action."
+  });
+  
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
+
+
+  const [modalState, setModalState] = useState({
+    signup: false,
+    login: false,
+    chatbot: false,
+    alignmentTest: false,
+    library: false,
+    feedback: false,
+    link: false,
+    video: false,
+    menu: false,
+  });
+
+  const [linkModalData, setLinkModalData] = useState<LinkModalData>({
+    title: '',
+    url: '',
+    requirementId: null,
+  });
+
+  const pathRef = useRef<SVGPathElement>(null);
+  const userIconRef = useRef<HTMLDivElement>(null);
+  const pathContainerRef = useRef<HTMLDivElement>(null);
+  const confettiContainerRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const infoPanelRef = useRef<HTMLDivElement>(null);
+
+  const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
+  const lastSoundTime = useRef(0);
+  
+  const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
+    if (typeof Tone === 'undefined' || !Tone.context) return;
+    
+    if (Tone.context.state !== 'running') {
+      Tone.start();
+    }
+    const synth = synths.current[type];
+    if (!synth) return;
+    
+    let now = Tone.now();
+    if (now <= lastSoundTime.current) {
+      now = lastSoundTime.current + 0.05; // Add a small delay
+    }
+    lastSoundTime.current = now;
+
+    if (type === 'progress') {
+        (synth as Tone.Synth).triggerAttackRelease('G4', '8n', now);
+        (synth as Tone.Synth).triggerAttackRelease('C5', '8n', now + 0.2);
+    } else if (type === 'hop') {
+        (synth as Tone.MembraneSynth).triggerAttackRelease('C2', '8n', now);
+    } else if (type === 'complete') {
+        (synth as Tone.Synth).triggerAttackRelease('C5', '8n', now);
+    } else if (note && duration) {
+        (synth as Tone.Synth).triggerAttackRelease(note, duration, now);
+    }
+  }, []);
+
+  const mapSvgPointToCss = useCallback((svgPoint: DOMPoint) => {
+    if (!pathRef.current || !pathContainerRef.current) return { x: 0, y: 0 };
+    const svg = pathRef.current.ownerSVGElement;
+    if (!svg) return { x: 0, y: 0 };
+  
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+  
+    const containerRect = pathContainerRef.current.getBoundingClientRect();
+  
+    let screenPoint = new DOMPoint(svgPoint.x, svgPoint.y).matrixTransform(ctm);
+  
+    const cssX = screenPoint.x - containerRect.left;
+    const cssY = screenPoint.y - containerRect.top;
+  
+    return { x: cssX, y: cssY };
+  }, []);
+
+  const triggerConfetti = useCallback((x: number, y: number) => {
+    if (!confettiContainerRef.current) return;
+    const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#c084fc'];
+    for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = `${x}px`;
+        confetti.style.top = `${y}px`;
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.transition = 'transform 1s ease-out, opacity 1s ease-out';
+        confettiContainerRef.current.appendChild(confetti);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 50 + 50;
+        const translateX = Math.cos(angle) * velocity;
+        const translateY = Math.sin(angle) * velocity - 100;
+
+        requestAnimationFrame(() => {
+            confetti.style.opacity = '1';
+            confetti.style.transform = `translate(${translateX}px, ${translateY + 150}px) rotate(360deg)`;
+        });
+
+        setTimeout(() => {
+            confetti.style.opacity = '0';
+            setTimeout(() => confetti.remove(), 1000);
+        }, 800);
+    }
+  }, []);
+
+  const animateUserIcon = useCallback(async (targetNode: PathNodeData, startLevel?: number) => {
+    if (isAnimating || !pathRef.current || !userIconRef.current) return;
+
+    setIsAnimating(true);
+    setSelectedNodeId(null);
+
+    const startNode = pathNodesData.find(n => n.level === (startLevel || currentUserLevel))!;
+    const totalLength = pathRef.current.getTotalLength();
+    const startLength = totalLength * startNode.pathPos;
+    const endLength = totalLength * targetNode.pathPos;
+    
+    if (startLength === endLength) {
+        setIsAnimating(false);
+        return;
+    }
+
+    const duration = 2000;
+    const hopCount = 15;
+    let startTime: number | null = null;
+    let lastHop = 0;
+
+    return new Promise<void>((resolve) => {
+      const animationStep = (timestamp: number) => {
+          if (!startTime) startTime = timestamp;
+          if (!userIconRef.current || !pathRef.current) {
+            setIsAnimating(false);
+            resolve();
+            return;
+          }
+
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const currentLength = startLength + (endLength - startLength) * progress;
+          const point = pathRef.current.getPointAtLength(currentLength);
+          const cssPoint = mapSvgPointToCss(point);
+
+          if (userIconRef.current) {
+              userIconRef.current.style.left = `${cssPoint.x}px`;
+              userIconRef.current.style.top = `${cssPoint.y}px`;
+              
+              const hopProgress = (progress * hopCount) % 1;
+              const hopY = -Math.sin(hopProgress * Math.PI) * 20;
+              userIconRef.current.style.transform = `translate(-50%, calc(-50% + ${hopY}px))`;
+          }
+
+
+          const currentHop = Math.floor(progress * hopCount);
+          if (currentHop > lastHop) {
+              playSound('hop');
+              lastHop = currentHop;
+          }
+          
+          if (progress < 1) {
+              requestAnimationFrame(animationStep);
+          } else {
+              if (!pathRef.current || !userIconRef.current) {
+                  setIsAnimating(false);
+                  resolve();
+                  return;
+              }
+              const finalPoint = mapSvgPointToCss(pathRef.current.getPointAtLength(endLength));
+              if (userIconRef.current) {
+                  userIconRef.current.style.left = `${finalPoint.x}px`;
+                  userIconRef.current.style.top = `${finalPoint.y}px`;
+                  userIconRef.current.style.transform = 'translate(-50%, -50%)'; 
+              }
+              setIsAnimating(false);
+
+              playSound('progress');
+              triggerConfetti(finalPoint.x, finalPoint.y);
+
+              if (targetNode.id === 'node-guest') {
+                  toast({
+                      title: "Welcome, Guest!",
+                      description: `You can now proceed on your journey.`,
+                  });
+              }
+              resolve();
+          }
+      };
+      requestAnimationFrame(animationStep);
+    });
+  }, [isAnimating, currentUserLevel, mapSvgPointToCss, playSound, triggerConfetti, toast]);
+
+  const placeElementsOnPath = useCallback(() => {
+    const container = pathContainerRef.current;
+    if (!pathRef.current || !container || !isMounted || isLoadingProgress) return;
+    
+    const place = () => {
+      if (!pathRef.current) return;
+      const totalLength = pathRef.current.getTotalLength();
+      
+      pathNodesData.forEach(nodeData => {
+        const nodeEl = nodeRefs.current[nodeData.id];
+        if (nodeEl) {
+          const point = pathRef.current!.getPointAtLength(totalLength * nodeData.pathPos);
+          const cssPoint = mapSvgPointToCss(point);
+          nodeEl.style.left = `${cssPoint.x}px`;
+          nodeEl.style.top = `${cssPoint.y}px`;
+        }
+      });
+  
+      if (userIconRef.current) {
+          const currentUserNode = pathNodesData.find(n => n.level === currentUserLevel);
+          if (currentUserNode) {
+              const point = pathRef.current.getPointAtLength(totalLength * currentUserNode.pathPos);
+              const cssPoint = mapSvgPointToCss(point);
+              userIconRef.current.style.left = `${cssPoint.x}px`;
+              userIconRef.current.style.top = `${cssPoint.y}px`;
+          }
+      }
+    };
+
+    requestAnimationFrame(place);
+
+  }, [mapSvgPointToCss, currentUserLevel, isLoadingProgress, isMounted]);
+
+  const completeRequirement = useCallback(async (reqId: string, name?: string) => {
+    if (reqId === 'sign-up' && name) {
+      setUserFirstName(name);
+    }
+    setJustCompletedActionId(reqId);
+    
+    const action = pathNodesData.flatMap(n => n.actions).find(a => a.id === reqId);
+    
+    if (action?.id !== 'open-alignment-test' && action?.id !== 'visit-library') {
+        playSound('complete');
+    }
+    
+    const newReqs = { ...requirementsState, [reqId]: true };
+    setRequirementsState(newReqs);
+
+    let newLevel = currentUserLevel;
+    let nextNode: PathNodeData | undefined;
+    
+    if (action?.next) { 
+        nextNode = pathNodesData.find(n => n.id === `node-${action.next}`);
+        if (nextNode) {
+            newLevel = nextNode.level;
+        }
+    }
+    
+    if (isGuest && auth.currentUser) {
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            await updateUserProgress({ currentUserLevel: newLevel, requirementsState: newReqs, idToken });
+        } catch (error) {
+            console.error("Failed to save progress:", error);
+            toast({
+                title: "Save Error",
+                description: "Could not save your progress. Please try again.",
+                variant: "destructive",
+            });
+            setRequirementsState(requirementsState);
+            return; 
+        }
+    }
+    
+    if (nextNode && nextNode.level > currentUserLevel) {
+        const oldLevel = currentUserLevel;
+        await animateUserIcon(nextNode, oldLevel);
+        setCurrentUserLevel(newLevel);
+    } else {
+      if (selectedNodeId) {
+        const currentSelected = selectedNodeId;
+        setSelectedNodeId(null); 
+        setTimeout(() => setSelectedNodeId(currentSelected), 0);
+      }
+    }
+  }, [requirementsState, isGuest, animateUserIcon, playSound, currentUserLevel, toast, selectedNodeId, justCompletedActionId]);
+  
+  const fetchUserProgress = useCallback(async (user: FirebaseUser | null) => {
+    setIsAuthLoading(true);
+    setIsLoadingProgress(true);
+
+    if (user) {
+      setCurrentUser(user);
+      try {
+        const idToken = await user.getIdToken();
+        const [progress, profile] = await Promise.all([
+          getUserProgress({ idToken }),
+          getUserProfile({ idToken }),
+        ]);
+
+        if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
+          if (progress.currentUserLevel >= 3) {
+            // Force completion if level is explorer but profile is incomplete
+            setNeedsProfileCompletion(true);
+          }
+          setCurrentUserLevel(progress.currentUserLevel || 1);
+          setRequirementsState(progress.requirementsState || {});
+          setUserFirstName(profile.firstName || null);
+
+        } else {
+          setNeedsProfileCompletion(false);
+          setCurrentUserLevel(progress.currentUserLevel || 1);
+          setRequirementsState(progress.requirementsState || {});
+          setUserFirstName(profile.firstName || null);
+          setUserProfile(profile);
+        }
+      } catch (error: any) {
+        if (error.code === 'auth/quota-exceeded') {
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Too many requests. Please try again later.",
+          });
+        }
+        console.error("Error fetching user data:", error);
+        setCurrentUserLevel(1);
+        setRequirementsState({});
+        setUserFirstName(null);
+      }
+    } else {
+      setCurrentUser(null);
+      setCurrentUserLevel(1);
+      setRequirementsState({});
+      setUserFirstName(null);
+      setNeedsProfileCompletion(false);
+    }
+    setIsAuthLoading(false);
+    setIsLoadingProgress(false);
+  }, [toast]);
+
+  const onSignupSuccess = useCallback(async (user: FirebaseUser) => {
+    const visitorNode = pathNodesData.find(n => n.level === 1)!;
+    const guestNode = pathNodesData.find(n => n.level === 2)!;
+    
+    await animateUserIcon(guestNode, visitorNode.level);
+
+    setCurrentUser(user);
+    setCurrentUserLevel(guestNode.level);
+    setRequirementsState(prev => ({ ...prev, 'sign-up': true }));
+  }, [animateUserIcon]);
+
+
+  const onProfileComplete = useCallback(async (firstName: string) => {
+    setUserFirstName(firstName);
+    setNeedsProfileCompletion(false);
+
+    const targetNode = pathNodesData.find(n => n.id === 'node-explorer');
+    if (targetNode) {
+        await completeRequirement('register-as-explorer');
+    }
+    toast({
+        title: "Congratulations, You are an Explorer!",
+        description: "Your diploma is in the mail. You may now join or start a tribe.",
+    });
+
+  }, [completeRequirement, toast]);
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      fetchUserProgress(user);
+    });
+    return () => unsubscribe();
+  }, [fetchUserProgress]);
+  
+
+  useEffect(() => {
+    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
+    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    
+    setIsMounted(true);
+
+    setTimeout(() => {
+        setShowSplash(false);
+        setTimeout(() => {
+          setShowCurtain(false);
+          setTimeout(() => {
+            setLogoZIndex(0);
+          }, 1000);
+        }, 1000);
+    }, 1000);
+
+  }, []);
+  
+  useEffect(() => {
+    if (!isMounted || isLoadingProgress) {
+        return;
+    }
+
+    placeElementsOnPath();
+
+    const observer = new ResizeObserver(() => {
+        placeElementsOnPath();
+    });
+
+    if (pathContainerRef.current) {
+        observer.observe(pathContainerRef.current);
+    }
+
+    return () => {
+      if(pathContainerRef.current) {
+        observer.unobserve(pathContainerRef.current);
+      }
+    }
+  }, [isMounted, isLoadingProgress, currentUserLevel, placeElementsOnPath]);
+
+
+  useEffect(() => {
+      if (isMounted && !isLoadingProgress && !isAnimating) {
+          if (autoSelectNodeParam) {
+              const nodeId = autoSelectNodeParam.startsWith('node-') ? autoSelectNodeParam : `node-${autoSelectNodeParam}`;
+              const node = pathNodesData.find(n => n.id === nodeId);
+              if (node && node.level <= currentUserLevel) {
+                  setSelectedNodeId(node.id);
+                  playSound('click', 'C4', '8n');
+              }
+          } else {
+              setSelectedNodeId(null);
+          }
+      }
+  }, [currentUserLevel, autoSelectNodeParam, isMounted, isLoadingProgress, isAnimating, playSound]);
+
+  const handleNodeClick = (nodeData: PathNodeData) => {
+    if (isAnimating) return;
+    
+    if (nodeData.id === selectedNodeId) {
+        setSelectedNodeId(null);
+        return;
+    }
+
+    if (nodeData.level > currentUserLevel) {
+      playSound('locked', 'A2', '16n');
+      const nodeEl = nodeRefs.current[nodeData.id];
+      if (nodeEl) {
+        nodeEl.classList.add('shake');
+        setTimeout(() => nodeEl.classList.remove('shake'), 500);
+      }
+      setLockedAlertContent({
+        title: "Prerequisite Not Met",
+        description: "You must complete the previous steps on the path before you can perform this action."
+      });
+      setShowLockedAlert(true);
+    } else {
+      playSound('click', 'C4', '8n');
+      setSelectedNodeId(nodeData.id);
+    }
+  };
+
+  const handleActionClick = async (action: PathAction) => {
+    const isLocked = action.dependsOn && !requirementsState[action.dependsOn];
+
+    if (isLocked) {
+        playSound('locked', 'A2', '16n');
+        const buttonEl = document.querySelector(`[data-action-id="${action.id}"]`);
+        if (buttonEl) {
+            buttonEl.classList.add('button-shake');
+            setTimeout(() => buttonEl.classList.remove('button-shake'), 600);
+        }
+        setLockedAlertContent({
+            title: "Prerequisite Not Met",
+            description: "You must complete the previous steps on the path before you can perform this action."
+        });
+        setShowLockedAlert(true);
+        return;
+    }
+
+    playSound('action', 'C4', '8n');
+
+    const requiresAuth = action.id === 'open-alignment-test' || action.action === 'navigate-my-tribe' || action.action === 'open-profile-form' || action.action === 'navigate-customs';
+    if (requiresAuth && !isGuest) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to perform this action.",
+      });
+      setModalState(s => ({ ...s, login: true }));
+      return;
+    }
+
+    if (action.action === 'open-profile-form') {
+      setNeedsProfileCompletion(true);
+      return;
+    }
+
+    if (action.action === 'navigate-customs') {
+        router.push('/relationships');
+        return;
+    }
+
+    if (action.action === 'open-pamphlet' || action.action === 'open-full-book' || action.action === 'open-full-book-part-2') {
+        const urls: { [key: string]: string } = {
+            'open-pamphlet': 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
+            'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
+            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0'
+        };
+        const url = urls[action.action];
+      
+        setLinkModalData({ title: action.label, url: url, requirementId: action.id });
+        setModalState(s => ({ ...s, link: true }));
+        return;
+    }
+
+    if (action.action === 'visit-library') {
+      setModalState(s => ({ ...s, library: true }));
+      return;
+    }
+
+    if (action.action === 'open-alignment-test') {
+      setModalState(s => ({ ...s, alignmentTest: true }));
+      return;
+    }
+
+    if (action.id === 'watch-video') {
+      setModalState(s => ({ ...s, video: true }));
+      return;
+    }
+    
+    if (action.action === 'navigate-my-tribe') {
+        if (action.targetView) {
+            router.push(`/my-tribe?view=${action.targetView}`);
+        } else {
+            const defaultView = currentUserLevel < 4 ? 'find-or-start-tribe' : 'my-profile';
+            router.push(`/my-tribe?view=${defaultView}`);
+        }
+        return;
+    }
+
+    if (action.id === 'sign-up' && !isGuest) {
+        setModalState(s => ({...s, signup: true}));
+        return;
+    }
+
+    if (action.next) {
+        await completeRequirement(action.id);
+    }
+  };
+
+  
+  const selectedNode = pathNodesData.find(n => n.id === selectedNodeId);
+  
+  const placeInfoPanel = useCallback(() => {
+    if (!infoPanelRef.current || !selectedNode) return;
+    const nodeEl = nodeRefs.current[selectedNode.id];
+    if (!nodeEl) return;
+    
+    const panelRect = infoPanelRef.current.getBoundingClientRect();
+    const nodeRect = nodeEl.getBoundingClientRect();
+    const containerRect = pathContainerRef.current!.getBoundingClientRect();
+    
+    let top = nodeRect.top - containerRect.top;
+    let left;
+    
+    if (selectedNode.panelPos === 'right') {
+        left = nodeRect.right - containerRect.left + 20;
+    } else {
+        left = nodeRect.left - containerRect.left - panelRect.width - 20;
+    }
+
+    top = top - (panelRect.height / 2) + (nodeRect.height / 2);
+    
+    top = Math.max(10, Math.min(top, containerRect.height - panelRect.height - 10));
+    left = Math.max(10, Math.min(left, containerRect.width - panelRect.width - 10));
+
+    infoPanelRef.current.style.top = `${top}px`;
+    infoPanelRef.current.style.left = `${left}px`;
+
+  }, [selectedNode]);
+
+  useEffect(() => {
+    if (selectedNodeId) {
+        placeInfoPanel();
+    }
+  }, [selectedNodeId, placeInfoPanel, requirementsState]);
+
+  const getActionCompletionStatus = (node: PathNodeData, action: PathAction) => {
+    // Basic explicit completion check
+    if (requirementsState[action.id]) return true;
+
+    // Optional steps don't block node completion, but we still show their explicit status
+    if (action.optional) return false;
+
+    // Level-based implicit completion
+    // If user level is > node level, foundational progression actions are done
+    if (action.next && currentUserLevel > node.level) return true;
+
+    // Special cases for foundational visitor/guest steps
+    if (currentUserLevel >= 3) {
+        if (action.id === 'read-book' || action.id === 'sign-up' || action.id === 'embrace-customs' || action.id === 'register-as-explorer') {
+            return true;
+        }
+    }
+
+    return false;
+  };
+
+  const renderAbilities = (node: PathNodeData) => {
+    return (
+      <div className="space-y-2">
+        {node.actions.map(action => {
+          const isCompleted = getActionCompletionStatus(node, action);
+          const isLocked = action.dependsOn && !requirementsState[action.dependsOn] && !isCompleted;
+          
+          const Icon = actionIcons[action.id] || (action.next ? Users : undefined);
+
+          const checkmarkAnimationClass = (isCompleted && action.id === justCompletedActionId) ? 'animate-pop' : '';
+          const CompletedIcon = isCompleted ? (
+            <span className={cn("checkmark-container flex items-center justify-center h-5 w-5 bg-green-100 rounded-full", checkmarkAnimationClass)}>
+              <Check className="h-3 w-3 text-green-600" />
+            </span>
+          ) : null;
+
+          return (
+            <Button
+              key={action.id}
+              variant="secondary"
+              size="sm"
+              className={cn('w-full justify-start h-auto p-2 text-wrap text-left gap-2')}
+              data-action-id={action.id}
+              onClick={() => handleActionClick(action)}
+              disabled={isLocked}
+            >
+              <div className="flex shrink-0 items-center justify-center w-5 h-5">
+                {isCompleted ? CompletedIcon : (Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />)}
+              </div>
+              <span className="flex-grow">{action.label}</span>
+            </Button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully.",
+    });
+  };
+
+  const showLoginModal = () => setModalState({ ...modalState, login: true, signup: false });
+  const showSignupModal = () => setModalState({ ...modalState, login: false, signup: true });
+
+  const openModal = (modalName: string) => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (modalName === 'open-pamphlet' || modalName === 'open-full-book' || modalName === 'open-full-book-part-2' || modalName === 'faq' || modalName === 'charts' || modalName === 'reach-out') {
+        const urls: { [key: string]: string } = {
+            'open-pamphlet': 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
+            'open-full-book': 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
+            'open-full-book-part-2': 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
+            'faq': 'https://www.seykota.com/tt/FAQ_Index/',
+            'charts': 'https://eseykota.com/TT/PHP_TT/TT_charts/TT_charts_client.php',
+            'reach-out': 'https://eseykota.com/TT/PHP_TT/TT_find/TT_find_client.php'
+        };
+        const labels: { [key: string]: string } = {
+            'open-pamphlet': 'Quick-Start Guide',
+            'open-full-book': 'Trading Tribe Methods',
+            'open-full-book-part-2': 'Trading Tribe Philosophy',
+            'faq': 'FAQ Pages',
+            'charts': 'Stock and Futures Charts',
+            'reach-out': 'TT Reach-Out Pages'
+        };
+        setLinkModalData({
+            title: labels[modalName],
+            url: urls[modalName],
+            requirementId: null,
+        });
+        setModalState(s => ({ ...s, link: true }));
+    } else if (modalName === 'open-alignment-test') {
+        setModalState(s => ({ ...s, alignmentTest: true }));
+    } else if (modalName as keyof typeof modalState) {
+        setModalState(s => ({ ...s, [modalName]: true }));
+    }
+  };
+
+  const handleTestCreateTribe = () => {
+    setModalState(s => ({ ...s, menu: false }));
+    setShowCreateTribeModalForTest(true);
+  };
+  
+  const handleSendTestEmail = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test email.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Test Email...",
+      description: `Sending a test email to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendTestEmail({ recipientEmail: currentUser.email });
+      if (result.success) {
+        toast({
+          title: "Email Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Email",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleSendTestDiploma = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test diploma.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Test Diploma...",
+      description: `Sending a test diploma to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendDiplomaEmail({ 
+        recipientEmail: currentUser.email,
+        recipientName: userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : "Valued Developer",
+       });
+      if (result.success) {
+        toast({
+          title: "Diploma Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Diploma",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleSendBugFinderDiploma = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser || !currentUser.email) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to send a test certificate.",
+      });
+      return;
+    }
+    toast({
+      title: "Sending Certificate...",
+      description: `Sending a Bug Finder certificate to ${currentUser.email}.`,
+    });
+    try {
+      const result = await sendBugFinderDiploma({ 
+        recipientEmail: currentUser.email,
+        recipientName: userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : "Valued Developer",
+        bugDescription: "This is a test certificate from the Dev Den."
+       });
+      if (result.success) {
+        toast({
+          title: "Certificate Sent Successfully",
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Certificate",
+        description: error.message,
+      });
+    }
+  }
+
+  const handleResetProgress = async () => {
+    setModalState(s => ({ ...s, menu: false }));
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Not Authenticated",
+        description: "You must be logged in to reset progress.",
+      });
+      return;
+    }
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      await resetUserProgress({ idToken });
+      toast({
+        title: "Progress Reset",
+        description: "Your progress has been reset back to the Explorer stage. The page will now reload.",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error Resetting Progress",
+        description: error.message,
+      });
+    }
+  };
+
+  const renderChatbotIcon = () => {
+    const content = (
+      <button
+        className={cn('action-icon', !isGuest && 'opacity-50 cursor-not-allowed')}
+        onClick={() => {
+          if (isGuest) {
+            openModal('chatbot');
+          }
+        }}
+      >
+        <MessageSquare className="h-8 w-8 text-muted-foreground" />
+      </button>
+    );
+
+    if (isGuest) {
+      return content;
+    }
+
+    return (
+      <TooltipTrigger asChild>
+        {content}
+      </TooltipTrigger>
+    );
+  }
+
+  return (
+    <TooltipProvider delayDuration={100}>
+      <div id="path-container" className="path-container" ref={pathContainerRef}>
+        <div className={cn("loading-curtain", !showCurtain && "hide")}></div>
+        <div 
+          id="logo-container" 
+          className={cn('splash-logo-container', !showSplash && 'persistent-logo')}
+          style={{ zIndex: logoZIndex }}
+        >
+          <video
+            className="animated-logo"
+            src="/logo/spinning_logo.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+
+        {isGuest && (
+          <div className="menu-icon-container">
+            <button className="action-icon" onClick={() => setModalState(s => ({...s, menu: true}))}>
+              <Menu className="h-8 w-8 text-muted-foreground" />
+            </button>
+            <span className="node-label">Resources</span>
+          </div>
+        )}
+
+        <div className="login-icon-container">
+            {isGuest ? (
+                <>
+                    <button className="action-icon" onClick={handleLogout}>
+                        <LogOut className="h-8 w-8 text-muted-foreground" />
+                    </button>
+                    <span className="node-label">Logout</span>
+                    {userFirstName && <span className="node-label text-sm mt-8 truncate max-w-[150px]">Welcome, {userFirstName}!</span>}
+                </>
+            ) : (
+                <>
+                    <button className="action-icon" onClick={() => setModalState(s => ({...s, login: true}))}>
+                        <LogIn className="h-8 w-8 text-muted-foreground" />
+                    </button>
+                     <span className="node-label">{isGuest ? "Logout" : "Login"}</span>
+                </>
+            )}
+        </div>
+
+        <div className="feedback-icon-container">
+          <button className="action-icon" onClick={() => openModal('feedback')}>
+              <Mail className="h-8 w-8 text-muted-foreground" />
+          </button>
+          <span className="node-label">Send Feedback</span>
+        </div>
+        
+        <div className="chatbot-icon-container">
+          <Tooltip>
+            {renderChatbotIcon()}
+            <span className="node-label">Ask The Chief</span>
+            {!isGuest && (
+              <TooltipContent>
+                <p>Follow the Path to Guest to have access to The Chief</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+
+        <div id="confetti-container" ref={confettiContainerRef}></div>
+        <svg id="path-svg" className="path-svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="path-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#8B5CF6" />
+                  <stop offset="25%" stopColor="#EC4899" />
+                  <stop offset="50%" stopColor="#F59E0B" />
+                  <stop offset="75%" stopColor="#10B981" />
+                  <stop offset="100%" stopColor="#3B82F6" />
+            </linearGradient>
+          </defs>
+          <path
+            ref={pathRef}
+            d="M 696.5925826289068 102.44480533314044 A 400 400 0 1 1 503.4074173710931 102.44480533314046"
+            fill="none"
+            stroke="url(#path-gradient)"
+            strokeLinecap="round"
+          />
+        </svg>
+        
+        {selectedNode && (
+            <Card
+                ref={infoPanelRef}
+                className={cn('info-panel absolute z-30 w-80 shadow-2xl bg-card/95 backdrop-blur-sm', !isMounted && "hidden")}
+            >
+                <CardHeader className="relative">
+                    <CardTitle>{selectedNode.title}</CardTitle>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => setSelectedNodeId(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {selectedNode.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{selectedNode.description}</p>}
+                    {selectedNode.req && (
+                        <p className="text-sm text-muted-foreground mb-4">Requirement: {selectedNode.req}</p>
+                    )}
+                    <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
+                    {renderAbilities(selectedNode)}
+                </CardContent>
+            </Card>
+        )}
+        
+        {!isLoadingProgress && (
+          <>
+            <div id="user-icon" ref={userIconRef}>
+              <div id="you-are-here">
+                {currentUserLevel === 1 ? 'Start Here' : 'Your Location'}
+              </div>
+              <User className="w-5 h-5" />
+            </div>
+
+            {pathNodesData.map(node => {
+              const Icon = nodeIcons[node.id.split('-')[1]] || Users;
+              const isLocked = node.level > currentUserLevel;
+              const isNextStep = node.level === currentUserLevel + 1;
+              const isActive = node.level === currentUserLevel;
+              const isSelected = selectedNodeId === node.id;
+              const isStartNode = node.id === 'node-visitor' && currentUserLevel === 1;
+
+              const isNodeCompleted = node.actions.every(action => getActionCompletionStatus(node, action));
+
+              return (
+                <Tooltip key={node.id} delayDuration={100} open={isSelected ? false : undefined}>
+                  <TooltipTrigger asChild>
+                    <div
+                      ref={(el) => {
+                        nodeRefs.current[node.id] = el;
+                      }}
+                      className={cn('path-node', {
+                        'active': isActive,
+                        'locked': isLocked,
+                        'next-step': isNextStep,
+                        'start-node': isStartNode,
+                      })}
+                      onClick={() => handleNodeClick(node)}
+                    >
+                      <Icon className={cn("h-8 w-8", (node.level > 4) ? "text-accent" : "text-muted-foreground")} />
+                      <span className="node-label flex items-center gap-1">
+                        {node.title}
+                        {isNodeCompleted && <Check className="h-3 w-3 text-green-500" />}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-card text-card-foreground p-0 border-border w-80 shadow-2xl" sideOffset={15}>
+                      <CardHeader className="relative">
+                          <CardTitle>{node.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          {node.description && <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">{node.description}</p>}
+                          {node.req && <p className="text-sm text-muted-foreground mb-4">Requirement: {node.req}</p>}
+                          <h4 className="font-semibold mb-2 text-foreground/80">To do:</h4>
+                          {renderAbilities(node)}
+                      </CardContent>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </>
+        )}
+
+      </div>
+      {needsProfileCompletion && (
+          <CompleteProfileForm 
+            user={currentUser} 
+            onComplete={onProfileComplete} 
+            onClose={() => setNeedsProfileCompletion(false)}
+          />
+      )}
+      <MenuSheet 
+        isOpen={modalState.menu}
+        onClose={() => setModalState(s => ({...s, menu: false}))}
+        openModal={openModal}
+        isGuest={isGuest}
+        onTestCreateTribe={handleTestCreateTribe}
+        onSendTestEmail={handleSendTestEmail}
+        onSendTestDiploma={handleSendTestDiploma}
+        onSendBugFinderDiploma={handleSendBugFinderDiploma}
+        onResetProgress={handleResetProgress}
+        currentUser={currentUser}
+      />
+      <LibraryModal 
+        isOpen={modalState.library}
+        onClose={() => setModalState(s => ({ ...s, library: false }))}
+      />
+      <LinkModal
+        isOpen={modalState.link}
+        onClose={() => setModalState(s => ({ ...s, link: false }))}
+        title={linkModalData.title}
+        url={linkModalData.url}
+        requirementId={linkModalData.requirementId}
+        onComplete={completeRequirement}
+      />
+       <VideoModal
+        isOpen={modalState.video}
+        onClose={() => setModalState(s => ({ ...s, video: false }))}
+        title="Introduction Video"
+        videoSrc="/Videos/couch.mp4"
+      />
+      <SignupModal 
+        isOpen={modalState.signup}
+        onClose={() => setModalState(s => ({ ...s, signup: false }))}
+        onSignupSuccess={onSignupSuccess}
+        showLogin={showLoginModal}
+      />
+      <LoginModal 
+        isOpen={modalState.login}
+        onClose={() => setModalState(s => ({ ...s, login: false }))}
+        showSignup={showSignupModal}
+      />
+      <ChatbotModal
+        isOpen={modalState.chatbot}
+        onClose={() => setModalState(s => ({ ...s, chatbot: false }))}
+      />
+      <AlignmentTestModal
+        isOpen={modalState.alignmentTest}
+        user={currentUser}
+        onClose={() => setModalState(s => ({ ...s, alignmentTest: false }))}
+        onComplete={completeRequirement}
+      />
+      <FeedbackModal
+        isOpen={modalState.feedback}
+        onClose={() => setModalState(s => ({ ...s, feedback: false }))}
+      />
+      <AlertDialog open={showLockedAlert} onOpenChange={setShowLockedAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{lockedAlertContent.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {lockedAlertContent.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowLockedAlert(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </TooltipProvider>
+  );
+}

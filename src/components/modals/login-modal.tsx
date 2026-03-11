@@ -1,0 +1,175 @@
+
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { useState } from "react";
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+
+type LoginModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  showSignup: () => void;
+};
+
+export default function LoginModal({ isOpen, onClose, showSignup }: LoginModalProps) {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isResetView, setIsResetView] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleClose = () => {
+    onClose();
+    // Reset view state after a short delay to allow the modal to close
+    setTimeout(() => {
+        setIsResetView(false);
+        setError(null);
+        setEmail('');
+        setPassword('');
+        setShowPassword(false);
+    }, 300);
+  }
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back!",
+      });
+      handleClose();
+    } catch (error: any) {
+      setError(error.message);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "If an account exists for this email, a reset link has been sent.",
+      });
+      handleClose();
+    } catch (error: any) {
+      // Don't show specific Firebase errors to avoid email enumeration
+      toast({
+        title: "Password Reset Email Sent",
+        description: "If an account exists for this email, a reset link has been sent.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const togglePasswordVisibility = () => setShowPassword(prev => !prev);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {isResetView ? 'Reset Password' : 'Login'}
+          </DialogTitle>
+          <DialogDescription>
+            {isResetView
+              ? 'Enter your email to receive a password reset link.'
+              : 'Enter your credentials to access your account.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        {isResetView ? (
+          <form onSubmit={handlePasswordReset}>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-reset">Email Address</Label>
+                <Input type="email" id="email-reset" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <div className="p-4 border-t flex flex-col gap-2">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Sending...</> : "Send Reset Link"}
+              </Button>
+              <Button type="button" variant="link" onClick={() => setIsResetView(false)} disabled={isLoading} className="w-full">
+                Back to Login
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleEmailLogin}>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-login">Email Address</Label>
+                <Input type="email" id="email-login" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2 relative">
+                <Label htmlFor="password-login">Password</Label>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password-login"
+                  placeholder="••••••••"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                  <span className="sr-only">
+                    {showPassword ? 'Hide password' : 'Show password'}
+                  </span>
+                </Button>
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <div className="p-4 border-t flex flex-col gap-2">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Logging in...</> : "Login"}
+              </Button>
+              <div className="flex justify-between items-center text-sm">
+                <Button type="button" variant="link" onClick={() => { handleClose(); showSignup(); }} disabled={isLoading} className="p-0 h-auto">
+                    Don't have an account?
+                </Button>
+                 <Button type="button" variant="link" onClick={() => setIsResetView(true)} disabled={isLoading} className="p-0 h-auto">
+                    Forgot Password?
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

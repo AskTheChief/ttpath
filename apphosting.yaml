@@ -1,0 +1,21 @@
+
+runConfig:
+  minInstances: 0
+secretManager:
+  - secret: GEMINI_API_KEY
+    pin: latest
+    availability:
+      - BUILD
+      - RUNTIME
+  - secret: MAILGUN_API_KEY
+    pin: latest
+    availability:
+      - RUNTIME
+  - secret: MAILGUN_DOMAIN
+    pin: latest
+    availability:
+      - RUNTIME
+  - secret: FEEDBACK_RECIPIENT_EMAIL
+    pin: latest
+    availability:
+      - RUNTIME

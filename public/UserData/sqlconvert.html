@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Contact Cleaner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .drag-active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+
+    <div class="max-w-3xl mx-auto p-6 md:p-12">
+
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <div
+                class="bg-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-database text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">SQL to CSV Cleaner</h1>
+            <p class="text-slate-500">Extract contacts, fix broken phone numbers, and remove junk data.</p>
+        </div>
+
+        <!-- Upload Area -->
+        <div id="drop-zone"
+            class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition-all cursor-pointer bg-white hover:border-blue-400 group">
+            <input type="file" id="file-input" accept=".sql" class="hidden">
+
+            <div id="upload-prompt">
+                <div class="mb-4 text-slate-300 group-hover:text-blue-500 transition-colors">
+                    <i class="fa-solid fa-cloud-arrow-up text-5xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-700">Click to upload or drag and drop</h3>
+                <p class="text-sm text-slate-400 mt-1">Supports .sql files (e.g., table_0.sql)</p>
+            </div>
+
+            <div id="processing-state" class="hidden">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-600 mb-3"></i>
+                <p class="text-slate-600 font-medium">Processing your file...</p>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message"
+            class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start">
+            <i class="fa-solid fa-circle-exclamation mt-0.5 mr-3"></i>
+            <span id="error-text">Error message goes here.</span>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-area" class="hidden mt-8">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <!-- Stats Header -->
+                <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-700">Processing Complete</h3>
+                    <span
+                        class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide">Ready</span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-3 divide-x divide-slate-100">
+                    <div class="p-6 text-center">
+                        <div class="text-3xl font-bold text-slate-800" id="stat-total">0</div>
+                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">Contacts Found</div>
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="text-3xl font-bold text-emerald-600" id="stat-cleaned">0</div>
+                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">Phones Fixed</div>
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="text-3xl font-bold text-amber-500" id="stat-junk">0</div>
+                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">Junk Removed</div>
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="p-6 bg-slate-50 border-t border-slate-200 text-center">
+                    <button id="download-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center mx-auto">
+                        <i class="fa-solid fa-file-csv mr-2"></i> Download Cleaned CSV
+                    </button>
+                    <p class="text-xs text-slate-400 mt-3">File generated locally. No data uploaded to server.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Core Logic (Ported from Python) ---
+
+        /**
+         * Parses a SQL VALUES line character by character to handle quotes correctly.
+         * Handles: ('Value', 'Street, Address', NULL)
+         */
+        function parseSqlValues(text) {
+            const values = [];
+            let currentRow = [];
+            let currentToken = [];
+            let inQuotes = false;
+            let escape = false;
+
+            // Find the start of the VALUES section
+            // We use a case-insensitive search for "VALUES"
+            const upperText = text.toUpperCase();
+            const valuesIndex = upperText.indexOf("VALUES");
+            if (valuesIndex === -1) return [];
+
+            // Start cursor after "VALUES"
+            const startCursor = valuesIndex + 6;
+
+            for (let i = startCursor; i < text.length; i++) {
+                const char = text[i];
+
+                if (escape) {
+                    currentToken.push(char);
+                    escape = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    escape = true;
+                    continue;
+                }
+
+                if (char === "'" && !escape) {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+
+                if (!inQuotes) {
+                    if (char === ',' || char === ')') {
+                        // End of a field found
+                        let val = currentToken.join('').trim();
+
+                        // Remove SQL quotes around strings
+                        if (val.startsWith("'") && val.endsWith("'")) {
+                            val = val.substring(1, val.length - 1);
+                            // Handle escaped single quotes in SQL (e.g. O''Connor -> O'Connor)
+                            val = val.replace(/''/g, "'");
+                        } else if (val.toUpperCase() === "NULL") {
+                            val = "";
+                        }
+
+                        currentRow.push(val);
+                        currentToken = [];
+
+                        if (char === ')') {
+                            // End of a row tuple
+                            if (currentRow.length > 0) {
+                                values.push(currentRow);
+                            }
+                            currentRow = [];
+                            // We rely on the loop continuing to find the next '(' to reset
+                        }
+                    } else if (char === '(') {
+                        // Start of a new row tuple
+                        currentRow = [];
+                        currentToken = [];
+                    } else if (char === ';') {
+                        break;
+                    } else {
+                        // Capture characters between delimiters (though mostly whitespace usually)
+                        // They get cleared when '(' is hit, so this is safe for newlines/spaces between rows
+                        currentToken.push(char);
+                    }
+                } else {
+                    // Inside quotes, just capture
+                    currentToken.push(char);
+                }
+            }
+            return values;
+        }
+
+        /**
+         * Detects if phone contains email or is too long/alpha-heavy
+         */
+        function cleanPhone(phoneVal) {
+            if (!phoneVal) return "";
+
+            // If it has an @, it's an email pasted in the wrong box
+            if (phoneVal.includes("@")) return "";
+
+            // Count letters. If mostly letters, it's junk.
+            const alphaCount = (phoneVal.match(/[a-zA-Z]/g) || []).length;
+            if (alphaCount > 3) return "";
+
+            return phoneVal.trim();
+        }
+
+        /**
+         * Detects the specific "e d" junk rows seen in the file
+         */
+        function isJunkRow(first, last) {
+            return (first && last && first.toLowerCase() === 'e' && last.toLowerCase() === 'd');
+        }
+
+        /**
+         * Title Case helper (e.g. "new york" -> "New York")
+         */
+        function toTitleCase(str) {
+            if (!str) return "";
+            return str.replace(/\w\S*/g, function (txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
+
+        /**
+         * Escape CSV fields properly (wrap in quotes if comma present)
+         */
+        function escapeCsv(field) {
+            if (field === null || field === undefined) return "";
+            const stringField = String(field);
+            if (stringField.includes(",") || stringField.includes('"') || stringField.includes("\n")) {
+                return `"${stringField.replace(/"/g, '""')}"`;
+            }
+            return stringField;
+        }
+
+        // --- UI Interactions ---
+
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const processingState = document.getElementById('processing-state');
+            const uploadPrompt = document.getElementById('upload-prompt');
+            const resultsArea = document.getElementById('results-area');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            let generatedCsvContent = "";
+
+            // Drag & Drop visual feedback
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-active'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-active'), false);
+            });
+
+            // Handle File Drop
+            dropZone.addEventListener('drop', handleDrop, false);
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                if (files.length === 0) return;
+                const file = files[0];
+
+                if (!file.name.toLowerCase().endsWith('.sql')) {
+                    showError("Please upload a .sql file.");
+                    return;
+                }
+
+                processFile(file);
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorMessage.classList.remove('hidden');
+                resultsArea.classList.add('hidden');
+                resetUploadUI();
+            }
+
+            function resetUploadUI() {
+                uploadPrompt.classList.remove('hidden');
+                processingState.classList.add('hidden');
+            }
+
+            function processFile(file) {
+                // UI Update
+                uploadPrompt.classList.add('hidden');
+                processingState.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                resultsArea.classList.add('hidden');
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    try {
+                        const content = e.target.result;
+                        const lines = content.split(/\r?\n/);
+
+                        let contacts = [];
+                        let stats = {
+                            junkRemoved: 0,
+                            phonesFixed: 0,
+                            totalFound: 0
+                        };
+
+                        // Buffer logic to handle multi-line INSERT statements
+                        let buffer = "";
+                        let isCollecting = false;
+
+                        // Process line by line
+                        for (let line of lines) {
+                            const trimmed = line.trim();
+
+                            // Check for start of INSERT statement (case insensitive)
+                            if (trimmed.toUpperCase().startsWith("INSERT INTO")) {
+                                isCollecting = true;
+                                buffer = ""; // Start a fresh buffer
+                            }
+
+                            if (isCollecting) {
+                                buffer += line + "\n"; // Preserve line breaks for safety
+
+                                // Check if this line ends the statement (look for semicolon at end)
+                                // We check 'trimmed' to ignore trailing whitespace
+                                if (trimmed.endsWith(";")) {
+                                    const rows = parseSqlValues(buffer);
+
+                                    for (let row of rows) {
+                                        // Basic safety check for column count (based on your table structure)
+                                        if (row.length < 15) continue;
+
+                                        // Adjust indices based on your table:
+                                        // 3: first, 4: last, 6: email, 7: phone, 8: address, 11: city, 12: state, 14: country
+                                        const rawFirst = row[3];
+                                        const rawLast = row[4];
+                                        const rawPhone = row[7];
+
+                                        // 1. Junk Check
+                                        if (isJunkRow(rawFirst, rawLast)) {
+                                            stats.junkRemoved++;
+                                            continue;
+                                        }
+
+                                        // 2. Phone Cleaning
+                                        const cleanPh = cleanPhone(rawPhone);
+                                        if (rawPhone !== "" && cleanPh === "") {
+                                            stats.phonesFixed++;
+                                        }
+
+                                        // 3. Formatting
+                                        const contact = {
+                                            "First Name": toTitleCase(rawFirst ? rawFirst.trim() : ""),
+                                            "Last Name": toTitleCase(rawLast ? rawLast.trim() : ""),
+                                            "Email": row[6] ? row[6].trim() : "",
+                                            "Phone": cleanPh,
+                                            "Address": row[8] ? row[8].trim() : "",
+                                            "City": toTitleCase(row[11] ? row[11].trim() : ""),
+                                            "State": row[12] ? row[12].trim().toUpperCase() : "",
+                                            "Country": toTitleCase(row[14] ? row[14].trim() : "")
+                                        };
+
+                                        contacts.push(contact);
+                                    }
+
+                                    // Reset buffer and flag
+                                    isCollecting = false;
+                                    buffer = "";
+                                }
+                            }
+                        }
+
+                        if (contacts.length === 0) {
+                            showError("No valid contacts found. The file format might be different than expected.");
+                            return;
+                        }
+
+                        stats.totalFound = contacts.length;
+                        displayResults(stats, contacts);
+
+                    } catch (err) {
+                        console.error(err);
+                        showError("An error occurred while parsing the file. See console for details.");
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+
+            function displayResults(stats, contacts) {
+                // Update Stats
+                document.getElementById('stat-total').textContent = stats.totalFound;
+                document.getElementById('stat-cleaned').textContent = stats.phonesFixed;
+                document.getElementById('stat-junk').textContent = stats.junkRemoved;
+
+                // Generate CSV content
+                const headers = Object.keys(contacts[0]);
+                const csvRows = [headers.join(",")];
+
+                for (const contact of contacts) {
+                    const values = headers.map(header => escapeCsv(contact[header]));
+                    csvRows.push(values.join(","));
+                }
+
+                generatedCsvContent = csvRows.join("\n");
+
+                // Show UI
+                resetUploadUI();
+                resultsArea.classList.remove('hidden');
+            }
+
+            // Download Handler
+            document.getElementById('download-btn').addEventListener('click', () => {
+                const blob = new Blob([generatedCsvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", "cleaned_contacts.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+
+</html>
