@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
+import { getFirestore, DocumentData, DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
@@ -24,6 +24,7 @@ const UserSchema = z.object({
   issue: z.string().optional(),
   serviceProject: z.string().optional(),
   emailsSent: z.number().optional(),
+  createdAt: z.string().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -38,6 +39,17 @@ export async function getUsers(): Promise<GetUsersOutput> {
 const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
     const data = doc.data() || {};
     
+    let createdAtStr: string | undefined;
+    if (data.createdAt) {
+        if (data.createdAt instanceof Timestamp) {
+            createdAtStr = data.createdAt.toDate().toISOString();
+        } else if (typeof data.createdAt === 'string') {
+            createdAtStr = data.createdAt;
+        } else if (data.createdAt.seconds) {
+            createdAtStr = new Date(data.createdAt.seconds * 1000).toISOString();
+        }
+    }
+
     return {
       uid: doc.id,
       firstName: data.firstName,
@@ -50,6 +62,7 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
       issue: data.issue,
       serviceProject: data.serviceProject,
       emailsSent: data.emailsSent,
+      createdAt: createdAtStr,
     };
 };
 

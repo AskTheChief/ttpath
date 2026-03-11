@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Trash2, GraduationCap } from 'lucide-react';
+import { Trash2, GraduationCap, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteUser } from '@/ai/flows/delete-user';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
+import { format } from 'date-fns';
 
 
 const levelMap: Record<number, string> = {
@@ -135,31 +136,32 @@ export default function UserTable() {
           <TableHead>Last Name</TableHead>
           <TableHead>First Name</TableHead>
           <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
+          <TableHead>Joined</TableHead>
           <TableHead>Level</TableHead>
-          <TableHead>Account Visits</TableHead>
-          <TableHead>Emails Sent</TableHead>
+          <TableHead>Visits</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={8} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
             <TableRow key={user.uid}>
-              <TableCell>{user.lastName || 'N/A'}</TableCell>
+              <TableCell className="font-medium">{user.lastName || 'N/A'}</TableCell>
               <TableCell>{user.firstName || 'N/A'}</TableCell>
-              <TableCell>{user.email || 'N/A'}</TableCell>
-              <TableCell>{user.phone || 'N/A'}</TableCell>
+              <TableCell className="text-muted-foreground">{user.email || 'N/A'}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A'}
+              </TableCell>
               <TableCell>
                 <Select
                   value={user.currentUserLevel?.toString()}
                   onValueChange={(value) => handleLevelChange(user.uid, value)}
                 >
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-[110px] h-8">
                     <SelectValue placeholder="Set level" />
                   </SelectTrigger>
                   <SelectContent>
@@ -170,11 +172,11 @@ export default function UserTable() {
                 </Select>
               </TableCell>
               <TableCell>{user.myAccountVisits ?? 0}</TableCell>
-              <TableCell>{user.emailsSent ?? 0}</TableCell>
-              <TableCell className="text-right space-x-2">
+              <TableCell className="text-right space-x-1">
                  <Button
                     variant="outline"
                     size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleResendDiploma(user)}
                     disabled={(user.currentUserLevel || 0) < 3}
                     title="Resend Diploma"
@@ -183,7 +185,7 @@ export default function UserTable() {
                  </Button>
                  <AlertDialog>
                   <AlertDialogTrigger asChild>
-                     <Button variant="destructive" size="icon" disabled={user.uid === adminUser?.uid}>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={user.uid === adminUser?.uid}>
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Delete User</span>
                     </Button>
@@ -211,7 +213,7 @@ export default function UserTable() {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={8} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={7} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>

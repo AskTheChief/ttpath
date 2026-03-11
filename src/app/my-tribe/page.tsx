@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
@@ -18,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2, UserCircle, Settings2, UserPlus2 } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2, UserCircle, Settings2, UserPlus2, UserX } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -87,6 +88,15 @@ const overviewMapContainerStyle = {
 const defaultCenter = {
     lat: 20,
     lng: -30,
+};
+
+const levelMap: Record<number, string> = {
+  1: "Visitor",
+  2: "Guest",
+  3: "Explorer",
+  4: "Member",
+  5: "Chief",
+  6: "Mentor",
 };
 
 function FormattingToolbar({
@@ -2220,8 +2230,18 @@ function MyTribePageContent() {
             <TabsContent value="mentor-dashboard" className="m-0 space-y-8">
                 <Card className="border-accent shadow-md">
                     <CardHeader className="bg-accent/10">
-                        <CardTitle className="flex items-center gap-2 text-accent-foreground"><Settings2 /> Manual Tribe Management</CardTitle>
-                        <CardDescription>Directly override tribe settings, assign Chiefs, or add members manually.</CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-accent-foreground"><Settings2 /> Manual Tribe Management</CardTitle>
+                                <CardDescription>Directly override tribe settings, assign Chiefs, or add members manually.</CardDescription>
+                            </div>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href="/admin/users">
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    Open User Management
+                                </Link>
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="pt-6 space-y-6">
                         <div className="grid md:grid-cols-2 gap-4">
@@ -2239,18 +2259,21 @@ function MyTribePageContent() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="manual-admin-user">Select User (Applicant/Explorer)</Label>
+                                <Label htmlFor="manual-admin-user">Select User (to add/assign)</Label>
                                 <Select value={manualAdminUserId} onValueChange={setManualAdminUserId}>
                                     <SelectTrigger id="manual-admin-user">
                                         <SelectValue placeholder="Choose a user..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={user?.uid || 'me'}>Myself</SelectItem>
+                                        <SelectItem value={user?.uid || 'me'}>Myself (Mentor)</SelectItem>
                                         {allUsers.map(u => (
-                                            <SelectItem key={u.uid} value={u.uid}>{u.firstName} {u.lastName} ({u.email})</SelectItem>
+                                            <SelectItem key={u.uid} value={u.uid}>
+                                                {u.firstName} {u.lastName} ({levelMap[u.currentUserLevel || 1]}) - {u.email}
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <p className="text-xs text-muted-foreground">Select a user above to perform an action. Duplicate names are distinguishable by email and level.</p>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-end pt-4 border-t">
