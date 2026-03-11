@@ -24,7 +24,7 @@ const LatestFeedbackSchema = z.object({
 });
 
 const GetAlignmentTestOutputSchema = z.object({
-    answers: z.record(z.string()),
+    answers: z.record(z.string()).optional(),
     latestFeedback: LatestFeedbackSchema.optional(),
 });
 export type GetAlignmentTestOutput = z.infer<typeof GetAlignmentTestOutputSchema>;

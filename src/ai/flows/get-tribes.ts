@@ -36,13 +36,15 @@ const getTribesFlow = ai.defineFlow(
       const userNamesMap = new Map<string, string>();
 
       // Batch fetch users in chunks of 30 (Firestore limit)
-      for (let i = 0; i < memberIdsArray.length; i += 30) {
-        const chunk = memberIdsArray.slice(i, i + 30);
-        const usersSnapshot = await db.collection('users').where('__name__', 'in', chunk).get();
-        usersSnapshot.forEach(uDoc => {
-          const uData = uDoc.data();
-          userNamesMap.set(uDoc.id, `${uData.firstName || ''} ${uData.lastName || ''}`.trim() || 'Unknown User');
-        });
+      if (memberIdsArray.length > 0) {
+        for (let i = 0; i < memberIdsArray.length; i += 30) {
+          const chunk = memberIdsArray.slice(i, i + 30);
+          const usersSnapshot = await db.collection('users').where('__name__', 'in', chunk).get();
+          usersSnapshot.forEach(uDoc => {
+            const uData = uDoc.data();
+            userNamesMap.set(uDoc.id, `${uData.firstName || ''} ${uData.lastName || ''}`.trim() || 'Unknown User');
+          });
+        }
       }
 
       const tribes = tribesSnapshot.docs.map(doc => {
