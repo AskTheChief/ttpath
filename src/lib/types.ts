@@ -53,6 +53,7 @@ export const TribeSchema = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   chief: z.string().optional(),
+  chiefName: z.string().optional(),
   members: z.array(z.string()).optional(),
   meetings: z.array(MeetingSchema).optional(),
   memberNames: z.array(z.string()).optional(),

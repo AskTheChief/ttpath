@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -26,16 +25,28 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
         let applicationsSnapshot;
 
         if (appType === 'join_tribe') {
-            const tribesSnapshot = await db.collection('tribes').where('chief', '==', userId).get();
-            if (tribesSnapshot.empty) {
-                return [];
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userLevel = userDoc.data()?.currentUserLevel || 0;
+
+            if (userLevel >= 6) {
+                // Mentors see all join_tribe applications
+                applicationsSnapshot = await db.collection('tribe_applications')
+                    .where('status', '==', 'pending')
+                    .where('type', '==', 'join_tribe')
+                    .get();
+            } else {
+                // Chiefs only see apps for their tribes
+                const tribesSnapshot = await db.collection('tribes').where('chief', '==', userId).get();
+                if (tribesSnapshot.empty) {
+                    return [];
+                }
+                const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
+                applicationsSnapshot = await db.collection('tribe_applications')
+                    .where('tribeId', 'in', tribeIds)
+                    .where('status', '==', 'pending')
+                    .where('type', '==', 'join_tribe')
+                    .get();
             }
-            const tribeIds = tribesSnapshot.docs.map(doc => doc.id);
-            applicationsSnapshot = await db.collection('tribe_applications')
-                .where('tribeId', 'in', tribeIds)
-                .where('status', '==', 'pending')
-                .where('type', '==', 'join_tribe')
-                .get();
         } else if (appType === 'my_pending') {
             applicationsSnapshot = await db.collection('tribe_applications')
                 .where('applicantId', '==', userId)
@@ -72,9 +83,16 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 }
             }
 
+            let tribeName = data.tribeName;
+            if (!tribeName && data.tribeId) {
+                const tribeDoc = await db.collection('tribes').doc(data.tribeId).get();
+                tribeName = tribeDoc.exists ? tribeDoc.data()?.name : 'Unknown Tribe';
+            }
+
             return {
                 id: doc.id,
                 ...data,
+                tribeName: tribeName,
                 applicantName: applicantProfile.name || 'Unknown Applicant',
                 applicantEmail: applicantProfile.email,
                 applicantPhone: applicantProfile.phone,
@@ -103,8 +121,11 @@ const manageApplicationFlow = ai.defineFlow(
       throw new Error('User not authenticated. Invalid token.');
     }
     let decodedToken;
+    let userLevel = 0;
     try {
       decodedToken = await adminAuth.verifyIdToken(input.idToken);
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      userLevel = userDoc.data()?.currentUserLevel || 0;
     } catch (error) {
       throw new Error('User not authenticated. Invalid token.');
     }
@@ -165,7 +186,9 @@ const manageApplicationFlow = ai.defineFlow(
             if (!tribeId) return { success: false, message: 'Tribe ID is required for joining a tribe.' };
             const tribeRef = db.collection('tribes').doc(tribeId);
             const tribeDoc = await tribeRef.get();
-            if (!tribeDoc.exists || tribeDoc.data()?.chief !== user.uid) {
+            
+            // Mentors can approve any join application
+            if (!tribeDoc.exists || (tribeDoc.data()?.chief !== user.uid && userLevel < 6)) {
                 return { success: false, message: 'You do not have permission to manage this application.' };
             }
             

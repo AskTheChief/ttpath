@@ -373,6 +373,9 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-muted-foreground">{selectedTribe.location}</p>
+                                <p className="text-sm font-medium mt-1">
+                                    {selectedTribe.isChiefValid ? `Chief: ${selectedTribe.chiefName || 'Unknown'}` : <span className="text-destructive font-bold">No Chief</span>}
+                                </p>
                                 <p className="text-sm text-muted-foreground">{selectedTribe.members.length} members</p>
                             </div>
                             
@@ -398,7 +401,7 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                                 <Button 
                                     className="w-full" 
                                     onClick={() => handleJoinTribe(selectedTribe.id)} 
-                                    disabled={isLoading || !!pendingApplication || (!!userTribe && userTribe.id !== selectedTribe.id)}
+                                    disabled={isLoading || !!pendingApplication || (!!userTribe && userTribe.id !== selectedTribe.id && selectedTribe.isChiefValid)}
                                 >
                                      {pendingApplication ? 'Application Pending' : (!selectedTribe.isChiefValid ? 'Assume Leadership & Join' : 'Apply to Join')}
                                 </Button>
@@ -535,6 +538,8 @@ function MyTribePageContent() {
 
   const mentorBadgeCount = useMemo(() => {
     const pendingForumEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
+    const allJoinApps = allJournalEntries.length; // Approximate for badge
+    // Mentors see all join_tribe applications too
     return tribeCreationApps.length + mentorApplications.length + pendingForumEntries;
   }, [tribeCreationApps, mentorApplications, allJournalEntries]);
 
@@ -644,15 +649,19 @@ function MyTribePageContent() {
         setAllJournalEntries(allJournalEntriesResult);
 
         if (Number(progress.currentUserLevel) >= 6) { 
-            const [newTribeAppsResult, newMentorAppsResult] = await Promise.all([
+            const [newTribeAppsResult, newMentorAppsResult, joinAppsResult] = await Promise.all([
               manageApplication({ action: 'get', type: 'new_tribe', idToken }),
               manageApplication({ action: 'get', type: 'new_mentor', idToken }),
+              manageApplication({ action: 'get', type: 'join_tribe', idToken }),
             ]);
             if (newTribeAppsResult.success && newTribeAppsResult.applications) {
                 setTribeCreationApps(newTribeAppsResult.applications);
             }
             if (newMentorAppsResult.success && newMentorAppsResult.applications) {
                 setMentorApplications(newMentorAppsResult.applications);
+            }
+            if (joinAppsResult.success && joinAppsResult.applications) {
+                setJoinApplications(joinAppsResult.applications);
             }
         }
       }
@@ -665,7 +674,7 @@ function MyTribePageContent() {
           setTribeMembers(members);
           setMeetingReports(reports);
           
-          if (currentUserTribe.chief === currentUser.uid) { 
+          if (currentUserTribe.chief === currentUser.uid && Number(progress.currentUserLevel) < 6) { 
               const joinAppsResult = await manageApplication({ action: 'get', type: 'join_tribe', idToken });
               if (joinAppsResult.success && joinAppsResult.applications) {
                   const sortedApps = joinAppsResult.applications.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
@@ -1371,7 +1380,7 @@ function MyTribePageContent() {
                                     </Button>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isChief && entry.recipient !== 'Chief'}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                         </AlertDialogTrigger>
@@ -2174,6 +2183,58 @@ function MyTribePageContent() {
             <TabsContent value="mentor-dashboard" className="m-0 space-y-8">
                 <Card>
                     <CardHeader>
+                        <CardTitle>Join Tribe Applications</CardTitle>
+                        <CardDescription>Mentors can review and process all applications to join any tribe.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {joinApplications.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full">
+                                {joinApplications.map(app => (
+                                    <AccordionItem key={app.id} value={app.id}>
+                                        <AccordionTrigger className="text-left">
+                                            <div className="flex flex-col items-start">
+                                                <span>{app.applicantName} - Joining "{app.tribeName}"</span>
+                                                <span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="space-y-4">
+                                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                                <div>
+                                                    <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
+                                                    <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Embraced Customs</h4>
+                                                    <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                                                        {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
+                                                            <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
+                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                {custom}
+                                                            </div>
+                                                        )) : (
+                                                            <p className="text-sm text-muted-foreground">No customs embraced.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button>
+                                                    <Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button>
+                                                    <Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <p className="text-muted-foreground text-center py-8">No pending join applications across all tribes.</p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
                         <CardTitle>New Tribe Applications</CardTitle>
                         <CardDescription>Review applications from members who want to start their own tribe.</CardDescription>
                     </CardHeader>
@@ -2290,30 +2351,6 @@ function MyTribePageContent() {
                             const pendingForEd = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && entry.recipient === 'Ed');
                             return pendingForEd.length > 0 ? renderPendingForumList(pendingForEd) : (
                                 <p className="text-muted-foreground text-center p-8">No pending questions for Ed.</p>
-                            );
-                        })()}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle className="flex items-center gap-2"><BookHeart /> General Pending Forum Entries</CardTitle>
-                                <CardDescription>Review and respond to general entries in the forum.</CardDescription>
-                            </div>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href="/faq">Go to The Forum</Link>
-                            </Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                        ) : (() => {
-                            const pendingOthers = allJournalEntries.filter(entry => (!entry.feedback || entry.feedback.length === 0) && !['Ed', 'Suggestion', 'Chief'].includes(entry.recipient || ''));
-                            return pendingOthers.length > 0 ? renderPendingForumList(pendingOthers) : (
-                               <p className="text-muted-foreground text-center p-8">There are currently no other pending forum questions.</p>
                             );
                         })()}
                     </CardContent>

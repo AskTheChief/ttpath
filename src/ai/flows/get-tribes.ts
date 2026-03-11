@@ -58,6 +58,7 @@ const getTribesFlow = ai.defineFlow(
         });
 
         const memberNames = (data.members || []).map((id: string) => userNamesMap.get(id) || 'Unknown Member');
+        const chiefName = data.chief ? userNamesMap.get(data.chief) : undefined;
         const isChiefValid = data.chief ? userNamesMap.has(data.chief) : false;
 
         return {
@@ -67,6 +68,7 @@ const getTribesFlow = ai.defineFlow(
           lat: data.lat,
           lng: data.lng,
           chief: data.chief,
+          chiefName: chiefName,
           members: data.members || [],
           meetings: meetings,
           memberNames: memberNames,
