@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -9,6 +8,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { InboundEmailSchema, type InboundEmail } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -21,21 +21,9 @@ const GetInboundEmailsInputSchema = z.object({
 });
 export type GetInboundEmailsInput = z.infer<typeof GetInboundEmailsInputSchema>;
 
-
-const InboundEmailSchema = z.object({
-  id: z.string(),
-  from: z.string(),
-  to: z.string(),
-  subject: z.string(),
-  body: z.string(),
-  receivedAt: z.string(),
-});
-export type InboundEmail = z.infer<typeof InboundEmailSchema>;
-
 const GetInboundEmailsOutputSchema = z.array(InboundEmailSchema);
-export type GetInboundEmailsOutput = z.infer<typeof GetInboundEmailsOutputSchema>;
 
-export async function getInboundEmails(input: GetInboundEmailsInput): Promise<GetInboundEmailsOutput> {
+export async function getInboundEmails(input: GetInboundEmailsInput): Promise<InboundEmail[]> {
   return getInboundEmailsFlow(input);
 }
 

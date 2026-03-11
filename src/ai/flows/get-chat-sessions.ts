@@ -1,10 +1,10 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { ChatSessionSchema, type ChatSession } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -12,20 +12,9 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
-const ChatSessionSchema = z.object({
-  id: z.string(),
-  question: z.string(),
-  answer: z.string(),
-  createdAt: z.string(),
-  userName: z.string().optional(),
-  userId: z.string().optional(),
-});
-export type ChatSession = z.infer<typeof ChatSessionSchema>;
-
 const GetChatSessionsOutputSchema = z.array(ChatSessionSchema);
-export type GetChatSessionsOutput = z.infer<typeof GetChatSessionsOutputSchema>;
 
-export async function getChatSessions(): Promise<GetChatSessionsOutput> {
+export async function getChatSessions(): Promise<ChatSession[]> {
   return getChatSessionsFlow();
 }
 

@@ -1,10 +1,10 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { FeedbackSchema, type Feedback } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -12,20 +12,9 @@ if (!getApps().length) {
 }
 const db = getFirestore();
 
-const FeedbackSchema = z.object({
-  id: z.string(),
-  feedback: z.string(),
-  email: z.string().optional(),
-  userName: z.string().optional(),
-  userId: z.string().optional(),
-  createdAt: z.string(),
-});
-export type Feedback = z.infer<typeof FeedbackSchema>;
-
 const GetFeedbackOutputSchema = z.array(FeedbackSchema);
-export type GetFeedbackOutput = z.infer<typeof GetFeedbackOutputSchema>;
 
-export async function getFeedback(): Promise<GetFeedbackOutput> {
+export async function getFeedback(): Promise<Feedback[]> {
   return getFeedbackFlow();
 }
 
@@ -37,7 +26,6 @@ const getFeedbackFlow = ai.defineFlow(
   async () => {
     try {
       const feedbackSnapshot = await db.collection('feedback').orderBy('createdAt', 'desc').get();
-      console.log('Feedback snapshot size:', feedbackSnapshot.size);
       
       const feedback = feedbackSnapshot.docs.map(doc => {
         const data = doc.data();
@@ -50,7 +38,6 @@ const getFeedbackFlow = ai.defineFlow(
           createdAt: data.createdAt.toDate().toISOString(),
         };
       });
-      console.log('Mapped feedback:', feedback);
       return feedback;
     } catch (error) {
       console.error('Error getting feedback:', error);
