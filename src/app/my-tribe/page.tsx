@@ -232,13 +232,13 @@ function FeedbackForm({
           <div className="space-y-1">
               <Label htmlFor="imageCredit" className="text-xs">Image Credit</Label>
               <FormattingToolbar textareaRef={imageCreditTextareaRef} value={imageCredit} onValueChange={setImageCredit} />
-              <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
+              <Textarea ref={imageCreditTextareaRef} id="imageCredit" value={imageCredit} onChange={e => imageCreditTextareaRef.current && setImageCredit(e.target.value)} placeholder="e.g., Photo by Jane Doe" rows={2}/>
           </div>
         )}
         <div className="space-y-1">
             <Label htmlFor="caption" className="text-xs">Caption</Label>
             <FormattingToolbar textareaRef={captionTextareaRef} value={caption} onValueChange={setCaption} />
-            <Textarea ref={captionTextareaRef} id="caption" value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
+            <Textarea ref={captionTextareaRef} id="caption" value={caption} onChange={e => captionTextareaRef.current && setCaption(e.target.value)} placeholder="Caption for content or image..." rows={2}/>
         </div>
       </div>
       <div className="flex gap-2 pt-2">
@@ -395,7 +395,11 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                             )}
 
                             {handleJoinTribe && (
-                                <Button className="w-full" onClick={() => handleJoinTribe(selectedTribe.id)} disabled={!!userTribe || isLoading || !!pendingApplication}>
+                                <Button 
+                                    className="w-full" 
+                                    onClick={() => handleJoinTribe(selectedTribe.id)} 
+                                    disabled={isLoading || !!pendingApplication || (!!userTribe && userTribe.id !== selectedTribe.id)}
+                                >
                                      {pendingApplication ? 'Application Pending' : (!selectedTribe.isChiefValid ? 'Assume Leadership & Join' : 'Apply to Join')}
                                 </Button>
                             )}
@@ -1759,6 +1763,7 @@ function MyTribePageContent() {
                                 tribes={tribes}
                                 selectedTribe={selectedTribe}
                                 setSelectedTribe={setSelectedTribe}
+                                handleJoinTribe={handleJoinTribe}
                                 userTribe={userTribe}
                                 isLoading={isLoading}
                                 pendingApplication={pendingApplication}

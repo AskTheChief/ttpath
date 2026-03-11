@@ -121,7 +121,7 @@ const joinTribeFlow = ai.defineFlow(
       const chiefId = tribeData?.chief;
       const embracedCustoms = applicantData?.embracedCustoms || [];
 
-      // Check if chief exists
+      // Check if chief exists in the users collection
       let isChiefValid = false;
       if (chiefId) {
           const chiefDoc = await db.collection('users').doc(chiefId).get();
@@ -143,6 +143,11 @@ const joinTribeFlow = ai.defineFlow(
         });
         return { success: true, message: "You have assumed leadership of this orphaned tribe." };
       } else {
+        // Prevent double membership in normal cases
+        if (tribeData?.members?.includes(user.uid)) {
+            return { success: false, message: "You are already a member of this tribe." };
+        }
+
         // Normal application process
         const applicationRef = db.collection('tribe_applications').doc();
         await applicationRef.set({
@@ -159,7 +164,7 @@ const joinTribeFlow = ai.defineFlow(
             await sendNewApplicationEmail(chiefId, user.uid, tribeData?.name || 'Your Tribe', embracedCustoms);
         }
 
-        return { success: true };
+        return { success: true, message: "Your application to join has been sent." };
       }
     } catch (error) {
       console.error('Error joining tribe:', error);
