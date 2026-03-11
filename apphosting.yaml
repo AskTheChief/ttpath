@@ -1,6 +1,32 @@
 
 runConfig:
   minInstances: 0
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyBpw8RSF3xX-a6xoJrcPmpJI9ExFMyeJuc
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    value: AIzaSyDmklVytrcSrFzxXjAL-k9lEAQpl0_SUug
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LexBOwrAAAAAGgT8Clywoq3a2TDGghRAN-U_Cc3
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: GCLOUD_PROJECT
+    value: studio-7790315517-f3fe6
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: GOOGLE_CLOUD_PROJECT
+    value: studio-7790315517-f3fe6
+    availability:
+      - BUILD
+      - RUNTIME
 secretManager:
   - secret: GEMINI_API_KEY
     pin: latest
@@ -16,6 +42,10 @@ secretManager:
     availability:
       - RUNTIME
   - secret: FEEDBACK_RECIPIENT_EMAIL
+    pin: latest
+    availability:
+      - RUNTIME
+  - secret: RECAPTCHA_SECRET_KEY
     pin: latest
     availability:
       - RUNTIME
