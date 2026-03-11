@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'rea
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, updateDoc, increment, setDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
 import { getAlignmentTest } from '@/ai/flows/get-alignment-test';
 import { comprehensionQuestions } from '@/lib/data';
@@ -626,8 +626,9 @@ function MyTribePageContent() {
       
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, {
-        myAccountVisits: increment(1)
-      }).catch(err => console.log("Could not update last login."));
+        myAccountVisits: increment(1),
+        lastActiveAt: serverTimestamp()
+      }).catch(err => console.log("Could not update last activity."));
 
 
       const [progress, allTribes, profile, myPendingAppsResult] = await Promise.all([

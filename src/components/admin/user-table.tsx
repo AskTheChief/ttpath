@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Trash2, GraduationCap, Calendar } from 'lucide-react';
+import { Trash2, GraduationCap, Calendar, Clock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -137,6 +137,7 @@ export default function UserTable() {
           <TableHead>First Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Joined</TableHead>
+          <TableHead>Last Active</TableHead>
           <TableHead>Level</TableHead>
           <TableHead>Visits</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -145,7 +146,7 @@ export default function UserTable() {
       <TableBody>
         {loading ? (
           <TableRow>
-            <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
+            <TableCell colSpan={8} className="text-center">Loading users...</TableCell>
           </TableRow>
         ) : users.length > 0 ? (
           users.map(user => (
@@ -155,6 +156,14 @@ export default function UserTable() {
               <TableCell className="text-muted-foreground">{user.email || 'N/A'}</TableCell>
               <TableCell className="whitespace-nowrap">
                 {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A'}
+              </TableCell>
+              <TableCell className="whitespace-nowrap">
+                {user.lastActiveAt ? (
+                    <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        {format(new Date(user.lastActiveAt), 'MMM d, p')}
+                    </div>
+                ) : 'Never'}
               </TableCell>
               <TableCell>
                 <Select
@@ -213,7 +222,7 @@ export default function UserTable() {
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center">No users found.</TableCell>
+            <TableCell colSpan={8} className="text-center">No users found.</TableCell>
           </TableRow>
         )}
       </TableBody>

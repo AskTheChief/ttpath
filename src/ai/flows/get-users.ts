@@ -25,6 +25,7 @@ const UserSchema = z.object({
   serviceProject: z.string().optional(),
   emailsSent: z.number().optional(),
   createdAt: z.string().optional(),
+  lastActiveAt: z.string().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -50,6 +51,17 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
         }
     }
 
+    let lastActiveAtStr: string | undefined;
+    if (data.lastActiveAt) {
+        if (data.lastActiveAt instanceof Timestamp) {
+            lastActiveAtStr = data.lastActiveAt.toDate().toISOString();
+        } else if (typeof data.lastActiveAt === 'string') {
+            lastActiveAtStr = data.lastActiveAt;
+        } else if (data.lastActiveAt.seconds) {
+            lastActiveAtStr = new Date(data.lastActiveAt.seconds * 1000).toISOString();
+        }
+    }
+
     return {
       uid: doc.id,
       firstName: data.firstName,
@@ -63,6 +75,7 @@ const mapDocToUser = (doc: DocumentSnapshot<DocumentData>): User => {
       serviceProject: data.serviceProject,
       emailsSent: data.emailsSent,
       createdAt: createdAtStr,
+      lastActiveAt: lastActiveAtStr,
     };
 };
 

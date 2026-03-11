@@ -165,6 +165,7 @@ export const UserProfileSchema = z.object({
   myAccountVisits: z.number().optional(),
   emailsSent: z.number().optional(),
   embracedCustoms: z.array(z.string()).optional(),
+  lastActiveAt: z.string().optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
