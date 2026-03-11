@@ -1,8 +1,7 @@
 
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -30,8 +29,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https'
-        ,
+        protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -41,8 +39,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // This rule allows the frontend (running on .ttpath.net domains)
-        // to make API calls to the backend Genkit flows.
         source: "/api/genkit/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
@@ -52,6 +48,20 @@ const nextConfig: NextConfig = {
         ]
       }
     ]
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Prevent Node.js-only modules from being bundled into the browser
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        perf_hooks: false,
+      };
+    }
+    return config;
   },
 };
 
