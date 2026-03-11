@@ -232,6 +232,37 @@ export type Principle = z.infer<typeof PrincipleSchema>;
 
 // --- Input/Output Schemas for Flows ---
 
+export const GetUserProfileInputSchema = z.object({
+  idToken: z.string(),
+});
+export type GetUserProfileInput = z.infer<typeof GetUserProfileInputSchema>;
+
+export const GetUserProfileOutputSchema = z.lazy(() => UserProfileSchema);
+export type GetUserProfileOutput = z.infer<typeof GetUserProfileOutputSchema>;
+
+export const UpdateUserProfileInputSchema = z.object({
+  idToken: z.string(),
+  profile: UserProfileSchema,
+});
+export type UpdateUserProfileInput = z.infer<typeof UpdateUserProfileInputSchema>;
+
+export const UpdateUserProfileOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type UpdateUserProfileOutput = z.infer<typeof UpdateUserProfileOutputSchema>;
+
+export const ApplyForMentorInputSchema = z.object({
+  idToken: z.string(),
+});
+export type ApplyForMentorInput = z.infer<typeof ApplyForMentorInputSchema>;
+
+export const ApplyForMentorOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type ApplyForMentorOutput = z.infer<typeof ApplyForMentorOutputSchema>;
+
 export const CreateTribeInputSchema = z.object({
   name: z.string(),
   location: z.string(),
