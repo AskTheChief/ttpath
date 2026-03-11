@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2, UserCircle } from 'lucide-react';
+import { Terminal, Users, Loader2, Home, UserCheck, Shield, Trash2, User as UserIcon, Sparkles, FileText, Lock, Compass, Info, AlertTriangle, Inbox, Send, Mail, BookOpen, RefreshCw, BookHeart, Edit, Bold, Italic, Underline, Lightbulb, Heart, CheckCircle2, UserCircle, Settings2, UserPlus2 } from 'lucide-react';
 import { createTribe } from '@/ai/flows/create-tribe';
 import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
@@ -63,6 +63,8 @@ import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { addManualFaq } from '@/ai/flows/add-manual-faq';
+import { adminTribeAction } from '@/ai/flows/admin-tribe-actions';
+import { getUsers, type User as SystemUser } from '@/ai/flows/get-users';
 import Image from 'next/image';
 import { ImageUploader } from '@/components/image-uploader';
 
@@ -421,6 +423,7 @@ function MyTribePageContent() {
   const [userLevel, setUserLevel] = useState(1);
   const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
   const [tribes, setTribes] = useState<Tribe[]>([]);
+  const [allUsers, setAllUsers] = useState<SystemUser[]>([]);
   const [newTribeName, setNewTribeName] = useState('');
   const [newTribeLocation, setNewTribeLocation] = useState('');
   const [newTribeCoords, setNewTribeCoords] = useState<{lat: number; lng: number} | null>(null);
@@ -484,6 +487,10 @@ function MyTribePageContent() {
   const manualFaqAnswerCaptionRef = useRef<HTMLTextAreaElement>(null);
   const manualFaqQuestionCaptionRef = useRef<HTMLTextAreaElement>(null);
 
+  const [manualAdminTribeId, setManualAdminTribeId] = useState<string>('');
+  const [manualAdminUserId, setManualAdminUserId] = useState<string>('');
+  const [isAdminActionLoading, setIsAdminActionLoading] = useState(false);
+
 
   type ForumEntry = JournalEntry;
   const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedback?: JournalFeedback): string => {
@@ -538,10 +545,8 @@ function MyTribePageContent() {
 
   const mentorBadgeCount = useMemo(() => {
     const pendingForumEntries = allJournalEntries.filter(entry => !entry.feedback || entry.feedback.length === 0).length;
-    const allJoinApps = allJournalEntries.length; // Approximate for badge
-    // Mentors see all join_tribe applications too
-    return tribeCreationApps.length + mentorApplications.length + pendingForumEntries;
-  }, [tribeCreationApps, mentorApplications, allJournalEntries]);
+    return tribeCreationApps.length + mentorApplications.length + joinApplications.length + pendingForumEntries;
+  }, [tribeCreationApps, mentorApplications, joinApplications, allJournalEntries]);
 
   useEffect(() => {
     setIsClient(true);
@@ -649,10 +654,11 @@ function MyTribePageContent() {
         setAllJournalEntries(allJournalEntriesResult);
 
         if (Number(progress.currentUserLevel) >= 6) { 
-            const [newTribeAppsResult, newMentorAppsResult, joinAppsResult] = await Promise.all([
+            const [newTribeAppsResult, newMentorAppsResult, joinAppsResult, allUsersResult] = await Promise.all([
               manageApplication({ action: 'get', type: 'new_tribe', idToken }),
               manageApplication({ action: 'get', type: 'new_mentor', idToken }),
               manageApplication({ action: 'get', type: 'join_tribe', idToken }),
+              getUsers(),
             ]);
             if (newTribeAppsResult.success && newTribeAppsResult.applications) {
                 setTribeCreationApps(newTribeAppsResult.applications);
@@ -663,6 +669,7 @@ function MyTribePageContent() {
             if (joinAppsResult.success && joinAppsResult.applications) {
                 setJoinApplications(joinAppsResult.applications);
             }
+            setAllUsers(allUsersResult);
         }
       }
       
@@ -1306,6 +1313,36 @@ function MyTribePageContent() {
       } finally {
           setIsAddingManualFaq(false);
       }
+  };
+
+  const handleAdminTribeAction = async (action: 'set_chief' | 'add_member' | 'remove_member') => {
+    if (!user) return;
+    if (!manualAdminTribeId || !manualAdminUserId) {
+        toast({ title: 'Please select both a tribe and a user.', variant: 'destructive' });
+        return;
+    }
+
+    setIsAdminActionLoading(true);
+    try {
+        const idToken = await user.getIdToken();
+        const result = await adminTribeAction({
+            idToken,
+            action,
+            tribeId: manualAdminTribeId,
+            targetUserId: manualAdminUserId,
+        });
+
+        if (result.success) {
+            toast({ title: 'Admin Action Complete', description: result.message });
+            fetchTribesAndUserData(user);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({ title: 'Admin Action Failed', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsAdminActionLoading(false);
+    }
   };
 
   const renderPendingForumList = (entries: JournalEntry[]) => (
@@ -2181,6 +2218,52 @@ function MyTribePageContent() {
 
         {isMentor && (
             <TabsContent value="mentor-dashboard" className="m-0 space-y-8">
+                <Card className="border-accent shadow-md">
+                    <CardHeader className="bg-accent/10">
+                        <CardTitle className="flex items-center gap-2 text-accent-foreground"><Settings2 /> Manual Tribe Management</CardTitle>
+                        <CardDescription>Directly override tribe settings, assign Chiefs, or add members manually.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="manual-admin-tribe">Select Tribe</Label>
+                                <Select value={manualAdminTribeId} onValueChange={setManualAdminTribeId}>
+                                    <SelectTrigger id="manual-admin-tribe">
+                                        <SelectValue placeholder="Choose a tribe..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {tribes.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name} ({t.location})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="manual-admin-user">Select User (Applicant/Explorer)</Label>
+                                <Select value={manualAdminUserId} onValueChange={setManualAdminUserId}>
+                                    <SelectTrigger id="manual-admin-user">
+                                        <SelectValue placeholder="Choose a user..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={user?.uid || 'me'}>Myself</SelectItem>
+                                        {allUsers.map(u => (
+                                            <SelectItem key={u.uid} value={u.uid}>{u.firstName} {u.lastName} ({u.email})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-end pt-4 border-t">
+                            <Button variant="outline" onClick={() => handleAdminTribeAction('add_member')} disabled={isAdminActionLoading}>
+                                <UserPlus2 className="mr-2 h-4 w-4" /> Add as Member
+                            </Button>
+                            <Button onClick={() => handleAdminTribeAction('set_chief')} disabled={isAdminActionLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                <Shield className="mr-2 h-4 w-4" /> Assign as Chief
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Join Tribe Applications</CardTitle>
@@ -2193,7 +2276,7 @@ function MyTribePageContent() {
                                     <AccordionItem key={app.id} value={app.id}>
                                         <AccordionTrigger className="text-left">
                                             <div className="flex flex-col items-start">
-                                                <span>{app.applicantName} - Joining "{app.tribeName}"</span>
+                                                <span>{app.applicantName} - Joining "<strong>{app.tribeName}</strong>"</span>
                                                 <span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span>
                                             </div>
                                         </AccordionTrigger>

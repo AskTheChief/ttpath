@@ -565,3 +565,18 @@ export const ToggleRelationshipAgreementOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type ToggleRelationshipAgreementOutput = z.infer<typeof ToggleRelationshipAgreementOutputSchema>;
+
+// Manual Tribe Admin Schemas
+export const AdminTribeActionInputSchema = z.object({
+  idToken: z.string(),
+  action: z.enum(['set_chief', 'add_member', 'remove_member']),
+  tribeId: z.string(),
+  targetUserId: z.string(),
+});
+export type AdminTribeActionInput = z.infer<typeof AdminTribeActionInputSchema>;
+
+export const AdminTribeActionOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type AdminTribeActionOutput = z.infer<typeof AdminTribeActionOutputSchema>;
