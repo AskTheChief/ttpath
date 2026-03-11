@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 import { ai } from '@/ai/genkit';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';

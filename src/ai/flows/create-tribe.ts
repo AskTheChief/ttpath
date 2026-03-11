@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 /**
  * @fileOverview A Genkit flow for creating a new Tribe application.
