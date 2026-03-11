@@ -31,25 +31,26 @@ type GameItem = {
   sliced?: boolean;
 };
 
-// Sound setup
+// Sound setup — lazy init on first user interaction to avoid AudioContext warnings
 let synths: { slice?: Tone.NoiseSynth, bomb?: Tone.MembraneSynth, miss?: Tone.NoiseSynth } = {};
-if (typeof window !== 'undefined') {
-    synths.slice = new Tone.NoiseSynth({
-        noise: { type: 'white' },
-        envelope: { attack: 0.005, decay: 0.1, sustain: 0 },
-    }).toDestination();
-
-    synths.bomb = new Tone.MembraneSynth({
-        pitchDecay: 0.05,
-        octaves: 10,
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 },
-    }).toDestination();
-    
-    synths.miss = new Tone.NoiseSynth({
-        noise: { type: 'pink' },
-        envelope: { attack: 0.01, decay: 0.15, sustain: 0 },
-    }).toDestination();
+let synthsReady = false;
+function initSynths() {
+  if (synthsReady || typeof window === 'undefined') return;
+  synthsReady = true;
+  synths.slice = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0 },
+  }).toDestination();
+  synths.bomb = new Tone.MembraneSynth({
+    pitchDecay: 0.05,
+    octaves: 10,
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 },
+  }).toDestination();
+  synths.miss = new Tone.NoiseSynth({
+    noise: { type: 'pink' },
+    envelope: { attack: 0.01, decay: 0.15, sustain: 0 },
+  }).toDestination();
 }
 
 
@@ -89,7 +90,8 @@ export default function FeelingsSlicerPage() {
     if (Tone.context.state !== 'running') {
         Tone.start();
     }
-    
+    initSynths();
+
     const synth = synths[type];
     if (!synth) return;
 
@@ -137,8 +139,8 @@ export default function FeelingsSlicerPage() {
   }, [gameDimensions]);
 
   const startGame = () => {
-    // Ensure Tone.js is started by user interaction
     Tone.start();
+    initSynths();
     setScore(0);
     setLives(3);
     setItems([]);

@@ -49,24 +49,24 @@ const RelationshipsPage = () => {
   const isMentor = userLevel >= 6;
   const synth = useRef<Tone.PolySynth | null>(null);
 
-  useEffect(() => {
-    // Soft, gentle synth for feedback
+  const initSynth = useCallback(() => {
+    if (synth.current) return;
     synth.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
-        envelope: { 
-          attack: 0.15, 
-          decay: 0.2, 
-          sustain: 0.2, 
-          release: 1.5 
+        envelope: {
+          attack: 0.15,
+          decay: 0.2,
+          sustain: 0.2,
+          release: 1.5
         },
         volume: -18
     }).toDestination();
-    return () => { synth.current?.dispose(); };
   }, []);
 
   const playToggleSound = (isAgreed: boolean) => {
-    if (!synth.current) return;
     if (Tone.context.state !== 'running') Tone.start();
+    initSynth();
+    if (!synth.current) return;
     const now = Tone.now();
     if (isAgreed) {
         // Gentle crystalline positive feel

@@ -133,14 +133,27 @@ export default function PathJourney() {
   const infoPanelRef = useRef<HTMLDivElement>(null);
 
   const synths = useRef<{ [key in SoundType]?: Tone.Synth | Tone.MembraneSynth }>({});
+  const synthsInitialized = useRef(false);
   const lastSoundTime = useRef(0);
-  
+
+  const initSynths = useCallback(() => {
+    if (synthsInitialized.current) return;
+    synthsInitialized.current = true;
+    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
+    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+  }, []);
+
   const playSound = useCallback((type: SoundType, note?: string, duration?: string) => {
     if (typeof Tone === 'undefined' || !Tone.context) return;
-    
+
     if (Tone.context.state !== 'running') {
       Tone.start();
     }
+    initSynths();
     const synth = synths.current[type];
     if (!synth) return;
     
@@ -469,13 +482,6 @@ export default function PathJourney() {
   
 
   useEffect(() => {
-    synths.current.click = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    synths.current.locked = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-    synths.current.progress = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.hop = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
-    synths.current.complete = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-    synths.current.action = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-    
     setIsMounted(true);
 
     setTimeout(() => {
