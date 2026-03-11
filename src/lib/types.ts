@@ -612,3 +612,9 @@ export const SubmitMeetingReportOutputSchema = z.object({
   message: z.string().optional(),
 });
 export type SubmitMeetingReportOutput = z.infer<typeof SubmitMeetingReportOutputSchema>;
+
+export const GetAllJournalEntriesOutputSchema = z.array(JournalEntrySchema);
+export type GetAllJournalEntriesOutput = z.infer<typeof GetAllJournalEntriesOutputSchema>;
+
+export const GetOutboxEmailsOutputSchema = z.array(OutboundEmailSchema);
+export type GetOutboxEmailsOutput = z.infer<typeof GetOutboxEmailsOutputSchema>;
