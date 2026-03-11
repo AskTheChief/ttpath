@@ -4,7 +4,6 @@ import { ai } from '@/ai/genkit';
 import { getFirestore, DocumentData, DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { SystemUserSchema, type SystemUser } from '@/lib/types';
-import { z } from 'genkit';
 
 if (!getApps().length) {
   initializeApp();

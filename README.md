@@ -2,40 +2,11 @@
 
 A community-driven platform for personal growth and trading psychology, based on the Trading Tribe Process (TTP). This application guides users through a journey from Visitor to Mentor, emphasizing emotional honesty, accountability, and the SVOP-B (Subject-Verb-Object-Present, Action-based) communication style.
 
-## 🚀 Deployment & Exporting Your Code
+## 🚀 Getting Started
 
-To move your code from this environment to your local machine and GitHub, follow these steps:
+To view and interact with the application, visit the production URL or follow the steps below for local setup.
 
-### 1. Download the Project
-*   **Locate the Export Button:** Look in the top-right header area for a **Download icon** (usually a downward arrow icon). 
-*   **Alternative Location:** If not in the header, check the **Project** or **Settings** menu in the left sidebar.
-*   **Save:** This will download a `.zip` file containing all your project files.
-
-### 2. Local Setup
-1.  **Unzip:** Extract the downloaded files into a new folder on your computer.
-2.  **Open Terminal:** Open your terminal (Command Prompt, PowerShell, or Terminal) in that folder.
-3.  **Initialize Git:**
-    ```bash
-    git init
-    git add .
-    git commit -m "Initial commit from Studio"
-    ```
-
-### 3. Connect to GitHub (Force Token Method)
-If you encounter authentication errors, use this method to link your new repository (`AskTheChief/ttpath.git`) using your **Personal Access Token (PAT)**:
-
-1.  **Add the Remote:**
-    ```bash
-    git remote add origin https://<YOUR_GITHUB_USERNAME>:<YOUR_TOKEN>@github.com/AskTheChief/ttpath.git
-    ```
-    *(Replace `<YOUR_GITHUB_USERNAME>` with your username and `<YOUR_TOKEN>` with your GitHub PAT).*
-
-2.  **Push to GitHub:**
-    ```bash
-    git push -u origin main
-    ```
-
-## Local Development
+### Local Development
 
 1. **Install dependencies:**
    ```bash
