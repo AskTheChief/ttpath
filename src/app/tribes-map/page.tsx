@@ -88,16 +88,18 @@ export default function TribesMapPage() {
       onClick={() => setSelectedTribe(null)}
     >
       <MarkerClustererF>
-        {(clusterer) =>
-          tribes.map((tribe) => (
+        {(clusterer) => (
+          <>
+          {tribes.map((tribe) => (
             <MarkerF
               key={tribe.id}
               position={{ lat: tribe.lat!, lng: tribe.lng! }}
               clusterer={clusterer}
               onClick={() => handleMarkerClick(tribe)}
             />
-          ))
-        }
+          ))}
+          </>
+        )}
       </MarkerClustererF>
     </GoogleMap>
   );

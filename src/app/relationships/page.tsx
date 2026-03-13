@@ -16,7 +16,8 @@ import {
   ArrowDown,
   CheckCircle2
 } from 'lucide-react';
-import { getPrinciples, updatePrinciples, type Principle } from '@/ai/flows/relationships-principles';
+import { getPrinciples, updatePrinciples } from '@/ai/flows/relationships-principles';
+import type { Principle } from '@/lib/types';
 import { getRelationshipAgreements, toggleRelationshipAgreement } from '@/ai/flows/relationship-agreements';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -249,11 +250,11 @@ const RelationshipsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3 font-bold text-lg">
             <Activity className="text-primary" size={24} />
-            <span>TRADING TRIBE<span className="font-light text-muted-foreground ml-2">CUSTOMS</span></span>
+            <span>TRADING TRIBE<span className="font-light text-muted-foreground ml-2">COMMUNICATION MODEL</span></span>
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex gap-6">
-                <a href="#customs" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Customs</a>
+                <a href="#customs" className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Communication Model</a>
             </div>
             <Button asChild variant="outline">
               <Link href="/">
@@ -276,7 +277,7 @@ const RelationshipsPage = () => {
             </div>
           ) : (
             <Button onClick={() => setIsEditing(true)}>
-              <Edit className="mr-2 h-4 w-4" /> Edit Customs
+              <Edit className="mr-2 h-4 w-4" /> Edit Content
             </Button>
           )}
         </div>
@@ -285,13 +286,16 @@ const RelationshipsPage = () => {
       <header className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 text-center bg-background">
         <div className="max-w-5xl mx-auto flex flex-col items-center space-y-2">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground/90 uppercase leading-tight">
-            Trading Tribe
+            The Trading Tribe
           </h1>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-primary uppercase leading-tight">
-            Customs
+            Communication Model
           </h1>
           <p className="max-w-2xl mt-8 text-lg text-muted-foreground">
-            The Trading Tribe relies on shared customs to maintain a safe and productive environment for all members. Guests review these customs and embrace those they align with before proceeding to become Explorers.
+            Trading Tribe Members practice using the Trading Tribe Communication Model during Tribe meetings. While members may find it a bit awkward at first, they generally find it leads to clear thinking before speaking and clear communication after speaking.
+          </p>
+          <p className="max-w-2xl mt-4 font-medium text-foreground">
+            Note: Check the boxes for the elements you already feel you use.
           </p>
         </div>
       </header>
@@ -350,7 +354,7 @@ const RelationshipsPage = () => {
                         </div>
                         {user && (
                             <div className="mt-8 flex flex-col gap-4">
-                                <span className="text-xl font-bold text-foreground/80">I embrace this custom:</span>
+                                <span className="text-xl font-bold text-foreground/80">I already use this element:</span>
                                 <div className="flex gap-4 items-center">
                                     <Button 
                                         variant={isAgreed ? "default" : "outline"} 
@@ -388,7 +392,7 @@ const RelationshipsPage = () => {
               <div className="text-center pt-16">
                 <Button size="lg" onClick={handleAddNewPrinciple}>
                   <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Custom Section
+                  Add New Element
                 </Button>
               </div>
             )}
@@ -398,7 +402,7 @@ const RelationshipsPage = () => {
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
                 <h3 className="text-2xl font-bold">Review Complete</h3>
                 <p className="text-muted-foreground">
-                    By clicking the button below, you confirm that you have reviewed the Trading Tribe Customs and are ready to return to your journey.
+                    By clicking the button below, you confirm that you have reviewed the Trading Tribe Communication Model and are ready to return to your journey.
                 </p>
                 <Button 
                     size="lg" 
@@ -418,7 +422,7 @@ const RelationshipsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div>
             <div className="font-bold text-2xl tracking-tight mb-2">Trading Tribe</div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trading Tribe Customs</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trading Tribe Communication Model</p>
           </div>
         </div>
       </footer>

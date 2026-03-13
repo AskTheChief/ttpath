@@ -7,7 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, updateDoc, increment, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { leaveTribe } from '@/lib/tribes';
-import { getAlignmentTest } from '@/ai/flows/get-alignment-test';
+import { getAlignmentTest, type GetAlignmentTestOutput } from '@/ai/flows/get-alignment-test';
 import { comprehensionQuestions } from '@/lib/data';
 import { saveAlignmentTest } from '@/ai/flows/save-alignment-test';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import { joinTribe } from '@/ai/flows/join-tribe';
 import { getTribes } from '@/ai/flows/get-tribes';
 import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '@react-google-maps/api';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import type { Tribe, Meeting, Application, UserProfile, GetAlignmentTestOutput, TribeMember, MeetingReport, OutboundEmail, JournalEntry, JournalFeedback } from '@/lib/types';
+import type { Tribe, Meeting, Application, UserProfile, TribeMember, MeetingReport, OutboundEmail, JournalEntry, JournalFeedback, SystemUser } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
@@ -65,7 +65,7 @@ import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
 import { deleteJournalFeedback } from '@/ai/flows/delete-journal-feedback';
 import { addManualFaq } from '@/ai/flows/add-manual-faq';
 import { adminTribeAction } from '@/ai/flows/admin-tribe-actions';
-import { getUsers, type User as SystemUser } from '@/ai/flows/get-users';
+import { getUsers } from '@/ai/flows/get-users';
 import Image from 'next/image';
 import { ImageUploader } from '@/components/image-uploader';
 
@@ -268,7 +268,27 @@ function FeedbackForm({
   );
 }
 
-function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }) {
+interface ExplorerViewProps {
+  user: User | null;
+  isLoaded: boolean;
+  isLoading: boolean;
+  tribes: Tribe[];
+  userTribe: Tribe | null;
+  newTribeName: string;
+  newTribeLocation: string;
+  newTribeCoords: { lat: number; lng: number } | null;
+  selectedTribe: Tribe | null;
+  handlePlaceSelected: (place: google.maps.places.PlaceResult) => void;
+  handleCreateTribe: () => void;
+  handleJoinTribe: (tribeId: string) => void;
+  setNewTribeName: (name: string) => void;
+  setSelectedTribe: (tribe: Tribe | null) => void;
+  pendingApplication: Application | null;
+  handleWithdrawApplication: (applicationId: string, appType: 'join_tribe' | 'new_tribe' | 'new_mentor') => void;
+  handleTabChange: (value: string) => void;
+}
+
+function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }: ExplorerViewProps) {
   const tribeAppliedTo = tribes.find(t => t.id === pendingApplication?.tribeId);
 
   return (
@@ -351,7 +371,17 @@ function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeNa
   );
 }
 
-function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe, userTribe, isLoading, pendingApplication }) {
+interface AllTribesMapProps {
+  tribes: Tribe[];
+  selectedTribe: Tribe | null;
+  setSelectedTribe: (tribe: Tribe | null) => void;
+  handleJoinTribe?: (tribeId: string) => void;
+  userTribe: Tribe | null;
+  isLoading: boolean;
+  pendingApplication: Application | null;
+}
+
+function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe, userTribe, isLoading, pendingApplication }: AllTribesMapProps) {
     return (
         <div className="relative">
             <div style={overviewMapContainerStyle}>
@@ -363,16 +393,18 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                     onClick={() => setSelectedTribe(null)}
                 >
                     <MarkerClustererF>
-                        {(clusterer) =>
-                            tribes.filter(t => t.lat && t.lng).map(tribe => (
+                        {(clusterer) => (
+                            <>
+                            {tribes.filter(t => t.lat && t.lng).map(tribe => (
                                 <MarkerF
                                     key={tribe.id}
                                     position={{ lat: tribe.lat!, lng: tribe.lng! }}
                                     clusterer={clusterer}
                                     onClick={() => setSelectedTribe(tribe)}
                                 />
-                            ))
-                        }
+                            ))}
+                            </>
+                        )}
                     </MarkerClustererF>
                 </GoogleMap>
             </div>
@@ -744,11 +776,11 @@ function MyTribePageContent() {
     }
   
     const handler = setTimeout(async () => {
-      if (Object.keys(alignmentTestData.answers).length > 0) {
+      if (alignmentTestData.answers && Object.keys(alignmentTestData.answers).length > 0) {
         setIsSavingAnswers(true);
         try {
           const idToken = await user.getIdToken();
-          await saveAlignmentTest({ answers: alignmentTestData.answers, idToken });
+          await saveAlignmentTest({ answers: alignmentTestData.answers || {}, idToken });
         } catch (error) {
           console.error("Auto-save failed:", error);
           toast({ title: 'Auto-save failed', variant: 'destructive'});
@@ -1028,7 +1060,7 @@ function MyTribePageContent() {
     setIsEvaluating(true);
     try {
         const idToken = await user.getIdToken();
-        const evaluation = await evaluateAlignmentTest({ answers: alignmentTestData.answers, idToken });
+        const evaluation = await evaluateAlignmentTest({ answers: alignmentTestData.answers || {}, idToken });
         
         setAlignmentTestData(prev => ({
             ...prev,
@@ -1428,7 +1460,7 @@ function MyTribePageContent() {
                                     </Button>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={isChief && entry.recipient !== 'Chief'}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={!!isChief && entry.recipient !== 'Chief'}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                         </AlertDialogTrigger>
@@ -1490,7 +1522,7 @@ function MyTribePageContent() {
     const Trigger = (
         <TabsTrigger value={value} disabled={!isUnlocked} className={cn("text-base relative flex items-center gap-2", !isUnlocked && 'text-muted-foreground/50 cursor-not-allowed')}>
             {title}
-            {isUnlocked && badgeCount > 0 && (
+            {isUnlocked && badgeCount !== undefined && badgeCount > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
                 {badgeCount}
               </span>
@@ -1887,7 +1919,7 @@ function MyTribePageContent() {
                 comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={alignmentTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={(alignmentTestData.answers || {})[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
@@ -2049,7 +2081,7 @@ function MyTribePageContent() {
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                     <div>
-                        <Calendar mode="single" selected={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
+                        <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="rounded-md border" disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} modifiers={{ meetings: meetingDates }} modifiersStyles={{ meetings: { textDecoration: 'underline' } }} />
                         <div className="flex items-center gap-2 mt-4">
                           <Label htmlFor="meeting-time" className="mb-0 whitespace-nowrap">Time:</Label>
                           <div className="flex w-full items-center gap-1">
@@ -2579,7 +2611,7 @@ function MyTribePageContent() {
                 comprehensionQuestions.map((q, i) => (
                 <div key={i} className="grid w-full gap-1.5">
                     <Label htmlFor={`question-${i}`}>{i + 1}. {q}</Label>
-                    <Textarea id={`question-${i}`} rows={5} value={alignmentTestData.answers[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
+                    <Textarea id={`question-${i}`} rows={5} value={(alignmentTestData.answers || {})[q] || ''} onChange={(e) => handleAnswerChange(q, e.target.value)} placeholder="Your answer..." disabled={isLoading || isEvaluating} />
                 </div>
                 ))
                 )}
