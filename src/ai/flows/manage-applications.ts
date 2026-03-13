@@ -171,6 +171,16 @@ const manageApplicationFlow = ai.defineFlow(
         return { success: true, message: 'Application withdrawn.' };
     }
 
+    if (action === 'deny') {
+      try {
+        await applicationRef.delete();
+        return { success: true };
+      } catch (error) {
+        console.error('Error denying application:', error);
+        return { success: false, message: 'Failed to deny application.' };
+      }
+    }
+
 
     if (!applicantId) {
         return { success: false, message: 'Missing applicantId for this action.' };
@@ -252,21 +262,10 @@ const manageApplicationFlow = ai.defineFlow(
                     recipientName: applicantName,
                 });
             }
-            return { success: true };
         }
     }
 
-
-    if (action === 'deny') {
-      try {
-        await applicationRef.delete();
-        return { success: true };
-      } catch (error) {
-        console.error('Error denying application:', error);
-        return { success: false, message: 'Failed to deny application.' };
-      }
-    }
-    
     return { success: false, message: 'Invalid action or type.' };
+
   }
 );
