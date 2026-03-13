@@ -393,18 +393,16 @@ function AllTribesMap({ tribes, selectedTribe, setSelectedTribe, handleJoinTribe
                     onClick={() => setSelectedTribe(null)}
                 >
                     <MarkerClustererF>
-                        {(clusterer) => (
-                            <>
-                            {tribes.filter(t => t.lat && t.lng).map(tribe => (
+                        {(clusterer) =>
+                            tribes.filter(t => t.lat && t.lng).map(tribe => (
                                 <MarkerF
                                     key={tribe.id}
                                     position={{ lat: tribe.lat!, lng: tribe.lng! }}
                                     clusterer={clusterer}
                                     onClick={() => setSelectedTribe(tribe)}
                                 />
-                            ))}
-                            </>
-                        )}
+                            )) as any
+                        }
                     </MarkerClustererF>
                 </GoogleMap>
             </div>
