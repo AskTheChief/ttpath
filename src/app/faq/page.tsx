@@ -37,7 +37,7 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedba
         if (level === 0) return "Forum Contributor:";
         if (level === 1) return "Visitor Says:";
         if (level === 2) return "Guest Says:";
-        if (level === 3) return "Explorer Says:";
+        if (level === 3) return "Applicant Says:";
         if (level === 4) return "Tribe Member Says:";
         if (level === 5) return "Chief Says:";
         if (level === 6) return "Mentor Says:";

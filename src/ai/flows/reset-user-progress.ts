@@ -46,14 +46,14 @@ const resetUserProgressFlow = ai.defineFlow(
     try {
       const writeBatch = db.batch();
 
-      // Reset user's level to Explorer and clear their requirements state
+      // Reset user's level to Applicant and clear their requirements state
       const userRef = db.collection('users').doc(user.uid);
       writeBatch.set(userRef, {
         currentUserLevel: 3,
         requirementsState: {
             'sign-up': true,
             'read-book': true,
-            'register-as-explorer': true,
+            'register-as-applicant': true,
         },
       }, { merge: true });
 

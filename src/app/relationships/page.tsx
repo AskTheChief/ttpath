@@ -226,7 +226,7 @@ const RelationshipsPage = () => {
       setRequirementsState(newReqs);
 
       playToggleSound(true); // Confirmation sound
-      toast({ title: "You embrace the customs", description: "Requirement complete. Returning to your journey..." });
+      toast({ title: "Communication Model studied", description: "Returning to your journey..." });
       
       // Immediate redirect back to the path journey with node auto-selection
       router.push('/?node=guest');

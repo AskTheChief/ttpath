@@ -43,7 +43,7 @@ interface LinkModalData {
 const nodeIcons: { [key: string]: React.FC<any> } = {
   visitor: User,
   guest: UserPlus,
-  explorer: Compass,
+  applicant: Compass,
   member: Users,
   chief: Crown,
   mentor: GraduationCap
@@ -407,7 +407,7 @@ export default function PathJourney() {
 
         if (!profile.firstName || !profile.lastName || !profile.address || !profile.phone) {
           if (progress.currentUserLevel >= 3) {
-            // Force completion if level is explorer but profile is incomplete
+            // Force completion if level is applicant but profile is incomplete
             setNeedsProfileCompletion(true);
           }
           setCurrentUserLevel(progress.currentUserLevel || 1);
@@ -461,12 +461,12 @@ export default function PathJourney() {
     setUserFirstName(firstName);
     setNeedsProfileCompletion(false);
 
-    const targetNode = pathNodesData.find(n => n.id === 'node-explorer');
+    const targetNode = pathNodesData.find(n => n.id === 'node-applicant');
     if (targetNode) {
-        await completeRequirement('register-as-explorer');
+        await completeRequirement('register-as-applicant');
     }
     toast({
-        title: "Congratulations, You are an Explorer!",
+        title: "Congratulations, You are an Applicant!",
         description: "Your diploma is in the mail. You may now join or start a tribe.",
     });
 
@@ -699,7 +699,7 @@ export default function PathJourney() {
 
     // Special cases for foundational visitor/guest steps
     if (currentUserLevel >= 3) {
-        if (action.id === 'read-book' || action.id === 'sign-up' || action.id === 'embrace-customs' || action.id === 'register-as-explorer') {
+        if (action.id === 'read-book' || action.id === 'sign-up' || action.id === 'embrace-customs' || action.id === 'register-as-applicant') {
             return true;
         }
     }
@@ -914,7 +914,7 @@ export default function PathJourney() {
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
-        description: "Your progress has been reset back to the Explorer stage. The page will now reload.",
+        description: "Your progress has been reset back to the Applicant stage. The page will now reload.",
       });
       setTimeout(() => {
         window.location.reload();

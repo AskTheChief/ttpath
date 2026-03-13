@@ -132,7 +132,7 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
         requirementsState: { 
           'sign-up': true, 
           'embrace-customs': true,
-          'register-as-explorer': true 
+          'register-as-applicant': true
         },
         idToken,
       });
@@ -145,7 +145,7 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
 
       toast({
         title: 'Profile Complete & Diploma Sent!',
-        description: "Congratulations, you are now an Explorer! Your diploma is in your inbox.",
+        description: "Congratulations, you are now an Applicant! Your diploma is in your inbox.",
       });
       
       onComplete(profile.firstName!);
@@ -166,9 +166,9 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 min-h-screen">
         <Card className="w-full max-w-lg">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold">Register as an Explorer</CardTitle>
+                <CardTitle className="text-2xl font-bold">Register as an Applicant</CardTitle>
                 <CardDescription>
-                    To register as an Explorer, please provide your information. This helps you connect with tribes in your area.
+                    To register as an Applicant, please provide your information. This helps you connect with tribes in your area.
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleProfileSubmit} noValidate>

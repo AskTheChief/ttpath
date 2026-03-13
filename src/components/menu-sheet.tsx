@@ -90,18 +90,19 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
   /**
    * Handles clicks within the "Library" dropdown.
    * Opens documentation in a new tab or opens the alignment test modal.
-   * @param {'pamphlet' | 'methods' | 'philosophy' | 'alignment-test'} doc - The document identifier.
+   * @param {'pamphlet' | 'methods' | 'philosophy' | 'communication-model'} doc - The document identifier.
    */
-  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'alignment-test') => {
+  const handleLibraryClick = (doc: 'pamphlet' | 'methods' | 'philosophy' | 'communication-model') => {
     onClose();
     const urls = {
         pamphlet: 'https://docs.google.com/document/d/12YS_MYx6i_uaY62a8I3-SUgZwz11qqdQ4cmZxQ4X4ic/',
         methods: 'https://docs.google.com/document/d/1KE8lVqnmYVQolnLbz6huUxftQSEz6YMGvU8x-TYnDgc/edit?tab=t.0',
         philosophy: 'https://docs.google.com/document/d/1JT7Rn5MUZjs-5PD_jweJrSIDD_fQRER3RPPx0xL2YHw/edit?tab=t.0',
+        'communication-model': '/relationships'
     };
 
-    if (doc === 'alignment-test') {
-        openModal('open-alignment-test');
+    if (doc === 'communication-model') {
+        window.location.href = urls[doc];
     } else {
         window.open(urls[doc], '_blank');
     }
@@ -182,7 +183,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <Heart className="mr-4 w-10 h-10" />
-                  Trading Tribe Customs
+                  Trading Tribe Communication Model
               </Button>
             </Link>
             <DropdownMenu>
@@ -208,9 +209,9 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Trading Tribe Philosophy</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLibraryClick('alignment-test')}>
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  <span>Alignment Test</span>
+                <DropdownMenuItem onClick={() => handleLibraryClick('communication-model')}>
+                  <Heart className="mr-2 h-4 w-4" />
+                  <span>Trading Tribe Communication Model</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

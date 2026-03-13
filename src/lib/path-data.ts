@@ -28,10 +28,10 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.0,
     title: "Visitor",
     req: "",
-    description: "Welcome to the Tribe Path. To find out how the Tribe works, read the Quick-Start Guide. Then, if you wish to proceed, you may register as a Guest. As a guest, you have access to Tribe resources, such as The Chief, The Library, The Forum, Trading, Games and The Store. You may also proceed along the path to join a Tribe or to run one as a Chief.",
+    description: "Welcome to the Tribe Path! To find out how the Tribe works, read the Quick-Start Guide. Then, to proceed, register as a Guest.",
     actions: [
       { id: "read-book", label: "Read the Quick-Start Guide", action: "open-pamphlet" },
-      { id: "sign-up", label: "Register as Guest", next: "guest", requires: "signup-form", dependsOn: "read-book" }
+      { id: "sign-up", label: "Register as a Guest", next: "guest", requires: "signup-form", dependsOn: "read-book" }
     ],
     panelPos: "right"
   },
@@ -41,23 +41,26 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.20,
     title: "Guest",
     req: "",
-    description: "As a Guest, you study the Tribe methods and customs. Before you can register as an Explorer and join a tribe, you must embrace the Trading Tribe Customs.",
+    description: "As a guest, you have access to Tribe resources, such as The Chief, The Library, The Forum, and especially, the Trading Tribe Communication Model. Then, you may apply to join a Tribe or to start one of your own.",
     actions: [
-      { id: "visit-library", label: "Visit the Library (Optional)", action: "visit-library", optional: true },
-      { id: "embrace-customs", label: "Embrace Trading Tribe Customs", action: "navigate-customs" },
-      { id: "register-as-explorer", label: "Register as an Explorer", action: "open-profile-form", next: "explorer", dependsOn: "embrace-customs" }
+      { id: "embrace-customs", label: "Study the Trading Tribe Communication Model", action: "navigate-customs" },
+      { id: "visit-library", label: "Inspect the Resources (Optional)", action: "visit-library", optional: true },
+      { id: "register-as-applicant", label: "Register as an Applicant", action: "open-profile-form", next: "applicant" }
     ],
     panelPos: "left"
   },
   {
-    id: "node-explorer",
+    id: "node-applicant",
     level: 3,
     pathPos: 0.40,
-    title: "Explorer",
+    title: "Applicant",
     req: "",
-    description: "As an Explorer, you now have your own Trading Tribe Account that you can access below and also on the Menu (upper left) under \"My Account.\"\n\nOn your My Account page, you may edit your profile, comprehension test, Issue and Service Project. You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
+    description: "As an Applicant, you have your own Trading Tribe Account that you can access on the Resources Menu (upper left) under \"My Account.\" You may also apply to join a Tribe, run a Tribe as its Chief or serve as a Mentor to help new Chiefs learn the ropes.",
     actions: [
-      { id: "join-tribe", label: "Join or Start a Tribe", action: "navigate-my-tribe", targetView: "find-or-start-tribe" }
+      { id: "go-to-my-account-applicant", label: "Go to My Account", action: "navigate-my-tribe", targetView: "my-profile" },
+      { id: "join-tribe", label: "Apply to Join a Tribe", action: "navigate-my-tribe", targetView: "find-or-start-tribe" },
+      { id: "start-tribe", label: "Apply to Start a Tribe", action: "navigate-my-tribe", targetView: "find-or-start-tribe" },
+      { id: "apply-for-mentor-applicant", label: "Apply to Serve as a Mentor", action: "navigate-my-tribe", targetView: "my-profile" }
     ],
     panelPos: "right"
   },
@@ -67,7 +70,7 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.60,
     title: "Tribe Member",
     req: "",
-    description: "As a member of a Tribe, you now have your own page for viewing the meeting schedule and for communicating with other Tribe members.",
+    description: "As a member of a Tribe, you have your own page for checking the meeting schedule and for documenting your progress (in the anonymous Forum) to inspire others.",
     actions: [
       { id: "go-to-my-account-member", label: "Go to My Account", action: "navigate-my-tribe", targetView: "my-tribe" }
     ],
@@ -79,10 +82,9 @@ export const pathNodesData: PathNodeData[] = [
     pathPos: 0.8,
     title: "Tribe Chief",
     req: "",
-    description: "As a Tribe Chief, you are in charge of your Tribe. You can also apply to become a Mentor to help other new Chiefs.",
+    description: "As a Tribe Chief, you have your own page to help manage your Tribe.",
     actions: [
-      { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe", targetView: "chief-dashboard" },
-      { id: "apply-for-mentor", label: "Apply for Mentorship", action: "navigate-my-tribe", targetView: "my-profile" }
+      { id: "go-to-my-account-chief", label: "Go to My Account", action: "navigate-my-tribe", targetView: "chief-dashboard" }
     ],
     panelPos: "right"
   },

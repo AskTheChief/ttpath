@@ -93,7 +93,7 @@ const defaultCenter = {
 const levelMap: Record<number, string> = {
   1: "Visitor",
   2: "Guest",
-  3: "Explorer",
+  3: "Applicant",
   4: "Member",
   5: "Chief",
   6: "Mentor",
@@ -268,7 +268,7 @@ function FeedbackForm({
   );
 }
 
-interface ExplorerViewProps {
+interface ApplicantViewProps {
   user: User | null;
   isLoaded: boolean;
   isLoading: boolean;
@@ -288,7 +288,7 @@ interface ExplorerViewProps {
   handleTabChange: (value: string) => void;
 }
 
-function ExplorerView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }: ExplorerViewProps) {
+function ApplicantView({ user, isLoaded, isLoading, tribes, userTribe, newTribeName, newTribeLocation, newTribeCoords, selectedTribe, handlePlaceSelected, handleCreateTribe, handleJoinTribe, setNewTribeName, setSelectedTribe, pendingApplication, handleWithdrawApplication, handleTabChange }: ApplicantViewProps) {
   const tribeAppliedTo = tribes.find(t => t.id === pendingApplication?.tribeId);
 
   return (
@@ -539,7 +539,7 @@ function MyTribePageContent() {
           if (level === 0) return "Forum Contributor:";
           if (level === 1) return "Visitor Says:";
           if (level === 2) return "Guest Says:";
-          if (level === 3) return "Explorer Says:";
+          if (level === 3) return "Applicant Says:";
           if (level === 4) return "Tribe Member Says:";
           if (level === 5) return "Chief Says:";
           if (level === 6) return "Mentor Says:";
@@ -1099,7 +1099,7 @@ function MyTribePageContent() {
       await resetUserProgress({ idToken });
       toast({
         title: "Progress Reset",
-        description: "Your progress has been reset back to the Explorer stage. The page will now reload.",
+        description: "Your progress has been reset back to the Applicant stage. The page will now reload.",
       });
       setTimeout(() => {
         window.location.reload();
@@ -1954,8 +1954,8 @@ function MyTribePageContent() {
             </Card>
             <Card>
               <CardHeader>
-                  <CardTitle>Reset Me to Explorer</CardTitle>
-                  <CardDescription>This action resets your journey back to the Explorer stage, allowing you to join a different tribe or start a new one.</CardDescription>
+                  <CardTitle>Reset Me to Applicant</CardTitle>
+                  <CardDescription>This action resets your journey back to the Applicant stage, allowing you to join a different tribe or start a new one.</CardDescription>
               </CardHeader>
               <CardContent>
                   <AlertDialog>
@@ -1969,7 +1969,7 @@ function MyTribePageContent() {
                           <AlertDialogHeader>
                               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                  This is a permanent action. It will reset your progress to the "Explorer" stage, remove you from your current tribe, and clear any chief responsibilities. Are you sure you want to continue?
+                                  This is a permanent action. It will reset your progress to the "Applicant" stage, remove you from your current tribe, and clear any chief responsibilities. Are you sure you want to continue?
                               </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -2550,7 +2550,7 @@ function MyTribePageContent() {
     </Tabs>
   );
 
-  const renderExplorerView = () => (
+  const renderApplicantView = () => (
     <Tabs defaultValue="find-or-start-tribe" className="w-full" onValueChange={handleTabChange} value={activeTab}>
         <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
             <TabsTrigger value="find-or-start-tribe" className="text-base">Find or Start a Tribe</TabsTrigger>
@@ -2558,7 +2558,7 @@ function MyTribePageContent() {
             {renderLockedTabTrigger("faq", "The Forum", 2)}
         </TabsList>
         <TabsContent value="find-or-start-tribe" className="m-0 space-y-8">
-             <ExplorerView 
+             <ApplicantView 
               user={user}
               isLoaded={isLoaded}
               isLoading={isLoading}
@@ -2664,7 +2664,7 @@ function MyTribePageContent() {
           </Link>
         </header>
 
-        {Number(userLevel) < 4 ? renderExplorerView() : renderMemberChiefView()}
+        {Number(userLevel) < 4 ? renderApplicantView() : renderMemberChiefView()}
 
       </div>
       

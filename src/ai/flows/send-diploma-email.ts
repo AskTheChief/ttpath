@@ -63,7 +63,7 @@ const sendDiplomaEmailFlow = ai.defineFlow(
               ${recipientName || 'Valued Member'}
             </p>
             <p style="font-size: 25px; color: #555;">has successfully completed all requirements to become a</p>
-            <p style="font-size: 30px; font-weight: bold; color: #2a433a; margin: 20px 0;">Tribe Explorer</p>
+            <p style="font-size: 30px; font-weight: bold; color: #2a433a; margin: 20px 0;">Tribe Applicant</p>
             <p style="font-size: 20px; color: #555;">on The Trading Tribe Path.</p>
             <div style="margin-top: 50px;">
               <p style="font-size: 16px; color: #777;">Your journey continues. You may now join a tribe or apply to start your own.</p>

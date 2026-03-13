@@ -21,7 +21,7 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground text-sm text-center">
             <p className="mb-4">
-              An individual Trading Tribe has about eight members who meet to support each other in working through issues and devoting to serving others. This app connects people who wish to join or start a Tribe in their area. Follow the wheel to find out how you might fit with the Trading Tribe, and how to participate.
+              The Trading Tribe associates individual Tribes from all over the world. Individual Tribes contain about eight members each, who support each other in identifying their gifts and in sharing them with others. To learn more about the Trading Tribe, get on the path by clicking on Visitor, below.
             </p>
           </AccordionContent>
         </AccordionItem>

@@ -30,7 +30,7 @@ import { format } from 'date-fns';
 const levelMap: Record<number, string> = {
   1: "Visitor",
   2: "Guest",
-  3: "Explorer",
+  3: "Applicant",
   4: "Member",
   5: "Chief",
   6: "Mentor",
