@@ -183,7 +183,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 onClick={onClose}
               >
                   <Heart className="mr-4 w-10 h-10" />
-                  Trading Tribe Communication Model
+                  Communication
               </Button>
             </Link>
             <DropdownMenu>
@@ -211,7 +211,7 @@ export default function MenuSheet({ isOpen, onClose, openModal, isGuest, onTestC
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleLibraryClick('communication-model')}>
                   <Heart className="mr-2 h-4 w-4" />
-                  <span>Trading Tribe Communication Model</span>
+                  <span>Communication</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
