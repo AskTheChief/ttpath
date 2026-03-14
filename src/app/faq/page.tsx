@@ -486,7 +486,8 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                 <CardContent className="space-y-4 flex-grow pt-6">
                     {(faq.feedback || []).map(fb => {
                          const answerAuthorLabel = getAuthorDisplay('answer', faq, fb);
-                         const canEditFeedback = isMentor && fb.mentorId !== 'chatbot-chief';
+                         // Enable editing if user is a mentor, EVEN IF it's a chatbot entry.
+                         const canEditFeedback = isMentor;
                          return (
                             <div key={fb.id} className="p-4 rounded-md bg-secondary/50">
                                 {editingAnswerId === fb.id ? (
@@ -509,7 +510,7 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                                         <div className="space-y-2">
                                             <Label htmlFor="answer-caption">Caption</Label>
                                             <FormattingToolbar textareaRef={answerCaptionTextareaRef} value={answerCaption} onValueChange={setAnswerCaption} />
-                                            <Textarea ref={answerCaptionTextareaRef} id="answer-caption" value={answerCaption} onChange={e => setCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
+                                            <Textarea ref={answerCaptionTextareaRef} id="answer-caption" value={answerCaption} onChange={e => setAnswerCaption(e.target.value)} placeholder="Caption for the answer content or image..." rows={2}/>
                                         </div>
 
                                         {isManualOrContributor && (
@@ -588,7 +589,7 @@ function ForumItemCard({ faq, user, userLevel, onUpdate, searchTerm, isPendingVi
                     {(!faq.feedback || faq.feedback.length === 0) && (
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">No feedback yet.</p>
-                            {(isMentor || (userTribe && faq.recipient === 'Chief' && userTribe.members.includes(faq.userId) && userTribe.chief === user?.uid)) && (
+                            {isMentor && (
                                 <FeedbackForm
                                     entryId={faq.id}
                                     user={user}

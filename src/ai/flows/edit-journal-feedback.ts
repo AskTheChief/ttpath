@@ -29,7 +29,34 @@ const editJournalFeedbackFlow = ai.defineFlow(
       throw new Error('User not authorized.');
     }
 
-    const entryRef = db.collection('journal_entries').doc(entryId);
+    const isChatbotEntry = entryId.startsWith('chatbot-');
+    const actualEntryId = isChatbotEntry ? entryId.replace('chatbot-', '') : entryId;
+
+    if (isChatbotEntry) {
+        // Special case for Ask Ed (chatbot) recorded answers
+        const chatSessionRef = db.collection('chat_sessions').doc(actualEntryId);
+        const chatSessionDoc = await chatSessionRef.get();
+
+        if (!chatSessionDoc.exists) {
+            throw new Error('Chat session not found.');
+        }
+
+        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+        const userLevel = Number(userDoc.data()?.currentUserLevel || 0);
+        
+        if (userLevel < ADMIN_LEVEL) {
+            throw new Error('Permission denied. Only a mentor can edit Ask Ed answers.');
+        }
+
+        const updateData: any = {
+            answer: newFeedbackContent, // The chief's answer is stored in 'answer'
+        };
+
+        await chatSessionRef.update(updateData);
+        return { success: true, message: 'Ask Ed answer updated successfully.' };
+    }
+
+    const entryRef = db.collection('journal_entries').doc(actualEntryId);
     const entryDoc = await entryRef.get();
 
     if (!entryDoc.exists) {

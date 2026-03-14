@@ -49,7 +49,11 @@ const notifyFaqAuthorFlow = ai.defineFlow(
     }
     
     try {
-        const entryRef = db.collection('journal_entries').doc(entryId);
+        const isChatbotEntry = entryId.startsWith('chatbot-');
+        const actualEntryId = isChatbotEntry ? entryId.replace('chatbot-', '') : entryId;
+
+        const collectionName = isChatbotEntry ? 'chat_sessions' : 'journal_entries';
+        const entryRef = db.collection(collectionName).doc(actualEntryId);
         const entryDoc = await entryRef.get();
 
         if (!entryDoc.exists) {
@@ -68,7 +72,7 @@ const notifyFaqAuthorFlow = ai.defineFlow(
         } else { // Fallback to existing logic if no direct email is provided
             const authorId = entryData.userId;
 
-            if (entryData.isManualEntry || !authorId) {
+            if ((entryData.isManualEntry && !isChatbotEntry) || !authorId) {
                 return { success: false, message: 'Cannot notify this entry without a specified email address.' };
             }
 
