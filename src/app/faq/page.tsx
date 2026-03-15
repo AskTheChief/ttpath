@@ -44,6 +44,8 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedba
         if (entry.isChatbotEntry) return "Visitor Says:";
         return "Contributor:";
     } else { // type === 'answer'
+        if (entry.isChatbotEntry) return "Ed Says:";
+
         const qLevel = Number(entry.userLevel || 0);
         if (qLevel === 0) return "Ed Says:";
         
@@ -52,7 +54,7 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedba
         }
 
         if (!feedback) return '';
-        if (feedback.mentorId === 'chatbot-chief') return "AI Chief Says:";
+        if (feedback.mentorId === 'chatbot-chief') return "Ed Says:";
         if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
         
         const level = Number(feedback.mentorLevel || 0);
