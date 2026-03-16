@@ -36,16 +36,20 @@ secretManager:
   - secret: MAILGUN_API_KEY
     pin: latest
     availability:
+      - BUILD
       - RUNTIME
   - secret: MAILGUN_DOMAIN
     pin: latest
     availability:
+      - BUILD
       - RUNTIME
   - secret: FEEDBACK_RECIPIENT_EMAIL
     pin: latest
     availability:
+      - BUILD
       - RUNTIME
   - secret: RECAPTCHA_SECRET_KEY
     pin: latest
     availability:
+      - BUILD
       - RUNTIME
