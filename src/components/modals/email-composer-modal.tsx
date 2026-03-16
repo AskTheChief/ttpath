@@ -291,7 +291,7 @@ export default function EmailComposerModal({
                  <div className="h-64 w-full rounded-md border border-input bg-white p-4">
                     <ScrollArea className="h-full w-full">
                         <div
-                            className="prose dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3"
+                            className="prose dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-img:mx-auto prose-img:block"
                             dangerouslySetInnerHTML={{ __html: body }}
                         />
                     </ScrollArea>
