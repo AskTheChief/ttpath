@@ -11,7 +11,7 @@ export default function Home() {
     <main className="flex flex-col items-center justify-center min-h-screen p-4">
       <h2 className="journey-title text-4xl font-bold flex items-center gap-3">
         The Trading Tribe Path
-        <span className="text-sm font-normal text-muted-foreground/60 bg-muted px-2 py-0.5 rounded-full">v1.0</span>
+        <span className="text-sm font-normal text-muted-foreground/60 bg-muted px-2 py-0.5 rounded-full">v1.1</span>
       </h2>
 
       <Accordion type="single" collapsible className="w-full max-w-4xl mb-8">
