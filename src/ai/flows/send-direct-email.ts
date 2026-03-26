@@ -46,12 +46,15 @@ const sendDirectEmailFlow = ai.defineFlow(
       const plainTextBody = body ? body.replace(/<[^>]+>/g, '') : '';
 
       const messageData = {
-        from: `TTpath <info@${mailgunDomain}>`,
+        from: `Ed Seykota <ed@${mailgunDomain}>`,
         to: recipientEmail,
         subject: subject,
         html: body,
         text: plainTextBody,
-        'h:Reply-To': `replies@${mailgunDomain}`,
+        'h:Reply-To': `ed@${mailgunDomain}`,
+        'o:tracking': false,
+        'o:tracking-clicks': false,
+        'o:tracking-opens': false,
       };
 
       const result = await mg.messages.create(mailgunDomain, messageData);

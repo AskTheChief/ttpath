@@ -12,12 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { updateUserProgress } from '@/ai/flows/update-user-progress';
-import { useLoadScript, GoogleMap, MarkerF, Libraries } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { cn } from '@/lib/utils';
 import { sendDiplomaEmail } from '@/ai/flows/send-diploma-email';
 
-const libraries: Libraries = ['places'];
+const libraries: ('places')[] = ['places'];
 const mapContainerStyle = {
   width: '100%',
   height: '200px',
@@ -56,11 +56,6 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
   const [profile, setProfile] = useState<Partial<UserProfile>>({});
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
   
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -185,27 +180,25 @@ export default function CompleteProfileForm({ user, onComplete, onClose }: Compl
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="address">Address</Label>
-                    {isLoaded && !loadError && (
+                    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} libraries={libraries}>
                         <div style={mapContainerStyle}>
-                            <GoogleMap
-                                mapContainerStyle={{ height: '100%', width: '100%' }}
+                            <Map
                                 center={coords || defaultCenter}
                                 zoom={coords ? 15 : 4}
-                                options={{ disableDefaultUI: true }}
+                                disableDefaultUI={true}
+                                mapId="DEMO_MAP_ID"
                             >
-                                {coords && <MarkerF position={coords} />}
-                            </GoogleMap>
+                                {coords && <AdvancedMarker position={coords} />}
+                            </Map>
                         </div>
-                    )}
-                    {loadError && <p className="text-sm text-destructive mt-2">Could not load map. Please check API key.</p>}
-                    <LocationAutocomplete
-                        id="location_autocomplete"
-                        placeholder="123 Main St, Anytown, USA"
-                        onPlaceSelected={handlePlaceSelected}
-                        initialValue={profile.address || ''}
-                        required
-                        disabled={!isLoaded}
-                    />
+                        <LocationAutocomplete
+                            id="location_autocomplete"
+                            placeholder="123 Main St, Anytown, USA"
+                            onPlaceSelected={handlePlaceSelected}
+                            initialValue={profile.address || ''}
+                            required
+                        />
+                    </APIProvider>
                 </div>
                 <div className="space-y-2">
                 <Label htmlFor="profile_field_phone">Phone Number</Label>

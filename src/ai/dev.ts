@@ -1,7 +1,8 @@
 'use server';
 
 import { config } from 'dotenv';
-config();
+// Load environment variables from .env.local first, fallback to .env
+config({ path: ['.env.local', '.env'] });
 
 import '@/ai/flows/mentor-bot-assistance.ts';
 import '@/ai/flows/personalized-tutorial-creation.ts';

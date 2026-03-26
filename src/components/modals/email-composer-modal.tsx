@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendDirectEmail } from '@/ai/flows/send-direct-email';
+import { sendDirectEmailAction as sendDirectEmail } from '@/app/actions/send-direct-email';
 import { Loader2, Sparkles } from 'lucide-react';
 import { sendBugFinderDiploma } from '@/ai/flows/send-bug-finder-diploma';
 import {
