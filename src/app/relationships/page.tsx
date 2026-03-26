@@ -292,10 +292,13 @@ const RelationshipsPage = () => {
             Communication Model
           </h1>
           <p className="max-w-2xl mt-8 text-lg text-muted-foreground">
-            Trading Tribe Members practice using the Trading Tribe Communication Model during Tribe meetings. While members may find it a bit awkward at first, they generally find it leads to clear thinking before speaking and clear communication after speaking.
+            Trading Tribe Members practice using the Trading Tribe Communication Model during Tribe meetings.
           </p>
-          <p className="max-w-2xl mt-4 font-medium text-foreground">
-            Note: Check the boxes for the elements you already feel you use.
+          <p className="max-w-2xl mt-6 text-lg text-muted-foreground">
+            While members may find it a bit awkward at first, they generally find it leads to clear thinking before speaking and clear communication after speaking.
+          </p>
+          <p className="max-w-2xl mt-6 font-medium text-foreground">
+            Indicate the elements you embrace.
           </p>
         </div>
       </header>
@@ -354,7 +357,7 @@ const RelationshipsPage = () => {
                         </div>
                         {user && (
                             <div className="mt-8 flex flex-col gap-4">
-                                <span className="text-xl font-bold text-foreground/80">I already use this element:</span>
+                                <span className="text-xl font-bold text-foreground/80">I embrace this element:</span>
                                 <div className="flex gap-4 items-center">
                                     <Button 
                                         variant={isAgreed ? "default" : "outline"} 

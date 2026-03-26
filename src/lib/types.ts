@@ -159,6 +159,7 @@ export const JournalEntrySchema = z.object({
     feedback: z.array(JournalFeedbackSchema).optional(),
     imageUrl: z.string().url().or(z.literal('')).optional(),
     isManualEntry: z.boolean().optional(),
+    isAnonymizedReport: z.boolean().optional(),
     caption: z.string().optional(),
     recipient: z.string().optional(),
 });

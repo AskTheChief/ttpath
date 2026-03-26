@@ -4,8 +4,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { ChatSessionSchema, type ChatSession } from '@/lib/types';
-export type { ChatSession };
+import { ChatSessionSchema } from '@/lib/types';
+import type { ChatSession } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {

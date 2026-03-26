@@ -111,6 +111,7 @@ const getAllJournalEntriesFlow = ai.defineFlow(
             feedback: feedbackArray.length > 0 ? feedbackArray : undefined,
             imageUrl: typeof data.imageUrl === 'string' && data.imageUrl.startsWith('http') ? data.imageUrl : undefined,
             isManualEntry: isManual,
+            isAnonymizedReport: data.isAnonymizedReport === true ? true : undefined,
             caption: typeof data.caption === 'string' ? data.caption : undefined,
             recipient: typeof data.recipient === 'string' ? data.recipient : undefined,
         });

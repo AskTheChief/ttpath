@@ -27,6 +27,7 @@ import { useLoadScript, Libraries, GoogleMap, MarkerF, MarkerClustererF } from '
 import LocationAutocomplete from '@/components/location-autocomplete';
 import type { Tribe, Meeting, Application, UserProfile, TribeMember, MeetingReport, OutboundEmail, JournalEntry, JournalFeedback, SystemUser } from '@/lib/types';
 import { deleteTribe } from '@/ai/flows/delete-tribe';
+import { getPrinciples } from '@/ai/flows/relationships-principles';
 import { updateTribeMeetings } from '@/ai/flows/update-tribe-meetings';
 import { manageApplication } from '@/ai/flows/manage-applications';
 import { Calendar } from '@/components/ui/calendar';
@@ -473,6 +474,7 @@ function MyTribePageContent() {
   const [joinApplications, setJoinApplications] = useState<Application[]>([]);
   const [tribeCreationApps, setTribeCreationApps] = useState<Application[]>([]);
   const [mentorApplications, setMentorApplications] = useState<Application[]>([]);
+  const [customsMap, setCustomsMap] = useState<Map<string, string>>(new Map());
   const [pendingApplication, setPendingApplication] = useState<Application | null>(null);
   const [pendingMentorApp, setPendingMentorApp] = useState<Application | null>(null);
   const [meetingReports, setMeetingReports] = useState<MeetingReport[]>([]);
@@ -711,6 +713,16 @@ function MyTribePageContent() {
                 setJoinApplications(joinAppsResult.applications);
             }
             setAllUsers(allUsersResult);
+
+            // Fetch customs content for display in application reviews
+            try {
+              const principles = await getPrinciples();
+              const map = new Map<string, string>();
+              principles.forEach(p => map.set(p.title, p.content));
+              setCustomsMap(map);
+            } catch (e) {
+              console.error('Failed to fetch customs:', e);
+            }
         }
       }
       
@@ -2198,16 +2210,21 @@ function MyTribePageContent() {
                                 </div>
                             </div>
                             <div>
-                                <h4 className="font-semibold mb-2">Embraced Customs</h4>
-                                <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/50">
-                                    {member.embracedCustoms && member.embracedCustoms.length > 0 ? member.embracedCustoms.map((custom, idx) => (
-                                        <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            {custom}
-                                        </div>
-                                    )) : (
-                                        <p className="text-sm text-muted-foreground">No customs embraced yet.</p>
-                                    )}
+                                <h4 className="font-semibold mb-2">Customs Checklist</h4>
+                                <div className="space-y-3 p-3 border rounded-md bg-muted/50">
+                                    {Array.from(customsMap.entries()).map(([title, content]) => {
+                                        const embraced = member.embracedCustoms?.includes(title);
+                                        return (
+                                            <div key={title} className={`space-y-1 ${!embraced ? 'opacity-50' : ''}`}>
+                                                <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                                                    {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
+                                                    {title}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground pl-5 whitespace-pre-line">{content}</p>
+                                            </div>
+                                        );
+                                    })}
+                                    {customsMap.size === 0 && <p className="text-sm text-muted-foreground">Loading customs...</p>}
                                 </div>
                             </div>
                             </div>
@@ -2233,16 +2250,21 @@ function MyTribePageContent() {
                                 <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                 </div>
                                 <div>
-                                <h4 className="font-semibold mb-2">Embraced Customs</h4>
-                                <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                                    {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
-                                        <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            {custom}
-                                        </div>
-                                    )) : (
-                                        <p className="text-sm text-muted-foreground">No customs embraced.</p>
-                                    )}
+                                <h4 className="font-semibold mb-2">Customs Checklist</h4>
+                                <div className="space-y-3 p-3 border rounded-md">
+                                    {Array.from(customsMap.entries()).map(([title, content]) => {
+                                        const embraced = app.embracedCustoms?.includes(title);
+                                        return (
+                                            <div key={title} className={`space-y-1 ${!embraced ? 'opacity-50' : ''}`}>
+                                                <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                                                    {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
+                                                    {title}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground pl-5 whitespace-pre-line">{content}</p>
+                                            </div>
+                                        );
+                                    })}
+                                    {customsMap.size === 0 && <p className="text-sm text-muted-foreground">Loading customs...</p>}
                                 </div>
                                 </div>
                                 <div className="flex justify-end gap-2 pt-2"><Button variant="outline" onClick={() => openComposerForApplicant(app)} disabled={isLoading}><Mail className="mr-2 h-4 w-4"/>Email</Button><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
@@ -2342,16 +2364,21 @@ function MyTribePageContent() {
                                                     <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-semibold mb-2">Embraced Customs</h4>
-                                                    <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                                                        {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
-                                                            <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
-                                                                <CheckCircle2 className="h-3 w-3" />
-                                                                {custom}
-                                                            </div>
-                                                        )) : (
-                                                            <p className="text-sm text-muted-foreground">No customs embraced.</p>
-                                                        )}
+                                                    <h4 className="font-semibold mb-2">Customs Checklist</h4>
+                                                    <div className="space-y-3 p-3 border rounded-md">
+                                                        {Array.from(customsMap.entries()).map(([title, content]) => {
+                                                            const embraced = app.embracedCustoms?.includes(title);
+                                                            return (
+                                                                <div key={title} className={`space-y-1 ${!embraced ? 'opacity-50' : ''}`}>
+                                                                    <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                                                                        {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
+                                                                        {title}
+                                                                    </div>
+                                                                    <p className="text-xs text-muted-foreground pl-5 whitespace-pre-line">{content}</p>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {customsMap.size === 0 && <p className="text-sm text-muted-foreground">Loading customs...</p>}
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-end gap-2 pt-2">
@@ -2389,16 +2416,21 @@ function MyTribePageContent() {
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                       </div>
                                       <div>
-                                      <h4 className="font-semibold mb-2">Embraced Customs</h4>
-                                      <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                                          {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
-                                              <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
-                                                  <CheckCircle2 className="h-3 w-3" />
-                                                  {custom}
-                                              </div>
-                                          )) : (
-                                              <p className="text-sm text-muted-foreground">No customs embraced.</p>
-                                          )}
+                                      <h4 className="font-semibold mb-2">Customs Checklist</h4>
+                                      <div className="space-y-3 p-3 border rounded-md">
+                                          {Array.from(customsMap.entries()).map(([title, content]) => {
+                                              const embraced = app.embracedCustoms?.includes(title);
+                                              return (
+                                                  <div key={title} className={`space-y-1 ${!embraced ? 'opacity-50' : ''}`}>
+                                                      <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                                                          {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
+                                                          {title}
+                                                      </div>
+                                                      <p className="text-xs text-muted-foreground pl-5 whitespace-pre-line">{content}</p>
+                                                  </div>
+                                              );
+                                          })}
+                                          {customsMap.size === 0 && <p className="text-sm text-muted-foreground">Loading customs...</p>}
                                       </div>
                                       </div>
                                       <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>
@@ -2431,16 +2463,21 @@ function MyTribePageContent() {
                                             <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold mb-2">Embraced Customs</h4>
-                                            <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                                                {app.embracedCustoms && app.embracedCustoms.length > 0 ? app.embracedCustoms.map((custom, idx) => (
-                                                    <div key={idx} className="flex items-center gap-1 bg-primary/10 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium border border-primary/20">
-                                                        <CheckCircle2 className="h-3 w-3" />
-                                                        {custom}
-                                                    </div>
-                                                )) : (
-                                                    <p className="text-sm text-muted-foreground">No customs embraced.</p>
-                                                )}
+                                            <h4 className="font-semibold mb-2">Customs Checklist</h4>
+                                            <div className="space-y-3 p-3 border rounded-md">
+                                                {Array.from(customsMap.entries()).map(([title, content]) => {
+                                                    const embraced = app.embracedCustoms?.includes(title);
+                                                    return (
+                                                        <div key={title} className={`space-y-1 ${!embraced ? 'opacity-50' : ''}`}>
+                                                            <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                                                                {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
+                                                                {title}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground pl-5 whitespace-pre-line">{content}</p>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {customsMap.size === 0 && <p className="text-sm text-muted-foreground">Loading customs...</p>}
                                             </div>
                                         </div>
                                         <div className="flex justify-end gap-2 pt-2"><Button variant="destructive" onClick={() => handleApplicationAction('deny', app)} disabled={isLoading}>Deny</Button><Button onClick={() => handleApplicationAction('approve', app)} disabled={isLoading}>Approve</Button></div>

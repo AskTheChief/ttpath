@@ -4,7 +4,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
+import { getChatSessions } from '@/ai/flows/get-chat-sessions';
+import type { ChatSession } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';

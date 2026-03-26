@@ -9,8 +9,10 @@ import { ArrowLeft, Loader2, Search, Edit, Trash2, Bold, Italic, Underline, Mail
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAllJournalEntries } from '@/ai/flows/get-all-journal-entries';
-import { getChatSessions, type ChatSession } from '@/ai/flows/get-chat-sessions';
+import { getChatSessions } from '@/ai/flows/get-chat-sessions';
+import type { ChatSession } from '@/lib/types';
 import { saveJournalEntry, deleteJournalEntry } from '@/ai/flows/journal';
 import { addJournalFeedback } from '@/ai/flows/add-journal-feedback';
 import { editJournalFeedback } from '@/ai/flows/edit-journal-feedback';
@@ -28,11 +30,12 @@ import { Label } from '@/components/ui/label';
 import ChatbotModal from '@/components/modals/chatbot-modal';
 import { cn } from '@/lib/utils';
 
-// Augment JournalEntry type for this component to include chatbot entries
-type ForumEntry = JournalEntry & { isChatbotEntry?: boolean };
+// Augment JournalEntry type for this component to include chatbot and anonymized report entries
+type ForumEntry = JournalEntry & { isChatbotEntry?: boolean; isAnonymizedReport?: boolean };
 
 const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedback?: JournalFeedback): string => {
     if (type === 'question') {
+        if (entry.isAnonymizedReport) return "Tribe Member:";
         const level = Number(entry.userLevel || 0);
         if (level === 0) return "Forum Contributor:";
         if (level === 1) return "Visitor Says:";
@@ -44,23 +47,25 @@ const getAuthorDisplay = (type: 'question' | 'answer', entry: ForumEntry, feedba
         if (entry.isChatbotEntry) return "Visitor Says:";
         return "Contributor:";
     } else { // type === 'answer'
-        if (entry.isChatbotEntry) return "Ed Says:";
+        if (entry.isAnonymizedReport) return "AI Chief Says:";
+        if (entry.isChatbotEntry) return "AI Chief Says:";
 
         const qLevel = Number(entry.userLevel || 0);
         if (qLevel === 0) return "Ed Says:";
-        
+
         if (qLevel === 6) {
             return "Mentor's Mentor Says:";
         }
 
         if (!feedback) return '';
-        if (feedback.mentorId === 'chatbot-chief') return "Ed Says:";
+        if (feedback.mentorId === 'ai-chief') return "AI Chief Says:";
+        if (feedback.mentorId === 'chatbot-chief') return "AI Chief Says:";
         if (feedback.mentorName?.toLowerCase().includes('ed')) return "Ed Says:";
-        
+
         const level = Number(feedback.mentorLevel || 0);
         if (level === 5) return "Tribe Chief Says:";
         if (level >= 6) return "Mentor Says:";
-        return "Mentor Says:"; 
+        return "Mentor Says:";
     }
 };
 
@@ -685,8 +690,20 @@ export default function ForumPage() {
     return { pendingFaqs: questions, pendingSuggestions: suggestions, answeredFaqs: answered };
   }, [faqs]);
 
+  const [activeTab, setActiveTab] = useState('all');
+
   const filteredAnsweredFaqs = useMemo(() => {
     let results = answeredFaqs;
+
+    // Tab filtering
+    if (activeTab === 'reports') {
+      results = results.filter(faq => (faq as ForumEntry).isAnonymizedReport);
+    } else if (activeTab === 'questions') {
+      results = results.filter(faq => !(faq as ForumEntry).isAnonymizedReport && !(faq as ForumEntry).isChatbotEntry);
+    } else if (activeTab === 'ai-chief') {
+      results = results.filter(faq => (faq as ForumEntry).isChatbotEntry);
+    }
+
     if (searchTerm) {
         const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
         results = results.filter(faq => {
@@ -697,7 +714,14 @@ export default function ForumPage() {
         });
     }
     return results;
-  }, [answeredFaqs, searchTerm]);
+  }, [answeredFaqs, searchTerm, activeTab]);
+
+  const tabCounts = useMemo(() => ({
+    all: answeredFaqs.length,
+    reports: answeredFaqs.filter(faq => (faq as ForumEntry).isAnonymizedReport).length,
+    questions: answeredFaqs.filter(faq => !(faq as ForumEntry).isAnonymizedReport && !(faq as ForumEntry).isChatbotEntry).length,
+    aiChief: answeredFaqs.filter(faq => (faq as ForumEntry).isChatbotEntry).length,
+  }), [answeredFaqs]);
 
   const NavigationButtons = () => (
     <div className="flex flex-wrap gap-3 mb-8">
@@ -921,28 +945,39 @@ export default function ForumPage() {
             </div>
         </div>
 
-        <div className="relative flex-grow w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Refine archive search by keyword..."
-              className="w-full pl-10 text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-        
-        {filteredAnsweredFaqs.length > 0 ? (
-           <div className="space-y-12">
-            {filteredAnsweredFaqs.map(faq => (
-                <ForumItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
-            ))}
-        </div>
-        ) : (
-            <div className="text-center py-16 text-muted-foreground">
-                <p>{searchTerm ? 'No results found for your archive query.' : 'No public entries yet.'}</p>
-            </div>
-        )}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
+            <TabsTrigger value="reports">Tribe Reports ({tabCounts.reports})</TabsTrigger>
+            <TabsTrigger value="questions">Questions ({tabCounts.questions})</TabsTrigger>
+            <TabsTrigger value="ai-chief">AI Chief Q&A ({tabCounts.aiChief})</TabsTrigger>
+          </TabsList>
+
+          <div className="relative flex-grow w-full mt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Refine archive search by keyword..."
+                className="w-full pl-10 text-base"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+          </div>
+
+          <TabsContent value={activeTab} className="mt-6">
+            {filteredAnsweredFaqs.length > 0 ? (
+              <div className="space-y-12">
+                {filteredAnsweredFaqs.map(faq => (
+                    <ForumItemCard key={faq.id} faq={faq} user={user} userLevel={userLevel} onUpdate={fetchFaqs} searchTerm={searchTerm} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-muted-foreground">
+                  <p>{searchTerm ? 'No results found for your archive query.' : 'No entries in this category yet.'}</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
       <ChatbotModal isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
     </div>
