@@ -2167,9 +2167,38 @@ function MyTribePageContent() {
                                   <p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p>
                                   <p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p>
                                 </div>
-                                <Button size="sm" variant="outline" onClick={() => openComposerForSingleMember(member)}>
-                                  <Mail className="mr-2 h-4 w-4" /> Email Member
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => openComposerForSingleMember(member)}>
+                                    <Mail className="mr-2 h-4 w-4" /> Email Member
+                                  </Button>
+                                  {member.uid !== userTribe.chief && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="destructive">
+                                          <UserX className="mr-2 h-4 w-4" /> Remove
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Remove {member.firstName} {member.lastName}?</AlertDialogTitle>
+                                          <AlertDialogDescription>This will remove them from your tribe. They can re-apply later.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={async () => {
+                                            try {
+                                              await leaveTribe(userTribe.id, member.uid);
+                                              toast({ title: `${member.firstName} ${member.lastName} removed from tribe.` });
+                                              window.location.reload();
+                                            } catch (err) {
+                                              toast({ title: 'Failed to remove member.', variant: 'destructive' });
+                                            }
+                                          }}>Remove Member</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
                               </div>
                             <div>
                               <p className="text-sm"><span className="font-semibold">Issue:</span> {member.issue || 'Not specified'}</p>
@@ -2332,6 +2361,9 @@ function MyTribePageContent() {
                         <div className="flex flex-wrap gap-2 justify-end pt-4 border-t">
                             <Button variant="outline" onClick={() => handleAdminTribeAction('add_member')} disabled={isAdminActionLoading}>
                                 <UserPlus2 className="mr-2 h-4 w-4" /> Add as Member
+                            </Button>
+                            <Button variant="destructive" onClick={() => handleAdminTribeAction('remove_member')} disabled={isAdminActionLoading}>
+                                <UserX className="mr-2 h-4 w-4" /> Remove Member
                             </Button>
                             <Button onClick={() => handleAdminTribeAction('set_chief')} disabled={isAdminActionLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                                 <Shield className="mr-2 h-4 w-4" /> Assign as Chief
