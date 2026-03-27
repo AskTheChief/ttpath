@@ -403,18 +403,18 @@ const RelationshipsPage = () => {
           
           {!isEditing && user && (
             <div className="mt-24 p-8 bg-primary/10 rounded-2xl border-2 border-primary/20 text-center max-w-3xl mx-auto space-y-6">
-                <h3 className="text-2xl font-bold">Review Complete</h3>
+                <h3 className="text-2xl font-bold">You Reach the End of the Communication Model</h3>
                 <p className="text-muted-foreground">
-                    By clicking the button below, you confirm that you have reviewed the Trading Tribe Communication Model and are ready to return to your journey.
+                    Click the button below to save your selections and return to your path.
                 </p>
-                <Button 
-                    size="lg" 
+                <Button
+                    size="lg"
                     className="text-xl font-bold px-12 py-8 h-auto shadow-lg"
                     onClick={handleCompleteEmbrace}
                     disabled={isSaving}
                 >
                     {isSaving ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : null}
-                    FINISH & RETURN TO PATH
+                    SAVE & RETURN TO PATH
                 </Button>
             </div>
           )}
