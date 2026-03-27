@@ -559,6 +559,13 @@ function MyTribePageContent() {
       }
   };
 
+  const toISOSafe = (d: any): string => {
+    if (typeof d === 'string') return d;
+    if (d instanceof Date) return d.toISOString();
+    if (d?.toDate) return d.toDate().toISOString();
+    return new Date(d).toISOString();
+  };
+
   const { upcomingMeetings, pastMeetings } = useMemo(() => {
     if (!userTribe?.meetings) return { upcomingMeetings: [], pastMeetings: [] };
     const now = new Date();
@@ -970,7 +977,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : String(m.date) })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: toISOSafe(m.date) })),
         idToken,
       });
 
@@ -994,7 +1001,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : String(m.date) })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: toISOSafe(m.date) })),
         idToken,
       });
   
@@ -1281,7 +1288,7 @@ function MyTribePageContent() {
             recipientEmail: member.email,
             recipientName: `${member.firstName} ${member.lastName}`,
             tribeName: userTribe.name,
-            meetingDate: meeting.date instanceof Date ? meeting.date.toISOString() : String(meeting.date),
+            meetingDate: toISOSafe(meeting.date),
             nagLevel: nagLevel,
         });
 
