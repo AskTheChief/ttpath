@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -35,6 +34,38 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/relationships/:path*',
+        destination: '/api/static/relationships/:path*',
+      },
+      {
+        source: '/logo/:path*',
+        destination: '/api/static/logo/:path*',
+      },
+      {
+        source: '/games/:path*',
+        destination: '/api/static/games/:path*',
+      },
+      {
+        source: '/Faq/:path*',
+        destination: '/api/static/Faq/:path*',
+      },
+      {
+        source: '/Videos/:path*',
+        destination: '/api/static/Videos/:path*',
+      },
+      {
+        source: '/UserData/:path*',
+        destination: '/api/static/UserData/:path*',
+      },
+      {
+        source: '/ed-and-izelia.jpg',
+        destination: '/api/static/ed-and-izelia.jpg',
+      },
+    ];
   },
   async headers() {
     return [
