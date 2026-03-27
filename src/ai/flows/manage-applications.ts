@@ -76,7 +76,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 return ts;
             };
 
-            let applicantProfile: { name?: string, email?: string, phone?: string, issue?: string, serviceProject?: string } = {};
+            let applicantProfile: { name?: string, email?: string, phone?: string, address?: string, issue?: string, serviceProject?: string } = {};
             if (data.applicantId) {
                 const userDoc = await db.collection('users').doc(data.applicantId).get();
                 if (userDoc.exists) {
@@ -85,6 +85,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                         name: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim(),
                         email: userData?.email,
                         phone: userData?.phone,
+                        address: userData?.address,
                         issue: userData?.issue,
                         serviceProject: userData?.serviceProject,
                     };
@@ -104,6 +105,7 @@ async function getApplications(userId: string, appType: 'join_tribe' | 'new_trib
                 applicantName: applicantProfile.name || 'Unknown Applicant',
                 applicantEmail: applicantProfile.email,
                 applicantPhone: applicantProfile.phone,
+                applicantAddress: applicantProfile.address,
                 issue: applicantProfile.issue,
                 serviceProject: applicantProfile.serviceProject,
                 createdAt: parseTimestamp(data.createdAt),

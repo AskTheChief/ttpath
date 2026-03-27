@@ -2274,7 +2274,7 @@ function MyTribePageContent() {
                             <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                             <AccordionContent>
                             <div className="space-y-4">
-                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Address:</span> {app.applicantAddress || 'Not provided'}</p></div></div>
                                 <div>
                                 <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
                                 <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
@@ -2391,7 +2391,7 @@ function MyTribePageContent() {
                                         </AccordionTrigger>
                                         <AccordionContent>
                                             <div className="space-y-4">
-                                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                                <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Address:</span> {app.applicantAddress || 'Not provided'}</p></div></div>
                                                 <div>
                                                     <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
                                                     <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
@@ -2443,7 +2443,7 @@ function MyTribePageContent() {
                                   <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>{app.applicantName} - {app.tribeName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                   <AccordionContent>
                                   <div className="space-y-4">
-                                      <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
+                                      <div><h4 className="font-semibold mb-2">Applicant & Tribe Info</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Address:</span> {app.applicantAddress || 'Not provided'}</p><p><span className="font-medium">Proposed Location:</span> {app.location || 'N/A'}</p></div></div>
                                       <div>
                                       <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
                                       <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>
@@ -2490,7 +2490,7 @@ function MyTribePageContent() {
                                 <AccordionTrigger className="text-left"><div className="flex flex-col items-start"><span>Applicant: {app.applicantName}</span><span className="text-xs text-muted-foreground">{isClient ? new Date(app.createdAt).toLocaleString() : '...'}</span></div></AccordionTrigger>
                                 <AccordionContent>
                                     <div className="space-y-4">
-                                        <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p></div></div>
+                                        <div><h4 className="font-semibold mb-2">Applicant Information</h4><div className="text-sm space-y-1"><p><span className="font-medium">Email:</span> {app.applicantEmail || 'N/A'}</p><p><span className="font-medium">Phone:</span> {app.applicantPhone || 'N/A'}</p><p><span className="font-medium">Address:</span> {app.applicantAddress || 'Not provided'}</p></div></div>
                                         <div>
                                             <p className="text-sm"><span className="font-semibold">Issue:</span> {app.issue || 'Not specified'}</p>
                                             <p className="text-sm"><span className="font-semibold">Service Project:</span> {app.serviceProject || 'Not specified'}</p>

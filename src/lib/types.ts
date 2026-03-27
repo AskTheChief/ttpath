@@ -92,6 +92,7 @@ export const ApplicationSchema = z.object({
     applicantName: z.string().optional(),
     applicantEmail: z.string().optional(),
     applicantPhone: z.string().optional(),
+    applicantAddress: z.string().optional(),
     answers: z.record(z.string()).optional(),
     embracedCustoms: z.array(z.string()).optional(),
     issue: z.string().optional(),
