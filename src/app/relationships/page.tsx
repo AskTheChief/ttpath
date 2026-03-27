@@ -95,7 +95,7 @@ const RelationshipsPage = () => {
       }
     } catch (error) {
       console.error("Failed to fetch content", error);
-      toast({ title: "Error loading content", variant: "destructive" });
+      toast({ title: "Content fails to load", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +154,7 @@ const RelationshipsPage = () => {
   
   const handleSave = async () => {
     if (!user) {
-      toast({ title: "You must be logged in to save.", variant: "destructive" });
+      toast({ title: "Please log in to save.", variant: "destructive" });
       return;
     }
     setIsSaving(true);
@@ -164,12 +164,12 @@ const RelationshipsPage = () => {
       if (result.success) {
         setPrinciples(editedPrinciples);
         setIsEditing(false);
-        toast({ title: "Content updated successfully!" });
+        toast({ title: "Content saves successfully!" });
       } else {
         throw new Error(result.message);
       }
     } catch (error: any) {
-      toast({ title: "Failed to save content", description: error.message, variant: "destructive" });
+      toast({ title: "Content fails to save", description: error.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -182,7 +182,7 @@ const RelationshipsPage = () => {
 
   const handleToggleAgreement = async (title: string, agreed: boolean) => {
     if (!user) {
-        toast({ title: "Please log in to record your agreement.", variant: "destructive" });
+        toast({ title: "Please log in to record your selection.", variant: "destructive" });
         return;
     }
 
@@ -200,7 +200,7 @@ const RelationshipsPage = () => {
         if (!result.success) throw new Error(result.message);
     } catch (error: any) {
         console.error("Agreement toggle failed", error);
-        toast({ title: "Failed to update agreement", description: error.message, variant: "destructive" });
+        toast({ title: "Selection fails to save", description: error.message, variant: "destructive" });
         // Revert on failure
         const reverted = new Set(userAgreements);
         if (agreed) reverted.delete(title);
@@ -226,12 +226,12 @@ const RelationshipsPage = () => {
       setRequirementsState(newReqs);
 
       playToggleSound(true); // Confirmation sound
-      toast({ title: "Communication Model studied", description: "Returning to your journey..." });
+      toast({ title: "You complete the Communication Model", description: "Returning to your path..." });
       
       // Immediate redirect back to the path journey with node auto-selection
       router.push('/?node=guest');
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Something goes wrong", description: error.message, variant: "destructive" });
       setIsSaving(false);
     }
   };
