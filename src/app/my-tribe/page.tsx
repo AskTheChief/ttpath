@@ -994,7 +994,7 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: (m.date as Date).toISOString() })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : String(m.date) })),
         idToken,
       });
   
