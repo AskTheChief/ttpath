@@ -2180,8 +2180,8 @@ function MyTribePageContent() {
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
-                                          <AlertDialogTitle>Remove {member.firstName} {member.lastName}?</AlertDialogTitle>
-                                          <AlertDialogDescription>This will remove them from your tribe. They can re-apply later.</AlertDialogDescription>
+                                          <AlertDialogTitle>Remove {member.firstName} {member.lastName} from Tribe</AlertDialogTitle>
+                                          <AlertDialogDescription>This action removes them from your tribe. They may re-apply at any time.</AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
