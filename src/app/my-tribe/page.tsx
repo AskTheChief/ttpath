@@ -2244,7 +2244,7 @@ function MyTribePageContent() {
                                     {Array.from(customsMap.entries()).map(([title, content]) => {
                                         const embraced = member.embracedCustoms?.includes(title);
                                         return (
-                                            <div key={title} className={`space-y-1 ${!embraced ? 'opacity-75' : ''}`}>
+                                            <div key={title} className={`space-y-1 ${!embraced ? '' : ''}`}>
                                                 <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
                                                     {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
                                                     {title}
@@ -2284,7 +2284,7 @@ function MyTribePageContent() {
                                     {Array.from(customsMap.entries()).map(([title, content]) => {
                                         const embraced = app.embracedCustoms?.includes(title);
                                         return (
-                                            <div key={title} className={`space-y-1 ${!embraced ? 'opacity-75' : ''}`}>
+                                            <div key={title} className={`space-y-1 ${!embraced ? '' : ''}`}>
                                                 <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
                                                     {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
                                                     {title}
@@ -2401,7 +2401,7 @@ function MyTribePageContent() {
                                                         {Array.from(customsMap.entries()).map(([title, content]) => {
                                                             const embraced = app.embracedCustoms?.includes(title);
                                                             return (
-                                                                <div key={title} className={`space-y-1 ${!embraced ? 'opacity-75' : ''}`}>
+                                                                <div key={title} className={`space-y-1 ${!embraced ? '' : ''}`}>
                                                                     <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
                                                                         {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
                                                                         {title}
@@ -2453,7 +2453,7 @@ function MyTribePageContent() {
                                           {Array.from(customsMap.entries()).map(([title, content]) => {
                                               const embraced = app.embracedCustoms?.includes(title);
                                               return (
-                                                  <div key={title} className={`space-y-1 ${!embraced ? 'opacity-75' : ''}`}>
+                                                  <div key={title} className={`space-y-1 ${!embraced ? '' : ''}`}>
                                                       <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
                                                           {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
                                                           {title}
@@ -2500,7 +2500,7 @@ function MyTribePageContent() {
                                                 {Array.from(customsMap.entries()).map(([title, content]) => {
                                                     const embraced = app.embracedCustoms?.includes(title);
                                                     return (
-                                                        <div key={title} className={`space-y-1 ${!embraced ? 'opacity-75' : ''}`}>
+                                                        <div key={title} className={`space-y-1 ${!embraced ? '' : ''}`}>
                                                             <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
                                                                 {embraced ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />}
                                                                 {title}
