@@ -782,7 +782,7 @@ export default function ForumPage() {
     );
   }
 
-  if (!isMentor) {
+  if (!user) {
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col items-center justify-center">
             <div className="max-w-4xl w-full">
@@ -795,18 +795,13 @@ export default function ForumPage() {
                     </Button>
                 </header>
 
-                <NavigationButtons />
-
                 <Card className="max-w-md mx-auto text-center">
                     <CardHeader>
-                        <CardTitle>Access Restricted</CardTitle>
+                        <CardTitle>Please Log In</CardTitle>
                         <CardDescription>
-                            This page is currently under review and is only available to Mentors.
+                            The Forum requires a login to view.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <p>We are working on anonymizing all entries before making them public. Thank you for your patience.</p>
-                    </CardContent>
                     <CardFooter>
                         <Button asChild className="w-full">
                             <Link href="/">
