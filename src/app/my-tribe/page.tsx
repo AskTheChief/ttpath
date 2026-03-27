@@ -970,10 +970,10 @@ function MyTribePageContent() {
       const idToken = await user.getIdToken();
       const result = await updateTribeMeetings({
         tribeId: userTribe.id,
-        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : (m.date as string) })),
+        meetings: updatedMeetings.map(m => ({ ...m, date: m.date instanceof Date ? m.date.toISOString() : String(m.date) })),
         idToken,
       });
-  
+
       if (result.success) {
         toast({ title: 'Meeting Scheduled', description: 'The new meeting has been added.' });
         if (user) fetchTribesAndUserData(user);
@@ -1281,7 +1281,7 @@ function MyTribePageContent() {
             recipientEmail: member.email,
             recipientName: `${member.firstName} ${member.lastName}`,
             tribeName: userTribe.name,
-            meetingDate: (meeting.date as Date).toISOString(),
+            meetingDate: meeting.date instanceof Date ? meeting.date.toISOString() : String(meeting.date),
             nagLevel: nagLevel,
         });
 
