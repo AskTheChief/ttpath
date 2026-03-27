@@ -2166,6 +2166,7 @@ function MyTribePageContent() {
                                 <div>
                                   <p className="text-sm"><span className="font-semibold">Email:</span> {member.email}</p>
                                   <p className="text-sm"><span className="font-semibold">Phone:</span> {member.phone}</p>
+                                  <p className="text-sm"><span className="font-semibold">Address:</span> {member.address || 'Not provided'}</p>
                                 </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" variant="outline" onClick={() => openComposerForSingleMember(member)}>

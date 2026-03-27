@@ -550,6 +550,7 @@ const TribeMemberSchema = z.object({
   lastName: z.string(),
   email: z.string(),
   phone: z.string(),
+  address: z.string(),
   answers: z.record(z.string()),
   embracedCustoms: z.array(z.string()),
   issue: z.string(),

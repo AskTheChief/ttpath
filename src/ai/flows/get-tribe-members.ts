@@ -66,6 +66,7 @@ const getTribeMembersFlow = ai.defineFlow(
           lastName: data.lastName || '',
           email: data.email || '',
           phone: data.phone || '',
+          address: data.address || '',
           answers: answers,
           embracedCustoms: data.embracedCustoms || [],
           issue: data.issue || '',
