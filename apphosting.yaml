@@ -27,29 +27,28 @@ env:
     availability:
       - BUILD
       - RUNTIME
-secretManager:
-  - secret: GEMINI_API_KEY
-    pin: latest
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
     availability:
       - BUILD
       - RUNTIME
-  - secret: MAILGUN_API_KEY
-    pin: latest
+  - variable: MAILGUN_API_KEY
+    secret: MAILGUN_API_KEY
     availability:
       - BUILD
       - RUNTIME
-  - secret: MAILGUN_DOMAIN
-    pin: latest
+  - variable: MAILGUN_DOMAIN
+    secret: MAILGUN_DOMAIN
     availability:
       - BUILD
       - RUNTIME
-  - secret: FEEDBACK_RECIPIENT_EMAIL
-    pin: latest
+  - variable: FEEDBACK_RECIPIENT_EMAIL
+    secret: FEEDBACK_RECIPIENT_EMAIL
     availability:
       - BUILD
       - RUNTIME
-  - secret: RECAPTCHA_SECRET_KEY
-    pin: latest
+  - variable: RECAPTCHA_SECRET_KEY
+    secret: RECAPTCHA_SECRET_KEY
     availability:
       - BUILD
       - RUNTIME
