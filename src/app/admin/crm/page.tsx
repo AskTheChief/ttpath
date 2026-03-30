@@ -398,6 +398,7 @@ export default function CrmPage() {
                             </TableHead>
                             <SortableHeader title="First Name" sortKey="firstName" />
                             <SortableHeader title="Last Name" sortKey="lastName" />
+                            <SortableHeader title="Email" sortKey="email" />
                             <TableHead>Reached Out</TableHead>
                             <SortableHeader title="City" sortKey="city" />
                             <SortableHeader title="State" sortKey="state" />
@@ -416,6 +417,7 @@ export default function CrmPage() {
                                 </TableCell>
                                 <TableCell>{user.firstName}</TableCell>
                                 <TableCell>{user.lastName}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{user.email}</TableCell>
                                 <TableCell>
                                     {user.reachouts === '1' && (
                                         <Check className="h-5 w-5 text-green-500" />
@@ -437,7 +439,7 @@ export default function CrmPage() {
                         ))}
                         {sortedUsers.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground h-24">
                                     {selectionMode ? 'No users found in the current map view.' : 'No users to display.'}
                                 </TableCell>
                             </TableRow>
