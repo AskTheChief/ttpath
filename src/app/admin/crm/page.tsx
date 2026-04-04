@@ -57,6 +57,7 @@ export default function CrmPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [customEmail, setCustomEmail] = useState('');
 
   const { toast } = useToast();
 
@@ -159,6 +160,18 @@ export default function CrmPage() {
           setEmailRecipients(recipients);
           setIsEmailModalOpen(true);
       }
+  };
+
+  const handleOpenEmailModalForCustom = () => {
+      const email = customEmail.trim();
+      if (!email || !email.includes('@')) {
+          toast({ title: 'Please enter a valid email address.', variant: 'destructive' });
+          return;
+      }
+      const name = email.split('@')[0];
+      setEmailRecipients([{ email, firstName: name, lastName: '' } as LegacyUser]);
+      setIsEmailModalOpen(true);
+      setCustomEmail('');
   };
 
   const handleViewRecord = (user: LegacyUser) => {
@@ -375,6 +388,20 @@ export default function CrmPage() {
                               Email ({numSelectedRows})
                           </Button>
                       )}
+                      <div className="flex gap-2 shrink-0">
+                          <Input
+                              type="email"
+                              placeholder="Custom email..."
+                              className="w-48"
+                              value={customEmail}
+                              onChange={(e) => setCustomEmail(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleOpenEmailModalForCustom()}
+                          />
+                          <Button variant="outline" onClick={handleOpenEmailModalForCustom}>
+                              <Send className="mr-2 h-4 w-4" />
+                              Send
+                          </Button>
+                      </div>
                   </div>
               </div>
           </CardHeader>
