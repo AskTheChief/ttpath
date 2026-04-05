@@ -57,12 +57,62 @@ function LiveTicker() {
   const [tickers, setTickers] = useState<TickerData[]>([]);
   useEffect(() => {
     // Simulated ticker data — no real market data (licensing)
-    const symbols = [
-      { ticker: 'FOMO', base: 420 }, { ticker: 'HODL', base: 69 },
-      { ticker: 'YOLO', base: 999 }, { ticker: 'MOON', base: 1337 },
-      { ticker: 'BAGS', base: 0.42 }, { ticker: 'DIPS', base: 88 },
-      { ticker: 'REKT', base: 3.50 }, { ticker: 'WHIP', base: 110.43 },
+    const allTickers = [
+      'FOMO','HODL','YOLO','MOON','BAGS','DIPS','REKT','WHIP','PUMP','DUMP','BULL','BEAR','STONK','TENDZ',
+      'LAMBO','BRRRR','CHAD','COPE','SHILL','WAGMI','NGMI','GWEI','SATS','DEFI','NOPE','OOPS','PANIC',
+      'CHILL','VIBES','SNACK','TACO','PIZZA','DONUT','BAGEL','SUSHI','RAMEN','WAFFLE','BACON','TOAST',
+      'GRAVY','BEANS','STEAK','FRIES','NACHO','SALSA','GUAC','MANGO','PEACH','LEMON','GRAPE','MELON',
+      'BERRY','PLUM','KIWI','FIG','LIME','PEAR','APPLE','CHERRY','OLIVE','ONION','CORN','RICE','WHEAT',
+      'OATS','HONEY','SUGAR','SPICE','COCOA','MOCHA','LATTE','BREW','FOAM','DRIP','SIPPY','GULP','CHUG',
+      'BURP','HICCUP','SNEEZ','YAWN','BLINK','WINK','GRIN','SMIRK','BLUSH','FROWN','POUT','GIGGL',
+      'LAUGH','SNORT','HOWL','GROWL','PURR','MEOW','WOOF','BARK','QUACK','OINK','MOO','NEIGH','ROAR',
+      'HISS','CHIRP','TWEET','HONK','CROAK','BUZZ','STING','SWARM','HIVE','NEST','BURRO','LLAMA',
+      'ALPCA','PANDA','KOALA','SLOTH','OTTER','BEAVR','MOOSE','GOOSE','DUCKY','BUNNY','PUPPY','KITTY',
+      'FISHY','SHRIMP','SQUID','CRAB','CLAM','SNAIL','SLUG','WORM','FROG','TOAD','NEWT','GECKO',
+      'CHAML','IGUNA','COBRA','VIPER','PYTHON','HAWK','EAGLE','RAVEN','CROW','ROBIN','FINCH','WREN',
+      'DOVE','SWAN','CRANE','HERON','STORK','PELIC','TOUCN','MACAW','DODO','EMU','KIWIB','OWLET',
+      'NINJA','PIRAT','ROBOT','ALIEN','GHOST','WITCH','DWARF','GIANT','TITAN','HYDRA','DRAGO','PHOENIX',
+      'GOBLN','TROLL','FAIRY','GNOME','PIXIE','SPRIT','DEMON','ANGEL','SAINT','KNIGT','QUEEN','JOKER',
+      'WIZARD','MAGE','DRUID','BARD','MONK','ROGUE','CLERIC','PALLY',
+      'BRICK','BLOCK','STACK','TOWER','VAULT','FORGE','ANVIL','SWORD','ARROW','SPEAR','SHIELD','HELM',
+      'ARMOR','CLOAK','BOOTS','GLOVE','RING','CROWN','STAFF','WAND','SCROLL','POTION','ELIXR','CHARM',
+      'RUNE','SIGIL','GLYPH','TOTEM','AMULET','TALIS',
+      'SPEED','TURBO','NITRO','BOOST','BLAST','FLASH','SPARK','FLAME','BLAZE','EMBER','SMOKE','STEAM',
+      'FROST','CHILL','FREEZE','THAW','MELT','DRIZZL','STORM','FLOOD','SURGE','WAVE','TIDE','DRIFT',
+      'BREEZ','GUST','WIND','TWIRL','SWIRL','SPIN','TWIST','FLIP','BOUNCE','WOBBL','JIGGL','WIGGL',
+      'SHAKE','QUAKE','RUMBL','THUMP','STOMP','CRASH','SMASH','BONK','CLONK','BOING','SPLAT','SPLSH',
+      'PLOP','DROOL','OOZE','GLOB','SLIME','GOOP','FUZZ','FLUFF','PUFF','CHUNK','CLUMP','LUMP',
+      'BLOB','NUGGT','MORSL','CRUMB','SCRAP','SHARD','SPLNTR','CHIP','DENT','DING','SCRATCH',
+      'SPARKL','SHIMR','GLEAM','GLOW','SHINE','LUSTRE','GLITZ','BLING','SWAG','DRIP2','FRESH','CRISP',
+      'SNAZZY','FANCY','RITZY','PLUSH','CUSHY','COZY','COMFY','SNUG','TOASTY','WARM','FUZZY','SOFT',
+      'SMOOTH','SILKY','VELVET','SATIN','DENIM','TWEED','PLAID','STRIP','CHECK','POLKA','NEON','RETRO',
+      'DISCO','FUNKY','JAZZY','BLUES','ROCK','METAL','PUNK','INDIE','FOLK','TECHNO','HOUSE','TRANCE',
+      'BEATS','BASS','DRUM','SYNTH','KEYS','CHORD','RIFF','SOLO','DUET','TRIO','QUAD','OCTET',
+      'TEMPO','PITCH','SCALE','SHARP','FLAT','MAJOR','MINOR','MODAL','TONAL','SONIC','AUDIO','VINYL',
+      'TAPE','MIXER','LOOP','SAMPL','REMIX','MASH','DROP','FADE','ECHO2','REVERB','DELAY','PHASER',
+      'FLANGR','CHORUS','WHAMMY','FUZZ2','DRIVE','CRUNCH','CLEAN','LOUD','QUIET','MUTE','HUSH',
+      'WHSPR','SHOUT','YELL','SCREAM','ROAR2','CHEER','CLAP','SNAP','POP','CRACK','SIZZL','FIZZL',
+      'BUBBL','FROTH','CHURN','GRIND','CRUSH','PRESS','SQEEZ','PINCH','POKE','NUDGE','SHOVE','PUSH',
+      'PULL','DRAG','LIFT','HEAVE','TOSS','FLING','HURL','CHUCK','LOFT','VOLLY','SERVE','SMASH2',
+      'DUNK','SWISH','SCORE','GOAL','WIN','LOSE','DRAW','MATCH','ROUND','GAME','PLAY','PAUSE2',
+      'START','RESET','LEVEL','BONUS','COMBO','ULTRA','MEGA','SUPER','HYPER','TURB2','WARP','ZOOM',
+      'DASH','SPRINT','BOLT','LEAP','VAULT2','CLIMB','SCALE2','PEAK','SUMIT','CREST','RIDGE','SLOPE',
+      'HILL','DUNE','MESA','CLIFF','GORGE','CANYON','RIVER','CREEK','BROOK','POND','LAKE','MARSH',
+      'SWAMP','BOG','FERN2','MOSS','VINE','ROOT','TRUNK','BARK2','LEAF','BLOOM','PETAL','THORN',
+      'SEED','SPROUT','SHOOT','GROVE','COPSE','THICKT','FOREST','GLADE2','MEADOW','FIELD','PLAIN',
+      'PRAIR','STEPPE','TUNDRA','TAIGA','OASIS','DESERT','DUNE2','BEACH','SHORE','COAST','COVE',
+      'REEF','ATOLL','ISLE','FJORD','INLET','BAY','GULF','STRAIT','CHANNEL','HARBOR','JETTY','PIER',
+      'DOCK','YACHT','CANOE','KAYAK','RAFT','FERRY','CARGO','TANKER','FLEET','MAST','SAIL','ANCHOR',
+      'BUOY','BEACON','LIGHTH','TOWER2','FORT','CASTLE','MOAT','DRAWB','TURRET','SPIRE','DOME',
+      'ARCH','PILLAR','COLUMN','BEAM','TRUSS','RIVET','BOLT2','SCREW','NAIL','PLANK','BOARD','PANEL',
+      'FRAME','JOIST','RAFTER','SHINGLE','SLATE','TILE','BRICK2','STONE','MARBLE','GRANITE','BASALT',
+      'QUARTZ','CRYSTAL','PRISM','LENS','MIRROR','GLASS',
     ];
+    // Pick 15 random tickers each refresh
+    const shuffled = [...allTickers].sort(() => Math.random() - 0.5);
+    const symbols = shuffled.slice(0, 15).map(t => ({
+      ticker: t, base: Math.round(1 + Math.random() * 999),
+    }));
     const generate = () => symbols.map(s => {
       const change = (Math.random() - 0.48) * s.base * 0.03;
       return { ticker: s.ticker, price: s.base + (Math.random() - 0.5) * s.base * 0.1, change, changePct: (change / s.base) * 100 };
