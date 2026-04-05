@@ -65,6 +65,25 @@ const TIMEFRAMES: Record<string, number> = {
 
 type Candle = { open: number; high: number; low: number; close: number };
 
+function generateSeedCandles(startPrice: number, count: number): Candle[] {
+  const candles: Candle[] = [];
+  let price = startPrice;
+  for (let i = 0; i < count; i++) {
+    const open = price;
+    let hi = open, lo = open;
+    // Simulate several ticks per candle
+    for (let t = 0; t < 10; t++) {
+      let pct = (Math.random() - 0.5) * 0.008;
+      if (Math.random() < 0.03) pct *= 4;
+      price = Math.max(0.5, price * (1 + pct));
+      hi = Math.max(hi, price);
+      lo = Math.min(lo, price);
+    }
+    candles.push({ open, high: hi, low: lo, close: price });
+  }
+  return candles;
+}
+
 export default function TradingSimPage() {
   const [balance, setBalance] = useState(STARTING_BALANCE);
   const [stockPrice, setStockPrice] = useState(STARTING_PRICE);
@@ -72,8 +91,13 @@ export default function TradingSimPage() {
   const [avgCost, setAvgCost] = useState(0);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
-  const [candles, setCandles] = useState<Candle[]>([]);
-  const [currentCandle, setCurrentCandle] = useState<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
+  const [seedData] = useState(() => {
+    const seed = generateSeedCandles(STARTING_PRICE, 60);
+    const lastClose = seed[seed.length - 1].close;
+    return { candles: seed, lastClose };
+  });
+  const [candles, setCandles] = useState<Candle[]>(seedData.candles);
+  const [currentCandle, setCurrentCandle] = useState<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
   const [speed] = useState(250); // ~4 ticks per second, realistic feel
   const [timeframe, setTimeframe] = useState('5s');
   const candleTicks = TIMEFRAMES[timeframe];
@@ -83,7 +107,7 @@ export default function TradingSimPage() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tickRef = useRef(0);
-  const candleRef = useRef<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
+  const candleRef = useRef<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
 
   // Derived
   const equity = balance + sharesOwned * stockPrice;
@@ -352,9 +376,11 @@ export default function TradingSimPage() {
     setSharesOwned(0);
     setAvgCost(0);
     setRealizedPnL(0);
-    setCandles([]);
-    setCurrentCandle({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
-    candleRef.current = { open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE };
+    const newSeed = generateSeedCandles(STARTING_PRICE, 60);
+    const lc = newSeed[newSeed.length - 1].close;
+    setCandles(newSeed);
+    setCurrentCandle({ open: lc, high: lc, low: lc, close: lc });
+    candleRef.current = { open: lc, high: lc, low: lc, close: lc };
     tickRef.current = 0;
     setGameMessage('Fresh start.');
     setTradeCount(0);
@@ -383,7 +409,7 @@ export default function TradingSimPage() {
               className={cn("h-7 px-2 text-xs", timeframe !== tf && "text-gray-400")}
               onClick={() => {
                 setTimeframe(tf);
-                setCandles([]);
+                // Start a new candle at current price but keep history
                 candleRef.current = { open: stockPrice, high: stockPrice, low: stockPrice, close: stockPrice };
                 setCurrentCandle({ ...candleRef.current });
                 tickRef.current = 0;
