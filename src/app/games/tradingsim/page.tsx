@@ -92,7 +92,7 @@ export default function TradingSimPage() {
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
   const [seedData] = useState(() => {
-    const seed = generateSeedCandles(STARTING_PRICE, 60);
+    const seed = generateSeedCandles(STARTING_PRICE, 200);
     const lastClose = seed[seed.length - 1].close;
     return { candles: seed, lastClose };
   });
@@ -376,7 +376,7 @@ export default function TradingSimPage() {
     setSharesOwned(0);
     setAvgCost(0);
     setRealizedPnL(0);
-    const newSeed = generateSeedCandles(STARTING_PRICE, 60);
+    const newSeed = generateSeedCandles(STARTING_PRICE, 200);
     const lc = newSeed[newSeed.length - 1].close;
     setCandles(newSeed);
     setCurrentCandle({ open: lc, high: lc, low: lc, close: lc });
