@@ -8,6 +8,52 @@ import { ArrowLeft, TrendingUp, TrendingDown, RotateCcw, Play, Pause, Zap } from
 import { cn } from '@/lib/utils';
 
 const STARTING_BALANCE = 10000;
+
+type TickerData = { ticker: string; price: number; change: number; changePct: number };
+
+function LiveTicker() {
+  const [tickers, setTickers] = useState<TickerData[]>([]);
+
+  useEffect(() => {
+    const fetchTickers = async () => {
+      try {
+        const resp = await fetch('/api/market');
+        const data = await resp.json();
+        if (data.tickers) setTickers(data.tickers);
+      } catch (e) { /* silent */ }
+    };
+    fetchTickers();
+    const interval = setInterval(fetchTickers, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (tickers.length === 0) return null;
+
+  return (
+    <div className="bg-black/80 border-t border-white/10 overflow-hidden whitespace-nowrap shrink-0">
+      <div className="inline-flex animate-ticker-scroll py-1.5">
+        {[...tickers, ...tickers].map((t, i) => (
+          <span key={i} className="mx-4 text-xs font-mono">
+            <span className="text-white/70 font-medium">{t.ticker}</span>{' '}
+            <span className="text-white">${t.price.toFixed(2)}</span>{' '}
+            <span className={t.change >= 0 ? 'text-green-400' : 'text-red-400'}>
+              {t.change >= 0 ? '+' : ''}{t.change.toFixed(2)} ({t.changePct >= 0 ? '+' : ''}{t.changePct.toFixed(2)}%)
+            </span>
+          </span>
+        ))}
+      </div>
+      <style jsx>{`
+        @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker-scroll {
+          animation: ticker-scroll 25s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
 const STARTING_PRICE = 100;
 const CANDLE_TICKS = 5; // Ticks per candle
 
@@ -342,6 +388,9 @@ export default function TradingSimPage() {
           <Button onClick={() => sell(sharesOwned)} size="sm" variant="destructive" className="text-xs h-10" disabled={sharesOwned < 1}>Sell All</Button>
         </div>
       </div>
+
+      {/* Live ticker */}
+      <LiveTicker />
     </div>
   );
 }
