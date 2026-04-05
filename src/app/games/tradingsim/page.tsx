@@ -55,7 +55,13 @@ function LiveTicker() {
   );
 }
 const STARTING_PRICE = 100;
-const CANDLE_TICKS = 5; // Ticks per candle
+const TIMEFRAMES: Record<string, number> = {
+  '1s': 2,
+  '5s': 10,
+  '10s': 20,
+  '30s': 60,
+  '1m': 120,
+};
 
 type Candle = { open: number; high: number; low: number; close: number };
 
@@ -68,7 +74,9 @@ export default function TradingSimPage() {
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
   const [candles, setCandles] = useState<Candle[]>([]);
   const [currentCandle, setCurrentCandle] = useState<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
-  const [speed] = useState(500);
+  const [speed] = useState(250); // ~4 ticks per second, realistic feel
+  const [timeframe, setTimeframe] = useState('5s');
+  const candleTicks = TIMEFRAMES[timeframe];
   const [paused, setPaused] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
   const [lastChange, setLastChange] = useState(0);
@@ -88,8 +96,8 @@ export default function TradingSimPage() {
     if (paused) return;
     const interval = setInterval(() => {
       setStockPrice(prev => {
-        let pctChange = (Math.random() - 0.5) * 0.025;
-        if (Math.random() < 0.04) pctChange *= 3.5;
+        let pctChange = (Math.random() - 0.5) * 0.008;
+        if (Math.random() < 0.03) pctChange *= 4; // occasional spike
         const next = Math.max(0.5, prev * (1 + pctChange));
         setLastChange(next - prev);
 
@@ -101,7 +109,7 @@ export default function TradingSimPage() {
         setCurrentCandle({ ...c });
 
         tickRef.current += 1;
-        if (tickRef.current >= CANDLE_TICKS) {
+        if (tickRef.current >= candleTicks) {
           // Finalize candle
           setCandles(prev => [...prev, { ...c }].slice(-120));
           // Start new candle
@@ -114,7 +122,7 @@ export default function TradingSimPage() {
       });
     }, speed);
     return () => clearInterval(interval);
-  }, [speed, paused]);
+  }, [speed, paused, candleTicks]);
 
   // Draw candles
   const drawChart = useCallback(() => {
@@ -367,10 +375,27 @@ export default function TradingSimPage() {
           <span className="text-[10px] text-gray-500 ml-1">Sim</span>
         </div>
         <div className="flex items-center gap-1">
+          {Object.keys(TIMEFRAMES).map(tf => (
+            <Button
+              key={tf}
+              variant={timeframe === tf ? 'default' : 'ghost'}
+              size="sm"
+              className={cn("h-7 px-2 text-xs", timeframe !== tf && "text-gray-400")}
+              onClick={() => {
+                setTimeframe(tf);
+                setCandles([]);
+                candleRef.current = { open: stockPrice, high: stockPrice, low: stockPrice, close: stockPrice };
+                setCurrentCandle({ ...candleRef.current });
+                tickRef.current = 0;
+              }}
+            >
+              {tf}
+            </Button>
+          ))}
+          <div className="w-px h-4 bg-gray-700 mx-1"></div>
           <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={() => setPaused(!paused)}>
             {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
           </Button>
-          <div className="w-px h-4 bg-gray-700 mx-1"></div>
           <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={reset}>
             <RotateCcw className="h-3 w-3" />
           </Button>
