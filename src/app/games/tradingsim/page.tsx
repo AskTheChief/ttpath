@@ -462,6 +462,7 @@ export default function TradingSimPage() {
           <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white">
             <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
+          <img src="/logo/logo.png" alt="TT" className="h-5 w-5 opacity-80" />
           <span className="font-bold text-sm text-gray-200">TT / USD</span>
         </div>
         <div className="flex items-center gap-1">
