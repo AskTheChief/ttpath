@@ -397,8 +397,7 @@ export default function TradingSimPage() {
           <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white">
             <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <span className="font-bold text-sm text-gray-200">RANDOM / USD</span>
-          <span className="text-[10px] text-gray-500 ml-1">Sim</span>
+          <span className="font-bold text-sm text-gray-200">TT / USD</span>
         </div>
         <div className="flex items-center gap-1">
           {Object.keys(TIMEFRAMES).map(tf => (
