@@ -502,9 +502,7 @@ export default function TradingSimPage() {
           <Button asChild variant="ghost" size="icon" className="h-8 w-8" style={{ color: theme.textMuted }}>
             <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center">
-            <img src="/logo/logo.png" alt="TT" className="h-5 w-5" />
-          </div>
+          <img src="/logo/logo.png" alt="TT" className="h-6 w-6 rounded-full object-cover" style={{ clipPath: 'circle(50%)' }} />
           <span className="font-bold text-sm" style={{ color: theme.text }}>TT / USD</span>
         </div>
         <div className="flex items-center gap-1">
@@ -537,11 +535,13 @@ export default function TradingSimPage() {
       {/* Ed's 4 Rules */}
       {showRules && (
         <div className="px-4 py-3 text-xs space-y-1 shrink-0" style={{ background: theme.panel, borderBottom: `1px solid ${theme.border}`, color: theme.text }}>
-          <p className="font-bold text-[11px]" style={{ color: theme.up }}>Ed Seykota's Rules of Trading:</p>
-          <p>1. Cut your losses.</p>
-          <p>2. Ride your winners.</p>
-          <p>3. Keep your bets small.</p>
-          <p>4. Follow the rules without question.</p>
+          <p className="font-bold text-[11px]" style={{ color: theme.up }}>The Whipsaw Song — Ed Seykota</p>
+          <p>1. Ride your winners — "We ride that trend right to the end"</p>
+          <p>2. Cut your losses — "We give that dag-gone loss a toss"</p>
+          <p>3. Manage your risk — "We make a lot of money and we sleep at night"</p>
+          <p>4. Use stops — "Our stops are in so there's nothing to do"</p>
+          <p>5. Stick to the system — "Stick to the plan and pull the trigger"</p>
+          <p>6. One good trend pays for them all — "You get a whip and I get a saw"</p>
         </div>
       )}
 
