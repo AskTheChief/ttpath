@@ -68,13 +68,14 @@ export default function TradingSimPage() {
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
   const [candles, setCandles] = useState<Candle[]>([]);
   const [currentCandle, setCurrentCandle] = useState<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
-  const [tickCount, setTickCount] = useState(0);
   const [speed, setSpeed] = useState(800);
   const [paused, setPaused] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
   const [lastChange, setLastChange] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tickRef = useRef(0);
+  const candleRef = useRef<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
 
   // Derived
   const equity = balance + sharesOwned * stockPrice;
@@ -82,7 +83,7 @@ export default function TradingSimPage() {
   const totalPnL = realizedPnL + unrealizedPnL;
   const maxShares = Math.floor(balance / stockPrice);
 
-  // Price engine
+  // Price engine — uses refs to avoid stale closures
   useEffect(() => {
     if (paused) return;
     const interval = setInterval(() => {
@@ -92,31 +93,28 @@ export default function TradingSimPage() {
         const next = Math.max(0.5, prev * (1 + pctChange));
         setLastChange(next - prev);
 
-        setCurrentCandle(c => ({
-          open: c.open,
-          high: Math.max(c.high, next),
-          low: Math.min(c.low, next),
-          close: next,
-        }));
+        // Update current candle via ref
+        const c = candleRef.current;
+        c.high = Math.max(c.high, next);
+        c.low = Math.min(c.low, next);
+        c.close = next;
+        setCurrentCandle({ ...c });
 
-        setTickCount(t => {
-          const newTick = t + 1;
-          if (newTick >= CANDLE_TICKS) {
-            setCandles(prev => {
-              const updated = [...prev, { ...currentCandle, close: next, high: Math.max(currentCandle.high, next), low: Math.min(currentCandle.low, next) }];
-              return updated.slice(-120);
-            });
-            setCurrentCandle({ open: next, high: next, low: next, close: next });
-            return 0;
-          }
-          return newTick;
-        });
+        tickRef.current += 1;
+        if (tickRef.current >= CANDLE_TICKS) {
+          // Finalize candle
+          setCandles(prev => [...prev, { ...c }].slice(-120));
+          // Start new candle
+          candleRef.current = { open: next, high: next, low: next, close: next };
+          setCurrentCandle({ open: next, high: next, low: next, close: next });
+          tickRef.current = 0;
+        }
 
         return next;
       });
     }, speed);
     return () => clearInterval(interval);
-  }, [speed, paused, currentCandle]);
+  }, [speed, paused]);
 
   // Draw candles
   const drawChart = useCallback(() => {
@@ -293,7 +291,8 @@ export default function TradingSimPage() {
     setRealizedPnL(0);
     setCandles([]);
     setCurrentCandle({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
-    setTickCount(0);
+    candleRef.current = { open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE };
+    tickRef.current = 0;
     setGameMessage('Fresh start.');
     setTradeCount(0);
     setLastChange(0);
