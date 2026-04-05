@@ -276,34 +276,33 @@ export default function TradingSimPage() {
       }
     }
 
-    // Trade markers on chart
-    const candleStartIdx = candles.length - visible.length;
+    // Trade markers on chart — map trades to visible candles by price
+    // Only show trades that happened after the game started (not in seed data)
+    const visibleStartTime = ticksRef.current.length > 0
+      ? ticksRef.current[Math.max(0, ticksRef.current.length - maxVis * Math.round(intervalMs / 250))].time
+      : 0;
+
     for (const trade of trades) {
-      // Find which candle this trade falls in
-      const tradeTime = trade.time;
-      let candleIdx = -1;
-      const allTicks = ticksRef.current;
-      // Map trade time to approximate candle index
-      for (let ci = candleStartIdx; ci < candles.length; ci++) {
-        const bucketStart = allTicks[0].time + ci * intervalMs;
-        if (tradeTime >= bucketStart && tradeTime < bucketStart + intervalMs) {
-          candleIdx = ci - candleStartIdx;
-          break;
-        }
-      }
+      if (trade.time < visibleStartTime) continue;
+
+      // Find the last visible candle at or before the trade price
+      // Place marker on the rightmost candle that was active at trade time
+      const tradeAge = Date.now() - trade.time;
+      const candlesAgo = Math.floor(tradeAge / intervalMs);
+      const candleIdx = visible.length - 1 - candlesAgo;
+
       if (candleIdx < 0 || candleIdx >= visible.length) continue;
 
       const cx = offsetX + candleIdx * step + CW / 2;
       const isBuy = trade.type === 'buy' || trade.type === 'cover';
-      const my = isBuy ? toY(visible[candleIdx].low) + 12 : toY(visible[candleIdx].high) - 12;
+      const my = isBuy ? toY(visible[candleIdx].low) + 14 : toY(visible[candleIdx].high) - 14;
 
-      // Triangle marker
       ctx.fillStyle = isBuy ? theme.up : theme.down;
       ctx.beginPath();
       if (isBuy) {
-        ctx.moveTo(cx, my - 6); ctx.lineTo(cx - 5, my + 4); ctx.lineTo(cx + 5, my + 4);
+        ctx.moveTo(cx, my - 6); ctx.lineTo(cx - 4, my + 3); ctx.lineTo(cx + 4, my + 3);
       } else {
-        ctx.moveTo(cx, my + 6); ctx.lineTo(cx - 5, my - 4); ctx.lineTo(cx + 5, my - 4);
+        ctx.moveTo(cx, my + 6); ctx.lineTo(cx - 4, my - 3); ctx.lineTo(cx + 4, my - 3);
       }
       ctx.closePath(); ctx.fill();
     }
