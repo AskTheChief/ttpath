@@ -108,17 +108,23 @@ function LiveTicker() {
       'FRAME','JOIST','RAFTER','SHINGLE','SLATE','TILE','BRICK2','STONE','MARBLE','GRANITE','BASALT',
       'QUARTZ','CRYSTAL','PRISM','LENS','MIRROR','GLASS',
     ];
-    // Pick 15 random tickers each refresh
+    // Pick 20 random tickers once, then evolve prices
     const shuffled = [...allTickers].sort(() => Math.random() - 0.5);
-    const symbols = shuffled.slice(0, 15).map(t => ({
-      ticker: t, base: Math.round(1 + Math.random() * 999),
+    const state = shuffled.slice(0, 20).map(t => ({
+      ticker: t, price: 1 + Math.random() * 999,
     }));
-    const generate = () => symbols.map(s => {
-      const change = (Math.random() - 0.48) * s.base * 0.03;
-      return { ticker: s.ticker, price: s.base + (Math.random() - 0.5) * s.base * 0.1, change, changePct: (change / s.base) * 100 };
-    });
-    setTickers(generate());
-    const i = setInterval(() => setTickers(generate()), 5000);
+    setTickers(state.map(s => ({ ticker: s.ticker, price: s.price, change: 0, changePct: 0 })));
+    const i = setInterval(() => {
+      for (const s of state) {
+        const pct = (Math.random() - 0.48) * 0.008;
+        const oldPrice = s.price;
+        s.price = Math.max(0.01, s.price * (1 + pct));
+        const change = s.price - oldPrice;
+        (s as any).change = change;
+        (s as any).changePct = (change / oldPrice) * 100;
+      }
+      setTickers(state.map(s => ({ ticker: s.ticker, price: s.price, change: (s as any).change, changePct: (s as any).changePct })));
+    }, 3000);
     return () => clearInterval(i);
   }, []);
   if (tickers.length === 0) return null;
