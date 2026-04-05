@@ -4,398 +4,344 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, LineChart as LineChartIcon } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, type Chart as ChartAPI } from 'chart.js';
+import { ArrowLeft, TrendingUp, TrendingDown, RotateCcw, Play, Pause, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
+const STARTING_BALANCE = 10000;
+const STARTING_PRICE = 100;
+const CANDLE_TICKS = 5; // Ticks per candle
 
-type OptionContract = {
-  id: number;
-  type: 'call' | 'put';
-  strikePrice: number;
-  premium: number;
-  entryPrice: number; // The stock price when the option was bought
-};
-
-
-const Ticker = () => {
-  return (
-    <div className="bg-gray-800 text-white p-3 overflow-hidden whitespace-nowrap w-full absolute bottom-0 left-0">
-      <div className="inline-block animate-ticker">
-        <span className="mx-4">AAPL 150.12 ▲</span>
-        <span className="mx-4">GOOGL 2750.65 ▼</span>
-        <span className="mx-4">AMZN 3400.23 ▲</span>
-        <span className="mx-4">TSLA 800.34 ▼</span>
-        <span className="mx-4">MSFT 299.35 ▲</span>
-      </div>
-      <div className="inline-block animate-ticker">
-        <span className="mx-4">AAPL 150.12 ▲</span>
-        <span className="mx-4">GOOGL 2750.65 ▼</span>
-        <span className="mx-4">AMZN 3400.23 ▲</span>
-        <span className="mx-4">TSLA 800.34 ▼</span>
-        <span className="mx-4">MSFT 299.35 ▲</span>
-      </div>
-       <style jsx>{`
-        @keyframes ticker-scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-ticker {
-          animation: ticker-scroll 20s linear infinite;
-        }
-      `}</style>
-    </div>
-  );
-};
-
+type Candle = { open: number; high: number; low: number; close: number };
 
 export default function TradingSimPage() {
-  const [balance, setBalance] = useState(1000);
-  const [stockPrice, setStockPrice] = useState(100);
+  const [balance, setBalance] = useState(STARTING_BALANCE);
+  const [stockPrice, setStockPrice] = useState(STARTING_PRICE);
   const [sharesOwned, setSharesOwned] = useState(0);
-  const [sharesShorted, setSharesShorted] = useState(0);
-  const [equity, setEquity] = useState(1000);
-  const [gameMessage, setGameMessage] = useState('');
-  const [marginBalance, setMarginBalance] = useState(0);
-  const [shortCollateral, setShortCollateral] = useState(0); // This will hold the value of the stock when it was shorted
-  const [optionsOwned, setOptionsOwned] = useState<OptionContract[]>([]);
+  const [avgCost, setAvgCost] = useState(0);
+  const [realizedPnL, setRealizedPnL] = useState(0);
+  const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
+  const [candles, setCandles] = useState<Candle[]>([]);
+  const [currentCandle, setCurrentCandle] = useState<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
+  const [tickCount, setTickCount] = useState(0);
+  const [speed, setSpeed] = useState(800);
+  const [paused, setPaused] = useState(false);
+  const [tradeCount, setTradeCount] = useState(0);
+  const [lastChange, setLastChange] = useState(0);
 
-  const [priceHistory, setPriceHistory] = useState<number[]>([100]);
-  const [timeHistory, setTimeHistory] = useState<number[]>([0]);
-  const [chartTimeframe, setChartTimeframe] = useState(20);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  
-  const chartRef = useRef<HTMLCanvasElement>(null);
-  const chartInstanceRef = useRef<ChartAPI | null>(null);
+  // Derived
+  const equity = balance + sharesOwned * stockPrice;
+  const unrealizedPnL = sharesOwned > 0 ? (stockPrice - avgCost) * sharesOwned : 0;
+  const totalPnL = realizedPnL + unrealizedPnL;
+  const maxShares = Math.floor(balance / stockPrice);
 
+  // Price engine
   useEffect(() => {
-    // Equity is your cash, plus the value of stocks you own, minus loans, plus/minus unrealized short profit/loss.
-    // Unrealized P/L for shorts = (price at which you shorted) - (current price)
-    const unrealizedShortProfit = shortCollateral - (sharesShorted * stockPrice);
-    const currentEquity = balance + (sharesOwned * stockPrice) - marginBalance + unrealizedShortProfit;
-    setEquity(currentEquity);
-  }, [balance, sharesOwned, stockPrice, marginBalance, sharesShorted, shortCollateral]);
-
-
-  const updateGameDisplay = useCallback(() => {
-    if (chartInstanceRef.current) {
-        const labelsToShow = timeHistory.slice(-chartTimeframe).map(t => `${t}s`);
-        const dataToShow = priceHistory.slice(-chartTimeframe);
-
-        chartInstanceRef.current.data.labels = labelsToShow;
-        chartInstanceRef.current.data.datasets[0].data = dataToShow;
-        chartInstanceRef.current.update('none'); // Update without animation
-    }
-  }, [priceHistory, timeHistory, chartTimeframe]);
-
-  useEffect(() => {
-    if (chartRef.current) {
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
-        chartInstanceRef.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [{
-              label: 'Stock Price',
-              data: [],
-              borderColor: 'hsl(var(--primary))',
-              fill: false,
-              tension: 0.1
-            }]
-          },
-          options: {
-            animation: false,
-            scales: {
-              y: { beginAtZero: false }
-            },
-            responsive: true,
-            maintainAspectRatio: false
-          }
-        });
-      }
-    }
-    return () => {
-      chartInstanceRef.current?.destroy();
-    };
-  }, []);
-  
-  useEffect(() => {
+    if (paused) return;
     const interval = setInterval(() => {
-      setPriceHistory(prev => {
-        const lastPrice = prev[prev.length - 1];
-        const change = (Math.random() - 0.5) * 2;
-        const newPrice = lastPrice + change;
-        const finalPrice = newPrice < 1 ? 1 : newPrice;
-        return [...prev, finalPrice];
+      setStockPrice(prev => {
+        let pctChange = (Math.random() - 0.5) * 0.025;
+        if (Math.random() < 0.04) pctChange *= 3.5;
+        const next = Math.max(0.5, prev * (1 + pctChange));
+        setLastChange(next - prev);
+
+        setCurrentCandle(c => ({
+          open: c.open,
+          high: Math.max(c.high, next),
+          low: Math.min(c.low, next),
+          close: next,
+        }));
+
+        setTickCount(t => {
+          const newTick = t + 1;
+          if (newTick >= CANDLE_TICKS) {
+            setCandles(prev => {
+              const updated = [...prev, { ...currentCandle, close: next, high: Math.max(currentCandle.high, next), low: Math.min(currentCandle.low, next) }];
+              return updated.slice(-120);
+            });
+            setCurrentCandle({ open: next, high: next, low: next, close: next });
+            return 0;
+          }
+          return newTick;
+        });
+
+        return next;
       });
-
-      setTimeHistory(prev => [...prev, (prev[prev.length - 1] || 0) + 2]);
-    }, 2000);
-
+    }, speed);
     return () => clearInterval(interval);
-  }, []);
+  }, [speed, paused, currentCandle]);
 
-  useEffect(() => {
-    setStockPrice(priceHistory[priceHistory.length - 1]);
-    updateGameDisplay();
-  }, [priceHistory, chartTimeframe, updateGameDisplay]);
+  // Draw candles
+  const drawChart = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
 
-  const buyStock = () => {
-    if (balance >= stockPrice) {
-      setBalance(prev => prev - stockPrice);
-      setSharesOwned(prev => prev + 1);
-      setGameMessage('You bought 1 share with cash.');
-    } else {
-      setGameMessage('Insufficient funds. Try buying on margin.');
+    const W = rect.width;
+    const H = rect.height;
+    const PADDING_RIGHT = 60;
+    const PADDING_TOP = 8;
+    const PADDING_BOTTOM = 8;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const allCandles = [...candles, currentCandle];
+    const maxVisible = Math.floor((W - PADDING_RIGHT) / 8);
+    const visible = allCandles.slice(-maxVisible);
+
+    if (visible.length === 0) return;
+
+    let hi = -Infinity, lo = Infinity;
+    for (const c of visible) {
+      if (c.high > hi) hi = c.high;
+      if (c.low < lo) lo = c.low;
     }
-  };
+    const range = hi - lo || 1;
+    const margin = range * 0.08;
+    hi += margin;
+    lo -= margin;
 
-  const buyOnMargin = () => {
-    setMarginBalance(prev => prev + stockPrice);
-    setSharesOwned(prev => prev + 1);
-    setGameMessage('You bought 1 share on margin.');
-  };
+    const toY = (v: number) => PADDING_TOP + ((hi - v) / (hi - lo)) * (H - PADDING_TOP - PADDING_BOTTOM);
 
-  const sellStock = () => {
-    if (sharesOwned > 0) {
-      const saleProceeds = stockPrice;
-      const repayment = Math.min(saleProceeds, marginBalance);
-      
-      setMarginBalance(prev => prev - repayment);
-      setBalance(prev => prev + (saleProceeds - repayment));
-      setSharesOwned(prev => prev - 1);
-      
-      setGameMessage(`You sold 1 share. Repaid $${repayment.toFixed(2)} of margin.`);
-    } else {
-      setGameMessage('You do not own any shares to sell.');
+    const candleWidth = Math.max(3, Math.floor((W - PADDING_RIGHT) / visible.length) - 2);
+    const gap = Math.max(1, Math.floor(candleWidth * 0.3));
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    const gridSteps = 5;
+    for (let i = 0; i <= gridSteps; i++) {
+      const v = lo + (range + 2 * margin) * (i / gridSteps);
+      const y = toY(v);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W - PADDING_RIGHT, y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#555';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('$' + v.toFixed(2), W - PADDING_RIGHT + 6, y + 4);
     }
-  };
 
-  const sellShort = () => {
-    const collateralRequirement = stockPrice * 0.5; // Require 50% collateral
-    if (balance < collateralRequirement) {
-        setGameMessage(`Insufficient funds. You need $${collateralRequirement.toFixed(2)} to short.`);
-        return;
-    }
-    // You receive cash for the sale, increasing your balance
-    setBalance(prev => prev + stockPrice); 
-    setSharesShorted(prev => prev + 1);
-    // Store the price at which you shorted to calculate profit/loss later
-    setShortCollateral(prev => prev + stockPrice);
-    setGameMessage(`Sold 1 share short at $${stockPrice.toFixed(2)}.`);
-  };
-  
-  const coverShort = () => {
-    if (sharesShorted > 0) {
-      const costToCover = stockPrice;
-      if (balance < costToCover) {
-        setGameMessage(`Insufficient funds to buy back the share at $${costToCover.toFixed(2)}.`);
-        return;
+    // Candles
+    for (let i = 0; i < visible.length; i++) {
+      const c = visible[i];
+      const x = i * (candleWidth + gap);
+      const isUp = c.close >= c.open;
+      const color = isUp ? '#22c55e' : '#ef4444';
+      const bodyTop = toY(Math.max(c.open, c.close));
+      const bodyBottom = toY(Math.min(c.open, c.close));
+      const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+
+      // Wick
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + candleWidth / 2, toY(c.high));
+      ctx.lineTo(x + candleWidth / 2, toY(c.low));
+      ctx.stroke();
+
+      // Body
+      ctx.fillStyle = color;
+      if (isUp) {
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = color;
+        ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
+      } else {
+        ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
       }
-      
-      // Calculate the price per share when shorted
-      const averageShortPrice = shortCollateral / sharesShorted; 
-      
-      // Use cash to buy back the share
-      setBalance(prev => prev - costToCover);
-      
-      setSharesShorted(prev => prev - 1);
-      // Reduce the total collateral by the value of the one share you're covering
-      setShortCollateral(prev => prev - averageShortPrice);
-      
-      const profit = averageShortPrice - costToCover;
-      setGameMessage(`Covered short. Realized P/L: $${profit.toFixed(2)}`);
-    } else {
-      setGameMessage('You have no short positions to cover.');
     }
-  };
-  
 
-  const buyOption = (type: 'call' | 'put') => {
-    const premium = 5; // Simplified premium
-    if (balance < premium) {
-      setGameMessage('Insufficient funds to buy option.');
-      return;
+    // Current price line
+    const priceY = toY(stockPrice);
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = visible[visible.length - 1].close >= visible[visible.length - 1].open ? '#22c55e' : '#ef4444';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, priceY);
+    ctx.lineTo(W - PADDING_RIGHT, priceY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Price label
+    const labelColor = lastChange >= 0 ? '#22c55e' : '#ef4444';
+    ctx.fillStyle = labelColor;
+    ctx.fillRect(W - PADDING_RIGHT, priceY - 10, PADDING_RIGHT, 20);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('$' + stockPrice.toFixed(2), W - PADDING_RIGHT + 4, priceY + 4);
+
+    // Avg cost line if holding
+    if (sharesOwned > 0 && avgCost >= lo && avgCost <= hi) {
+      const costY = toY(avgCost);
+      ctx.setLineDash([2, 6]);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, costY);
+      ctx.lineTo(W - PADDING_RIGHT, costY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#fbbf2480';
+      ctx.font = '10px monospace';
+      ctx.fillText('avg $' + avgCost.toFixed(2), 4, costY - 4);
     }
-    setBalance(prev => prev - premium);
 
-    const strikePrice = type === 'call' 
-      ? Math.ceil(stockPrice + 5) 
-      : Math.floor(stockPrice - 5);
-    
-    const newOption: OptionContract = {
-      id: Date.now(),
-      type,
-      strikePrice,
-      premium,
-      entryPrice: stockPrice,
-    };
-    
-    setOptionsOwned(prev => [...prev, newOption]);
-    setGameMessage(`Bought ${type.toUpperCase()} option with strike $${strikePrice.toFixed(2)}.`);
+  }, [candles, currentCandle, stockPrice, lastChange, sharesOwned, avgCost]);
+
+  useEffect(() => { drawChart(); }, [drawChart, stockPrice]);
+
+  // Resize handler
+  useEffect(() => {
+    const handleResize = () => drawChart();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [drawChart]);
+
+  // Actions
+  const buy = (qty: number) => {
+    const actualQty = Math.min(qty, maxShares);
+    if (actualQty < 1) { setGameMessage('Not enough cash.'); return; }
+    const cost = actualQty * stockPrice;
+    const totalCost = avgCost * sharesOwned + cost;
+    const totalShares = sharesOwned + actualQty;
+    setAvgCost(totalShares > 0 ? totalCost / totalShares : 0);
+    setBalance(prev => prev - cost);
+    setSharesOwned(prev => prev + actualQty);
+    setTradeCount(prev => prev + 1);
+    setGameMessage(`Bought ${actualQty} @ $${stockPrice.toFixed(2)}`);
   };
 
-  const exerciseOption = (optionId: number) => {
-    const option = optionsOwned.find(o => o.id === optionId);
-    if (!option) return;
-
-    let grossProfit = 0;
-    if (option.type === 'call') {
-      grossProfit = Math.max(0, stockPrice - option.strikePrice);
-    } else { // put
-      grossProfit = Math.max(0, option.strikePrice - stockPrice);
-    }
-    
-    // The net profit is the gross profit from the exercise, considering you already paid the premium.
-    setBalance(prev => prev + grossProfit);
-    setOptionsOwned(prev => prev.filter(o => o.id !== optionId));
-    setGameMessage(`${option.type.toUpperCase()} exercised. Gross gain: $${(grossProfit).toFixed(2)} (premium of $${option.premium.toFixed(2)} was already paid).`);
+  const sell = (qty: number) => {
+    const actualQty = Math.min(qty, sharesOwned);
+    if (actualQty < 1) { setGameMessage('No shares to sell.'); return; }
+    const proceeds = actualQty * stockPrice;
+    const costBasis = actualQty * avgCost;
+    const pnl = proceeds - costBasis;
+    setRealizedPnL(prev => prev + pnl);
+    setBalance(prev => prev + proceeds);
+    setSharesOwned(prev => prev - actualQty);
+    if (sharesOwned - actualQty === 0) setAvgCost(0);
+    setTradeCount(prev => prev + 1);
+    setGameMessage(`Sold ${actualQty} @ $${stockPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`);
   };
+
+  const reset = () => {
+    setBalance(STARTING_BALANCE);
+    setStockPrice(STARTING_PRICE);
+    setSharesOwned(0);
+    setAvgCost(0);
+    setRealizedPnL(0);
+    setCandles([]);
+    setCurrentCandle({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
+    setTickCount(0);
+    setGameMessage('Fresh start.');
+    setTradeCount(0);
+    setLastChange(0);
+  };
+
+  const pnlColor = (v: number) => v > 0 ? 'text-green-500' : v < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 relative pb-16">
-        <header className="w-full max-w-7xl mx-auto mb-6 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-                <LineChartIcon className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold">Market Trading Game</h1>
-                    <p className="text-muted-foreground">Practice your trading skills in this simple simulation.</p>
-                </div>
-            </div>
-             <Button asChild variant="outline">
-                <Link href="/games"><ArrowLeft /> Back to Game Center</Link>
-            </Button>
-        </header>
-
-        <div className="w-full max-w-7xl mx-auto space-y-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Market Price: <span className="text-primary font-mono">${stockPrice.toFixed(2)}</span></CardTitle>
-                        <CardDescription>Price updates every 2 seconds.</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">View:</span>
-                        {[10, 20, 50, 100].map(points => (
-                            <Button
-                                key={points}
-                                variant={chartTimeframe === points ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setChartTimeframe(points)}
-                            >
-                                {points}
-                            </Button>
-                        ))}
-                    </div>
-                </CardHeader>
-                <CardContent className="h-80">
-                    <canvas ref={chartRef}></canvas>
-                </CardContent>
-            </Card>
-
-            <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader><CardTitle>${balance.toFixed(2)}</CardTitle><CardDescription>Cash Balance</CardDescription></CardHeader>
-                </Card>
-                 <Card>
-                  <CardHeader><CardTitle>${equity.toFixed(2)}</CardTitle><CardDescription>Total Equity</CardDescription></CardHeader>
-                </Card>
-                 <Card>
-                  <CardHeader><CardTitle>${marginBalance.toFixed(2)}</CardTitle><CardDescription>Margin Debt</CardDescription></CardHeader>
-                </Card>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-                <Card className="md:col-span-1">
-                    <CardHeader>
-                        <CardTitle>Your Positions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Owned:</span> <span className="font-bold text-lg">{sharesOwned}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Shares Shorted:</span> <span className="font-bold text-lg">{sharesShorted}</span></div>
-                        </div>
-                        {optionsOwned.length > 0 && (
-                            <div>
-                            <h3 className="text-md font-semibold mb-2 border-t pt-4">Options Contracts</h3>
-                            <div className="space-y-2">
-                                {optionsOwned.map(option => (
-                                <div key={option.id} className="text-sm p-2 border rounded-md flex items-center justify-between">
-                                    <div>
-                                    <p className="font-bold">{option.type.toUpperCase()} Option</p>
-                                    <p className="text-muted-foreground">Strike: ${option.strikePrice.toFixed(2)}</p>
-                                    </div>
-                                    <Button size="sm" variant="outline" onClick={() => exerciseOption(option.id)}>Exercise</Button>
-                                </div>
-                                ))}
-                            </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Actions</CardTitle>
-                        {gameMessage && <CardDescription className="h-5">{gameMessage}</CardDescription>}
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Button onClick={buyStock} className="w-full">Buy Stock</Button>
-                        <Button onClick={sellStock} variant="secondary" className="w-full">Sell Stock</Button>
-                        <Button onClick={buyOnMargin} variant="outline" className="w-full">Buy on Margin</Button>
-                        <Button onClick={sellShort} variant="destructive" className="w-full">Sell Short</Button>
-                        <Button onClick={coverShort} variant="outline" className="w-full">Cover Short</Button>
-                        <div className="h-px bg-border col-span-full my-2"></div>
-                        <Button onClick={() => buyOption('call')} className="w-full">Buy Call Option</Button>
-                        <Button onClick={() => buyOption('put')} variant="secondary" className="w-full">Buy Put Option</Button>
-                    </CardContent>
-                </Card>
-            </div>
-
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left w-full">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Trading Concepts</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-2">
-                        <p><strong>Buy Stock:</strong> Purchase a stock, hoping the price increases.</p>
-                        <p><strong>Sell Stock:</strong> Sell a stock you own to lock in a gain or loss.</p>
-                        <p><strong>Buy on Margin:</strong> Borrow money to buy more stock than you can afford. This amplifies both gains and losses.</p>
-                        <p><strong>Sell Short:</strong> Borrow a stock and sell it, hoping the price drops so you can buy it back cheaper for a profit.</p>
-                        <p><strong>Cover Short:</strong> Buy back the stock you previously sold short to close your position.</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                <CardHeader>
-                    <CardTitle>Options Trading</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                    <p><strong>Call Option:</strong> Gives you the right to BUY the stock at the strike price. You want the stock price to go UP.</p>
-                    <p><strong>Put Option:</strong> Gives you the right to SELL the stock at the strike price. You want the stock price to go DOWN.</p>
-                    <p><strong>Premium:</strong> The cost to buy an option contract.</p>
-                    <p><strong>Exercise:</strong> Use your option to buy or sell at the strike price, realizing a profit or loss.</p>
-                </CardContent>
-                </Card>
-                <Card>
-                <CardHeader>
-                    <CardTitle>Price Change Formula</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <code className="text-sm bg-muted p-2 rounded block">
-                    newPrice = oldPrice + (Math.random() - 0.5) * 2;
-                    </code>
-                    <CardDescription className="mt-2 text-sm">
-                    The stock price follows a simple random walk. Every two seconds, the price changes by a random value between -1 and +1.
-                    </CardDescription>
-                </CardContent>
-                </Card>
-            </div>
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      {/* Header */}
+      <header className="border-b px-3 py-2 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+            <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
+          </Button>
+          <span className="font-bold text-sm">Trading Sim</span>
         </div>
-      <Ticker />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setPaused(!paused)}>
+            {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+          </Button>
+          <Button variant={speed === 800 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(800)}>1x</Button>
+          <Button variant={speed === 400 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(400)}>2x</Button>
+          <Button variant={speed === 150 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(150)}>
+            <Zap className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={reset}>
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        </div>
+      </header>
+
+      {/* Price */}
+      <div className="px-3 pt-2 pb-1 shrink-0 flex items-baseline gap-2">
+        <span className="text-2xl sm:text-3xl font-mono font-bold">${stockPrice.toFixed(2)}</span>
+        <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5", lastChange >= 0 ? 'text-green-500' : 'text-red-500')}>
+          {lastChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+          {lastChange >= 0 ? '+' : ''}{lastChange.toFixed(2)} ({stockPrice > 0 ? ((lastChange / (stockPrice - lastChange)) * 100).toFixed(2) : '0.00'}%)
+        </span>
+      </div>
+
+      {/* Chart */}
+      <div className="flex-1 min-h-0 px-2">
+        <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }}></canvas>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-1.5 px-3 py-2 shrink-0">
+        <div className="bg-muted/50 rounded-md p-2">
+          <p className="text-[10px] text-muted-foreground">Cash</p>
+          <p className="text-sm font-mono font-bold">${balance.toFixed(0)}</p>
+        </div>
+        <div className="bg-muted/50 rounded-md p-2">
+          <p className="text-[10px] text-muted-foreground">Equity</p>
+          <p className="text-sm font-mono font-bold">${equity.toFixed(0)}</p>
+        </div>
+        <div className="bg-muted/50 rounded-md p-2">
+          <p className="text-[10px] text-muted-foreground">Shares</p>
+          <p className="text-sm font-mono font-bold">{sharesOwned}</p>
+        </div>
+        <div className="bg-muted/50 rounded-md p-2">
+          <p className="text-[10px] text-muted-foreground">P&L</p>
+          <p className={cn("text-sm font-mono font-bold", pnlColor(totalPnL))}>
+            {totalPnL >= 0 ? '+' : ''}{totalPnL.toFixed(0)}
+          </p>
+        </div>
+      </div>
+
+      {/* Message */}
+      <p className="text-xs text-muted-foreground text-center px-3 shrink-0">{gameMessage}</p>
+
+      {/* Actions */}
+      <div className="px-3 py-3 space-y-1.5 shrink-0">
+        {sharesOwned > 0 && (
+          <div className="flex items-center justify-between text-[10px] px-0.5 text-muted-foreground">
+            <span>Avg: ${avgCost.toFixed(2)}</span>
+            <span>Unreal: <span className={pnlColor(unrealizedPnL)}>{unrealizedPnL >= 0 ? '+' : ''}${unrealizedPnL.toFixed(2)}</span></span>
+            <span>Real: <span className={pnlColor(realizedPnL)}>{realizedPnL >= 0 ? '+' : ''}${realizedPnL.toFixed(2)}</span></span>
+            <span>{tradeCount} trades</span>
+          </div>
+        )}
+        <div className="grid grid-cols-4 gap-1.5">
+          <Button onClick={() => buy(1)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 1</Button>
+          <Button onClick={() => buy(5)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 5</Button>
+          <Button onClick={() => buy(10)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 10</Button>
+          <Button onClick={() => buy(maxShares)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10" disabled={maxShares < 1}>All In</Button>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          <Button onClick={() => sell(1)} size="sm" variant="destructive" className="text-xs h-10">Sell 1</Button>
+          <Button onClick={() => sell(5)} size="sm" variant="destructive" className="text-xs h-10">Sell 5</Button>
+          <Button onClick={() => sell(10)} size="sm" variant="destructive" className="text-xs h-10">Sell 10</Button>
+          <Button onClick={() => sell(sharesOwned)} size="sm" variant="destructive" className="text-xs h-10" disabled={sharesOwned < 1}>Sell All</Button>
+        </div>
+      </div>
     </div>
   );
 }
