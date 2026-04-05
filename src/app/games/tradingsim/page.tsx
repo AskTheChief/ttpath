@@ -14,7 +14,7 @@ const TIMEFRAMES: Record<string, number> = { '1s': 2, '5s': 10, '10s': 20, '30s'
 type TickerData = { ticker: string; price: number; change: number; changePct: number };
 type Candle = { open: number; high: number; low: number; close: number };
 type Tick = { price: number; time: number };
-type Trade = { type: 'buy' | 'sell'; price: number; qty: number; time: number; pnl?: number };
+type Trade = { type: 'buy' | 'sell' | 'short' | 'cover'; price: number; qty: number; time: number; pnl?: number };
 
 function LiveTicker() {
   const [tickers, setTickers] = useState<TickerData[]>([]);
@@ -89,6 +89,8 @@ export default function TradingSimPage() {
   }, []);
   const [sharesOwned, setSharesOwned] = useState(0);
   const [avgCost, setAvgCost] = useState(0);
+  const [sharesShort, setSharesShort] = useState(0);
+  const [avgShortPrice, setAvgShortPrice] = useState(0);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
   const [timeframe, setTimeframe] = useState('5s');
@@ -108,14 +110,16 @@ export default function TradingSimPage() {
   const [renderTick, setRenderTick] = useState(0);
 
   // Derived
-  const equity = balance + sharesOwned * stockPrice;
-  const unrealizedPnL = sharesOwned > 0 ? (stockPrice - avgCost) * sharesOwned : 0;
+  const unrealizedLong = sharesOwned > 0 ? (stockPrice - avgCost) * sharesOwned : 0;
+  const unrealizedShort = sharesShort > 0 ? (avgShortPrice - stockPrice) * sharesShort : 0;
+  const equity = balance + sharesOwned * stockPrice - sharesShort * stockPrice + sharesShort * avgShortPrice;
+  const unrealizedPnL = unrealizedLong + unrealizedShort;
   const totalPnL = realizedPnL + unrealizedPnL;
   const maxShares = Math.floor(balance / stockPrice);
-  const winningTrades = trades.filter(t => t.type === 'sell' && (t.pnl || 0) > 0).length;
-  const losingTrades = trades.filter(t => t.type === 'sell' && (t.pnl || 0) < 0).length;
-  const totalSells = trades.filter(t => t.type === 'sell').length;
-  const winRate = totalSells > 0 ? (winningTrades / totalSells * 100) : 0;
+  const closedTrades = trades.filter(t => (t.type === 'sell' || t.type === 'cover') && t.pnl !== undefined);
+  const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+  const losingTrades = closedTrades.filter(t => (t.pnl || 0) < 0).length;
+  const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length * 100) : 0;
   const returnPct = ((equity - STARTING_BALANCE) / STARTING_BALANCE * 100);
 
   // Track equity + drawdown
@@ -249,7 +253,7 @@ export default function TradingSimPage() {
       if (candleIdx < 0 || candleIdx >= visible.length) continue;
 
       const cx = offsetX + candleIdx * step + CW / 2;
-      const isBuy = trade.type === 'buy';
+      const isBuy = trade.type === 'buy' || trade.type === 'cover';
       const my = isBuy ? toY(visible[candleIdx].low) + 12 : toY(visible[candleIdx].high) - 12;
 
       // Triangle marker
@@ -288,7 +292,19 @@ export default function TradingSimPage() {
       ctx.fillStyle = '#000'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
       ctx.fillText('AVG ' + avgCost.toFixed(2), W - PR / 2, cy + 4);
     }
-  }, [candles, stockPrice, lastChange, sharesOwned, avgCost, renderTick, trades, intervalMs]);
+
+    // Short avg price line
+    if (sharesShort > 0 && avgShortPrice >= lo && avgShortPrice <= hi) {
+      const sy = toY(avgShortPrice);
+      ctx.setLineDash([2, 4]); ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(chartW, sy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath(); ctx.roundRect(lx, sy - lh / 2, PR - 2, lh, 3); ctx.fill();
+      ctx.fillStyle = '#000'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('SHT ' + avgShortPrice.toFixed(2), W - PR / 2, sy + 4);
+    }
+  }, [candles, stockPrice, lastChange, sharesOwned, avgCost, sharesShort, avgShortPrice, renderTick, trades, intervalMs]);
 
   // Draw equity curve
   const drawEquity = useCallback(() => {
@@ -388,10 +404,42 @@ export default function TradingSimPage() {
     setGameMessage(`Sold ${actual} @ $${stockPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`);
   };
 
+  const short = (qty: number) => {
+    // Need 50% collateral
+    const collateral = qty * stockPrice * 0.5;
+    const actual = Math.min(qty, Math.floor(balance / (stockPrice * 0.5)));
+    if (actual < 1) { setGameMessage('Not enough collateral to short.'); return; }
+    // Receive sale proceeds
+    const proceeds = actual * stockPrice;
+    const totalShortValue = avgShortPrice * sharesShort + proceeds;
+    const totalShort = sharesShort + actual;
+    setAvgShortPrice(totalShort > 0 ? totalShortValue / totalShort : 0);
+    setBalance(prev => prev + proceeds);
+    setSharesShort(prev => prev + actual);
+    setTrades(prev => [...prev, { type: 'short', price: stockPrice, qty: actual, time: Date.now() }]);
+    setFlash('sell');
+    setGameMessage(`Shorted ${actual} @ $${stockPrice.toFixed(2)}`);
+  };
+
+  const cover = (qty: number) => {
+    const actual = Math.min(qty, sharesShort);
+    if (actual < 1) { setGameMessage('No short position to cover.'); return; }
+    const costToCover = actual * stockPrice;
+    if (balance < costToCover) { setGameMessage('Not enough cash to cover.'); return; }
+    const pnl = (avgShortPrice - stockPrice) * actual;
+    setRealizedPnL(prev => prev + pnl);
+    setBalance(prev => prev - costToCover);
+    setSharesShort(prev => prev - actual);
+    if (sharesShort - actual === 0) setAvgShortPrice(0);
+    setTrades(prev => [...prev, { type: 'cover', price: stockPrice, qty: actual, time: Date.now(), pnl }]);
+    setFlash('buy');
+    setGameMessage(`Covered ${actual} @ $${stockPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`);
+  };
+
   const reset = () => {
     setBalance(STARTING_BALANCE);
     setStockPrice(STARTING_PRICE);
-    setSharesOwned(0); setAvgCost(0); setRealizedPnL(0);
+    setSharesOwned(0); setAvgCost(0); setSharesShort(0); setAvgShortPrice(0); setRealizedPnL(0);
     ticksRef.current = generateSeedTicks(STARTING_PRICE, 7200);
     setTrades([]); setEquityHistory([]);
     setPeakEquity(STARTING_BALANCE); setMaxDrawdown(0);
@@ -474,7 +522,7 @@ export default function TradingSimPage() {
           </div>
           <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
             <p className="text-[9px] text-gray-500">Win Rate</p>
-            <p className="text-xs font-mono font-bold text-gray-200">{totalSells > 0 ? `${winRate.toFixed(0)}%` : '—'}</p>
+            <p className="text-xs font-mono font-bold text-gray-200">{closedTrades.length > 0 ? `${winRate.toFixed(0)}%` : '—'}</p>
           </div>
           <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
             <p className="text-[9px] text-gray-500">Max DD</p>
@@ -483,7 +531,7 @@ export default function TradingSimPage() {
           <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
             <p className="text-[9px] text-gray-500">Trades</p>
             <p className="text-xs font-mono font-bold text-gray-200">
-              {totalSells > 0 ? <><span className="text-[#26a69a]">{winningTrades}W</span> <span className="text-[#ef5350]">{losingTrades}L</span></> : `${trades.length}`}
+              {closedTrades.length > 0 ? <><span className="text-[#26a69a]">{winningTrades}W</span> <span className="text-[#ef5350]">{losingTrades}L</span></> : `${trades.length}`}
             </p>
           </div>
         </div>
@@ -494,9 +542,10 @@ export default function TradingSimPage() {
 
       {/* Actions */}
       <div className="px-3 py-2 space-y-1.5 shrink-0">
-        {sharesOwned > 0 && (
+        {(sharesOwned > 0 || sharesShort > 0) && (
           <div className="flex items-center justify-between text-[10px] px-0.5 text-gray-500">
-            <span>{sharesOwned} shares @ ${avgCost.toFixed(2)}</span>
+            {sharesOwned > 0 && <span className="text-[#26a69a]">{sharesOwned} long @ ${avgCost.toFixed(2)}</span>}
+            {sharesShort > 0 && <span className="text-[#f97316]">{sharesShort} short @ ${avgShortPrice.toFixed(2)}</span>}
             <span className={pc(unrealizedPnL)}>Unreal: {unrealizedPnL >= 0 ? '+' : ''}${unrealizedPnL.toFixed(2)}</span>
             <span className={pc(realizedPnL)}>Real: {realizedPnL >= 0 ? '+' : ''}${realizedPnL.toFixed(2)}</span>
           </div>
@@ -512,6 +561,12 @@ export default function TradingSimPage() {
           <Button onClick={() => sell(5)} size="sm" variant="destructive" className="text-xs h-9">Sell 5</Button>
           <Button onClick={() => sell(10)} size="sm" variant="destructive" className="text-xs h-9">Sell 10</Button>
           <Button onClick={() => sell(sharesOwned)} size="sm" variant="destructive" className="text-xs h-9" disabled={sharesOwned < 1}>Sell All</Button>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          <Button onClick={() => short(1)} size="sm" className="bg-[#f97316] hover:bg-[#fb923c] text-white text-xs h-9">Short 1</Button>
+          <Button onClick={() => short(5)} size="sm" className="bg-[#f97316] hover:bg-[#fb923c] text-white text-xs h-9">Short 5</Button>
+          <Button onClick={() => cover(1)} size="sm" className="bg-[#6366f1] hover:bg-[#818cf8] text-white text-xs h-9">Cover 1</Button>
+          <Button onClick={() => cover(sharesShort)} size="sm" className="bg-[#6366f1] hover:bg-[#818cf8] text-white text-xs h-9" disabled={sharesShort < 1}>Cover All</Button>
         </div>
       </div>
 
