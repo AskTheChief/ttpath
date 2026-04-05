@@ -539,10 +539,11 @@ export default function TradingSimPage() {
   };
 
   const reset = () => {
+    const newTicks = generateSeedTicks(STARTING_PRICE, 7200);
+    ticksRef.current = newTicks;
     setBalance(STARTING_BALANCE);
-    setStockPrice(STARTING_PRICE);
+    setStockPrice(newTicks[newTicks.length - 1].price);
     setSharesOwned(0); setAvgCost(0); setSharesShort(0); setAvgShortPrice(0); setRealizedPnL(0);
-    ticksRef.current = generateSeedTicks(STARTING_PRICE, 7200);
     setTrades([]); setEquityHistory([]);
     setPeakEquity(STARTING_BALANCE); setMaxDrawdown(0);
     setRenderTick(t => t + 1); setLastChange(0);
