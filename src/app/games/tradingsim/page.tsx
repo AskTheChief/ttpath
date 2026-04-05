@@ -107,8 +107,9 @@ function ticksToCandles(ticks: Tick[], intervalMs: number): Candle[] {
 }
 
 export default function TradingSimPage() {
+  const [initialTicks] = useState(() => generateSeedTicks(STARTING_PRICE, 7200));
   const [balance, setBalance] = useState(STARTING_BALANCE);
-  const [stockPrice, setStockPrice] = useState(STARTING_PRICE);
+  const [stockPrice, setStockPrice] = useState(() => initialTicks[initialTicks.length - 1].price);
   const [sharesOwned, setSharesOwned] = useState(0);
   const [avgCost, setAvgCost] = useState(0);
   const [realizedPnL, setRealizedPnL] = useState(0);
@@ -120,7 +121,7 @@ export default function TradingSimPage() {
   const [lastChange, setLastChange] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ticksRef = useRef<Tick[]>(generateSeedTicks(STARTING_PRICE, 7200)); // 2 hours = fills 1m chart
+  const ticksRef = useRef<Tick[]>(initialTicks);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [renderTick, setRenderTick] = useState(0); // Force re-render
 
