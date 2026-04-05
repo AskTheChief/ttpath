@@ -13,10 +13,19 @@ export async function GET() {
 
     const tickers = (data.tickers || []).map((t: any) => {
       const prev = t.prevDay || {};
-      const last = t.lastTrade?.p || t.min?.c || prev.c || 0;
+      const day = t.day || {};
+      const last = t.lastTrade?.p || day.c || prev.c || 0;
       const prevClose = prev.c || last;
-      const change = last - prevClose;
-      const changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
+      // Use today's change if market is open, otherwise show prev day's move
+      let change = t.todaysChange || 0;
+      let changePct = t.todaysChangePerc || 0;
+
+      if (change === 0 && prev.o && prev.c) {
+        // Market closed — show previous day's performance
+        change = prev.c - prev.o;
+        changePct = prev.o > 0 ? (change / prev.o) * 100 : 0;
+      }
 
       return {
         ticker: t.ticker,
