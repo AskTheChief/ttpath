@@ -4,8 +4,45 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, TrendingUp, TrendingDown, RotateCcw, Play, Pause } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, RotateCcw, Play, Pause, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+type Theme = {
+  name: string;
+  bg: string;
+  panel: string;
+  grid: string;
+  border: string;
+  text: string;
+  textMuted: string;
+  up: string;
+  down: string;
+  flashBuy: string;
+  flashSell: string;
+};
+
+const THEMES: Record<string, Theme> = {
+  midnight: {
+    name: 'Midnight', bg: '#131722', panel: '#1e222d', grid: '#1e222d', border: '#2a2e39',
+    text: '#d1d4dc', textMuted: '#555e6d', up: '#26a69a', down: '#ef5350',
+    flashBuy: '#0a1f1a', flashSell: '#1f0a0a',
+  },
+  forest: {
+    name: 'Forest', bg: '#0a1a0f', panel: '#112215', grid: '#15291a', border: '#1e3a24',
+    text: '#c8e6c9', textMuted: '#5a7d5e', up: '#4caf50', down: '#e57373',
+    flashBuy: '#0d2a12', flashSell: '#2a0d0d',
+  },
+  light: {
+    name: 'Light', bg: '#fafafa', panel: '#f0f0f0', grid: '#e8e8e8', border: '#ddd',
+    text: '#1a1a1a', textMuted: '#888', up: '#16a34a', down: '#dc2626',
+    flashBuy: '#ecfdf5', flashSell: '#fef2f2',
+  },
+  ocean: {
+    name: 'Ocean', bg: '#0c1929', panel: '#132238', grid: '#16293f', border: '#1e3a55',
+    text: '#b8d4e8', textMuted: '#4a7a9d', up: '#00bcd4', down: '#ff7043',
+    flashBuy: '#0a2233', flashSell: '#220a0a',
+  },
+};
 
 const STARTING_BALANCE = 10000;
 const STARTING_PRICE = 100;
@@ -102,6 +139,8 @@ export default function TradingSimPage() {
   const [peakEquity, setPeakEquity] = useState(STARTING_BALANCE);
   const [maxDrawdown, setMaxDrawdown] = useState(0);
   const [flash, setFlash] = useState<'buy' | 'sell' | null>(null);
+  const [themeKey, setThemeKey] = useState('midnight');
+  const theme = THEMES[themeKey];
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const equityCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -171,7 +210,7 @@ export default function TradingSimPage() {
     const W = rect.width, H = rect.height;
     const PR = 68, PT = 12, PB = 12;
 
-    ctx.fillStyle = '#131722';
+    ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, W, H);
 
     const CW = 8, GAP = 2, step = CW + GAP;
@@ -189,9 +228,9 @@ export default function TradingSimPage() {
     const offsetX = chartW - visible.length * step;
 
     // Price axis bg
-    ctx.fillStyle = '#1e222d';
+    ctx.fillStyle = theme.panel;
     ctx.fillRect(W - PR, 0, PR, H);
-    ctx.strokeStyle = '#2a2e39';
+    ctx.strokeStyle = theme.border;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(W - PR, 0); ctx.lineTo(W - PR, H); ctx.stroke();
 
@@ -200,11 +239,11 @@ export default function TradingSimPage() {
     const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
     let gridStep = mag;
     for (const s of [1, 2, 2.5, 5, 10]) { if (s * mag >= rawStep) { gridStep = s * mag; break; } }
-    ctx.strokeStyle = '#1e222d'; ctx.lineWidth = 1;
+    ctx.strokeStyle = theme.grid; ctx.lineWidth = 1;
     for (let v = Math.ceil(lo / gridStep) * gridStep; v <= hi; v += gridStep) {
       const y = toY(v);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(chartW, y); ctx.stroke();
-      ctx.fillStyle = '#555e6d'; ctx.font = '11px monospace'; ctx.textAlign = 'right';
+      ctx.fillStyle = theme.textMuted; ctx.font = '11px monospace'; ctx.textAlign = 'right';
       ctx.fillText(v.toFixed(2), W - 8, y + 4);
     }
     for (let i = 0; i < visible.length; i += 10) {
@@ -218,7 +257,7 @@ export default function TradingSimPage() {
       const cx = offsetX + i * step + CW / 2;
       const x = cx - CW / 2;
       const up = c.close >= c.open;
-      const color = up ? '#26a69a' : '#ef5350';
+      const color = up ? theme.up : theme.down;
       const bt = toY(Math.max(c.open, c.close));
       const bb = toY(Math.min(c.open, c.close));
       const bh = Math.max(1, bb - bt);
@@ -227,10 +266,10 @@ export default function TradingSimPage() {
       ctx.beginPath(); ctx.moveTo(cx, toY(c.high)); ctx.lineTo(cx, toY(c.low)); ctx.stroke();
 
       if (up) {
-        ctx.strokeStyle = '#26a69a'; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = theme.up; ctx.lineWidth = 1.5;
         ctx.strokeRect(x + 0.5, bt + 0.5, CW - 1, Math.max(1, bh - 1));
       } else {
-        ctx.fillStyle = '#ef5350';
+        ctx.fillStyle = theme.down;
         ctx.fillRect(x, bt, CW, bh);
       }
     }
@@ -257,7 +296,7 @@ export default function TradingSimPage() {
       const my = isBuy ? toY(visible[candleIdx].low) + 12 : toY(visible[candleIdx].high) - 12;
 
       // Triangle marker
-      ctx.fillStyle = isBuy ? '#26a69a' : '#ef5350';
+      ctx.fillStyle = isBuy ? theme.up : theme.down;
       ctx.beginPath();
       if (isBuy) {
         ctx.moveTo(cx, my - 6); ctx.lineTo(cx - 5, my + 4); ctx.lineTo(cx + 5, my + 4);
@@ -269,7 +308,7 @@ export default function TradingSimPage() {
 
     // Current price line
     const priceY = toY(stockPrice);
-    const priceColor = lastChange >= 0 ? '#26a69a' : '#ef5350';
+    const priceColor = lastChange >= 0 ? theme.up : theme.down;
     ctx.setLineDash([3, 3]); ctx.strokeStyle = priceColor + '80'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, priceY); ctx.lineTo(chartW, priceY); ctx.stroke();
     ctx.setLineDash([]);
@@ -304,7 +343,7 @@ export default function TradingSimPage() {
       ctx.fillStyle = '#000'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
       ctx.fillText('SHT ' + avgShortPrice.toFixed(2), W - PR / 2, sy + 4);
     }
-  }, [candles, stockPrice, lastChange, sharesOwned, avgCost, sharesShort, avgShortPrice, renderTick, trades, intervalMs]);
+  }, [candles, stockPrice, lastChange, sharesOwned, avgCost, sharesShort, avgShortPrice, renderTick, trades, intervalMs, theme]);
 
   // Draw equity curve
   const drawEquity = useCallback(() => {
@@ -320,7 +359,7 @@ export default function TradingSimPage() {
     ctx.scale(dpr, dpr);
 
     const W = rect.width, H = rect.height;
-    ctx.fillStyle = '#131722';
+    ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, W, H);
 
     const pts = equityHistory;
@@ -342,7 +381,7 @@ export default function TradingSimPage() {
 
     // Fill under curve
     const lastEq = pts[pts.length - 1].equity;
-    const curveColor = lastEq >= STARTING_BALANCE ? '#26a69a' : '#ef5350';
+    const curveColor = lastEq >= STARTING_BALANCE ? theme.up : theme.down;
 
     ctx.beginPath();
     ctx.moveTo(toX(0), toY(pts[0].equity));
@@ -447,45 +486,68 @@ export default function TradingSimPage() {
     setGameMessage('Fresh start.');
   };
 
-  const pc = (v: number) => v > 0 ? 'text-[#26a69a]' : v < 0 ? 'text-[#ef5350]' : 'text-gray-500';
+  const pc = (v: number) => v > 0 ? 'text-[#26a69a]' : v < 0 ? 'text-[#ef5350]' : 'text-gray-500/80';
+  const [showRules, setShowRules] = useState(false);
 
   return (
     <div
       className={cn("flex flex-col h-screen overflow-hidden transition-colors duration-300")}
       style={{
-        background: flash === 'buy' ? '#0a1f1a' : flash === 'sell' ? '#1f0a0a' : '#131722',
+        background: flash === 'buy' ? theme.flashBuy : flash === 'sell' ? theme.flashSell : theme.bg,
       }}
     >
       {/* Header */}
-      <header className="px-3 py-2 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid #2a2e39' }}>
+      <header className="px-3 py-2 flex items-center justify-between shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8" style={{ color: theme.textMuted }}>
             <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <img src="/logo/logo.png" alt="TT" className="h-5 w-5 opacity-80" />
-          <span className="font-bold text-sm text-gray-200">TT / USD</span>
+          <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center">
+            <img src="/logo/logo.png" alt="TT" className="h-5 w-5" />
+          </div>
+          <span className="font-bold text-sm" style={{ color: theme.text }}>TT / USD</span>
         </div>
         <div className="flex items-center gap-1">
           {Object.keys(TIMEFRAMES).map(tf => (
             <Button key={tf} variant={timeframe === tf ? 'default' : 'ghost'} size="sm"
-              className={cn("h-7 px-2 text-xs", timeframe !== tf && "text-gray-400")}
+              className={cn("h-7 px-2 text-xs")}
+              style={{ color: timeframe !== tf ? theme.textMuted : undefined }}
               onClick={() => { setTimeframe(tf); setRenderTick(t => t + 1); }}>
               {tf}
             </Button>
           ))}
-          <div className="w-px h-4 bg-gray-700 mx-1" />
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={() => setPaused(!paused)}>
+          <div className="w-px h-4 mx-1" style={{ background: theme.border }} />
+          <Button variant="ghost" size="sm" className="h-7 px-2" style={{ color: theme.textMuted }}
+            onClick={() => setShowRules(!showRules)} title="Ed's Rules">
+            <span className="text-[10px] font-bold">RULES</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 px-2" style={{ color: theme.textMuted }}
+            onClick={() => { const keys = Object.keys(THEMES); setThemeKey(keys[(keys.indexOf(themeKey) + 1) % keys.length]); }}>
+            <Palette className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 px-2" style={{ color: theme.textMuted }} onClick={() => setPaused(!paused)}>
             {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={reset}>
+          <Button variant="ghost" size="sm" className="h-7 px-2" style={{ color: theme.textMuted }} onClick={reset}>
             <RotateCcw className="h-3 w-3" />
           </Button>
         </div>
       </header>
 
+      {/* Ed's 4 Rules */}
+      {showRules && (
+        <div className="px-4 py-3 text-xs space-y-1 shrink-0" style={{ background: theme.panel, borderBottom: `1px solid ${theme.border}`, color: theme.text }}>
+          <p className="font-bold text-[11px]" style={{ color: theme.up }}>Ed Seykota's Rules of Trading:</p>
+          <p>1. Cut your losses.</p>
+          <p>2. Ride your winners.</p>
+          <p>3. Keep your bets small.</p>
+          <p>4. Follow the rules without question.</p>
+        </div>
+      )}
+
       {/* Price */}
       <div className="px-3 pt-2 pb-1 shrink-0 flex items-baseline gap-2">
-        <span className="text-2xl sm:text-3xl font-mono font-bold text-gray-100">${stockPrice.toFixed(2)}</span>
+        <span className="text-2xl sm:text-3xl font-mono font-bold" style={{ color: theme.text }}>${stockPrice.toFixed(2)}</span>
         <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5", lastChange >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]')}>
           {lastChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {lastChange >= 0 ? '+' : ''}{lastChange.toFixed(2)} ({stockPrice > 0 ? ((lastChange / (stockPrice - lastChange)) * 100).toFixed(2) : '0.00'}%)
@@ -499,38 +561,38 @@ export default function TradingSimPage() {
 
       {/* Equity curve */}
       {equityHistory.length > 2 && (
-        <div className="h-16 px-2 shrink-0" style={{ borderTop: '1px solid #1e222d' }}>
+        <div className="h-16 px-2 shrink-0" style={{ borderTop: `1px solid ${theme.grid}` }}>
           <canvas ref={equityCanvasRef} className="w-full h-full" style={{ display: 'block' }} />
         </div>
       )}
 
       {/* Stats */}
-      <div className="px-3 py-1.5 shrink-0" style={{ borderTop: '1px solid #2a2e39' }}>
+      <div className="px-3 py-1.5 shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}>
         <div className="grid grid-cols-6 gap-1">
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Cash</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Cash</p>
             <p className="text-xs font-mono font-bold text-gray-200">${balance.toFixed(0)}</p>
           </div>
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Equity</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Equity</p>
             <p className="text-xs font-mono font-bold text-gray-200">${equity.toFixed(0)}</p>
           </div>
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Return</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Return</p>
             <p className={cn("text-xs font-mono font-bold", pc(returnPct))}>
               {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
             </p>
           </div>
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Win Rate</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Win Rate</p>
             <p className="text-xs font-mono font-bold text-gray-200">{closedTrades.length > 0 ? `${winRate.toFixed(0)}%` : '—'}</p>
           </div>
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Max DD</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Max DD</p>
             <p className="text-xs font-mono font-bold text-[#ef5350]">{maxDrawdown > 0 ? `-${maxDrawdown.toFixed(1)}%` : '—'}</p>
           </div>
-          <div className="rounded p-1.5" style={{ background: '#1e222d' }}>
-            <p className="text-[9px] text-gray-500">Trades</p>
+          <div className="rounded p-1.5" style={{ background: theme.panel }}>
+            <p className="text-[9px] text-gray-500/80">Trades</p>
             <p className="text-xs font-mono font-bold text-gray-200">
               {closedTrades.length > 0 ? <><span className="text-[#26a69a]">{winningTrades}W</span> <span className="text-[#ef5350]">{losingTrades}L</span></> : `${trades.length}`}
             </p>
@@ -539,12 +601,12 @@ export default function TradingSimPage() {
       </div>
 
       {/* Message */}
-      <p className="text-xs text-gray-500 text-center px-3 shrink-0">{gameMessage}</p>
+      <p className="text-xs text-gray-500/80 text-center px-3 shrink-0">{gameMessage}</p>
 
       {/* Actions */}
       <div className="px-3 py-2 space-y-1.5 shrink-0">
         {(sharesOwned > 0 || sharesShort > 0) && (
-          <div className="flex items-center justify-between text-[10px] px-0.5 text-gray-500">
+          <div className="flex items-center justify-between text-[10px] px-0.5 text-gray-500/80">
             {sharesOwned > 0 && <span className="text-[#26a69a]">{sharesOwned} long @ ${avgCost.toFixed(2)}</span>}
             {sharesShort > 0 && <span className="text-[#f97316]">{sharesShort} short @ ${avgShortPrice.toFixed(2)}</span>}
             <span className={pc(unrealizedPnL)}>Unreal: {unrealizedPnL >= 0 ? '+' : ''}${unrealizedPnL.toFixed(2)}</span>
