@@ -209,6 +209,8 @@ export const FeedbackSchema = z.object({
   userName: z.string().optional(),
   userId: z.string().optional(),
   createdAt: z.string(),
+  status: z.enum(['open', 'in_progress', 'resolved', 'wont_fix']).optional(),
+  notes: z.string().optional(),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
 

@@ -36,6 +36,8 @@ const getFeedbackFlow = ai.defineFlow(
           userName: data.userName,
           userId: data.userId,
           createdAt: data.createdAt.toDate().toISOString(),
+          status: data.status || 'open',
+          notes: data.notes || '',
         };
       });
       return feedback;
