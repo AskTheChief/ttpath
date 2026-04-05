@@ -58,10 +58,10 @@ function LiveTicker() {
   useEffect(() => {
     // Simulated ticker data — no real market data (licensing)
     const symbols = [
-      { ticker: 'TT', base: 100 }, { ticker: 'TREND', base: 250 },
-      { ticker: 'WHIP', base: 45 }, { ticker: 'SAW', base: 180 },
-      { ticker: 'TRIBE', base: 320 }, { ticker: 'EDGE', base: 75 },
-      { ticker: 'FLOW', base: 890 }, { ticker: 'RISK', base: 55 },
+      { ticker: 'FOMO', base: 420 }, { ticker: 'HODL', base: 69 },
+      { ticker: 'YOLO', base: 999 }, { ticker: 'MOON', base: 1337 },
+      { ticker: 'BAGS', base: 0.42 }, { ticker: 'DIPS', base: 88 },
+      { ticker: 'REKT', base: 3.50 }, { ticker: 'WHIP', base: 110.43 },
     ];
     const generate = () => symbols.map(s => {
       const change = (Math.random() - 0.48) * s.base * 0.03;
