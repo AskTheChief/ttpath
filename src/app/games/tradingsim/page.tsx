@@ -98,7 +98,6 @@ export default function TradingSimPage() {
   });
   const [candles, setCandles] = useState<Candle[]>(seedData.candles);
   const [currentCandle, setCurrentCandle] = useState<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
-  const [speed] = useState(250); // ~4 ticks per second, realistic feel
   const [timeframe, setTimeframe] = useState('5s');
   const candleTicks = TIMEFRAMES[timeframe];
   const [paused, setPaused] = useState(false);
@@ -108,6 +107,7 @@ export default function TradingSimPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tickRef = useRef(0);
   const candleRef = useRef<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived
   const equity = balance + sharesOwned * stockPrice;
@@ -115,15 +115,29 @@ export default function TradingSimPage() {
   const totalPnL = realizedPnL + unrealizedPnL;
   const maxShares = Math.floor(balance / stockPrice);
 
-  // Price engine — uses refs to avoid stale closures
+  // Price engine — variable timing for realistic feel
   useEffect(() => {
-    if (paused) return;
-    const interval = setInterval(() => {
+    if (paused) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      return;
+    }
+
+    const tick = () => {
       setStockPrice(prev => {
-        let pctChange = (Math.random() - 0.5) * 0.008;
-        if (Math.random() < 0.03) pctChange *= 4; // occasional spike
+        // Variable move size — sometimes nothing, sometimes a lot
+        const activity = Math.random();
+        let pctChange: number;
+        if (activity < 0.15) {
+          pctChange = 0; // 15% — no change (quiet)
+        } else if (activity < 0.85) {
+          pctChange = (Math.random() - 0.5) * 0.006; // 70% — small move
+        } else if (activity < 0.97) {
+          pctChange = (Math.random() - 0.5) * 0.015; // 12% — medium move
+        } else {
+          pctChange = (Math.random() - 0.5) * 0.04; // 3% — big spike
+        }
         const next = Math.max(0.5, prev * (1 + pctChange));
-        setLastChange(next - prev);
+        if (pctChange !== 0) setLastChange(next - prev);
 
         // Update current candle via ref
         const c = candleRef.current;
@@ -144,9 +158,15 @@ export default function TradingSimPage() {
 
         return next;
       });
-    }, speed);
-    return () => clearInterval(interval);
-  }, [speed, paused, candleTicks]);
+
+      // Variable delay — bursts and pauses like real tape
+      const delay = 100 + Math.random() * 400 + (Math.random() < 0.1 ? 800 : 0);
+      timeoutRef.current = setTimeout(tick, delay);
+    };
+
+    timeoutRef.current = setTimeout(tick, 200);
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [paused, candleTicks]);
 
   // Draw candles
   const drawChart = useCallback(() => {
