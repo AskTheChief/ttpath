@@ -151,7 +151,9 @@ export default function TradingSimPage() {
   // Derived
   const unrealizedLong = sharesOwned > 0 ? (stockPrice - avgCost) * sharesOwned : 0;
   const unrealizedShort = sharesShort > 0 ? (avgShortPrice - stockPrice) * sharesShort : 0;
-  const equity = balance + sharesOwned * stockPrice - sharesShort * stockPrice + sharesShort * avgShortPrice;
+  // Equity = cash + long value + short unrealized P&L
+  // Balance already includes short sale proceeds, so we subtract current cost to cover
+  const equity = balance + sharesOwned * stockPrice - sharesShort * stockPrice;
   const unrealizedPnL = unrealizedLong + unrealizedShort;
   const totalPnL = realizedPnL + unrealizedPnL;
   const maxShares = Math.floor(balance / stockPrice);
