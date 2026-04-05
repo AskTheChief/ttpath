@@ -734,7 +734,7 @@ export default function PathJourney() {
               disabled={isLocked}
             >
               <div className="flex shrink-0 items-center justify-center w-5 h-5">
-                {Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                {isCompleted ? CompletedIcon : (Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />)}
               </div>
               <span className="flex-grow">{action.label}</span>
             </Button>
@@ -1102,9 +1102,8 @@ export default function PathJourney() {
                       onClick={() => handleNodeClick(node)}
                     >
                       <Icon className={cn("h-8 w-8", (node.level > 4) ? "text-accent" : "text-muted-foreground")} />
-                      <span className="node-label flex items-center gap-1">
+                      <span className="node-label">
                         {node.title}
-                        {isNodeCompleted && <Check className="h-3 w-3 text-green-500" />}
                       </span>
                     </div>
                   </TooltipTrigger>
