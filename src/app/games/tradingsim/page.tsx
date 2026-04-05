@@ -120,7 +120,7 @@ export default function TradingSimPage() {
   const [lastChange, setLastChange] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ticksRef = useRef<Tick[]>(generateSeedTicks(STARTING_PRICE, 300));
+  const ticksRef = useRef<Tick[]>(generateSeedTicks(STARTING_PRICE, 7200)); // 2 hours = fills 1m chart
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [renderTick, setRenderTick] = useState(0); // Force re-render
 
@@ -155,9 +155,9 @@ export default function TradingSimPage() {
 
         // Store raw tick
         ticksRef.current.push({ price: next, time: Date.now() });
-        // Keep last 10000 ticks
-        if (ticksRef.current.length > 10000) {
-          ticksRef.current = ticksRef.current.slice(-8000);
+        // Keep last 60000 ticks (~4 hours at 4/sec)
+        if (ticksRef.current.length > 60000) {
+          ticksRef.current = ticksRef.current.slice(-50000);
         }
         setRenderTick(t => t + 1);
 
@@ -402,7 +402,7 @@ export default function TradingSimPage() {
     setSharesOwned(0);
     setAvgCost(0);
     setRealizedPnL(0);
-    ticksRef.current = generateSeedTicks(STARTING_PRICE, 300);
+    ticksRef.current = generateSeedTicks(STARTING_PRICE, 7200);
     setRenderTick(t => t + 1);
     setGameMessage('Fresh start.');
     setTradeCount(0);
