@@ -140,8 +140,10 @@ export default function TradingSimPage() {
     ctx.fillRect(0, 0, W, H);
 
     const allCandles = [...candles, currentCandle];
-    const candleSpacing = 10;
-    const maxVisible = Math.floor((W - PR) / candleSpacing);
+    const CANDLE_W = 8; // fixed candle body width
+    const GAP = 2;      // fixed gap between candles
+    const candleStep = CANDLE_W + GAP;
+    const maxVisible = Math.floor((W - PR) / candleStep);
     const visible = allCandles.slice(-maxVisible);
 
     if (visible.length === 0) return;
@@ -158,9 +160,10 @@ export default function TradingSimPage() {
 
     const toY = (v: number) => PT + ((hi - v) / (hi - lo)) * (H - PT - PB);
 
-    const totalWidth = W - PR;
-    const candleStep = totalWidth / visible.length;
-    const candleWidth = Math.max(3, Math.min(12, candleStep * 0.65));
+    // Right-align candles so they grow from the right edge
+    const chartWidth = W - PR;
+    const totalCandlesWidth = visible.length * candleStep;
+    const offsetX = chartWidth - totalCandlesWidth;
 
     // Price axis background
     ctx.fillStyle = '#1e222d';
@@ -202,7 +205,7 @@ export default function TradingSimPage() {
     // Vertical grid (every 10 candles)
     ctx.strokeStyle = '#1e222d';
     for (let i = 0; i < visible.length; i += 10) {
-      const x = i * candleStep + candleStep / 2;
+      const x = offsetX + i * candleStep + candleStep / 2;
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, H);
@@ -212,8 +215,8 @@ export default function TradingSimPage() {
     // Candles
     for (let i = 0; i < visible.length; i++) {
       const c = visible[i];
-      const cx = i * candleStep + candleStep / 2;
-      const x = cx - candleWidth / 2;
+      const cx = offsetX + i * candleStep + CANDLE_W / 2;
+      const x = cx - CANDLE_W / 2;
       const isUp = c.close >= c.open;
 
       const upColor = '#26a69a';
@@ -237,11 +240,11 @@ export default function TradingSimPage() {
         // Hollow candle for up
         ctx.strokeStyle = upColor;
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(x + 0.5, bodyTop + 0.5, candleWidth - 1, Math.max(1, bodyHeight - 1));
+        ctx.strokeRect(x + 0.5, bodyTop + 0.5, CANDLE_W - 1, Math.max(1, bodyHeight - 1));
       } else {
         // Filled candle for down
         ctx.fillStyle = downColor;
-        ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
+        ctx.fillRect(x, bodyTop, CANDLE_W, bodyHeight);
       }
     }
 
