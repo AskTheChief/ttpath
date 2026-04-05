@@ -56,8 +56,20 @@ type Trade = { type: 'buy' | 'sell' | 'short' | 'cover'; price: number; qty: num
 function LiveTicker() {
   const [tickers, setTickers] = useState<TickerData[]>([]);
   useEffect(() => {
-    const f = async () => { try { const r = await fetch('/api/market'); const d = await r.json(); if (d.tickers) setTickers(d.tickers); } catch {} };
-    f(); const i = setInterval(f, 30000); return () => clearInterval(i);
+    // Simulated ticker data — no real market data (licensing)
+    const symbols = [
+      { ticker: 'TT', base: 100 }, { ticker: 'TREND', base: 250 },
+      { ticker: 'WHIP', base: 45 }, { ticker: 'SAW', base: 180 },
+      { ticker: 'TRIBE', base: 320 }, { ticker: 'EDGE', base: 75 },
+      { ticker: 'FLOW', base: 890 }, { ticker: 'RISK', base: 55 },
+    ];
+    const generate = () => symbols.map(s => {
+      const change = (Math.random() - 0.48) * s.base * 0.03;
+      return { ticker: s.ticker, price: s.base + (Math.random() - 0.5) * s.base * 0.1, change, changePct: (change / s.base) * 100 };
+    });
+    setTickers(generate());
+    const i = setInterval(() => setTickers(generate()), 5000);
+    return () => clearInterval(i);
   }, []);
   if (tickers.length === 0) return null;
   return (
