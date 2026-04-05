@@ -64,23 +64,45 @@ const TIMEFRAMES: Record<string, number> = {
 };
 
 type Candle = { open: number; high: number; low: number; close: number };
+type Tick = { price: number; time: number }; // time in ms since start
 
-function generateSeedCandles(startPrice: number, count: number): Candle[] {
-  const candles: Candle[] = [];
+function generateSeedTicks(startPrice: number, count: number): Tick[] {
+  const ticks: Tick[] = [];
   let price = startPrice;
-  for (let i = 0; i < count; i++) {
-    const open = price;
-    let hi = open, lo = open;
-    // Simulate several ticks per candle
-    for (let t = 0; t < 10; t++) {
-      let pct = (Math.random() - 0.5) * 0.008;
-      if (Math.random() < 0.03) pct *= 4;
-      price = Math.max(0.5, price * (1 + pct));
-      hi = Math.max(hi, price);
-      lo = Math.min(lo, price);
-    }
-    candles.push({ open, high: hi, low: lo, close: price });
+  // Generate ~count seconds of ticks at ~4 ticks/sec going backwards
+  const now = Date.now();
+  const totalTicks = count * 4;
+  for (let i = totalTicks; i > 0; i--) {
+    let pct = (Math.random() - 0.5) * 0.006;
+    if (Math.random() < 0.03) pct *= 4;
+    price = Math.max(0.5, price * (1 + pct));
+    ticks.push({ price, time: now - i * 250 });
   }
+  return ticks;
+}
+
+function ticksToCandles(ticks: Tick[], intervalMs: number): Candle[] {
+  if (ticks.length === 0) return [];
+  const candles: Candle[] = [];
+  let bucketStart = ticks[0].time;
+  let open = ticks[0].price, high = open, low = open, close = open;
+
+  for (const t of ticks) {
+    if (t.time >= bucketStart + intervalMs) {
+      candles.push({ open, high, low, close });
+      bucketStart += intervalMs * Math.floor((t.time - bucketStart) / intervalMs);
+      open = t.price;
+      high = t.price;
+      low = t.price;
+      close = t.price;
+    } else {
+      high = Math.max(high, t.price);
+      low = Math.min(low, t.price);
+      close = t.price;
+    }
+  }
+  // Current incomplete candle
+  candles.push({ open, high, low, close });
   return candles;
 }
 
@@ -91,23 +113,16 @@ export default function TradingSimPage() {
   const [avgCost, setAvgCost] = useState(0);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
-  const [seedData] = useState(() => {
-    const seed = generateSeedCandles(STARTING_PRICE, 200);
-    const lastClose = seed[seed.length - 1].close;
-    return { candles: seed, lastClose };
-  });
-  const [candles, setCandles] = useState<Candle[]>(seedData.candles);
-  const [currentCandle, setCurrentCandle] = useState<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
   const [timeframe, setTimeframe] = useState('5s');
-  const candleTicks = TIMEFRAMES[timeframe];
+  const intervalMs = TIMEFRAMES[timeframe] * 500; // Convert tick counts to ms
   const [paused, setPaused] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
   const [lastChange, setLastChange] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tickRef = useRef(0);
-  const candleRef = useRef<Candle>({ open: seedData.lastClose, high: seedData.lastClose, low: seedData.lastClose, close: seedData.lastClose });
+  const ticksRef = useRef<Tick[]>(generateSeedTicks(STARTING_PRICE, 300));
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [renderTick, setRenderTick] = useState(0); // Force re-render
 
   // Derived
   const equity = balance + sharesOwned * stockPrice;
@@ -115,7 +130,7 @@ export default function TradingSimPage() {
   const totalPnL = realizedPnL + unrealizedPnL;
   const maxShares = Math.floor(balance / stockPrice);
 
-  // Price engine — variable timing for realistic feel
+  // Price engine — stores raw ticks, candles derived on render
   useEffect(() => {
     if (paused) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -124,49 +139,41 @@ export default function TradingSimPage() {
 
     const tick = () => {
       setStockPrice(prev => {
-        // Variable move size — sometimes nothing, sometimes a lot
         const activity = Math.random();
         let pctChange: number;
         if (activity < 0.15) {
-          pctChange = 0; // 15% — no change (quiet)
+          pctChange = 0;
         } else if (activity < 0.85) {
-          pctChange = (Math.random() - 0.5) * 0.006; // 70% — small move
+          pctChange = (Math.random() - 0.5) * 0.006;
         } else if (activity < 0.97) {
-          pctChange = (Math.random() - 0.5) * 0.015; // 12% — medium move
+          pctChange = (Math.random() - 0.5) * 0.015;
         } else {
-          pctChange = (Math.random() - 0.5) * 0.04; // 3% — big spike
+          pctChange = (Math.random() - 0.5) * 0.04;
         }
         const next = Math.max(0.5, prev * (1 + pctChange));
         if (pctChange !== 0) setLastChange(next - prev);
 
-        // Update current candle via ref
-        const c = candleRef.current;
-        c.high = Math.max(c.high, next);
-        c.low = Math.min(c.low, next);
-        c.close = next;
-        setCurrentCandle({ ...c });
-
-        tickRef.current += 1;
-        if (tickRef.current >= candleTicks) {
-          // Finalize candle
-          setCandles(prev => [...prev, { ...c }].slice(-120));
-          // Start new candle
-          candleRef.current = { open: next, high: next, low: next, close: next };
-          setCurrentCandle({ open: next, high: next, low: next, close: next });
-          tickRef.current = 0;
+        // Store raw tick
+        ticksRef.current.push({ price: next, time: Date.now() });
+        // Keep last 10000 ticks
+        if (ticksRef.current.length > 10000) {
+          ticksRef.current = ticksRef.current.slice(-8000);
         }
+        setRenderTick(t => t + 1);
 
         return next;
       });
 
-      // Variable delay — bursts and pauses like real tape
       const delay = 100 + Math.random() * 400 + (Math.random() < 0.1 ? 800 : 0);
       timeoutRef.current = setTimeout(tick, delay);
     };
 
     timeoutRef.current = setTimeout(tick, 200);
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [paused, candleTicks]);
+  }, [paused]);
+
+  // Derive candles from ticks based on current timeframe
+  const candles = ticksToCandles(ticksRef.current, intervalMs);
 
   // Draw candles
   const drawChart = useCallback(() => {
@@ -191,12 +198,11 @@ export default function TradingSimPage() {
     ctx.fillStyle = '#131722';
     ctx.fillRect(0, 0, W, H);
 
-    const allCandles = [...candles, currentCandle];
-    const CANDLE_W = 8; // fixed candle body width
-    const GAP = 2;      // fixed gap between candles
+    const CANDLE_W = 8;
+    const GAP = 2;
     const candleStep = CANDLE_W + GAP;
     const maxVisible = Math.floor((W - PR) / candleStep);
-    const visible = allCandles.slice(-maxVisible);
+    const visible = candles.slice(-maxVisible);
 
     if (visible.length === 0) return;
 
@@ -351,7 +357,7 @@ export default function TradingSimPage() {
       ctx.fillText('AVG ' + avgCost.toFixed(2), W - PR / 2, costY + 4);
     }
 
-  }, [candles, currentCandle, stockPrice, lastChange, sharesOwned, avgCost]);
+  }, [candles, stockPrice, lastChange, sharesOwned, avgCost, renderTick]);
 
   useEffect(() => { drawChart(); }, [drawChart, stockPrice]);
 
@@ -396,12 +402,8 @@ export default function TradingSimPage() {
     setSharesOwned(0);
     setAvgCost(0);
     setRealizedPnL(0);
-    const newSeed = generateSeedCandles(STARTING_PRICE, 200);
-    const lc = newSeed[newSeed.length - 1].close;
-    setCandles(newSeed);
-    setCurrentCandle({ open: lc, high: lc, low: lc, close: lc });
-    candleRef.current = { open: lc, high: lc, low: lc, close: lc };
-    tickRef.current = 0;
+    ticksRef.current = generateSeedTicks(STARTING_PRICE, 300);
+    setRenderTick(t => t + 1);
     setGameMessage('Fresh start.');
     setTradeCount(0);
     setLastChange(0);
@@ -428,10 +430,7 @@ export default function TradingSimPage() {
               className={cn("h-7 px-2 text-xs", timeframe !== tf && "text-gray-400")}
               onClick={() => {
                 setTimeframe(tf);
-                // Start a new candle at current price but keep history
-                candleRef.current = { open: stockPrice, high: stockPrice, low: stockPrice, close: stockPrice };
-                setCurrentCandle({ ...candleRef.current });
-                tickRef.current = 0;
+                setRenderTick(t => t + 1); // Force re-derive candles
               }}
             >
               {tf}
