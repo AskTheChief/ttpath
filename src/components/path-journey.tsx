@@ -734,7 +734,7 @@ export default function PathJourney() {
               disabled={isLocked}
             >
               <div className="flex shrink-0 items-center justify-center w-5 h-5">
-                {isCompleted ? CompletedIcon : (Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />)}
+                {Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />}
               </div>
               <span className="flex-grow">{action.label}</span>
             </Button>
