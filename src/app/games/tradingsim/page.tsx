@@ -68,7 +68,7 @@ export default function TradingSimPage() {
   const [gameMessage, setGameMessage] = useState('Buy low, sell high. Or don\'t.');
   const [candles, setCandles] = useState<Candle[]>([]);
   const [currentCandle, setCurrentCandle] = useState<Candle>({ open: STARTING_PRICE, high: STARTING_PRICE, low: STARTING_PRICE, close: STARTING_PRICE });
-  const [speed, setSpeed] = useState(800);
+  const [speed] = useState(500);
   const [paused, setPaused] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
   const [lastChange, setLastChange] = useState(0);
@@ -131,14 +131,17 @@ export default function TradingSimPage() {
 
     const W = rect.width;
     const H = rect.height;
-    const PADDING_RIGHT = 60;
-    const PADDING_TOP = 8;
-    const PADDING_BOTTOM = 8;
+    const PR = 68; // right padding for price axis
+    const PT = 12;
+    const PB = 12;
 
-    ctx.clearRect(0, 0, W, H);
+    // Background
+    ctx.fillStyle = '#131722';
+    ctx.fillRect(0, 0, W, H);
 
     const allCandles = [...candles, currentCandle];
-    const maxVisible = Math.floor((W - PADDING_RIGHT) / 8);
+    const candleSpacing = 10;
+    const maxVisible = Math.floor((W - PR) / candleSpacing);
     const visible = allCandles.slice(-maxVisible);
 
     if (visible.length === 0) return;
@@ -149,39 +152,74 @@ export default function TradingSimPage() {
       if (c.low < lo) lo = c.low;
     }
     const range = hi - lo || 1;
-    const margin = range * 0.08;
+    const margin = range * 0.1;
     hi += margin;
     lo -= margin;
 
-    const toY = (v: number) => PADDING_TOP + ((hi - v) / (hi - lo)) * (H - PADDING_TOP - PADDING_BOTTOM);
+    const toY = (v: number) => PT + ((hi - v) / (hi - lo)) * (H - PT - PB);
 
-    const candleWidth = Math.max(3, Math.floor((W - PADDING_RIGHT) / visible.length) - 2);
-    const gap = Math.max(1, Math.floor(candleWidth * 0.3));
+    const totalWidth = W - PR;
+    const candleStep = totalWidth / visible.length;
+    const candleWidth = Math.max(3, Math.min(12, candleStep * 0.65));
 
-    // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    // Price axis background
+    ctx.fillStyle = '#1e222d';
+    ctx.fillRect(W - PR, 0, PR, H);
+
+    // Separator line
+    ctx.strokeStyle = '#2a2e39';
     ctx.lineWidth = 1;
-    const gridSteps = 5;
-    for (let i = 0; i <= gridSteps; i++) {
-      const v = lo + (range + 2 * margin) * (i / gridSteps);
+    ctx.beginPath();
+    ctx.moveTo(W - PR, 0);
+    ctx.lineTo(W - PR, H);
+    ctx.stroke();
+
+    // Horizontal grid + price labels — nice round numbers
+    const rawStep = range / 5;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const niceSteps = [1, 2, 2.5, 5, 10];
+    let gridStep = niceSteps[0] * magnitude;
+    for (const s of niceSteps) {
+      if (s * magnitude >= rawStep) { gridStep = s * magnitude; break; }
+    }
+
+    const gridStart = Math.ceil(lo / gridStep) * gridStep;
+    ctx.strokeStyle = '#1e222d';
+    ctx.lineWidth = 1;
+    for (let v = gridStart; v <= hi; v += gridStep) {
       const y = toY(v);
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(W - PADDING_RIGHT, y);
+      ctx.lineTo(W - PR, y);
       ctx.stroke();
 
-      ctx.fillStyle = '#555';
-      ctx.font = '11px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('$' + v.toFixed(2), W - PADDING_RIGHT + 6, y + 4);
+      ctx.fillStyle = '#555e6d';
+      ctx.font = '11px -apple-system, monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(v.toFixed(2), W - 8, y + 4);
+    }
+
+    // Vertical grid (every 10 candles)
+    ctx.strokeStyle = '#1e222d';
+    for (let i = 0; i < visible.length; i += 10) {
+      const x = i * candleStep + candleStep / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
     }
 
     // Candles
     for (let i = 0; i < visible.length; i++) {
       const c = visible[i];
-      const x = i * (candleWidth + gap);
+      const cx = i * candleStep + candleStep / 2;
+      const x = cx - candleWidth / 2;
       const isUp = c.close >= c.open;
-      const color = isUp ? '#22c55e' : '#ef4444';
+
+      const upColor = '#26a69a';
+      const downColor = '#ef5350';
+      const color = isUp ? upColor : downColor;
+
       const bodyTop = toY(Math.max(c.open, c.close));
       const bodyBottom = toY(Math.min(c.open, c.close));
       const bodyHeight = Math.max(1, bodyBottom - bodyTop);
@@ -190,58 +228,72 @@ export default function TradingSimPage() {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(x + candleWidth / 2, toY(c.high));
-      ctx.lineTo(x + candleWidth / 2, toY(c.low));
+      ctx.moveTo(cx, toY(c.high));
+      ctx.lineTo(cx, toY(c.low));
       ctx.stroke();
 
       // Body
-      ctx.fillStyle = color;
       if (isUp) {
-        ctx.globalAlpha = 0.3;
-        ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = color;
-        ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
+        // Hollow candle for up
+        ctx.strokeStyle = upColor;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 0.5, bodyTop + 0.5, candleWidth - 1, Math.max(1, bodyHeight - 1));
       } else {
+        // Filled candle for down
+        ctx.fillStyle = downColor;
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
       }
     }
 
     // Current price line
     const priceY = toY(stockPrice);
-    ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = visible[visible.length - 1].close >= visible[visible.length - 1].open ? '#22c55e' : '#ef4444';
+    const priceUp = lastChange >= 0;
+    const priceColor = priceUp ? '#26a69a' : '#ef5350';
+
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = priceColor + '80';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, priceY);
-    ctx.lineTo(W - PADDING_RIGHT, priceY);
+    ctx.lineTo(W - PR, priceY);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Price label
-    const labelColor = lastChange >= 0 ? '#22c55e' : '#ef4444';
-    ctx.fillStyle = labelColor;
-    ctx.fillRect(W - PADDING_RIGHT, priceY - 10, PADDING_RIGHT, 20);
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('$' + stockPrice.toFixed(2), W - PADDING_RIGHT + 4, priceY + 4);
+    // Price label on axis
+    const labelH = 20;
+    ctx.fillStyle = priceColor;
+    // Rounded rect
+    const lx = W - PR + 1;
+    const ly = priceY - labelH / 2;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, PR - 2, labelH, 3);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px -apple-system, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(stockPrice.toFixed(2), W - PR / 2, priceY + 4);
 
-    // Avg cost line if holding
+    // Avg cost line
     if (sharesOwned > 0 && avgCost >= lo && avgCost <= hi) {
       const costY = toY(avgCost);
-      ctx.setLineDash([2, 6]);
+      ctx.setLineDash([2, 4]);
       ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, costY);
-      ctx.lineTo(W - PADDING_RIGHT, costY);
+      ctx.lineTo(W - PR, costY);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = '#fbbf2480';
-      ctx.font = '10px monospace';
-      ctx.fillText('avg $' + avgCost.toFixed(2), 4, costY - 4);
+      // Avg label
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.roundRect(lx, costY - labelH / 2, PR - 2, labelH, 3);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 10px -apple-system, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('AVG ' + avgCost.toFixed(2), W - PR / 2, costY + 4);
     }
 
   }, [candles, currentCandle, stockPrice, lastChange, sharesOwned, avgCost]);
@@ -301,25 +353,22 @@ export default function TradingSimPage() {
   const pnlColor = (v: number) => v > 0 ? 'text-green-500' : v < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#131722' }}>
       {/* Header */}
-      <header className="border-b px-3 py-2 flex items-center justify-between shrink-0">
+      <header className="px-3 py-2 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid #2a2e39' }}>
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white">
             <Link href="/games"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <span className="font-bold text-sm">Trading Sim</span>
+          <span className="font-bold text-sm text-gray-200">RANDOM / USD</span>
+          <span className="text-[10px] text-gray-500 ml-1">Sim</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setPaused(!paused)}>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={() => setPaused(!paused)}>
             {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
           </Button>
-          <Button variant={speed === 800 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(800)}>1x</Button>
-          <Button variant={speed === 400 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(400)}>2x</Button>
-          <Button variant={speed === 150 ? 'default' : 'ghost'} size="sm" className="h-7 px-2 text-xs" onClick={() => setSpeed(150)}>
-            <Zap className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={reset}>
+          <div className="w-px h-4 bg-gray-700 mx-1"></div>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white" onClick={reset}>
             <RotateCcw className="h-3 w-3" />
           </Button>
         </div>
@@ -327,8 +376,8 @@ export default function TradingSimPage() {
 
       {/* Price */}
       <div className="px-3 pt-2 pb-1 shrink-0 flex items-baseline gap-2">
-        <span className="text-2xl sm:text-3xl font-mono font-bold">${stockPrice.toFixed(2)}</span>
-        <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5", lastChange >= 0 ? 'text-green-500' : 'text-red-500')}>
+        <span className="text-2xl sm:text-3xl font-mono font-bold text-gray-100">${stockPrice.toFixed(2)}</span>
+        <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5", lastChange >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]')}>
           {lastChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {lastChange >= 0 ? '+' : ''}{lastChange.toFixed(2)} ({stockPrice > 0 ? ((lastChange / (stockPrice - lastChange)) * 100).toFixed(2) : '0.00'}%)
         </span>
@@ -340,34 +389,34 @@ export default function TradingSimPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-1.5 px-3 py-2 shrink-0">
-        <div className="bg-muted/50 rounded-md p-2">
-          <p className="text-[10px] text-muted-foreground">Cash</p>
-          <p className="text-sm font-mono font-bold">${balance.toFixed(0)}</p>
+      <div className="grid grid-cols-4 gap-1.5 px-3 py-2 shrink-0" style={{ borderTop: '1px solid #2a2e39' }}>
+        <div className="rounded-md p-2" style={{ background: '#1e222d' }}>
+          <p className="text-[10px] text-gray-500">Cash</p>
+          <p className="text-sm font-mono font-bold text-gray-200">${balance.toFixed(0)}</p>
         </div>
-        <div className="bg-muted/50 rounded-md p-2">
-          <p className="text-[10px] text-muted-foreground">Equity</p>
-          <p className="text-sm font-mono font-bold">${equity.toFixed(0)}</p>
+        <div className="rounded-md p-2" style={{ background: '#1e222d' }}>
+          <p className="text-[10px] text-gray-500">Equity</p>
+          <p className="text-sm font-mono font-bold text-gray-200">${equity.toFixed(0)}</p>
         </div>
-        <div className="bg-muted/50 rounded-md p-2">
-          <p className="text-[10px] text-muted-foreground">Shares</p>
-          <p className="text-sm font-mono font-bold">{sharesOwned}</p>
+        <div className="rounded-md p-2" style={{ background: '#1e222d' }}>
+          <p className="text-[10px] text-gray-500">Shares</p>
+          <p className="text-sm font-mono font-bold text-gray-200">{sharesOwned}</p>
         </div>
-        <div className="bg-muted/50 rounded-md p-2">
-          <p className="text-[10px] text-muted-foreground">P&L</p>
-          <p className={cn("text-sm font-mono font-bold", pnlColor(totalPnL))}>
-            {totalPnL >= 0 ? '+' : ''}{totalPnL.toFixed(0)}
+        <div className="rounded-md p-2" style={{ background: '#1e222d' }}>
+          <p className="text-[10px] text-gray-500">P&L</p>
+          <p className={cn("text-sm font-mono font-bold", totalPnL > 0 ? 'text-[#26a69a]' : totalPnL < 0 ? 'text-[#ef5350]' : 'text-gray-500')}>
+            {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(0)}
           </p>
         </div>
       </div>
 
       {/* Message */}
-      <p className="text-xs text-muted-foreground text-center px-3 shrink-0">{gameMessage}</p>
+      <p className="text-xs text-gray-500 text-center px-3 shrink-0">{gameMessage}</p>
 
       {/* Actions */}
       <div className="px-3 py-3 space-y-1.5 shrink-0">
         {sharesOwned > 0 && (
-          <div className="flex items-center justify-between text-[10px] px-0.5 text-muted-foreground">
+          <div className="flex items-center justify-between text-[10px] px-0.5 text-gray-500">
             <span>Avg: ${avgCost.toFixed(2)}</span>
             <span>Unreal: <span className={pnlColor(unrealizedPnL)}>{unrealizedPnL >= 0 ? '+' : ''}${unrealizedPnL.toFixed(2)}</span></span>
             <span>Real: <span className={pnlColor(realizedPnL)}>{realizedPnL >= 0 ? '+' : ''}${realizedPnL.toFixed(2)}</span></span>
@@ -375,10 +424,10 @@ export default function TradingSimPage() {
           </div>
         )}
         <div className="grid grid-cols-4 gap-1.5">
-          <Button onClick={() => buy(1)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 1</Button>
-          <Button onClick={() => buy(5)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 5</Button>
-          <Button onClick={() => buy(10)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10">Buy 10</Button>
-          <Button onClick={() => buy(maxShares)} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-10" disabled={maxShares < 1}>All In</Button>
+          <Button onClick={() => buy(1)} size="sm" className="bg-[#26a69a] hover:bg-[#2bbd8e] text-white text-xs h-10">Buy 1</Button>
+          <Button onClick={() => buy(5)} size="sm" className="bg-[#26a69a] hover:bg-[#2bbd8e] text-white text-xs h-10">Buy 5</Button>
+          <Button onClick={() => buy(10)} size="sm" className="bg-[#26a69a] hover:bg-[#2bbd8e] text-white text-xs h-10">Buy 10</Button>
+          <Button onClick={() => buy(maxShares)} size="sm" className="bg-[#26a69a] hover:bg-[#2bbd8e] text-white text-xs h-10" disabled={maxShares < 1}>All In</Button>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
           <Button onClick={() => sell(1)} size="sm" variant="destructive" className="text-xs h-10">Sell 1</Button>
