@@ -95,21 +95,23 @@ function generateSeedTicks(startPrice: number, seconds: number): Tick[] {
   return ticks;
 }
 
-function ticksToCandles(ticks: Tick[], intervalMs: number): Candle[] {
+type CandleWithTime = Candle & { startTime: number };
+
+function ticksToCandles(ticks: Tick[], intervalMs: number): CandleWithTime[] {
   if (ticks.length === 0) return [];
-  const candles: Candle[] = [];
+  const candles: CandleWithTime[] = [];
   let bs = ticks[0].time;
   let o = ticks[0].price, h = o, l = o, c = o;
   for (const t of ticks) {
     if (t.time >= bs + intervalMs) {
-      candles.push({ open: o, high: h, low: l, close: c });
+      candles.push({ open: o, high: h, low: l, close: c, startTime: bs });
       bs += intervalMs * Math.floor((t.time - bs) / intervalMs);
       o = t.price; h = t.price; l = t.price; c = t.price;
     } else {
       h = Math.max(h, t.price); l = Math.min(l, t.price); c = t.price;
     }
   }
-  candles.push({ open: o, high: h, low: l, close: c });
+  candles.push({ open: o, high: h, low: l, close: c, startTime: bs });
   return candles;
 }
 
@@ -276,22 +278,17 @@ export default function TradingSimPage() {
       }
     }
 
-    // Trade markers on chart — map trades to visible candles by price
-    // Only show trades that happened after the game started (not in seed data)
-    const visibleStartTime = ticksRef.current.length > 0
-      ? ticksRef.current[Math.max(0, ticksRef.current.length - maxVis * Math.round(intervalMs / 250))].time
-      : 0;
-
+    // Trade markers — match trade time to candle bucket
     for (const trade of trades) {
-      if (trade.time < visibleStartTime) continue;
-
-      // Find the last visible candle at or before the trade price
-      // Place marker on the rightmost candle that was active at trade time
-      const tradeAge = Date.now() - trade.time;
-      const candlesAgo = Math.floor(tradeAge / intervalMs);
-      const candleIdx = visible.length - 1 - candlesAgo;
-
-      if (candleIdx < 0 || candleIdx >= visible.length) continue;
+      let candleIdx = -1;
+      for (let vi = 0; vi < visible.length; vi++) {
+        const cs = visible[vi].startTime;
+        if (trade.time >= cs && trade.time < cs + intervalMs) {
+          candleIdx = vi;
+          break;
+        }
+      }
+      if (candleIdx < 0) continue;
 
       const cx = offsetX + candleIdx * step + CW / 2;
       const isBuy = trade.type === 'buy' || trade.type === 'cover';
